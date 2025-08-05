@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 基础样式 */
+* {
+  @apply box-border;
+}
+
+html, body {
+  @apply h-full;
+}
+
+body {
+  @apply font-sans antialiased bg-white dark:bg-dark-900 text-gray-900 dark:text-gray-100 transition-colors duration-300;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-dark-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-dark-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-dark-500;
+}
+
+/* 代码块样式 */
+pre {
+  @apply bg-gray-50 dark:bg-dark-800 rounded-lg p-4 overflow-x-auto;
+}
+
+code {
+  @apply font-mono text-sm bg-gray-100 dark:bg-dark-700 px-1 py-0.5 rounded;
+}
+
+pre code {
+  @apply bg-transparent p-0;
+}
+
+/* 链接样式 */
+a {
+  @apply text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200;
+}
+
+/* 按钮基础样式 */
+.btn {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.btn-primary {
+  @apply bg-primary-600 hover:bg-primary-700 text-white focus:ring-primary-500;
+}
+
+.btn-secondary {
+  @apply bg-gray-200 hover:bg-gray-300 text-gray-900 focus:ring-gray-500 dark:bg-dark-700 dark:hover:bg-dark-600 dark:text-gray-100;
+}
+
+/* 卡片样式 */
+.card {
+  @apply bg-white dark:bg-dark-800 rounded-lg shadow-sm border border-gray-200 dark:border-dark-700 transition-all duration-200;
+}
+
+.card-hover {
+  @apply hover:shadow-md hover:border-gray-300 dark:hover:border-dark-600;
+}
+
+/* 输入框样式 */
+.input {
+  @apply w-full px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+}
+
+/* 搜索高亮 */
+.search-highlight {
+  @apply bg-yellow-200 dark:bg-yellow-800 px-1 rounded;
+}
+
+/* 动画 */
+.fade-in {
+  @apply animate-pulse duration-200;
+}
+
+.slide-up {
+  @apply transform translate-y-0 duration-300;
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}

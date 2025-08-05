@@ -1,0 +1,78 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Suspense } from 'react';
+
+// 页面组件
+import HomePage from './pages/HomePage';
+import ArticlePage from './pages/ArticlePage';
+import CategoryPage from './pages/CategoryPage';
+import TagPage from './pages/TagPage';
+import SearchPage from './pages/SearchPage';
+import ArticlePreviewPage from './pages/ArticlePreviewPage';
+import NotFoundPage from './pages/NotFoundPage';
+
+// 管理后台页面
+import AdminLayout from './pages/admin/AdminLayout';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import ArticleList from './pages/admin/ArticleList';
+import ArticleEditor from './pages/admin/ArticleEditor';
+import AdminCategories from './pages/admin/AdminCategories';
+import AdminTags from './pages/admin/AdminTags';
+
+// 布局组件
+import Layout from './components/Layout';
+import LoadingSpinner from './components/LoadingSpinner';
+
+// 创建 QueryClient 实例
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5分钟
+    },
+  },
+});
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <div className="min-h-screen bg-white dark:bg-dark-900 transition-colors duration-300">
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+              {/* 前台路由 */}
+              <Route path="/" element={<Layout />}>
+                <Route index element={<HomePage />} />
+                <Route path="article/:slug" element={<ArticlePage />} />
+                <Route path="category/:slug" element={<CategoryPage />} />
+                <Route path="tag/:slug" element={<TagPage />} />
+                <Route path="search" element={<SearchPage />} />
+              </Route>
+
+              {/* 文章预览路由 */}
+              <Route path="/articles/:id/preview" element={<ArticlePreviewPage />} />
+
+              {/* 管理后台路由 */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="articles" element={<ArticleList />} />
+                <Route path="articles/new" element={<ArticleEditor />} />
+                <Route path="articles/:id/edit" element={<ArticleEditor />} />
+                <Route path="categories" element={<AdminCategories />} />
+                <Route path="tags" element={<AdminTags />} />
+              </Route>
+
+              {/* 404页面 */}
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+        </div>
+      </Router>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
