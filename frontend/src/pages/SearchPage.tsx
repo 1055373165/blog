@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { articlesApi } from '../api';
+import { apiClient } from '../api/client';
 import { SearchFilters } from '../types';
 import ArticleCard from '../components/ArticleCard';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -65,8 +66,7 @@ export default function SearchPage() {
         if (searchFilters.sortby) queryParams.set('sort_by', searchFilters.sortby);
         if (searchFilters.sortOrder) queryParams.set('sort_order', searchFilters.sortOrder);
 
-        const response = await fetch(`/api/search?${queryParams}`);
-        const data = await response.json();
+        const data = await apiClient.get(`/api/search?${queryParams}`);
 
         if (data.success) {
           setResults(data.data);
@@ -346,34 +346,37 @@ export default function SearchPage() {
                       viewsCount: doc.views_count || 0,
                       likesCount: doc.likes_count || 0,
                       author: {
-                        id: doc.author_id || '1',
-                        name: doc.author_name || '作者',
-                        email: '',
-                        avatar: '',
-                        isAdmin: false,
-                        createdAt: '',
-                        updatedAt: '',
+                        id: doc.author.id?.toString() || '1',
+                        name: doc.author.name || '作者',
+                        email: doc.author.email || '',
+                        avatar: doc.author.avatar || '',
+                        isAdmin: doc.author.is_admin || false,
+                        createdAt: doc.author.created_at || '',
+                        updatedAt: doc.author.updated_at || '',
                       },
                       category: doc.category ? {
-                        id: doc.category_id,
-                        name: doc.category,
-                        slug: '',
-                        articlesCount: 0,
-                        createdAt: '',
-                        updatedAt: '',
+                        id: doc.category.id?.toString() || '0',
+                        name: doc.category.name || '',
+                        slug: doc.category.slug || '',
+                        description: doc.category.description,
+                        parentId: doc.category.parent_id?.toString(),
+                        articlesCount: doc.category.articles_count || 0,
+                        createdAt: doc.category.created_at || '',
+                        updatedAt: doc.category.updated_at || '',
                       } : undefined,
-                      tags: doc.tags ? doc.tags.map((tag: string, index: number) => ({
-                        id: `${index}`,
-                        name: tag,
-                        slug: tag.toLowerCase(),
-                        articlesCount: 0,
-                        createdAt: '',
-                        updatedAt: '',
+                      tags: doc.tags ? doc.tags.map((tag: any) => ({
+                        id: tag.id?.toString() || '0',
+                        name: tag.name || '',
+                        slug: tag.slug || '',
+                        color: tag.color,
+                        articlesCount: tag.articles_count || 0,
+                        createdAt: tag.created_at || '',
+                        updatedAt: tag.updated_at || '',
                       })) : [],
                       series: doc.series ? {
                         id: doc.series_id,
-                        name: doc.series,
-                        slug: '',
+                        name: typeof doc.series === 'string' ? doc.series : (doc.series.name || ''),
+                        slug: typeof doc.series === 'string' ? '' : (doc.series.slug || ''),
                         articlesCount: 0,
                         createdAt: '',
                         updatedAt: '',

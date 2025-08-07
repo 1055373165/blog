@@ -4,6 +4,8 @@ import ArticleCard from './ArticleCard';
 import LoadingSpinner from './LoadingSpinner';
 import Pagination from './Pagination';
 
+type ViewMode = 'card' | 'list' | 'icon' | 'column';
+
 interface ArticleListProps {
   fetchArticles: (page: number, limit: number) => Promise<PaginatedResponse<Article>>;
   title?: string;
@@ -16,6 +18,8 @@ interface ArticleListProps {
   showPagination?: boolean;
   initialPage?: number;
   pageSize?: number;
+  defaultViewMode?: ViewMode;
+  allowViewModeChange?: boolean;
 }
 
 export default function ArticleList({
@@ -30,6 +34,8 @@ export default function ArticleList({
   showPagination = true,
   initialPage = 1,
   pageSize = 10,
+  defaultViewMode = 'card',
+  allowViewModeChange = true,
 }: ArticleListProps) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +44,7 @@ export default function ArticleList({
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [currentPageSize, setCurrentPageSize] = useState(pageSize);
+  const [viewMode, setViewMode] = useState<ViewMode>(defaultViewMode);
 
   const loadArticles = async (page: number, limit: number) => {
     try {
@@ -71,13 +78,194 @@ export default function ArticleList({
     setCurrentPage(1);
   };
 
-  const getGridClasses = () => {
+  const getLayoutClasses = () => {
+    if (viewMode === 'list') {
+      return 'space-y-4';
+    }
+    if (viewMode === 'icon') {
+      return 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4';
+    }
+    if (viewMode === 'column') {
+      return 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4';
+    }
+    // card view (default)
     const gridClasses = {
       1: 'grid grid-cols-1 gap-6',
       2: 'grid grid-cols-1 md:grid-cols-2 gap-6',
       3: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6',
     };
     return gridClasses[columns];
+  };
+
+  const ViewModeToggle = () => {
+    if (!allowViewModeChange) return null;
+
+    const modes: { mode: ViewMode; icon: string; title: string }[] = [
+      { mode: 'card', icon: '■', title: '卡片视图' },
+      { mode: 'list', icon: '☰', title: '列表视图' },
+      { mode: 'icon', icon: '⚏', title: '图标视图' },
+      { mode: 'column', icon: '|||', title: '分栏视图' },
+    ];
+
+    return (
+      <div className="flex justify-center mb-6">
+        <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          {modes.map((modeConfig) => (
+            <button
+              key={modeConfig.mode}
+              onClick={() => setViewMode(modeConfig.mode)}
+              title={modeConfig.title}
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                viewMode === modeConfig.mode
+                  ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                  : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+              } ${
+                modeConfig.mode === modes[0].mode ? 'rounded-l-lg' : ''
+              } ${
+                modeConfig.mode === modes[modes.length - 1].mode ? 'rounded-r-lg' : ''
+              }`}
+            >
+              {modeConfig.icon}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderArticleItem = (article: Article) => {
+    if (viewMode === 'list') {
+      return (
+        <div key={article.id} className="flex bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
+          {article.coverImage && (
+            <div className="w-32 h-24 flex-shrink-0">
+              <img
+                src={article.coverImage}
+                alt={article.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          <div className="flex-1 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors cursor-pointer">
+                {article.title}
+              </h3>
+              {showStats && (
+                <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                  <span>👁 {article.viewsCount || 0}</span>
+                  <span>❤ {article.likesCount || 0}</span>
+                </div>
+              )}
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
+              {article.excerpt || article.content?.substring(0, 120) + '...'}
+            </p>
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-3">
+                {showCategory && article.category && (
+                  <span className="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded text-xs">
+                    {article.category.name}
+                  </span>
+                )}
+                {showTags && article.tags && article.tags.length > 0 && (
+                  <div className="flex gap-1">
+                    {article.tags.slice(0, 2).map((tag) => (
+                      <span key={tag.id} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
+                        #{tag.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <span className="text-gray-500 dark:text-gray-400">
+                {new Date(article.publishedAt || article.createdAt).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (viewMode === 'icon') {
+      return (
+        <div key={article.id} className="text-center group cursor-pointer">
+          <div className="w-16 h-16 mx-auto mb-2 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center group-hover:bg-primary-200 dark:group-hover:bg-primary-900/50 transition-colors">
+            {article.coverImage ? (
+              <img
+                src={article.coverImage}
+                alt={article.title}
+                className="w-12 h-12 rounded-full object-cover"
+              />
+            ) : (
+              <svg className="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            )}
+          </div>
+          <h4 className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2">
+            {article.title}
+          </h4>
+          {showStats && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              👁 {article.viewsCount || 0}
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    if (viewMode === 'column') {
+      return (
+        <div key={article.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-sm transition-shadow">
+          {article.coverImage && (
+            <div className="h-32 overflow-hidden">
+              <img
+                src={article.coverImage}
+                alt={article.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          <div className="p-3">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors cursor-pointer line-clamp-2 mb-2">
+              {article.title}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 text-xs line-clamp-3 mb-3">
+              {article.excerpt || article.content?.substring(0, 80) + '...'}
+            </p>
+            <div className="flex items-center justify-between text-xs">
+              {showCategory && article.category ? (
+                <span className="px-1.5 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded">
+                  {article.category.name}
+                </span>
+              ) : (
+                <span className="text-gray-500 dark:text-gray-400">
+                  {new Date(article.publishedAt || article.createdAt).toLocaleDateString()}
+                </span>
+              )}
+              {showStats && (
+                <span className="text-gray-500 dark:text-gray-400">
+                  👁 {article.viewsCount || 0}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Default card view
+    return (
+      <ArticleCard
+        key={article.id}
+        article={article}
+        variant={variant}
+        showCategory={showCategory}
+        showTags={showTags}
+        showStats={showStats}
+      />
+    );
   };
 
   if (loading) {
@@ -144,18 +332,12 @@ export default function ArticleList({
         </div>
       )}
 
-      {/* Articles Grid */}
-      <div className={getGridClasses()}>
-        {articles.map((article) => (
-          <ArticleCard
-            key={article.id}
-            article={article}
-            variant={variant}
-            showCategory={showCategory}
-            showTags={showTags}
-            showStats={showStats}
-          />
-        ))}
+      {/* View Mode Toggle */}
+      <ViewModeToggle />
+
+      {/* Articles Display */}
+      <div className={getLayoutClasses()}>
+        {articles.map(renderArticleItem)}
       </div>
 
       {/* Pagination */}

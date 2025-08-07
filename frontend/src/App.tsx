@@ -1,12 +1,18 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Suspense } from 'react';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // 页面组件
 import HomePage from './pages/HomePage';
+import ArticlesPage from './pages/ArticlesPage';
 import ArticlePage from './pages/ArticlePage';
+import CategoriesPage from './pages/CategoriesPage';
 import CategoryPage from './pages/CategoryPage';
+import TagsPage from './pages/TagsPage';
 import TagPage from './pages/TagPage';
+import SeriesPage from './pages/SeriesPage';
+import SeriesDetailPage from './pages/SeriesDetailPage';
 import SearchPage from './pages/SearchPage';
 import ArticlePreviewPage from './pages/ArticlePreviewPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -38,16 +44,22 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="min-h-screen bg-white dark:bg-dark-900 transition-colors duration-300">
-          <Suspense fallback={<LoadingSpinner />}>
-            <Routes>
+      <ThemeProvider>
+        <Router>
+          <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
+            <Suspense fallback={<LoadingSpinner />}>
+              <Routes>
               {/* 前台路由 */}
               <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
+                <Route path="articles" element={<ArticlesPage />} />
                 <Route path="article/:slug" element={<ArticlePage />} />
+                <Route path="categories" element={<CategoriesPage />} />
                 <Route path="category/:slug" element={<CategoryPage />} />
+                <Route path="tags" element={<TagsPage />} />
                 <Route path="tag/:slug" element={<TagPage />} />
+                <Route path="series" element={<SeriesPage />} />
+                <Route path="series/:slug" element={<SeriesDetailPage />} />
                 <Route path="search" element={<SearchPage />} />
               </Route>
 
@@ -68,9 +80,10 @@ function App() {
               {/* 404页面 */}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
-          </Suspense>
-        </div>
-      </Router>
+            </Suspense>
+          </div>
+        </Router>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

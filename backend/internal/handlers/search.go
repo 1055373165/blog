@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -29,40 +31,20 @@ type SearchRequest struct {
 	Highlight   bool     `json:"highlight"`
 }
 
-// SearchContent 搜索内容
+// SearchContent 搜索内容 
 func SearchContent(c *gin.Context) {
 	// 获取查询参数
 	query := c.Query("q")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	sortBy := c.DefaultQuery("sort_by", "score")
-	sortOrder := c.DefaultQuery("sort_order", "desc")
-	highlight := c.DefaultQuery("highlight", "true") == "true"
-
-	// 获取筛选条件
-	categoryIDs := strings.Split(c.Query("category_ids"), ",")
-	if len(categoryIDs) == 1 && categoryIDs[0] == "" {
-		categoryIDs = []string{}
-	}
-	
-	tagIDs := strings.Split(c.Query("tag_ids"), ",")
-	if len(tagIDs) == 1 && tagIDs[0] == "" {
-		tagIDs = []string{}
-	}
-	
-	authorIDs := strings.Split(c.Query("author_ids"), ",")
-	if len(authorIDs) == 1 && authorIDs[0] == "" {
-		authorIDs = []string{}
-	}
-	
-	seriesIDs := strings.Split(c.Query("series_ids"), ",")
-	if len(seriesIDs) == 1 && seriesIDs[0] == "" {
-		seriesIDs = []string{}
-	}
-
+	categoryID := c.Query("category_id")
+	tagIDs := c.Query("tag_ids")
+	seriesID := c.Query("series_id")
 	dateFrom := c.Query("date_from")
 	dateTo := c.Query("date_to")
-
+	sortBy := c.DefaultQuery("sort_by", "published_at")
+	sortOrder := c.DefaultQuery("sort_order", "desc")
+	
 	// 参数验证
 	if page < 1 {
 		page = 1
@@ -70,73 +52,142 @@ func SearchContent(c *gin.Context) {
 	if limit < 1 || limit > 50 {
 		limit = 10
 	}
-
-	// 如果没有搜索引擎，使用数据库搜索作为备选方案
-	if search.Engine == nil {
-		fallbackSearchResult, err := fallbackDatabaseSearch(query, categoryIDs, tagIDs, page, limit, sortBy, sortOrder)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"error":   "搜索失败",
-			})
-			return
+	
+	// 直接使用数据库搜索
+	var articles []models.Article
+	dbQuery := database.DB.Model(&models.Article{}).
+		Preload("Author").
+		Preload("Category").
+		Preload("Tags").
+		Preload("Series").
+		Where("is_published = ?", true)
+	
+	// 添加搜索条件
+	if query != "" {
+		searchCondition := "title ILIKE ? OR content ILIKE ? OR excerpt ILIKE ?"
+		searchTerm := "%" + query + "%"
+		dbQuery = dbQuery.Where(searchCondition, searchTerm, searchTerm, searchTerm)
+	}
+	
+	// 分类筛选
+	if categoryID != "" {
+		dbQuery = dbQuery.Where("category_id = ?", categoryID)
+	}
+	
+	// 标签筛选
+	if tagIDs != "" {
+		tagIDList := strings.Split(tagIDs, ",")
+		if len(tagIDList) > 0 {
+			dbQuery = dbQuery.Joins("JOIN article_tags ON article_tags.article_id = articles.id").
+				Where("article_tags.tag_id IN ?", tagIDList).
+				Distinct()
 		}
-		
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"data":    fallbackSearchResult,
-			"message": "使用数据库搜索（搜索引擎不可用）",
-		})
-		return
 	}
-
-	// 构建搜索选项
-	searchOptions := search.SearchOptions{
-		Query:       query,
-		CategoryIDs: categoryIDs,
-		TagIDs:      tagIDs,
-		AuthorIDs:   authorIDs,
-		SeriesIDs:   seriesIDs,
-		DateFrom:    dateFrom,
-		DateTo:      dateTo,
-		SortBy:      sortBy,
-		SortOrder:   sortOrder,
-		From:        (page - 1) * limit,
-		Size:        limit,
-		Highlight:   highlight,
+	
+	// 系列筛选
+	if seriesID != "" {
+		dbQuery = dbQuery.Where("series_id = ?", seriesID)
 	}
-
-	// 执行搜索
-	searchResult, err := search.Engine.Search(searchOptions)
+	
+	// 日期范围筛选
+	if dateFrom != "" {
+		dbQuery = dbQuery.Where("published_at >= ?", dateFrom)
+	}
+	if dateTo != "" {
+		dbQuery = dbQuery.Where("published_at <= ?", dateTo)
+	}
+	
+	// 排序
+	orderClause := "published_at DESC"
+	switch sortBy {
+	case "created_at":
+		if sortOrder == "asc" {
+			orderClause = "created_at ASC"
+		} else {
+			orderClause = "created_at DESC"
+		}
+	case "updated_at":
+		if sortOrder == "asc" {
+			orderClause = "updated_at ASC"
+		} else {
+			orderClause = "updated_at DESC"
+		}
+	case "published_at":
+		if sortOrder == "asc" {
+			orderClause = "published_at ASC"
+		} else {
+			orderClause = "published_at DESC"
+		}
+	case "title":
+		if sortOrder == "asc" {
+			orderClause = "title ASC"
+		} else {
+			orderClause = "title DESC"
+		}
+	case "views_count":
+		if sortOrder == "asc" {
+			orderClause = "views_count ASC"
+		} else {
+			orderClause = "views_count DESC"
+		}
+	case "likes_count":
+		if sortOrder == "asc" {
+			orderClause = "likes_count ASC"
+		} else {
+			orderClause = "likes_count DESC"
+		}
+	}
+	
+	// 计算总数
+	var total int64
+	dbQuery.Count(&total)
+	
+	// 分页查询
+	offset := (page - 1) * limit
+	err := dbQuery.Order(orderClause).Offset(offset).Limit(limit).Find(&articles).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"error":   "搜索执行失败: " + err.Error(),
+			"error":   "搜索失败: " + err.Error(),
 		})
 		return
 	}
-
+	
 	// 计算分页信息
-	totalPages := (int(searchResult.Total) + limit - 1) / limit
-
+	totalPages := (int(total) + limit - 1) / limit
+	
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": gin.H{
-			"documents": searchResult.Documents,
+			"documents": articles,
 			"pagination": gin.H{
 				"page":        page,
 				"limit":       limit,
-				"total":       searchResult.Total,
+				"total":       total,
 				"total_pages": totalPages,
 			},
-			"took":      searchResult.Took.String(),
-			"max_score": searchResult.MaxScore,
 		},
+		"message": "使用数据库搜索",
+	})
+}
+
+// TestSearch 测试搜索
+func TestSearch(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "测试成功",
 	})
 }
 
 // fallbackDatabaseSearch 数据库搜索备选方案
 func fallbackDatabaseSearch(query string, categoryIDs, tagIDs []string, page, limit int, sortBy, sortOrder string) (gin.H, error) {
+	log.Printf("开始数据库搜索: query=%s, categoryIDs=%v, tagIDs=%v", query, categoryIDs, tagIDs)
+	
+	// 检查数据库连接
+	if database.DB == nil {
+		return nil, fmt.Errorf("数据库连接未初始化")
+	}
+	
 	// 构建数据库查询
 	dbQuery := database.DB.Model(&models.Article{}).
 		Preload("Author").
@@ -144,6 +195,8 @@ func fallbackDatabaseSearch(query string, categoryIDs, tagIDs []string, page, li
 		Preload("Tags").
 		Preload("Series").
 		Where("is_published = ?", true)
+	
+	log.Println("基础查询构建完成")
 
 	// 全文搜索条件
 	if query != "" {
@@ -153,12 +206,12 @@ func fallbackDatabaseSearch(query string, categoryIDs, tagIDs []string, page, li
 	}
 
 	// 分类筛选
-	if len(categoryIDs) > 0 && categoryIDs[0] != "" {
+	if len(categoryIDs) > 0 {
 		dbQuery = dbQuery.Where("category_id IN ?", categoryIDs)
 	}
 
 	// 标签筛选
-	if len(tagIDs) > 0 && tagIDs[0] != "" {
+	if len(tagIDs) > 0 {
 		dbQuery = dbQuery.Joins("JOIN article_tags ON article_tags.article_id = articles.id").
 			Where("article_tags.tag_id IN ?", tagIDs)
 	}

@@ -31,7 +31,10 @@ class ApiClient {
         }
 
         // 添加请求日志
-        console.log(`🚀 ${config.method?.toUpperCase()} ${config.url}`, config.data || config.params);
+        const logData = config.data ? `Data: ${JSON.stringify(config.data)}` : 
+                       config.params ? `Params: ${JSON.stringify(config.params)}` : 
+                       'No payload';
+        console.log(`🚀 ${config.method?.toUpperCase()} ${config.url} - ${logData}`);
         
         return config;
       },

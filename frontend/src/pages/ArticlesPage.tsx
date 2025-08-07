@@ -11,7 +11,14 @@ export default function ArticlesPage() {
       sortBy: 'published_at',
       sortOrder: 'desc',
     });
-    return response.data;
+    // 转换API返回的数据格式为ArticleList期望的格式
+    return {
+      items: response.data.articles || [],
+      total: response.data.pagination?.total || 0,
+      page: response.data.pagination?.page || page,
+      limit: response.data.pagination?.limit || limit,
+      totalPages: response.data.pagination?.total_pages || 1,
+    };
   };
 
   return (

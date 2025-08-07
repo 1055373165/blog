@@ -8,8 +8,12 @@ help:
 	@echo "  dev     - 开发模式运行（自动重启）"
 	@echo "  test    - 运行测试"
 	@echo "  clean   - 清理构建文件"
-	@echo "  deps    - 安装依赖"
-	@echo "  migrate - 运行数据库迁移"
+	@echo "  deps      - 安装依赖"
+	@echo "  db-create - 创建数据库"
+	@echo "  db-migrate- 运行数据库迁移"
+	@echo "  db-seed   - 插入种子数据"
+	@echo "  db-reset  - 重置数据库（删除并重建）"
+	@echo "  db-status - 检查数据库状态"
 
 # 构建应用程序
 build:
@@ -45,9 +49,28 @@ deps:
 	@go mod download
 
 # 数据库相关
-migrate:
+db-create:
+	@echo "创建数据库..."
+	@createdb -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) $(DB_NAME)
+
+db-drop:
+	@echo "删除数据库..."
+	@dropdb -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) $(DB_NAME)
+
+db-migrate:
 	@echo "运行数据库迁移..."
-	@go run cmd/main.go --migrate
+	@psql -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) -d $(DB_NAME) -f migrations/001_create_tables.sql
+
+db-seed:
+	@echo "插入种子数据..."
+	@psql -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) -d $(DB_NAME) -f scripts/seed.sql
+
+db-reset: db-drop db-create db-migrate db-seed
+	@echo "数据库重置完成"
+
+db-status:
+	@echo "数据库状态检查..."
+	@psql -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) -d $(DB_NAME) -c "SELECT COUNT(*) as user_count FROM users; SELECT COUNT(*) as article_count FROM articles;"
 
 # 格式化代码
 fmt:

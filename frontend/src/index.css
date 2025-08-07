@@ -47,6 +47,42 @@ pre code {
   @apply bg-transparent p-0;
 }
 
+/* 文本截断样式 */
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Syntax highlighter overrides */
+.hljs {
+  @apply bg-transparent;
+}
+
+/* 代码高亮主题调整 */
+pre[class*="language-"] {
+  @apply rounded-lg overflow-hidden;
+  margin: 0;
+  padding: 0;
+}
+
+pre[class*="language-"] code {
+  @apply bg-transparent p-4 block overflow-x-auto;
+}
+
+/* 行号样式 */
+.react-syntax-highlighter-line-number {
+  @apply text-gray-400 dark:text-gray-500 select-none mr-4;
+}
+
 /* 链接样式 */
 a {
   @apply text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200;

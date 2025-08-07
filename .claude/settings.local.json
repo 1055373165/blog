@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(go mod:*)",
+      "Bash(go build:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(./scripts/init-db.sh:*)",
+      "Bash(go run:*)",
+      "Bash(curl:*)",
+      "Bash(lsof:*)",
+      "Bash(./bin/blog-server)",
+      "Bash(pkill:*)",
+      "Bash(./start-dev.sh:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(npm run dev:*)",
+      "Bash(kill:*)",
+      "Bash(npm run build:*)",
+      "Bash(docker exec:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}

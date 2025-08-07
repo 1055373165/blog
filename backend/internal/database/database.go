@@ -3,14 +3,13 @@ package database
 import (
 	"fmt"
 	"log"
-	"os"
-	"strconv"
 	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	"blog-backend/internal/config"
 	"blog-backend/internal/models"
 	"blog-backend/pkg/auth"
 )
@@ -19,23 +18,22 @@ var DB *gorm.DB
 
 // InitDB 初始化数据库连接
 func InitDB() error {
-	// 获取数据库配置
-	host := getEnv("DB_HOST", "localhost")
-	port := getEnv("DB_PORT", "5432")
-	user := getEnv("DB_USER", "postgres")
-	password := getEnv("DB_PASSWORD", "")
-	dbname := getEnv("DB_NAME", "blog_db")
-	sslmode := getEnv("DB_SSLMODE", "disable")
-	timezone := getEnv("DB_TIMEZONE", "Asia/Shanghai")
+	if config.GlobalConfig == nil {
+		return fmt.Errorf("配置未初始化，请先调用 config.LoadConfig()")
+	}
 
+	cfg := config.GlobalConfig
+	
 	// 构建数据库连接字符串
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=%s",
-		host, user, password, dbname, port, sslmode, timezone)
+	dsn := cfg.GetDSN()
 
 	// 配置GORM日志级别
 	logLevel := logger.Info
-	if os.Getenv("GIN_MODE") == "release" {
+	if cfg.IsProduction() || cfg.Server.Mode == "release" {
 		logLevel = logger.Error
+	}
+	if cfg.App.Debug {
+		logLevel = logger.Info
 	}
 
 	// 创建数据库连接
@@ -45,6 +43,8 @@ func InitDB() error {
 		NowFunc: func() time.Time {
 			return time.Now().Local()
 		},
+		// 禁用外键约束检查（可选，根据需要调整）
+		DisableForeignKeyConstraintWhenMigrating: false,
 	})
 
 	if err != nil {
@@ -58,20 +58,16 @@ func InitDB() error {
 	}
 
 	// 设置连接池参数
-	maxOpenConns, _ := strconv.Atoi(getEnv("DB_MAX_OPEN_CONNS", "25"))
-	maxIdleConns, _ := strconv.Atoi(getEnv("DB_MAX_IDLE_CONNS", "5"))
-	maxLifetime, _ := strconv.Atoi(getEnv("DB_MAX_LIFETIME", "300"))
-
-	sqlDB.SetMaxOpenConns(maxOpenConns)
-	sqlDB.SetMaxIdleConns(maxIdleConns)
-	sqlDB.SetConnMaxLifetime(time.Duration(maxLifetime) * time.Second)
+	sqlDB.SetMaxOpenConns(cfg.Database.MaxOpenConns)
+	sqlDB.SetMaxIdleConns(cfg.Database.MaxIdleConns)
+	sqlDB.SetConnMaxLifetime(cfg.Database.MaxLifetime)
 
 	// 测试连接
 	if err := sqlDB.Ping(); err != nil {
 		return fmt.Errorf("数据库连接测试失败: %v", err)
 	}
 
-	log.Println("数据库连接成功")
+	log.Printf("数据库连接成功 (Host: %s, DB: %s)", cfg.Database.Host, cfg.Database.Name)
 	return nil
 }
 
@@ -211,10 +207,44 @@ func CloseDB() error {
 	return sqlDB.Close()
 }
 
-// getEnv 获取环境变量，如果不存在则返回默认值
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
+// HealthCheck 数据库健康检查
+func HealthCheck() error {
+	if DB == nil {
+		return fmt.Errorf("数据库连接未初始化")
 	}
-	return defaultValue
+	
+	sqlDB, err := DB.DB()
+	if err != nil {
+		return fmt.Errorf("获取数据库实例失败: %v", err)
+	}
+	
+	if err := sqlDB.Ping(); err != nil {
+		return fmt.Errorf("数据库连接检查失败: %v", err)
+	}
+	
+	return nil
+}
+
+// GetStats 获取数据库连接统计信息
+func GetStats() map[string]interface{} {
+	if DB == nil {
+		return map[string]interface{}{"error": "数据库连接未初始化"}
+	}
+	
+	sqlDB, err := DB.DB()
+	if err != nil {
+		return map[string]interface{}{"error": err.Error()}
+	}
+	
+	stats := sqlDB.Stats()
+	return map[string]interface{}{
+		"open_connections":     stats.OpenConnections,
+		"in_use":              stats.InUse,
+		"idle":                stats.Idle,
+		"wait_count":          stats.WaitCount,
+		"wait_duration":       stats.WaitDuration.String(),
+		"max_idle_closed":     stats.MaxIdleClosed,
+		"max_idle_time_closed": stats.MaxIdleTimeClosed,
+		"max_lifetime_closed": stats.MaxLifetimeClosed,
+	}
 }

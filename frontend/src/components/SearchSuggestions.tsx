@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { apiClient } from '../api/client';
 
 interface SearchSuggestion {
   id: string;
@@ -37,48 +38,18 @@ export default function SearchSuggestions({
 
       try {
         setLoading(true);
-        const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}&limit=10`);
-        const data = await response.json();
+        const data = await apiClient.get(`/api/search/suggestions?q=${encodeURIComponent(query)}&limit=10`);
 
         if (data.success) {
-          const formattedSuggestions: SearchSuggestion[] = [
-            // Articles
-            ...(data.data.articles || []).map((article: any) => ({
-              id: `article-${article.id}`,
-              type: 'article' as const,
-              title: article.title,
-              subtitle: article.category?.name || '文章',
-              url: `/article/${article.slug}`,
-              icon: 'document',
-            })),
-            // Categories
-            ...(data.data.categories || []).map((category: any) => ({
-              id: `category-${category.id}`,
-              type: 'category' as const,
-              title: category.name,
-              subtitle: `${category.articles_count} 篇文章`,
-              url: `/category/${category.slug}`,
-              icon: 'folder',
-            })),
-            // Tags
-            ...(data.data.tags || []).map((tag: any) => ({
-              id: `tag-${tag.id}`,
-              type: 'tag' as const,
-              title: tag.name,
-              subtitle: `${tag.articles_count} 篇文章`,
-              url: `/tag/${tag.slug}`,
-              icon: 'tag',
-            })),
-            // Series
-            ...(data.data.series || []).map((series: any) => ({
-              id: `series-${series.id}`,
-              type: 'series' as const,
-              title: series.name,
-              subtitle: `${series.articles_count} 篇文章`,
-              url: `/series/${series.slug}`,
-              icon: 'collection',
-            })),
-          ];
+          // 当前后端只返回文章标题的字符串数组
+          const formattedSuggestions: SearchSuggestion[] = (data.data || []).map((title: string, index: number) => ({
+            id: `suggestion-${index}`,
+            type: 'article' as const,
+            title: title,
+            subtitle: '文章',
+            url: `/search?q=${encodeURIComponent(title)}`,
+            icon: 'document',
+          }));
 
           setSuggestions(formattedSuggestions.slice(0, 10));
         }

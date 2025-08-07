@@ -1,14 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 
+	"blog-backend/internal/config"
 	"blog-backend/internal/database"
 	"blog-backend/internal/handlers"
 	"blog-backend/internal/middleware"
@@ -17,10 +17,13 @@ import (
 )
 
 func main() {
-	// 加载环境变量
-	if err := godotenv.Load(); err != nil {
-		log.Println("警告: 未找到 .env 文件，使用系统环境变量")
+	// 加载配置
+	if err := config.LoadConfig(); err != nil {
+		log.Fatal("加载配置失败:", err)
 	}
+
+	cfg := config.GlobalConfig
+	log.Printf("启动 %s v%s (%s 环境)", cfg.App.Name, cfg.App.Version, cfg.App.Environment)
 
 	// 初始化数据库连接
 	if err := database.InitDB(); err != nil {
@@ -42,9 +45,7 @@ func main() {
 	}
 
 	// 设置Gin模式
-	if os.Getenv("GIN_MODE") == "release" {
-		gin.SetMode(gin.ReleaseMode)
-	}
+	gin.SetMode(cfg.Server.Mode)
 
 	// 创建Gin路由器
 	router := gin.New()
@@ -54,20 +55,43 @@ func main() {
 	router.Use(gin.Recovery())
 
 	// CORS配置
-	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{
-		"http://localhost:3000",  // 前端开发环境
-		"http://localhost:5173",  // Vite默认端口
-	}
-	config.AllowCredentials = true
-	config.AllowHeaders = append(config.AllowHeaders, "Authorization")
-	router.Use(cors.New(config))
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = cfg.CORS.AllowedOrigins
+	corsConfig.AllowMethods = cfg.CORS.AllowedMethods
+	corsConfig.AllowHeaders = cfg.CORS.AllowedHeaders
+	corsConfig.AllowCredentials = true
+	router.Use(cors.New(corsConfig))
 
 	// 健康检查接口
 	router.GET("/health", func(c *gin.Context) {
+		dbErr := database.HealthCheck()
+		if dbErr != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"status":   "error",
+				"message":  "Database connection failed",
+				"error":    dbErr.Error(),
+				"app":      cfg.App.Name,
+				"version":  cfg.App.Version,
+			})
+			return
+		}
+		
 		c.JSON(http.StatusOK, gin.H{
-			"status":  "ok",
-			"message": "Blog API Server is running",
+			"status":     "ok",
+			"message":    "Blog API Server is running",
+			"app":        cfg.App.Name,
+			"version":    cfg.App.Version,
+			"environment": cfg.App.Environment,
+			"database":   "connected",
+		})
+	})
+
+	// 数据库状态接口
+	router.GET("/health/db", func(c *gin.Context) {
+		stats := database.GetStats()
+		c.JSON(http.StatusOK, gin.H{
+			"status": "ok",
+			"data":   stats,
 		})
 	})
 
@@ -126,6 +150,19 @@ func main() {
 			tags.GET("/search", handlers.SearchTags)
 		}
 
+		// 系列相关路由
+		series := api.Group("/series")
+		{
+			series.GET("", handlers.GetSeries)
+			series.GET("/:id", handlers.GetSeriesById)
+			series.GET("/slug/:slug", handlers.GetSeriesBySlug)
+			series.POST("", middleware.AuthRequired(), handlers.CreateSeries)
+			series.PUT("/:id", middleware.AuthRequired(), handlers.UpdateSeries)
+			series.DELETE("/:id", middleware.AuthRequired(), handlers.DeleteSeries)
+			series.GET("/:id/articles", handlers.GetArticlesBySeries)
+			series.GET("/slug/:slug/articles", handlers.GetArticlesBySeriesSlug)
+		}
+
 		// 搜索相关路由
 		searchGroup := api.Group("/search")
 		{
@@ -151,16 +188,12 @@ func main() {
 	}
 
 	// 静态文件服务
-	router.Static("/uploads", "./uploads")
+	router.Static("/uploads", cfg.Upload.Path)
 
-	// 获取端口
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "3001"
-	}
-
-	log.Printf("服务器启动在端口 %s", port)
-	if err := router.Run(":" + port); err != nil {
+	// 启动服务器
+	serverAddr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
+	log.Printf("服务器启动在 %s", serverAddr)
+	if err := router.Run(serverAddr); err != nil {
 		log.Fatal("服务器启动失败:", err)
 	}
 }

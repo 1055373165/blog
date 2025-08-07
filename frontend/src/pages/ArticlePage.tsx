@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { articlesApi } from '../api';
 import { Article } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 import { formatDate, formatReadingTime } from '../utils';
 
 export default function ArticlePage() {
@@ -165,7 +166,13 @@ export default function ArticlePage() {
               <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
               </svg>
-              发布于 {formatDate(article.publishedAt || article.createdAt)}
+              发布于 {formatDate(
+                article.publishedAt && article.publishedAt !== '0001-01-01T00:00:00Z' 
+                  ? article.publishedAt 
+                  : article.createdAt !== '0001-01-01T00:00:00Z' 
+                    ? article.createdAt 
+                    : '未知日期'
+              )}
             </div>
 
             {/* Reading Time */}
@@ -185,7 +192,7 @@ export default function ArticlePage() {
                   <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                   <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                 </svg>
-                {article.viewsCount + 1} 次阅读
+                {(article.viewsCount || 0) + 1} 次阅读
               </span>
               <button
                 onClick={handleLike}
@@ -222,12 +229,12 @@ export default function ArticlePage() {
           )}
 
           {/* Article Content */}
-          <div 
-            className="prose prose-lg dark:prose-invert max-w-none prose-headings:text-gray-900 dark:prose-headings:text-white
+          <MarkdownRenderer 
+            content={article.content}
+            className="prose-headings:text-gray-900 dark:prose-headings:text-white
                        prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-a:text-primary-600 dark:prose-a:text-primary-400
                        prose-strong:text-gray-900 dark:prose-strong:text-white prose-code:text-primary-600 dark:prose-code:text-primary-400
                        prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800 prose-blockquote:border-primary-500"
-            dangerouslySetInnerHTML={{ __html: article.content }}
           />
         </div>
       </article>

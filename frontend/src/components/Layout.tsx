@@ -1,16 +1,19 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import SearchBar from './SearchBar';
+import ThemeSettings from './ThemeSettings';
 
 export default function Layout() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [themeSettingsOpen, setThemeSettingsOpen] = useState(false);
 
   const navigation = [
     { name: '首页', href: '/', icon: 'home' },
     { name: '文章', href: '/articles', icon: 'document' },
     { name: '分类', href: '/categories', icon: 'folder' },
     { name: '标签', href: '/tags', icon: 'tag' },
+    { name: '系列', href: '/series', icon: 'collection' },
     { name: '搜索', href: '/search', icon: 'search' },
   ];
 
@@ -41,6 +44,11 @@ export default function Layout() {
       tag: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+        </svg>
+      ),
+      collection: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
         </svg>
       ),
       search: (
@@ -83,7 +91,7 @@ export default function Layout() {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-1">
+            <nav className="hidden md:flex space-x-1 items-center">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
@@ -98,6 +106,19 @@ export default function Layout() {
                   <span className="ml-2">{item.name}</span>
                 </Link>
               ))}
+              
+              {/* Theme Settings Button */}
+              <button
+                type="button"
+                onClick={() => setThemeSettingsOpen(true)}
+                className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title="主题设置"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                </svg>
+                <span className="ml-2">主题</span>
+              </button>
             </nav>
 
             {/* Mobile menu button */}
@@ -147,6 +168,21 @@ export default function Layout() {
                     <span className="ml-3">{item.name}</span>
                   </Link>
                 ))}
+                
+                {/* Mobile Theme Settings Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setThemeSettingsOpen(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors w-full"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                  </svg>
+                  <span className="ml-3">主题设置</span>
+                </button>
               </nav>
             </div>
           )}
@@ -157,6 +193,12 @@ export default function Layout() {
       <main className="flex-1">
         <Outlet />
       </main>
+
+      {/* 主题设置面板 */}
+      <ThemeSettings 
+        isOpen={themeSettingsOpen} 
+        onClose={() => setThemeSettingsOpen(false)} 
+      />
 
       {/* 页脚 */}
       <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12">
