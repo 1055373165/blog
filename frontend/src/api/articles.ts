@@ -18,8 +18,8 @@ export const articlesApi = {
     tagIds?: string[];
     seriesId?: string;
     isPublished?: boolean;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
   }) {
     const queryString = params ? buildQueryString(params) : '';
     return apiClient.get<PaginatedResponse<Article>>(`/api/articles?${queryString}`);
@@ -102,8 +102,8 @@ export const articlesApi = {
       page: 1,
       limit,
       isPublished: true,
-      sortBy: 'published_at',
-      sortOrder: 'desc'
+      sort_by: 'published_at',
+      sort_order: 'desc'
     });
     return { ...response, data: response.data.articles || [] };
   },
@@ -117,8 +117,8 @@ export const articlesApi = {
   async getArticlesByCategory(categoryId: string, params?: {
     page?: number;
     limit?: number;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
   }) {
     const queryString = params ? buildQueryString(params) : '';
     return apiClient.get<PaginatedResponse<Article>>(`/api/categories/${categoryId}/articles?${queryString}`);
@@ -128,8 +128,8 @@ export const articlesApi = {
   async getArticlesByTag(tagId: string, params?: {
     page?: number;
     limit?: number;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
   }) {
     const queryString = params ? buildQueryString(params) : '';
     return apiClient.get<PaginatedResponse<Article>>(`/api/tags/${tagId}/articles?${queryString}`);
@@ -139,8 +139,8 @@ export const articlesApi = {
   async getArticlesBySeries(seriesId: string, params?: {
     page?: number;
     limit?: number;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
   }) {
     const queryString = params ? buildQueryString(params) : '';
     return apiClient.get<PaginatedResponse<Article>>(`/api/series/${seriesId}/articles?${queryString}`);
@@ -150,8 +150,8 @@ export const articlesApi = {
   async getDrafts(params?: {
     page?: number;
     limit?: number;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
   }) {
     const queryString = params ? buildQueryString(params) : '';
     return apiClient.get<PaginatedResponse<Article>>(`/api/articles/drafts?${queryString}`);

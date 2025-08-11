@@ -6,14 +6,14 @@ export const categoriesApi = {
   async getCategories(params?: {
     page?: number;
     limit?: number;
-    parentId?: string;
-    includeChildren?: boolean;
+    parent_id?: string;
+    include_children?: boolean;
   }) {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.parentId) queryParams.append('parentId', params.parentId);
-    if (params?.includeChildren) queryParams.append('includeChildren', 'true');
+    if (params?.parent_id) queryParams.append('parent_id', params.parent_id);
+    if (params?.include_children) queryParams.append('include_children', 'true');
     
     const queryString = queryParams.toString();
     return apiClient.get<PaginatedResponse<Category>>(`/api/categories${queryString ? '?' + queryString : ''}`);
@@ -39,7 +39,7 @@ export const categoriesApi = {
     name: string;
     slug?: string;
     description?: string;
-    parentId?: string;
+    parent_id?: string;
   }) {
     return apiClient.post<Category>('/api/categories', data);
   },
@@ -49,7 +49,7 @@ export const categoriesApi = {
     name?: string;
     slug?: string;
     description?: string;
-    parentId?: string;
+    parent_id?: string;
   }) {
     return apiClient.put<Category>(`/api/categories/${id}`, data);
   },

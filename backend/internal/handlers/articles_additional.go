@@ -172,7 +172,7 @@ func IncrementArticleViews(c *gin.Context) {
 			"success": true,
 			"message": "浏览记录已存在",
 			"data": gin.H{
-				"views_count": article.ViewsCount,
+				"viewsCount": article.ViewsCount,
 			},
 		})
 		return
@@ -217,7 +217,7 @@ func IncrementArticleViews(c *gin.Context) {
 		"success": true,
 		"message": "浏览量更新成功",
 		"data": gin.H{
-			"views_count": article.ViewsCount,
+			"viewsCount": article.ViewsCount,
 		},
 	})
 }

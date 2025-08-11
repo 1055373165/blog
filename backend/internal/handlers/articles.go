@@ -230,9 +230,45 @@ func GetArticleBySlug(c *gin.Context) {
 		return
 	}
 
+	// 检查用户是否已点赞
+	clientIP := c.ClientIP()
+	var existingLike models.ArticleLike
+	isLiked := database.DB.Where("article_id = ? AND ip = ?", article.ID, clientIP).
+		First(&existingLike).Error == nil
+
+	// 创建响应数据，包含点赞状态
+	responseData := gin.H{
+		"id":            article.ID,
+		"title":         article.Title,
+		"slug":          article.Slug,
+		"excerpt":       article.Excerpt,
+		"content":       article.Content,
+		"cover_image":    article.CoverImage,
+		"is_published":   article.IsPublished,
+		"is_draft":       article.IsDraft,
+		"published_at":   article.PublishedAt,
+		"reading_time":   article.ReadingTime,
+		"views_count":    article.ViewsCount,
+		"likes_count":    article.LikesCount,
+		"author_id":      article.AuthorID,
+		"category_id":    article.CategoryID,
+		"series_id":      article.SeriesID,
+		"series_order":   article.SeriesOrder,
+		"meta_title":     article.MetaTitle,
+		"meta_description": article.MetaDescription,
+		"meta_keywords":  article.MetaKeywords,
+		"created_at":     article.CreatedAt,
+		"updated_at":     article.UpdatedAt,
+		"author":        article.Author,
+		"category":      article.Category,
+		"series":        article.Series,
+		"tags":          article.Tags,
+		"is_liked":       isLiked,
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"data":    article,
+		"data":    responseData,
 	})
 }
 

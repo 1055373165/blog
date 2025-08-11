@@ -16,82 +16,84 @@ export interface PaginatedResponse<T> {
 
 // 用户相关类型
 export interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
   avatar?: string;
-  isAdmin: boolean;
-  createdAt: string;
-  updatedAt: string;
+  is_admin: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 // 分类相关类型
 export interface Category {
-  id: string;
+  id: number;
   name: string;
   slug: string;
   description?: string;
-  parentId?: string;
+  parent_id?: number;
   parent?: Category;
   children?: Category[];
-  articlesCount: number;
-  createdAt: string;
-  updatedAt: string;
+  articles_count: number;
+  created_at: string;
+  updated_at: string;
 }
 
 // 标签相关类型
 export interface Tag {
-  id: string;
+  id: number;
   name: string;
   slug: string;
   color?: string;
-  articlesCount: number;
-  createdAt: string;
-  updatedAt: string;
+  articles_count: number;
+  created_at: string;
+  updated_at: string;
 }
 
 // 系列相关类型
 export interface Series {
-  id: string;
+  id: number;
   name: string;
   slug: string;
   description?: string;
-  articlesCount: number;
-  createdAt: string;
-  updatedAt: string;
+  articles_count: number;
+  created_at: string;
+  updated_at: string;
 }
 
 // 文章相关类型
 export interface Article {
-  id: string;
+  id: number;
   title: string;
   slug: string;
   excerpt: string;
   content: string;
-  coverImage?: string;
-  isPublished: boolean;
-  isDraft: boolean;
-  publishedAt?: string;
-  readingTime: number;
-  viewsCount: number;
-  likesCount: number;
+  cover_image?: string;
+  is_published: boolean;
+  is_draft: boolean;
+  published_at?: string;
+  reading_time: number;
+  views_count: number;
+  likes_count: number;
+  is_liked?: boolean;
   
   // 关联数据
   author: User;
-  categoryId?: string;
+  author_id: number;
+  category_id?: number;
   category?: Category;
   tags: Tag[];
-  seriesId?: string;
+  series_id?: number;
   series?: Series;
-  seriesOrder?: number;
+  series_order?: number;
   
   // SEO相关
-  metaTitle?: string;
-  metaDescription?: string;
-  metaKeywords?: string;
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
   
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // 文章创建/更新输入类型
@@ -99,32 +101,32 @@ export interface CreateArticleInput {
   title: string;
   content: string;
   excerpt?: string;
-  coverImage?: string;
-  categoryId?: string;
-  tagIds?: string[];
-  seriesId?: string;
-  seriesOrder?: number;
-  isPublished: boolean;
-  metaTitle?: string;
-  metaDescription?: string;
-  metaKeywords?: string;
+  cover_image?: string;
+  category_id?: number;
+  tag_ids?: number[];
+  series_id?: number;
+  series_order?: number;
+  is_published: boolean;
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
 }
 
 export interface UpdateArticleInput extends Partial<CreateArticleInput> {
-  id: string;
+  id: number;
 }
 
 // 搜索相关类型
 export interface SearchFilters {
   query?: string;
-  categoryId?: string;
-  tagIds?: string[];
-  seriesId?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  isPublished?: boolean;
-  sortby?: 'createdAt' | 'updatedAt' | 'publishedAt' | 'viewsCount' | 'likesCount' | 'title';
-  sortOrder?: 'asc' | 'desc';
+  category_id?: number;
+  tag_ids?: number[];
+  series_id?: number;
+  date_from?: string;
+  date_to?: string;
+  is_published?: boolean;
+  sort_by?: 'created_at' | 'updated_at' | 'published_at' | 'views_count' | 'likes_count' | 'title';
+  sort_order?: 'asc' | 'desc';
 }
 
 export interface SearchResult {
@@ -137,23 +139,23 @@ export interface SearchResult {
 
 // 统计相关类型
 export interface BlogStats {
-  totalArticles: number;
-  publishedArticles: number;
-  draftArticles: number;
-  totalViews: number;
-  totalLikes: number;
-  totalCategories: number;
-  totalTags: number;
-  totalSeries: number;
+  total_articles: number;
+  published_articles: number;
+  draft_articles: number;
+  total_views: number;
+  total_likes: number;
+  total_categories: number;
+  total_tags: number;
+  total_series: number;
 }
 
 // 组件Props类型
 export interface PaginationProps {
-  currentPage: number;
-  totalPages: number;
+  current_page: number;
+  total_pages: number;
   onPageChange: (page: number) => void;
-  showSizeChanger?: boolean;
-  pageSize?: number;
+  show_size_changer?: boolean;
+  page_size?: number;
   onPageSizeChange?: (size: number) => void;
 }
 

@@ -7,15 +7,15 @@ export const tagsApi = {
     page?: number;
     limit?: number;
     search?: string;
-    sortBy?: 'name' | 'articlesCount' | 'createdAt';
-    sortOrder?: 'asc' | 'desc';
+    sort_by?: 'name' | 'articles_count' | 'created_at';
+    sort_order?: 'asc' | 'desc';
   }) {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.search) queryParams.append('search', params.search);
-    if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
-    if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+    if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+    if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
     
     const queryString = queryParams.toString();
     return apiClient.get<PaginatedResponse<Tag>>(`/api/tags${queryString ? '?' + queryString : ''}`);

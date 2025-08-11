@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { articlesApi } from '../api';
 import { Article } from '../types';
@@ -14,7 +14,10 @@ export default function ArticlePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [liked, setLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
+  const [likes_count, setLikes_count] = useState(0);
+  const [views_count, setViews_count] = useState(0);
+  const [likeLoading, setLikeLoading] = useState(false);
+  const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
 
   useEffect(() => {
     if (!slug) {
@@ -31,15 +34,30 @@ export default function ArticlePage() {
         const articleResponse = await articlesApi.getArticleBySlug(slug);
         const articleData = articleResponse.data;
         setArticle(articleData);
-        setLikesCount(articleData.likesCount);
+        setLikes_count(articleData.likes_count);
+        setLiked(articleData.is_liked || false);
+        setViews_count(articleData.views_count || 0);
 
-        // 增加浏览量
-        await articlesApi.incrementViews(articleData.id);
+        // 增加浏览量 - 异步进行，不影响页面渲染
+        articlesApi.incrementViews(articleData.id.toString())
+          .then(() => {
+            // 更新本地显示的浏览次数
+            setViews_count(prev => prev + 1);
+          })
+          .catch(error => {
+            console.error('Failed to increment views:', error);
+            // 静默失败，不影响用户体验
+          });
 
         // 获取相关文章
         try {
-          const relatedResponse = await articlesApi.getRelatedArticles(articleData.id, 4);
-          setRelatedArticles(relatedResponse.data);
+          const relatedResponse = await articlesApi.getRelatedArticles(articleData.id.toString(), 4);
+          // 去重处理，防止重复的ID导致React key警告
+          const uniqueRelatedArticles = relatedResponse.data.filter(
+            (article: Article, index: number, self: Article[]) => 
+              index === self.findIndex(a => a.id === article.id)
+          );
+          setRelatedArticles(uniqueRelatedArticles);
         } catch (relatedError) {
           console.error('Failed to load related articles:', relatedError);
         }
@@ -53,17 +71,44 @@ export default function ArticlePage() {
     loadArticle();
   }, [slug, navigate]);
 
-  const handleLike = async () => {
-    if (!article) return;
+  const handleLike = useCallback(async () => {
+    if (!article || likeLoading) return;
+
+    setLikeLoading(true);
+    
+    // 乐观更新 UI
+    const originalLiked = liked;
+    const originalCount = likes_count;
+    
+    setLiked(!liked);
+    setLikes_count(prev => liked ? prev - 1 : prev + 1);
 
     try {
-      const response = await articlesApi.toggleLike(article.id);
+      const response = await articlesApi.toggleLike(article.id.toString());
+      // 使用服务端返回的最新数据
       setLiked(response.data.liked);
-      setLikesCount(response.data.likesCount);
+      setLikes_count(response.data.likes_count);
     } catch (error) {
       console.error('Failed to toggle like:', error);
+      // 回滚到原始状态
+      setLiked(originalLiked);
+      setLikes_count(originalCount);
+      // 显示错误提示
+      setNotification({message: '操作失败，请稍后重试', type: 'error'});
+    } finally {
+      setLikeLoading(false);
     }
-  };
+  }, [article, likeLoading, liked, likes_count]);
+
+  // 自动隐藏通知
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   if (loading) {
     return <LoadingSpinner size="lg" />;
@@ -97,13 +142,33 @@ export default function ArticlePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Notification */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${
+          notification.type === 'error' 
+            ? 'bg-red-100 border border-red-400 text-red-700 dark:bg-red-900/20 dark:border-red-700 dark:text-red-400' 
+            : 'bg-green-100 border border-green-400 text-green-700 dark:bg-green-900/20 dark:border-green-700 dark:text-green-400'
+        }`}>
+          <div className="flex items-center">
+            <span className="text-sm font-medium">{notification.message}</span>
+            <button
+              onClick={() => setNotification(null)}
+              className="ml-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
       {/* Article Header */}
       <article className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
         {/* Cover Image */}
-        {article.coverImage && (
+        {article.cover_image && (
           <div className="aspect-video overflow-hidden">
             <img
-              src={article.coverImage}
+              src={article.cover_image}
               alt={article.title}
               className="w-full h-full object-cover"
             />
@@ -134,7 +199,7 @@ export default function ArticlePage() {
                   <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
                 </svg>
                 {article.series.name}
-                {article.seriesOrder && ` #${article.seriesOrder}`}
+                {article.series_order && ` #${article.series_order}`}
               </Link>
             )}
           </div>
@@ -166,22 +231,16 @@ export default function ArticlePage() {
               <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
               </svg>
-              发布于 {formatDate(
-                article.publishedAt && article.publishedAt !== '0001-01-01T00:00:00Z' 
-                  ? article.publishedAt 
-                  : article.createdAt !== '0001-01-01T00:00:00Z' 
-                    ? article.createdAt 
-                    : '未知日期'
-              )}
+              发布于 {formatDate(article.published_at || article.created_at)}
             </div>
 
             {/* Reading Time */}
-            {article.readingTime > 0 && (
+            {article.reading_time > 0 && (
               <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                 <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                 </svg>
-                {formatReadingTime(article.readingTime)}
+                {formatReadingTime(article.reading_time)}
               </div>
             )}
 
@@ -192,20 +251,25 @@ export default function ArticlePage() {
                   <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                   <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                 </svg>
-                {(article.viewsCount || 0) + 1} 次阅读
+                {views_count} 次阅读
               </span>
               <button
                 onClick={handleLike}
+                disabled={likeLoading}
                 className={`flex items-center transition-colors ${
                   liked 
                     ? 'text-red-600 dark:text-red-400' 
                     : 'text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400'
-                }`}
+                } ${likeLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
               >
-                <svg className="w-4 h-4 mr-1" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-                {likesCount}
+                {likeLoading ? (
+                  <div className="w-4 h-4 mr-1 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                ) : (
+                  <svg className="w-4 h-4 mr-1" fill={liked ? 'currentColor' : 'none'} stroke={liked ? 'none' : 'currentColor'} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                )}
+                {likes_count}
               </button>
             </div>
           </div>
@@ -252,10 +316,10 @@ export default function ArticlePage() {
                 to={`/article/${relatedArticle.slug}`}
                 className="block bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden"
               >
-                {relatedArticle.coverImage && (
+                {relatedArticle.cover_image && (
                   <div className="aspect-video overflow-hidden">
                     <img
-                      src={relatedArticle.coverImage}
+                      src={relatedArticle.cover_image}
                       alt={relatedArticle.title}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     />
@@ -270,7 +334,7 @@ export default function ArticlePage() {
                   </p>
                   <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                     <span>{relatedArticle.author.name}</span>
-                    <span>{formatDate(relatedArticle.publishedAt || relatedArticle.createdAt)}</span>
+                    <span>{formatDate(relatedArticle.published_at || relatedArticle.created_at)}</span>
                   </div>
                 </div>
               </Link>
