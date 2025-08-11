@@ -14,7 +14,7 @@ html, body {
 }
 
 body {
-  @apply font-sans antialiased bg-white dark:bg-dark-900 text-gray-900 dark:text-gray-100 transition-colors duration-300;
+  @apply font-sans antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300;
 }
 
 /* 滚动条样式 */
@@ -23,24 +23,24 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100 dark:bg-dark-800;
+  @apply bg-gray-100 dark:bg-gray-800;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 dark:bg-dark-600 rounded-full;
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400 dark:bg-dark-500;
+  @apply bg-gray-400 dark:bg-gray-500;
 }
 
 /* 代码块样式 */
 pre {
-  @apply bg-gray-50 dark:bg-dark-800 rounded-lg p-4 overflow-x-auto;
+  @apply bg-gray-50 dark:bg-gray-800 rounded-lg p-4 overflow-x-auto;
 }
 
 code {
-  @apply font-mono text-sm bg-gray-100 dark:bg-dark-700 px-1 py-0.5 rounded;
+  @apply font-mono text-sm bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded;
 }
 
 pre code {
@@ -98,21 +98,21 @@ a {
 }
 
 .btn-secondary {
-  @apply bg-gray-200 hover:bg-gray-300 text-gray-900 focus:ring-gray-500 dark:bg-dark-700 dark:hover:bg-dark-600 dark:text-gray-100;
+  @apply bg-gray-200 hover:bg-gray-300 text-gray-900 focus:ring-gray-500 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100;
 }
 
 /* 卡片样式 */
 .card {
-  @apply bg-white dark:bg-dark-800 rounded-lg shadow-sm border border-gray-200 dark:border-dark-700 transition-all duration-200;
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-all duration-200;
 }
 
 .card-hover {
-  @apply hover:shadow-md hover:border-gray-300 dark:hover:border-dark-600;
+  @apply hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600;
 }
 
 /* 输入框样式 */
 .input {
-  @apply w-full px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent;
 }
 
 /* 搜索高亮 */

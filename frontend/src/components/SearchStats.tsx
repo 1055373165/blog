@@ -164,9 +164,9 @@ export default function SearchStats({ className = '' }: SearchStatsProps) {
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex space-x-8 px-6" aria-label="Tabs">
           {[
-            { key: 'popular', label: '热门搜索', count: stats.popularQueries.length },
-            { key: 'recent', label: '最近搜索', count: stats.recentSearches.length },
-            { key: 'trends', label: '搜索趋势', count: stats.searchTrends.length },
+            { key: 'popular', label: '热门搜索', count: stats.popularQueries?.length || 0 },
+            { key: 'recent', label: '最近搜索', count: stats.recentSearches?.length || 0 },
+            { key: 'trends', label: '搜索趋势', count: stats.searchTrends?.length || 0 },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -193,7 +193,7 @@ export default function SearchStats({ className = '' }: SearchStatsProps) {
         {/* Popular Queries */}
         {activeTab === 'popular' && (
           <div className="space-y-3">
-            {stats.popularQueries.length === 0 ? (
+            {!stats.popularQueries || stats.popularQueries.length === 0 ? (
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
                 暂无热门搜索数据
               </p>
@@ -223,7 +223,7 @@ export default function SearchStats({ className = '' }: SearchStatsProps) {
         {/* Recent Searches */}
         {activeTab === 'recent' && (
           <div className="space-y-3">
-            {stats.recentSearches.length === 0 ? (
+            {!stats.recentSearches || stats.recentSearches.length === 0 ? (
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
                 暂无最近搜索数据
               </p>
@@ -250,7 +250,7 @@ export default function SearchStats({ className = '' }: SearchStatsProps) {
         {/* Search Trends */}
         {activeTab === 'trends' && (
           <div className="space-y-4">
-            {stats.searchTrends.length === 0 ? (
+            {!stats.searchTrends || stats.searchTrends.length === 0 ? (
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
                 暂无趋势数据
               </p>
@@ -258,7 +258,7 @@ export default function SearchStats({ className = '' }: SearchStatsProps) {
               <>
                 <div className="grid grid-cols-7 gap-2">
                   {stats.searchTrends.map((item, index) => {
-                    const maxCount = Math.max(...stats.searchTrends.map(t => t.count));
+                    const maxCount = Math.max(...(stats.searchTrends || []).map(t => t.count));
                     const height = Math.max((item.count / maxCount) * 100, 10);
                     
                     return (

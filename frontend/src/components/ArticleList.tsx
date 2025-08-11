@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Article, PaginatedResponse } from '../types';
 import ArticleCard from './ArticleCard';
 import LoadingSpinner from './LoadingSpinner';
 import Pagination from './Pagination';
+import { formatDate } from '../utils';
 
 type ViewMode = 'card' | 'list' | 'icon' | 'column';
 
@@ -136,11 +138,15 @@ export default function ArticleList({
   const renderArticleItem = (article: Article) => {
     if (viewMode === 'list') {
       return (
-        <div key={article.id} className="flex bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
-          {article.coverImage && (
+        <Link
+          key={article.id}
+          to={`/article/${article.slug}`}
+          className="flex bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow"
+        >
+          {article.cover_image && (
             <div className="w-32 h-24 flex-shrink-0">
               <img
-                src={article.coverImage}
+                src={article.cover_image}
                 alt={article.title}
                 className="w-full h-full object-cover"
               />
@@ -148,13 +154,13 @@ export default function ArticleList({
           )}
           <div className="flex-1 p-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors cursor-pointer">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
                 {article.title}
               </h3>
               {showStats && (
                 <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                  <span>👁 {article.viewsCount || 0}</span>
-                  <span>❤ {article.likesCount || 0}</span>
+                  <span>👁 {article.views_count || 0}</span>
+                  <span>❤ {article.likes_count || 0}</span>
                 </div>
               )}
             </div>
@@ -179,21 +185,25 @@ export default function ArticleList({
                 )}
               </div>
               <span className="text-gray-500 dark:text-gray-400">
-                {new Date(article.publishedAt || article.createdAt).toLocaleDateString()}
+                {formatDate(article.published_at || article.created_at)}
               </span>
             </div>
           </div>
-        </div>
+        </Link>
       );
     }
 
     if (viewMode === 'icon') {
       return (
-        <div key={article.id} className="text-center group cursor-pointer">
+        <Link
+          key={article.id}
+          to={`/article/${article.slug}`}
+          className="text-center group cursor-pointer block"
+        >
           <div className="w-16 h-16 mx-auto mb-2 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center group-hover:bg-primary-200 dark:group-hover:bg-primary-900/50 transition-colors">
-            {article.coverImage ? (
+            {article.cover_image ? (
               <img
-                src={article.coverImage}
+                src={article.cover_image}
                 alt={article.title}
                 className="w-12 h-12 rounded-full object-cover"
               />
@@ -208,27 +218,31 @@ export default function ArticleList({
           </h4>
           {showStats && (
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              👁 {article.viewsCount || 0}
+              👁 {article.views_count || 0}
             </p>
           )}
-        </div>
+        </Link>
       );
     }
 
     if (viewMode === 'column') {
       return (
-        <div key={article.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-sm transition-shadow">
-          {article.coverImage && (
+        <Link
+          key={article.id}
+          to={`/article/${article.slug}`}
+          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-sm transition-shadow block"
+        >
+          {article.cover_image && (
             <div className="h-32 overflow-hidden">
               <img
-                src={article.coverImage}
+                src={article.cover_image}
                 alt={article.title}
                 className="w-full h-full object-cover"
               />
             </div>
           )}
           <div className="p-3">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors cursor-pointer line-clamp-2 mb-2">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors line-clamp-2 mb-2">
               {article.title}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 text-xs line-clamp-3 mb-3">
@@ -241,17 +255,17 @@ export default function ArticleList({
                 </span>
               ) : (
                 <span className="text-gray-500 dark:text-gray-400">
-                  {new Date(article.publishedAt || article.createdAt).toLocaleDateString()}
+                  {formatDate(article.published_at || article.created_at)}
                 </span>
               )}
               {showStats && (
                 <span className="text-gray-500 dark:text-gray-400">
-                  👁 {article.viewsCount || 0}
+                  👁 {article.views_count || 0}
                 </span>
               )}
             </div>
           </div>
-        </div>
+        </Link>
       );
     }
 

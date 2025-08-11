@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function AdminLogin() {
   const [credentials, setCredentials] = useState({
@@ -9,6 +10,16 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login, isAuthenticated, user } = useAuth();
+
+  // 如果已登录且是管理员，重定向到管理后台
+  useEffect(() => {
+    if (isAuthenticated && user?.isAdmin) {
+      const from = location.state?.from?.pathname || '/admin';
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, user, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,23 +33,13 @@ export default function AdminLogin() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Store token and redirect
-        localStorage.setItem('admin_token', data.data.token);
-        navigate('/admin');
-      } else {
-        throw new Error(data.error || '登录失败');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '登录时出错');
+      await login(credentials.email, credentials.password);
+      
+      // 重定向到原来试图访问的页面
+      const from = location.state?.from?.pathname || '/admin';
+      navigate(from, { replace: true });
+    } catch (err: any) {
+      setError(err.message || '登录时出错');
     } finally {
       setLoading(false);
     }

@@ -139,14 +139,14 @@ export interface SearchResult {
 
 // 统计相关类型
 export interface BlogStats {
-  total_articles: number;
-  published_articles: number;
-  draft_articles: number;
-  total_views: number;
-  total_likes: number;
-  total_categories: number;
-  total_tags: number;
-  total_series: number;
+  totalArticles: number;
+  publishedArticles: number;
+  draftArticles?: number;
+  totalViews: number;
+  totalLikes: number;
+  totalCategories: number;
+  totalTags: number;
+  totalSeries?: number;
 }
 
 // 组件Props类型

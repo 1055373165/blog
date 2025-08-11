@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -151,6 +152,17 @@ func SearchContent(c *gin.Context) {
 			"error":   "搜索失败: " + err.Error(),
 		})
 		return
+	}
+	
+	// 记录搜索统计（只有当有搜索查询时才记录）
+	if query != "" {
+		searchStat := models.SearchStatistics{
+			Query:       query,
+			IP:          c.ClientIP(),
+			UserAgent:   c.GetHeader("User-Agent"),
+			ResultCount: int(total),
+		}
+		database.DB.Create(&searchStat)
 	}
 	
 	// 计算分页信息
@@ -399,6 +411,96 @@ func IndexAllArticles(c *gin.Context) {
 		"message": "搜索索引重建成功",
 		"data": gin.H{
 			"indexed_articles": len(articles),
+		},
+	})
+}
+
+// GetSearchStats 获取搜索统计
+func GetSearchStats(c *gin.Context) {
+	// 获取总搜索次数
+	var totalSearches int64
+	err := database.DB.Model(&models.SearchStatistics{}).Count(&totalSearches).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "查询搜索统计失败",
+		})
+		return
+	}
+
+	// 获取热门搜索（按查询次数分组并排序）
+	type PopularQuery struct {
+		Query string `json:"query"`
+		Count int    `json:"count"`
+	}
+	var popularQueries []PopularQuery
+	err = database.DB.Model(&models.SearchStatistics{}).
+		Select("query, COUNT(*) as count").
+		Where("query != ''").
+		Group("query").
+		Order("count DESC").
+		Limit(10).
+		Scan(&popularQueries).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "查询热门搜索失败",
+		})
+		return
+	}
+
+	// 获取最近搜索
+	type RecentSearch struct {
+		Query       string    `json:"query"`
+		Timestamp   time.Time `json:"timestamp"`
+		ResultCount int       `json:"resultCount"`
+	}
+	var recentSearches []RecentSearch
+	err = database.DB.Model(&models.SearchStatistics{}).
+		Select("query, searched_at as timestamp, result_count").
+		Where("query != ''").
+		Order("searched_at DESC").
+		Limit(10).
+		Scan(&recentSearches).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "查询最近搜索失败",
+		})
+		return
+	}
+
+	// 获取搜索趋势（过去7天）
+	type SearchTrend struct {
+		Date  string `json:"date"`
+		Count int    `json:"count"`
+	}
+	var searchTrends []SearchTrend
+	
+	// 生成过去7天的日期
+	now := time.Now()
+	for i := 6; i >= 0; i-- {
+		date := now.AddDate(0, 0, -i).Format("2006-01-02")
+		var count int64
+		
+		// 查询当天的搜索次数
+		database.DB.Model(&models.SearchStatistics{}).
+			Where("DATE(searched_at) = ?", date).
+			Count(&count)
+		
+		searchTrends = append(searchTrends, SearchTrend{
+			Date:  date,
+			Count: int(count),
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data": gin.H{
+			"totalSearches":   totalSearches,
+			"popularQueries":  popularQueries,
+			"recentSearches":  recentSearches,
+			"searchTrends":    searchTrends,
 		},
 	})
 }

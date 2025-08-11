@@ -168,6 +168,7 @@ func main() {
 		{
 			searchGroup.GET("", handlers.SearchContent)
 			searchGroup.GET("/suggestions", handlers.SearchSuggestions)
+			searchGroup.GET("/stats", handlers.GetSearchStats)
 			searchGroup.POST("/reindex", middleware.AuthRequired(), handlers.IndexAllArticles)
 		}
 

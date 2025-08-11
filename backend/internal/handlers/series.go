@@ -34,12 +34,12 @@ func GetSeries(c *gin.Context) {
 		return
 	}
 
-	// TODO: 为每个系列计算文章数量（暂时跳过以避免性能问题）
-	// for i := range series {
-	//     var articleCount int64
-	//     database.DB.Model(&models.Article{}).Where("series_id = ? AND status = ?", series[i].ID, "published").Count(&articleCount)
-	//     series[i].ArticlesCount = int(articleCount)
-	// }
+	// 为每个系列计算文章数量
+	for i := range series {
+		var articleCount int64
+		database.DB.Model(&models.Article{}).Where("series_id = ? AND is_published = ?", series[i].ID, true).Count(&articleCount)
+		series[i].ArticlesCount = int(articleCount)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -79,7 +79,15 @@ func GetSeriesById(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, series)
+	// 计算文章数量
+	var articleCount int64
+	database.DB.Model(&models.Article{}).Where("series_id = ? AND is_published = ?", series.ID, true).Count(&articleCount)
+	series.ArticlesCount = int(articleCount)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    series,
+	})
 }
 
 // GetSeriesBySlug 根据slug获取系列
@@ -100,7 +108,15 @@ func GetSeriesBySlug(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, series)
+	// 计算文章数量
+	var articleCount int64
+	database.DB.Model(&models.Article{}).Where("series_id = ? AND is_published = ?", series.ID, true).Count(&articleCount)
+	series.ArticlesCount = int(articleCount)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    series,
+	})
 }
 
 // GetArticlesBySeries 获取系列下的文章

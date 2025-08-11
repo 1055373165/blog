@@ -32,19 +32,19 @@ export default function TagPage() {
 
   const fetchTagArticles = async (page: number, limit: number): Promise<PaginatedResponse<Article>> => {
     if (!tag) throw new Error('Tag not found');
-    const response = await articlesApi.getArticlesByTag(tag.id, {
+    const response = await articlesApi.getArticlesByTag(tag.id.toString(), {
       page,
       limit,
-      sortBy: 'published_at',
-      sortOrder: 'desc',
+      sort_by: 'published_at',
+      sort_order: 'desc',
     });
     // 转换API返回的数据格式为ArticleList期望的格式
     return {
-      items: response.data.articles || [],
-      total: response.data.pagination?.total || 0,
-      page: response.data.pagination?.page || page,
-      limit: response.data.pagination?.limit || limit,
-      totalPages: response.data.pagination?.total_pages || 1,
+      items: response.data.articles || response.data.items || [],
+      total: response.data.pagination?.total || response.data.total || 0,
+      page: response.data.pagination?.page || response.data.page || page,
+      limit: response.data.pagination?.limit || response.data.limit || limit,
+      totalPages: response.data.pagination?.total_pages || response.data.totalPages || 1,
     };
   };
 
@@ -124,7 +124,7 @@ export default function TagPage() {
                 <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                 </svg>
-                {tag.articlesCount || 0} 篇文章
+                {tag.articles_count || 0} 篇文章
               </div>
             </div>
 
@@ -150,7 +150,7 @@ export default function TagPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {tag.articlesCount || 0}
+              {tag.articles_count || 0}
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
               相关文章
@@ -158,7 +158,7 @@ export default function TagPage() {
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {tag.createdAt ? new Date(tag.createdAt).getFullYear() || '未知' : '未知'}
+              {tag.created_at ? new Date(tag.created_at).getFullYear() || '未知' : '未知'}
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
               创建年份

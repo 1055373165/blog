@@ -7,9 +7,9 @@ export default function ArticlesPage() {
     const response = await articlesApi.getArticles({
       page,
       limit,
-      isPublished: true,
-      sortBy: 'published_at',
-      sortOrder: 'desc',
+      is_published: true,
+      sort_by: 'published_at',
+      sort_order: 'desc',
     });
     // 转换API返回的数据格式为ArticleList期望的格式
     return {

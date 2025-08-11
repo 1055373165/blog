@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Article, CreateArticleInput, UpdateArticleInput, Category, Tag, Series } from '../../types';
+import { articlesApi, categoriesApi, tagsApi } from '../../api';
+import seriesApi from '../../services/seriesApi';
 import MarkdownEditor from '../../components/MarkdownEditor';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
@@ -73,11 +75,10 @@ export default function ArticleEditor() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/articles/${articleId}`);
-      const data = await response.json();
+      const response = await articlesApi.getArticle(articleId);
       
-      if (data.success) {
-        const article: Article = data.data;
+      if (response.success) {
+        const article: Article = response.data;
         setFormData({
           title: article.title,
           content: article.content,
@@ -95,10 +96,10 @@ export default function ArticleEditor() {
         setSelectedTags(article.tags.map(tag => tag.id));
         setHasUnsavedChanges(false);
       } else {
-        throw new Error(data.error || '加载文章失败');
+        throw new Error('加载文章失败');
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '加载文章时出错');
+    } catch (err: any) {
+      setError(err.message || '加载文章时出错');
     } finally {
       setLoading(false);
     }
@@ -108,22 +109,20 @@ export default function ArticleEditor() {
     try {
       // Load categories, tags, and series for form dropdowns
       const [categoriesRes, tagsRes, seriesRes] = await Promise.all([
-        fetch('/api/categories'),
-        fetch('/api/tags'),
-        fetch('/api/series'),
+        categoriesApi.getCategories(),
+        tagsApi.getTags({ limit: 100 }),
+        seriesApi.getSeries(1, 100),
       ]);
 
-      const [categoriesData, tagsData, seriesData] = await Promise.all([
-        categoriesRes.json(),
-        tagsRes.json(),
-        seriesRes.json(),
-      ]);
-
-      if (categoriesData.success) setCategories(categoriesData.data);
-      if (tagsData.success) setTags(tagsData.data);
-      if (seriesData.success) setSeries(seriesData.data);
-    } catch (err) {
-      console.error('Failed to load form data:', err);
+      if (categoriesRes.success) {
+        setCategories(categoriesRes.data.categories || categoriesRes.data);
+      }
+      if (tagsRes.success) {
+        setTags(tagsRes.data.tags || tagsRes.data);
+      }
+      setSeries(seriesRes.items || []);
+    } catch (err: any) {
+      setError(err.message || '加载表单数据失败');
     }
   };
 
@@ -181,22 +180,12 @@ export default function ArticleEditor() {
 
       let response;
       if (isEditing && id) {
-        response = await fetch(`/api/articles/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+        response = await articlesApi.updateArticle(id, payload);
       } else {
-        response = await fetch('/api/articles', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+        response = await articlesApi.createArticle(payload);
       }
-
-      const data = await response.json();
       
-      if (data.success) {
+      if (response.success) {
         setHasUnsavedChanges(false);
         setLastSaved(new Date());
         
@@ -204,15 +193,15 @@ export default function ArticleEditor() {
           // Show success message
           if (!isEditing) {
             // Redirect to edit mode after creating
-            navigate(`/admin/articles/${data.data.id}/edit`);
+            navigate(`/admin/articles/${response.data.id}/edit`);
           }
         }
       } else {
-        throw new Error(data.error || '保存失败');
+        throw new Error('保存失败');
       }
-    } catch (err) {
+    } catch (err: any) {
       if (!silent) {
-        setError(err instanceof Error ? err.message : '保存时出错');
+        setError(err.message || '保存时出错');
       }
     } finally {
       setSaving(false);
@@ -241,17 +230,17 @@ export default function ArticleEditor() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div>
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <button
@@ -319,7 +308,7 @@ export default function ArticleEditor() {
 
       {/* Error Message */}
       {error && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <div className="px-4 sm:px-6 lg:px-8 mt-4">
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
             <div className="flex">
               <svg className="w-5 h-5 text-red-400 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -332,7 +321,7 @@ export default function ArticleEditor() {
       )}
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Editor Column */}
           <div className="lg:col-span-3">

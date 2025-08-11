@@ -1,7 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Suspense } from 'react';
-import { ThemeProvider } from './contexts/ThemeContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
 
 // 页面组件
 import HomePage from './pages/HomePage';
@@ -41,14 +42,26 @@ const queryClient = new QueryClient({
   },
 });
 
-function App() {
+// 内部应用组件，用于访问主题上下文
+function AppContent() {
+  const { settings } = useTheme();
+  
+  // 根据字号设置获取基础字号类
+  const getFontSizeClass = () => {
+    const sizeMap = {
+      sm: 'text-sm',
+      base: 'text-base', 
+      lg: 'text-lg',
+      xl: 'text-xl',
+    };
+    return sizeMap[settings.fontSize] || 'text-base';
+  };
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <Router>
-          <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
-            <Suspense fallback={<LoadingSpinner />}>
-              <Routes>
+    <Router>
+      <div className={`min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300 ${getFontSizeClass()}`}>
+        <Suspense fallback={<LoadingSpinner />}>
+        <Routes>
               {/* 前台路由 */}
               <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
@@ -80,9 +93,19 @@ function App() {
               {/* 404页面 */}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
-            </Suspense>
-          </div>
-        </Router>
+              </Suspense>
+            </div>
+          </Router>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

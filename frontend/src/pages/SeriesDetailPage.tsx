@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import seriesApi, { Article } from '../services/seriesApi';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
+import { formatDate } from '../utils';
 
 export default function SeriesDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -99,11 +100,7 @@ export default function SeriesDetailPage() {
             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
             </svg>
-            创建于 {new Date(series.created_at).toLocaleDateString('zh-CN', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
+            创建于 {formatDate(series.created_at)}
           </div>
         </div>
 
@@ -146,8 +143,8 @@ export default function SeriesDetailPage() {
         {data.totalPages > 1 && (
           <div className="mt-8">
             <Pagination
-              currentPage={currentPage}
-              totalPages={data.totalPages}
+              current_page={currentPage}
+              total_pages={data.totalPages}
               onPageChange={setCurrentPage}
             />
           </div>
@@ -163,12 +160,6 @@ interface ArticleItemProps {
 }
 
 function ArticleItem({ article, index }: ArticleItemProps) {
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return '未知日期';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '未知日期';
-    return date.toLocaleDateString('zh-CN');
-  };
 
   return (
     <Link
@@ -208,14 +199,14 @@ function ArticleItem({ article, index }: ArticleItemProps) {
                     <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                     <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                   </svg>
-                  {article.views_count || 0} 次阅读
+                  {(article.views_count ?? 0).toLocaleString()} 次阅读
                 </div>
                 
                 <div className="flex items-center">
                   <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
                   </svg>
-                  {article.likes_count || 0} 点赞
+                  {(article.likes_count ?? 0).toLocaleString()} 点赞
                 </div>
               </div>
             </div>

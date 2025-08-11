@@ -138,6 +138,16 @@ type SearchIndex struct {
 	Article Article `json:"article" gorm:"foreignKey:ArticleID"`
 }
 
+// SearchStatistics 搜索统计模型
+type SearchStatistics struct {
+	ID        uint      `json:"id" gorm:"primaryKey"`
+	Query     string    `json:"query" gorm:"not null;index"`
+	IP        string    `json:"ip"`
+	UserAgent string    `json:"user_agent"`
+	ResultCount int     `json:"result_count" gorm:"default:0"`
+	SearchedAt time.Time `json:"searched_at" gorm:"autoCreateTime"`
+}
+
 // Config 系统配置模型
 type Config struct {
 	ID    uint   `json:"id" gorm:"primaryKey"`
@@ -150,12 +160,13 @@ type Config struct {
 }
 
 // 定义表名
-func (User) TableName() string          { return "users" }
-func (Category) TableName() string      { return "categories" }
-func (Tag) TableName() string           { return "tags" }
-func (Series) TableName() string        { return "series" }
-func (Article) TableName() string       { return "articles" }
-func (ArticleView) TableName() string   { return "article_views" }
-func (ArticleLike) TableName() string   { return "article_likes" }
-func (SearchIndex) TableName() string   { return "search_indexes" }
-func (Config) TableName() string        { return "configs" }
+func (User) TableName() string              { return "users" }
+func (Category) TableName() string          { return "categories" }
+func (Tag) TableName() string               { return "tags" }
+func (Series) TableName() string            { return "series" }
+func (Article) TableName() string           { return "articles" }
+func (ArticleView) TableName() string       { return "article_views" }
+func (ArticleLike) TableName() string       { return "article_likes" }
+func (SearchIndex) TableName() string       { return "search_indexes" }
+func (SearchStatistics) TableName() string { return "search_statistics" }
+func (Config) TableName() string            { return "configs" }

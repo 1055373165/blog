@@ -31,7 +31,7 @@ export default function AdvancedSearchFilter({
         setLoading(true);
         const [categoriesRes, tagsRes] = await Promise.all([
           categoriesApi.getCategories({ limit: 100 }),
-          tagsApi.getTags({ limit: 100, sortBy: 'articlesCount', sortOrder: 'desc' }),
+          tagsApi.getTags({ limit: 100, sortBy: 'articles_count', sortOrder: 'desc' }),
         ]);
         
         setCategories(categoriesRes.data.items || []);
@@ -55,25 +55,25 @@ export default function AdvancedSearchFilter({
     });
   };
 
-  const handleTagToggle = (tagId: string) => {
-    const currentTags = filters.tagIds || [];
+  const handleTagToggle = (tagId: number) => {
+    const currentTags = filters.tag_ids || [];
     const newTags = currentTags.includes(tagId)
       ? currentTags.filter(id => id !== tagId)
       : [...currentTags, tagId];
     
-    handleFilterChange('tagIds', newTags);
+    handleFilterChange('tag_ids', newTags);
   };
 
   const getActiveFiltersCount = () => {
     let count = 0;
-    if (filters.categoryId) count++;
-    if (filters.tagIds && filters.tagIds.length > 0) count++;
-    if (filters.seriesId) count++;
-    if (filters.dateFrom) count++;
-    if (filters.dateTo) count++;
-    if (filters.isPublished !== undefined) count++;
-    if (filters.sortby && filters.sortby !== 'createdAt') count++;
-    if (filters.sortOrder && filters.sortOrder !== 'desc') count++;
+    if (filters.category_id) count++;
+    if (filters.tag_ids && filters.tag_ids.length > 0) count++;
+    if (filters.series_id) count++;
+    if (filters.date_from) count++;
+    if (filters.date_to) count++;
+    if (filters.is_published !== undefined) count++;
+    if (filters.sort_by && filters.sort_by !== 'created_at') count++;
+    if (filters.sort_order && filters.sort_order !== 'desc') count++;
     return count;
   };
 
@@ -135,8 +135,8 @@ export default function AdvancedSearchFilter({
                   分类
                 </label>
                 <select
-                  value={filters.categoryId || ''}
-                  onChange={(e) => handleFilterChange('categoryId', e.target.value || undefined)}
+                  value={filters.category_id || ''}
+                  onChange={(e) => handleFilterChange('category_id', e.target.value || undefined)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md
                              bg-white dark:bg-gray-800 text-gray-900 dark:text-white
                              focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -144,7 +144,7 @@ export default function AdvancedSearchFilter({
                   <option value="">所有分类</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
-                      {category.parent && '└ '}{category.name} ({category.articlesCount})
+                      {category.parent && '└ '}{category.name} ({category.articles_count})
                     </option>
                   ))}
                 </select>
@@ -157,7 +157,7 @@ export default function AdvancedSearchFilter({
                 </label>
                 <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                   {tags.map((tag) => {
-                    const isSelected = filters.tagIds?.includes(tag.id) || false;
+                    const isSelected = filters.tag_ids?.includes(tag.id) || false;
                     return (
                       <button
                         key={tag.id}
@@ -173,14 +173,14 @@ export default function AdvancedSearchFilter({
                           <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                         </svg>
                         {tag.name}
-                        <span className="ml-1 text-xs opacity-75">({tag.articlesCount})</span>
+                        <span className="ml-1 text-xs opacity-75">({tag.articles_count})</span>
                       </button>
                     );
                   })}
                 </div>
-                {filters.tagIds && filters.tagIds.length > 0 && (
+                {filters.tag_ids && filters.tag_ids.length > 0 && (
                   <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                    已选择 {filters.tagIds.length} 个标签
+                    已选择 {filters.tag_ids.length} 个标签
                   </div>
                 )}
               </div>
@@ -193,8 +193,8 @@ export default function AdvancedSearchFilter({
                   </label>
                   <input
                     type="date"
-                    value={filters.dateFrom || ''}
-                    onChange={(e) => handleFilterChange('dateFrom', e.target.value || undefined)}
+                    value={filters.date_from || ''}
+                    onChange={(e) => handleFilterChange('date_from', e.target.value || undefined)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md
                                bg-white dark:bg-gray-800 text-gray-900 dark:text-white
                                focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -206,8 +206,8 @@ export default function AdvancedSearchFilter({
                   </label>
                   <input
                     type="date"
-                    value={filters.dateTo || ''}
-                    onChange={(e) => handleFilterChange('dateTo', e.target.value || undefined)}
+                    value={filters.date_to || ''}
+                    onChange={(e) => handleFilterChange('date_to', e.target.value || undefined)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md
                                bg-white dark:bg-gray-800 text-gray-900 dark:text-white
                                focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -224,9 +224,9 @@ export default function AdvancedSearchFilter({
                   <label className="flex items-center">
                     <input
                       type="radio"
-                      name="isPublished"
-                      checked={filters.isPublished === undefined}
-                      onChange={() => handleFilterChange('isPublished', undefined)}
+                      name="is_published"
+                      checked={filters.is_published === undefined}
+                      onChange={() => handleFilterChange('is_published', undefined)}
                       className="mr-2 text-primary-600 border-gray-300 focus:ring-primary-500"
                     />
                     <span className="text-sm text-gray-700 dark:text-gray-300">全部</span>
@@ -234,9 +234,9 @@ export default function AdvancedSearchFilter({
                   <label className="flex items-center">
                     <input
                       type="radio"
-                      name="isPublished"
-                      checked={filters.isPublished === true}
-                      onChange={() => handleFilterChange('isPublished', true)}
+                      name="is_published"
+                      checked={filters.is_published === true}
+                      onChange={() => handleFilterChange('is_published', true)}
                       className="mr-2 text-primary-600 border-gray-300 focus:ring-primary-500"
                     />
                     <span className="text-sm text-gray-700 dark:text-gray-300">已发布</span>
@@ -244,9 +244,9 @@ export default function AdvancedSearchFilter({
                   <label className="flex items-center">
                     <input
                       type="radio"
-                      name="isPublished"
-                      checked={filters.isPublished === false}
-                      onChange={() => handleFilterChange('isPublished', false)}
+                      name="is_published"
+                      checked={filters.is_published === false}
+                      onChange={() => handleFilterChange('is_published', false)}
                       className="mr-2 text-primary-600 border-gray-300 focus:ring-primary-500"
                     />
                     <span className="text-sm text-gray-700 dark:text-gray-300">草稿</span>
@@ -261,17 +261,17 @@ export default function AdvancedSearchFilter({
                     排序字段
                   </label>
                   <select
-                    value={filters.sortby || 'createdAt'}
-                    onChange={(e) => handleFilterChange('sortby', e.target.value as any)}
+                    value={filters.sort_by || 'created_at'}
+                    onChange={(e) => handleFilterChange('sort_by', e.target.value as any)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md
                                bg-white dark:bg-gray-800 text-gray-900 dark:text-white
                                focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
-                    <option value="createdAt">创建时间</option>
-                    <option value="updatedAt">更新时间</option>
-                    <option value="publishedAt">发布时间</option>
-                    <option value="viewsCount">浏览量</option>
-                    <option value="likesCount">点赞数</option>
+                    <option value="created_at">创建时间</option>
+                    <option value="updated_at">更新时间</option>
+                    <option value="published_at">发布时间</option>
+                    <option value="views_count">浏览量</option>
+                    <option value="likes_count">点赞数</option>
                     <option value="title">标题</option>
                   </select>
                 </div>
@@ -280,8 +280,8 @@ export default function AdvancedSearchFilter({
                     排序方向
                   </label>
                   <select
-                    value={filters.sortOrder || 'desc'}
-                    onChange={(e) => handleFilterChange('sortOrder', e.target.value as 'asc' | 'desc')}
+                    value={filters.sort_order || 'desc'}
+                    onChange={(e) => handleFilterChange('sort_order', e.target.value as 'asc' | 'desc')}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md
                                bg-white dark:bg-gray-800 text-gray-900 dark:text-white
                                focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -313,8 +313,8 @@ export default function AdvancedSearchFilter({
                         const startDate = new Date();
                         startDate.setDate(endDate.getDate() - days);
                         
-                        handleFilterChange('dateFrom', startDate.toISOString().split('T')[0]);
-                        handleFilterChange('dateTo', endDate.toISOString().split('T')[0]);
+                        handleFilterChange('date_from', startDate.toISOString().split('T')[0]);
+                        handleFilterChange('date_to', endDate.toISOString().split('T')[0]);
                       }}
                       className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md
                                  text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700
@@ -325,8 +325,8 @@ export default function AdvancedSearchFilter({
                   ))}
                   <button
                     onClick={() => {
-                      handleFilterChange('dateFrom', undefined);
-                      handleFilterChange('dateTo', undefined);
+                      handleFilterChange('date_from', undefined);
+                      handleFilterChange('date_to', undefined);
                     }}
                     className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md
                                text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20

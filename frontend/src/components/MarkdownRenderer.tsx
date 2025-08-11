@@ -40,8 +40,19 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
     return themeMap[settings.codeTheme] || vscDarkPlus;
   };
 
+  // 根据字号设置获取 prose 类
+  const getProseClass = () => {
+    const sizeMap = {
+      sm: 'prose-sm',
+      base: 'prose',
+      lg: 'prose-lg',
+      xl: 'prose-xl',
+    };
+    return sizeMap[settings.fontSize] || 'prose';
+  };
+
   return (
-    <div className={`prose prose-lg dark:prose-invert max-w-none ${className}`}>
+    <div className={`${getProseClass()} dark:prose-invert max-w-none ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[
@@ -90,26 +101,46 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               </code>
             );
           },
-          h1: ({ children, id }) => (
-            <h1 id={id} className="text-3xl font-bold text-gray-900 dark:text-white mt-8 mb-4 first:mt-0">
-              {children}
-            </h1>
-          ),
-          h2: ({ children, id }) => (
-            <h2 id={id} className="text-2xl font-bold text-gray-900 dark:text-white mt-6 mb-3">
-              {children}
-            </h2>
-          ),
-          h3: ({ children, id }) => (
-            <h3 id={id} className="text-xl font-bold text-gray-900 dark:text-white mt-5 mb-3">
-              {children}
-            </h3>
-          ),
-          p: ({ children }) => (
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-              {children}
-            </p>
-          ),
+          h1: ({ children, id }) => {
+            const sizeClass = settings.fontSize === 'sm' ? 'text-2xl' : 
+                             settings.fontSize === 'lg' ? 'text-4xl' : 
+                             settings.fontSize === 'xl' ? 'text-5xl' : 'text-3xl';
+            return (
+              <h1 id={id} className={`${sizeClass} font-bold text-gray-900 dark:text-white mt-8 mb-4 first:mt-0`}>
+                {children}
+              </h1>
+            );
+          },
+          h2: ({ children, id }) => {
+            const sizeClass = settings.fontSize === 'sm' ? 'text-xl' : 
+                             settings.fontSize === 'lg' ? 'text-3xl' : 
+                             settings.fontSize === 'xl' ? 'text-4xl' : 'text-2xl';
+            return (
+              <h2 id={id} className={`${sizeClass} font-bold text-gray-900 dark:text-white mt-6 mb-3`}>
+                {children}
+              </h2>
+            );
+          },
+          h3: ({ children, id }) => {
+            const sizeClass = settings.fontSize === 'sm' ? 'text-lg' : 
+                             settings.fontSize === 'lg' ? 'text-2xl' : 
+                             settings.fontSize === 'xl' ? 'text-3xl' : 'text-xl';
+            return (
+              <h3 id={id} className={`${sizeClass} font-bold text-gray-900 dark:text-white mt-5 mb-3`}>
+                {children}
+              </h3>
+            );
+          },
+          p: ({ children }) => {
+            const sizeClass = settings.fontSize === 'sm' ? 'text-sm' : 
+                             settings.fontSize === 'lg' ? 'text-lg' : 
+                             settings.fontSize === 'xl' ? 'text-xl' : 'text-base';
+            return (
+              <p className={`${sizeClass} text-gray-700 dark:text-gray-300 leading-relaxed mb-4`}>
+                {children}
+              </p>
+            );
+          },
           a: ({ href, children }) => (
             <a
               href={href}

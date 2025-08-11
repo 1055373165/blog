@@ -19,10 +19,10 @@ export default function ArticlePreview({ article, className = '' }: ArticlePrevi
     <div className={`max-w-4xl mx-auto ${className}`}>
       {/* Article Header */}
       <header className="mb-8">
-        {article.coverImage && (
+        {article.cover_image && (
           <div className="mb-6">
             <img
-              src={article.coverImage}
+              src={article.cover_image}
               alt={article.title}
               className="w-full h-64 sm:h-80 object-cover rounded-lg shadow-lg"
             />
@@ -67,11 +67,11 @@ export default function ArticlePreview({ article, className = '' }: ArticlePrevi
             </div>
             
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-              article.isPublished
+              article.is_published
                 ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200'
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
             }`}>
-              {article.isPublished ? '已发布' : '草稿'}
+              {article.is_published ? '已发布' : '草稿'}
             </span>
           </div>
         </div>
@@ -165,28 +165,28 @@ export default function ArticlePreview({ article, className = '' }: ArticlePrevi
       <footer className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
         <div className="space-y-4">
           {/* SEO Information (for admin preview) */}
-          {(article.metaTitle || article.metaDescription || article.metaKeywords) && (
+          {(article.meta_title || article.meta_description || article.meta_keywords) && (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
                 SEO 信息预览
               </h3>
               <div className="space-y-2 text-sm">
-                {article.metaTitle && (
+                {article.meta_title && (
                   <div>
                     <span className="font-medium text-blue-700 dark:text-blue-300">标题: </span>
-                    <span className="text-blue-600 dark:text-blue-400">{article.metaTitle}</span>
+                    <span className="text-blue-600 dark:text-blue-400">{article.meta_title}</span>
                   </div>
                 )}
-                {article.metaDescription && (
+                {article.meta_description && (
                   <div>
                     <span className="font-medium text-blue-700 dark:text-blue-300">描述: </span>
-                    <span className="text-blue-600 dark:text-blue-400">{article.metaDescription}</span>
+                    <span className="text-blue-600 dark:text-blue-400">{article.meta_description}</span>
                   </div>
                 )}
-                {article.metaKeywords && (
+                {article.meta_keywords && (
                   <div>
                     <span className="font-medium text-blue-700 dark:text-blue-300">关键词: </span>
-                    <span className="text-blue-600 dark:text-blue-400">{article.metaKeywords}</span>
+                    <span className="text-blue-600 dark:text-blue-400">{article.meta_keywords}</span>
                   </div>
                 )}
               </div>

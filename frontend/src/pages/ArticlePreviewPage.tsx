@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Article } from '../types';
 import ArticlePreview from '../components/ArticlePreview';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { apiClient } from '../api/client';
 
 export default function ArticlePreviewPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,13 +22,12 @@ export default function ArticlePreviewPage() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/articles/${articleId}`);
-      const data = await response.json();
+      const response = await apiClient.get<Article>(`/api/articles/${articleId}`);
 
-      if (data.success) {
-        setArticle(data.data);
+      if (response.success) {
+        setArticle(response.data);
       } else {
-        throw new Error(data.error || '文章不存在');
+        throw new Error(response.error || '文章不存在');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载文章失败');
@@ -79,19 +79,19 @@ export default function ArticlePreviewPage() {
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
               <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                预览模式 - 此文章{article.isPublished ? '已发布' : '为草稿'}
+                预览模式 - 此文章{article?.is_published ? '已发布' : '为草稿'}
               </span>
             </div>
             <div className="flex items-center space-x-4">
               <Link
-                to={`/admin/articles/${article.id}/edit`}
+                to={`/admin/articles/${article?.id}/edit`}
                 className="text-sm text-yellow-700 dark:text-yellow-300 hover:text-yellow-800 dark:hover:text-yellow-200"
               >
                 编辑文章
               </Link>
-              {article.isPublished && (
+              {article?.is_published && (
                 <Link
-                  to={`/articles/${article.slug || article.id}`}
+                  to={`/articles/${article?.slug || article?.id}`}
                   className="text-sm text-yellow-700 dark:text-yellow-300 hover:text-yellow-800 dark:hover:text-yellow-200"
                 >
                   查看发布版本
@@ -112,18 +112,18 @@ export default function ArticlePreviewPage() {
       <div className="py-8 px-4 sm:px-6 lg:px-8">
         <ArticlePreview
           article={{
-            title: article.title,
-            content: article.content,
-            excerpt: article.excerpt,
-            coverImage: article.coverImage,
-            categoryId: article.categoryId,
-            tagIds: article.tags.map(tag => tag.id),
-            seriesId: article.seriesId,
-            seriesOrder: article.seriesOrder,
-            isPublished: article.isPublished,
-            metaTitle: article.metaTitle,
-            metaDescription: article.metaDescription,
-            metaKeywords: article.metaKeywords,
+            title: article?.title || '',
+            content: article?.content || '',
+            excerpt: article?.excerpt || '',
+            cover_image: article?.cover_image || '',
+            category_id: article?.category_id,
+            tag_ids: Array.isArray(article?.tags) ? article.tags.map(tag => tag.id) : [],
+            series_id: article?.series_id,
+            series_order: article?.series_order,
+            is_published: article?.is_published || false,
+            meta_title: article?.meta_title || '',
+            meta_description: article?.meta_description || '',
+            meta_keywords: article?.meta_keywords || '',
           }}
         />
       </div>

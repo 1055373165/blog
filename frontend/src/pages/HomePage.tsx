@@ -37,7 +37,7 @@ export default function HomePage() {
     const response = await articlesApi.getArticles({
       page,
       limit,
-      isPublished: true,
+      is_published: true,
       sortBy: 'published_at',
       sortOrder: 'desc',
     });
@@ -106,10 +106,10 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredArticles.map((article) => (
               <div key={article.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden border border-primary-200 dark:border-primary-700">
-                {article.coverImage && (
+                {article.cover_image && (
                   <div className="aspect-video overflow-hidden">
                     <img
-                      src={article.coverImage}
+                      src={article.cover_image}
                       alt={article.title}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     />
@@ -138,7 +138,7 @@ export default function HomePage() {
                   </p>
                   <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                     <span>{article.author.name}</span>
-                    <span>{formatDate(article.publishedAt || article.createdAt)}</span>
+                    <span>{formatDate(article.published_at || article.created_at)}</span>
                   </div>
                 </div>
               </div>
@@ -180,13 +180,13 @@ export default function HomePage() {
                             <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                             <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                           </svg>
-                          {article.viewsCount}
+                          {article.views_count}
                         </span>
                         <span className="flex items-center">
                           <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
                           </svg>
-                          {article.likesCount}
+                          {article.likes_count}
                         </span>
                       </div>
                     </div>

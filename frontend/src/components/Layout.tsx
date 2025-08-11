@@ -1,12 +1,29 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SearchBar from './SearchBar';
 import ThemeSettings from './ThemeSettings';
+import { BlogStats } from '../types';
+import { statsApi } from '../api';
 
 export default function Layout() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [themeSettingsOpen, setThemeSettingsOpen] = useState(false);
+  const [stats, setStats] = useState<BlogStats | null>(null);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      const response = await statsApi.getStats();
+      setStats(response.data);
+    } catch (err) {
+      // Silently fail for stats, they're not critical
+      console.error('Failed to load stats:', err);
+    }
+  };
 
   const navigation = [
     { name: '首页', href: '/', icon: 'home' },
@@ -204,31 +221,6 @@ export default function Layout() {
       <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* About */}
-            <div className="col-span-1 md:col-span-2">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                关于博客
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                一个现代化的博客系统，专注于强大的分类和搜索功能。
-                记录技术思考，分享实用经验，探索前沿趋势。
-              </p>
-              <div className="flex space-x-4">
-                <Link
-                  to="/about"
-                  className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm"
-                >
-                  关于我们
-                </Link>
-                <Link
-                  to="/contact"
-                  className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm"
-                >
-                  联系方式
-                </Link>
-              </div>
-            </div>
-
             {/* Quick Links */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -256,19 +248,19 @@ export default function Layout() {
               <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex justify-between">
                   <span>文章总数</span>
-                  <span className="font-medium">-</span>
+                  <span className="font-medium">{stats?.totalArticles || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>分类数量</span>
-                  <span className="font-medium">-</span>
+                  <span className="font-medium">{stats?.totalCategories || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>标签数量</span>
-                  <span className="font-medium">-</span>
+                  <span className="font-medium">{stats?.totalTags || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>总浏览量</span>
-                  <span className="font-medium">-</span>
+                  <span className="font-medium">{stats?.totalViews?.toLocaleString() || 0}</span>
                 </div>
               </div>
             </div>

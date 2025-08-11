@@ -7,7 +7,7 @@ export default function ArticleListPage() {
     const response = await articlesApi.getArticles({
       page,
       limit,
-      isPublished: true,
+      is_published: true,
       sortBy: 'published_at',
       sortOrder: 'desc',
     });

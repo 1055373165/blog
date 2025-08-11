@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Article } from '../../types';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import Pagination from '../../components/Pagination';
+import { apiClient } from '../../api/client';
 
 export default function ArticleList() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -30,15 +31,14 @@ export default function ArticleList() {
         queryParams.set('is_published', filter === 'published' ? 'true' : 'false');
       }
 
-      const response = await fetch(`/api/articles?${queryParams}`);
-      const data = await response.json();
+      const response = await apiClient.get(`/api/articles?${queryParams}`);
       
-      if (data.success) {
-        setArticles(data.data.items || []);
-        setTotalPages(data.data.totalPages || 1);
-      } else {
-        throw new Error(data.error || '加载文章列表失败');
+      if (!response.success) {
+        throw new Error('Failed to fetch articles');
       }
+      
+      setArticles(response.data.articles || []);
+      setTotalPages(response.data.pagination?.total_pages || 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载文章时出错');
     } finally {
@@ -52,42 +52,27 @@ export default function ArticleList() {
     }
 
     try {
-      const response = await fetch(`/api/articles/${id}`, {
-        method: 'DELETE',
-      });
-      
-      if (response.ok) {
-        setArticles(articles.filter(article => article.id !== id));
-      } else {
-        throw new Error('删除失败');
-      }
-    } catch (err) {
-      alert(err instanceof Error ? err.message : '删除时出错');
+      await apiClient.delete(`/api/articles/${id}`);
+      setArticles(articles.filter(article => article.id !== id));
+    } catch (err: any) {
+      alert(err.message || '删除时出错');
     }
   };
 
   const handleTogglePublish = async (article: Article) => {
     try {
-      const response = await fetch(`/api/articles/${article.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...article,
-          isPublished: !article.isPublished,
-        }),
+      await apiClient.put(`/api/articles/${article.id}`, {
+        ...article,
+        is_published: !article.is_published,
       });
       
-      if (response.ok) {
-        setArticles(articles.map(a => 
-          a.id === article.id 
-            ? { ...a, isPublished: !a.isPublished }
-            : a
-        ));
-      } else {
-        throw new Error('更新失败');
-      }
-    } catch (err) {
-      alert(err instanceof Error ? err.message : '更新时出错');
+      setArticles(articles.map(a => 
+        a.id === article.id 
+          ? { ...a, is_published: !a.is_published }
+          : a
+      ));
+    } catch (err: any) {
+      alert(err.message || '更新时出错');
     }
   };
 
@@ -103,36 +88,32 @@ export default function ArticleList() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="p-6">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-              文章管理
-            </h1>
-            <Link
-              to="/admin/articles/new"
-              className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 
-                         transition-colors flex items-center"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              新建文章
-            </Link>
-          </div>
-        </div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          文章管理
+        </h1>
+        <Link
+          to="/admin/articles/new"
+          className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 
+                     transition-colors flex items-center"
+        >
+          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          新建文章
+        </Link>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div>
         {/* Error Message */}
         {error && (
           <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
@@ -225,11 +206,11 @@ export default function ArticleList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        article.isPublished
+                        article.is_published
                           ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                       }`}>
-                        {article.isPublished ? '已发布' : '草稿'}
+                        {article.is_published ? '已发布' : '草稿'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
@@ -242,18 +223,18 @@ export default function ArticleList() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
-                          {article.viewsCount}
+                          {article.views_count}
                         </span>
                         <span className="flex items-center">
                           <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                           </svg>
-                          {article.likesCount}
+                          {article.likes_count}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {formatDate(article.createdAt)}
+                      {formatDate(article.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
@@ -267,7 +248,7 @@ export default function ArticleList() {
                           onClick={() => handleTogglePublish(article)}
                           className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                         >
-                          {article.isPublished ? '取消发布' : '发布'}
+                          {article.is_published ? '取消发布' : '发布'}
                         </button>
                         <Link
                           to={`/articles/${article.slug || article.id}`}

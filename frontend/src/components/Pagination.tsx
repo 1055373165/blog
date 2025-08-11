@@ -2,49 +2,49 @@ import { PaginationProps } from '../types';
 import { cn } from '../utils';
 
 export default function Pagination({
-  currentPage,
-  totalPages,
+  current_page,
+  total_pages,
   onPageChange,
-  showSizeChanger = false,
-  pageSize = 10,
+  show_size_changer = false,
+  page_size = 10,
   onPageSizeChange,
 }: PaginationProps) {
-  if (totalPages <= 1) return null;
+  if (total_pages <= 1) return null;
 
   const getVisiblePages = () => {
     const visiblePages: (number | string)[] = [];
-    const showEllipsis = totalPages > 7;
+    const showEllipsis = total_pages > 7;
 
     if (!showEllipsis) {
       // 显示所有页面
-      for (let i = 1; i <= totalPages; i++) {
+      for (let i = 1; i <= total_pages; i++) {
         visiblePages.push(i);
       }
     } else {
       // 复杂分页逻辑
-      if (currentPage <= 4) {
+      if (current_page <= 4) {
         // 当前页在前面
         for (let i = 1; i <= 5; i++) {
           visiblePages.push(i);
         }
         visiblePages.push('ellipsis');
-        visiblePages.push(totalPages);
-      } else if (currentPage >= totalPages - 3) {
+        visiblePages.push(total_pages);
+      } else if (current_page >= total_pages - 3) {
         // 当前页在后面
         visiblePages.push(1);
         visiblePages.push('ellipsis');
-        for (let i = totalPages - 4; i <= totalPages; i++) {
+        for (let i = total_pages - 4; i <= total_pages; i++) {
           visiblePages.push(i);
         }
       } else {
         // 当前页在中间
         visiblePages.push(1);
         visiblePages.push('ellipsis');
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+        for (let i = current_page - 1; i <= current_page + 1; i++) {
           visiblePages.push(i);
         }
         visiblePages.push('ellipsis');
-        visiblePages.push(totalPages);
+        visiblePages.push(total_pages);
       }
     }
 
@@ -67,11 +67,11 @@ export default function Pagination({
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8">
       {/* Page Size Changer */}
-      {showSizeChanger && onPageSizeChange && (
+      {show_size_changer && onPageSizeChange && (
         <div className="flex items-center space-x-2">
           <span className="text-sm text-gray-700 dark:text-gray-300">每页显示:</span>
           <select
-            value={pageSize}
+            value={page_size}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
             className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md
                        bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300
@@ -89,9 +89,9 @@ export default function Pagination({
       <div className="flex items-center space-x-1">
         {/* Previous Button */}
         <button
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className={buttonClass(false, currentPage === 1)}
+          onClick={() => onPageChange(current_page - 1)}
+          disabled={current_page === 1}
+          className={buttonClass(false, current_page === 1)}
         >
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -116,7 +116,7 @@ export default function Pagination({
             <button
               key={pageNumber}
               onClick={() => onPageChange(pageNumber)}
-              className={buttonClass(pageNumber === currentPage)}
+              className={buttonClass(pageNumber === current_page)}
             >
               {pageNumber}
             </button>
@@ -125,9 +125,9 @@ export default function Pagination({
 
         {/* Next Button */}
         <button
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className={buttonClass(false, currentPage === totalPages)}
+          onClick={() => onPageChange(current_page + 1)}
+          disabled={current_page === total_pages}
+          className={buttonClass(false, current_page === total_pages)}
         >
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
@@ -137,7 +137,7 @@ export default function Pagination({
 
       {/* Page Info */}
       <div className="text-sm text-gray-700 dark:text-gray-300">
-        第 {currentPage} 页，共 {totalPages} 页
+        第 {current_page} 页，共 {total_pages} 页
       </div>
     </div>
   );

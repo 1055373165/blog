@@ -5,7 +5,7 @@ interface SavedSearch {
   id: string;
   name: string;
   filters: SearchFilters;
-  createdAt: string;
+  created_at: string;
   resultCount?: number;
 }
 
@@ -51,7 +51,7 @@ export default function SavedSearches({
       id: Date.now().toString(),
       name: searchName.trim(),
       filters: currentFilters,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
 
     const updated = [newSearch, ...savedSearches.slice(0, 19)]; // Keep max 20 searches
@@ -76,12 +76,12 @@ export default function SavedSearches({
   const canSaveCurrentFilters = () => {
     return !!(
       currentFilters.query ||
-      currentFilters.categoryId ||
-      (currentFilters.tagIds && currentFilters.tagIds.length > 0) ||
-      currentFilters.seriesId ||
-      currentFilters.dateFrom ||
-      currentFilters.dateTo ||
-      currentFilters.isPublished !== undefined
+      currentFilters.category_id ||
+      (currentFilters.tag_ids && currentFilters.tag_ids.length > 0) ||
+      currentFilters.series_id ||
+      currentFilters.date_from ||
+      currentFilters.date_to ||
+      currentFilters.is_published !== undefined
     );
   };
 
@@ -90,13 +90,13 @@ export default function SavedSearches({
     const parts: string[] = [];
     
     if (filters.query) parts.push(`"${filters.query}"`);
-    if (filters.categoryId) parts.push('分类筛选');
-    if (filters.tagIds && filters.tagIds.length > 0) {
-      parts.push(`${filters.tagIds.length}个标签`);
+    if (filters.category_id) parts.push('分类筛选');
+    if (filters.tag_ids && filters.tag_ids.length > 0) {
+      parts.push(`${filters.tag_ids.length}个标签`);
     }
-    if (filters.dateFrom || filters.dateTo) parts.push('日期范围');
-    if (filters.isPublished !== undefined) {
-      parts.push(filters.isPublished ? '已发布' : '草稿');
+    if (filters.date_from || filters.date_to) parts.push('日期范围');
+    if (filters.is_published !== undefined) {
+      parts.push(filters.is_published ? '已发布' : '草稿');
     }
     
     return parts.join(' + ') || '无筛选条件';
@@ -234,7 +234,7 @@ export default function SavedSearches({
                     {getFilterDisplayName(search.filters)}
                   </p>
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    {formatDate(search.createdAt)}
+                    {formatDate(search.created_at)}
                   </p>
                 </div>
                 <div className="flex items-center space-x-2 ml-4">

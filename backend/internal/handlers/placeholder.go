@@ -4,6 +4,8 @@ import (
 	"net/http"
 	
 	"github.com/gin-gonic/gin"
+	"blog-backend/internal/database"
+	"blog-backend/internal/models"
 )
 
 // 分类相关处理器已在 categories.go 中实现
@@ -12,18 +14,54 @@ import (
 
 // 搜索相关处理器已在 search.go 中实现
 
-// 统计相关处理器占位符
+// 统计相关处理器
 func GetStats(c *gin.Context) {
+	db := database.GetDB()
+	if db == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "数据库连接失败",
+		})
+		return
+	}
+
+	// 获取文章统计
+	var totalArticles, publishedArticles, draftArticles int64
+	db.Model(&models.Article{}).Count(&totalArticles)
+	db.Model(&models.Article{}).Where("is_published = ?", true).Count(&publishedArticles)
+	db.Model(&models.Article{}).Where("is_draft = ?", true).Count(&draftArticles)
+
+	// 获取总浏览量
+	var totalViews int64
+	db.Model(&models.ArticleView{}).Count(&totalViews)
+
+	// 获取总点赞数
+	var totalLikes int64
+	db.Model(&models.ArticleLike{}).Count(&totalLikes)
+
+	// 获取分类数量
+	var totalCategories int64
+	db.Model(&models.Category{}).Count(&totalCategories)
+
+	// 获取标签数量
+	var totalTags int64
+	db.Model(&models.Tag{}).Count(&totalTags)
+
+	// 获取系列数量
+	var totalSeries int64
+	db.Model(&models.Series{}).Count(&totalSeries)
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "Stats endpoint - to be implemented",
 		"data": gin.H{
-			"total_articles":     0,
-			"published_articles": 0,
-			"total_views":        0,
-			"total_likes":        0,
-			"total_categories":   0,
-			"total_tags":         0,
+			"totalArticles":     totalArticles,
+			"publishedArticles": publishedArticles,
+			"draftArticles":     draftArticles,
+			"totalViews":        totalViews,
+			"totalLikes":        totalLikes,
+			"totalCategories":   totalCategories,
+			"totalTags":         totalTags,
+			"totalSeries":       totalSeries,
 		},
 	})
 }

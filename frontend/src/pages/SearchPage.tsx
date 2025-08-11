@@ -33,7 +33,7 @@ export default function SearchPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<SearchFilters>({
     query: searchParams.get('q') || '',
-    sortby: 'createdAt',
+    sortby: 'created_at',
     sortOrder: 'desc',
   });
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -53,15 +53,15 @@ export default function SearchPage() {
         queryParams.set('limit', '12');
         queryParams.set('highlight', 'true');
         
-        if (searchFilters.categoryId) queryParams.set('category_id', searchFilters.categoryId);
-        if (searchFilters.tagIds && searchFilters.tagIds.length > 0) {
-          queryParams.set('tag_ids', searchFilters.tagIds.join(','));
+        if (searchFilters.category_id) queryParams.set('category_id', searchFilters.category_id);
+        if (searchFilters.tag_ids && searchFilters.tag_ids.length > 0) {
+          queryParams.set('tag_ids', searchFilters.tag_ids.join(','));
         }
-        if (searchFilters.seriesId) queryParams.set('series_id', searchFilters.seriesId);
-        if (searchFilters.dateFrom) queryParams.set('date_from', searchFilters.dateFrom);
-        if (searchFilters.dateTo) queryParams.set('date_to', searchFilters.dateTo);
-        if (searchFilters.isPublished !== undefined) {
-          queryParams.set('is_published', searchFilters.isPublished.toString());
+        if (searchFilters.series_id) queryParams.set('series_id', searchFilters.series_id);
+        if (searchFilters.date_from) queryParams.set('date_from', searchFilters.date_from);
+        if (searchFilters.date_to) queryParams.set('date_to', searchFilters.date_to);
+        if (searchFilters.is_published !== undefined) {
+          queryParams.set('is_published', searchFilters.is_published.toString());
         }
         if (searchFilters.sortby) queryParams.set('sort_by', searchFilters.sortby);
         if (searchFilters.sortOrder) queryParams.set('sort_order', searchFilters.sortOrder);
@@ -156,7 +156,7 @@ export default function SearchPage() {
   const handleResetFilters = () => {
     const resetFilters: SearchFilters = {
       query: '',
-      sortby: 'createdAt',
+      sortby: 'created_at',
       sortOrder: 'desc',
     };
     setFilters(resetFilters);
@@ -168,13 +168,13 @@ export default function SearchPage() {
   // Check if there are active filters (excluding default query and sort)
   const hasActiveFilters = (filtersToCheck: SearchFilters = filters) => {
     return !!(
-      filtersToCheck.categoryId ||
-      (filtersToCheck.tagIds && filtersToCheck.tagIds.length > 0) ||
-      filtersToCheck.seriesId ||
-      filtersToCheck.dateFrom ||
-      filtersToCheck.dateTo ||
-      filtersToCheck.isPublished !== undefined ||
-      (filtersToCheck.sortby && filtersToCheck.sortby !== 'createdAt') ||
+      filtersToCheck.category_id ||
+      (filtersToCheck.tag_ids && filtersToCheck.tag_ids.length > 0) ||
+      filtersToCheck.series_id ||
+      filtersToCheck.date_from ||
+      filtersToCheck.date_to ||
+      filtersToCheck.is_published !== undefined ||
+      (filtersToCheck.sortby && filtersToCheck.sortby !== 'created_at') ||
       (filtersToCheck.sortOrder && filtersToCheck.sortOrder !== 'desc')
     );
   };
@@ -338,51 +338,51 @@ export default function SearchPage() {
                       slug: doc.slug,
                       excerpt: doc.excerpt,
                       content: '',
-                      coverImage: doc.cover_image,
-                      isPublished: doc.is_published,
-                      isDraft: false,
-                      publishedAt: doc.published_at,
-                      readingTime: 0,
-                      viewsCount: doc.views_count || 0,
-                      likesCount: doc.likes_count || 0,
+                      cover_image: doc.cover_image,
+                      is_published: doc.is_published,
+                      is_draft: false,
+                      published_at: doc.published_at,
+                      reading_time: 0,
+                      views_count: doc.views_count || 0,
+                      likes_count: doc.likes_count || 0,
                       author: {
                         id: doc.author.id?.toString() || '1',
                         name: doc.author.name || '作者',
                         email: doc.author.email || '',
                         avatar: doc.author.avatar || '',
-                        isAdmin: doc.author.is_admin || false,
-                        createdAt: doc.author.created_at || '',
-                        updatedAt: doc.author.updated_at || '',
+                        is_admin: doc.author.is_admin || false,
+                        created_at: doc.author.created_at || '',
+                        updated_at: doc.author.updated_at || '',
                       },
                       category: doc.category ? {
                         id: doc.category.id?.toString() || '0',
                         name: doc.category.name || '',
                         slug: doc.category.slug || '',
                         description: doc.category.description,
-                        parentId: doc.category.parent_id?.toString(),
-                        articlesCount: doc.category.articles_count || 0,
-                        createdAt: doc.category.created_at || '',
-                        updatedAt: doc.category.updated_at || '',
+                        parent_id: doc.category.parent_id?.toString(),
+                        articles_count: doc.category.articles_count || 0,
+                        created_at: doc.category.created_at || '',
+                        updated_at: doc.category.updated_at || '',
                       } : undefined,
                       tags: doc.tags ? doc.tags.map((tag: any) => ({
                         id: tag.id?.toString() || '0',
                         name: tag.name || '',
                         slug: tag.slug || '',
                         color: tag.color,
-                        articlesCount: tag.articles_count || 0,
-                        createdAt: tag.created_at || '',
-                        updatedAt: tag.updated_at || '',
+                        articles_count: tag.articles_count || 0,
+                        created_at: tag.created_at || '',
+                        updated_at: tag.updated_at || '',
                       })) : [],
                       series: doc.series ? {
                         id: doc.series_id,
                         name: typeof doc.series === 'string' ? doc.series : (doc.series.name || ''),
                         slug: typeof doc.series === 'string' ? '' : (doc.series.slug || ''),
-                        articlesCount: 0,
-                        createdAt: '',
-                        updatedAt: '',
+                        articles_count: 0,
+                        created_at: '',
+                        updated_at: '',
                       } : undefined,
-                      createdAt: doc.created_at,
-                      updatedAt: doc.updated_at,
+                      created_at: doc.created_at,
+                      updated_at: doc.updated_at,
                     }}
                     variant="default"
                     showCategory={true}
@@ -395,8 +395,8 @@ export default function SearchPage() {
               {/* Pagination */}
               {results.pagination.total_pages > 1 && (
                 <Pagination
-                  currentPage={results.pagination.page}
-                  totalPages={results.pagination.total_pages}
+                  current_page={results.pagination.page}
+                  total_pages={results.pagination.total_pages}
                   onPageChange={handlePageChange}
                 />
               )}
