@@ -5,6 +5,8 @@ import { articlesApi, categoriesApi, tagsApi } from '../../api';
 import seriesApi from '../../services/seriesApi';
 import MarkdownEditor from '../../components/MarkdownEditor';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import FileImport from '../../components/FileImport';
+import RSSImport from '../../components/RSSImport';
 
 export default function ArticleEditor() {
   const { id } = useParams<{ id?: string }>();
@@ -32,7 +34,9 @@ export default function ArticleEditor() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // const [showAdvanced, setShowAdvanced] = useState(false);
-  const [activeTab, setActiveTab] = useState<'content' | 'settings' | 'seo'>('content');
+  const [activeTab, setActiveTab] = useState<'content' | 'settings' | 'seo' | 'import'>('content');
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importType, setImportType] = useState<'file' | 'rss'>('file');
 
   // Data for dropdowns
   const [categories, setCategories] = useState<Category[]>([]);
@@ -228,6 +232,61 @@ export default function ArticleEditor() {
     }
   };
 
+  const handleFileImport = (content: string, metadata?: any) => {
+    setFormData(prev => ({
+      ...prev,
+      content,
+      title: metadata?.title || prev.title,
+      excerpt: metadata?.excerpt || prev.excerpt,
+      metaTitle: metadata?.metaTitle || prev.metaTitle,
+      metaDescription: metadata?.metaDescription || prev.metaDescription,
+      metaKeywords: metadata?.metaKeywords || prev.metaKeywords,
+    }));
+    
+    setHasUnsavedChanges(true);
+    setShowImportModal(false);
+    setError(null);
+    
+    // Show success message briefly
+    const successMsg = `成功导入 ${metadata?.fileName || '文件'}`;
+    setError(null);
+    // Could add a toast notification here
+  };
+
+  const handleBulkImport = (articles: Array<{
+    title: string;
+    content: string;
+    excerpt: string;
+    publishedAt?: string;
+    author?: string;
+    tags?: string[];
+    link?: string;
+  }>) => {
+    if (articles.length === 0) return;
+    
+    if (articles.length === 1) {
+      // Single article import
+      const article = articles[0];
+      setFormData(prev => ({
+        ...prev,
+        title: article.title,
+        content: article.content,
+        excerpt: article.excerpt,
+        isPublished: false, // Import as draft initially
+      }));
+      setHasUnsavedChanges(true);
+      setShowImportModal(false);
+    } else {
+      // Multiple articles - show selection dialog or process in batch
+      alert(`导入了 ${articles.length} 篇文章。请联系开发者实现批量创建功能。`);
+      setShowImportModal(false);
+    }
+  };
+
+  const handleImportError = (errorMessage: string) => {
+    setError(errorMessage);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -267,6 +326,19 @@ export default function ArticleEditor() {
             </div>
 
             <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 
+                           bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 
+                           rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors
+                           flex items-center space-x-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                </svg>
+                <span>导入</span>
+              </button>
+
               <button
                 onClick={handlePreview}
                 disabled={!isEditing}
@@ -666,6 +738,95 @@ export default function ArticleEditor() {
           </div>
         </div>
       </div>
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  导入文章内容
+                </h2>
+                <button
+                  onClick={() => setShowImportModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              {/* Import Type Tabs */}
+              <div className="mt-4">
+                <nav className="flex space-x-4">
+                  <button
+                    onClick={() => setImportType('file')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      importType === 'file'
+                        ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                    }`}
+                  >
+                    <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    文件导入
+                  </button>
+                  <button
+                    onClick={() => setImportType('rss')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      importType === 'rss'
+                        ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                    }`}
+                  >
+                    <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7m-6 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                    </svg>
+                    RSS 导入
+                  </button>
+                </nav>
+              </div>
+            </div>
+            
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-8rem)]">
+              {importType === 'file' && (
+                <FileImport
+                  onFileImport={handleFileImport}
+                  onError={handleImportError}
+                  className="mb-4"
+                />
+              )}
+              
+              {importType === 'rss' && (
+                <RSSImport
+                  onArticlesImport={handleBulkImport}
+                  onError={handleImportError}
+                  className="mb-4"
+                />
+              )}
+            </div>
+            
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowImportModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 
+                             bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 
+                             rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

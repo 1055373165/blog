@@ -101,50 +101,77 @@ export default function MarkdownEditor({
 
   return (
     <div className={`markdown-editor ${className}`}>
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center space-x-4">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">编辑模式:</span>
-          <div className="flex rounded-md shadow-sm">
+          <div className="flex rounded-lg shadow-sm overflow-hidden">
             <button
               type="button"
               onClick={() => setMode('edit')}
-              className={`px-3 py-1 text-xs font-medium border border-gray-300 dark:border-gray-600 rounded-l-md transition-colors ${
+              className={`px-4 py-2 text-sm font-medium border transition-all duration-200 ${
                 mode === 'edit'
-                  ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 border-primary-300 dark:border-primary-600'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
+              <svg className="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
               编辑
             </button>
             <button
               type="button"
               onClick={() => setMode('live')}
-              className={`px-3 py-1 text-xs font-medium border-t border-b border-gray-300 dark:border-gray-600 transition-colors ${
+              className={`px-4 py-2 text-sm font-medium border-t border-b transition-all duration-200 ${
                 mode === 'live'
-                  ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 border-primary-300 dark:border-primary-600'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
+              <svg className="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
               实时预览
             </button>
             <button
               type="button"
               onClick={() => setMode('preview')}
-              className={`px-3 py-1 text-xs font-medium border border-gray-300 dark:border-gray-600 rounded-r-md transition-colors ${
+              className={`px-4 py-2 text-sm font-medium border rounded-r-lg transition-all duration-200 ${
                 mode === 'preview'
-                  ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 border-primary-300 dark:border-primary-600'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
+              <svg className="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
               预览
             </button>
           </div>
         </div>
         
-        <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
-          <span>字数: {value.length}</span>
-          <span>•</span>
-          <span>行数: {value.split('\n').length}</span>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex items-center">
+              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+              </svg>
+              {value.length.toLocaleString()} 字
+            </div>
+            <div className="flex items-center">
+              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+              </svg>
+              {value.split('\n').length} 行
+            </div>
+            <div className="flex items-center">
+              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L10 9.586V6z" clipRule="evenodd" />
+              </svg>
+              预计 {Math.ceil(value.length / 200)} 分钟阅读
+            </div>
+          </div>
         </div>
       </div>
 

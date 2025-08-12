@@ -19,7 +19,8 @@
       "Bash(kill:*)",
       "Bash(npm run build:*)",
       "Bash(docker exec:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git pull:*)"
     ],
     "deny": []
   }
