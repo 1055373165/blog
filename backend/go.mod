@@ -1,6 +1,6 @@
 module blog-backend
 
-go 1.24.3
+go 1.23.12
 
 require (
 	github.com/blevesearch/bleve/v2 v2.5.2
