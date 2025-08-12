@@ -15,7 +15,7 @@ NC='\033[0m'
 # 配置变量
 PROJECT_DIR="/opt/blog"
 BACKUP_DIR="/opt/backups"
-LOG_FILE="/var/log/blog-update.log"
+LOG_FILE="$HOME/blog-update.log"
 
 # 日志函数
 log() {

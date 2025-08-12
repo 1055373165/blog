@@ -17,7 +17,7 @@ DOMAIN="www.godepth.top"
 EMAIL="1055373165@qq.com"  # 请修改为您的邮箱
 PROJECT_DIR="/opt/blog"
 BACKUP_DIR="/opt/backups"
-LOG_FILE="/var/log/blog-deploy.log"
+LOG_FILE="$HOME/blog-deploy.log"
 
 # 日志函数
 log() {
@@ -255,7 +255,7 @@ setup_ssl() {
     sudo docker stop temp-nginx
     
     # 设置证书自动续期
-    echo "0 12 * * * /usr/bin/certbot renew --quiet && /usr/bin/docker-compose -f $PROJECT_DIR/docker-compose.prod.yml restart nginx" | sudo crontab -
+    (sudo crontab -l 2>/dev/null; echo "0 12 * * * /usr/bin/certbot renew --quiet && /usr/bin/docker-compose -f $PROJECT_DIR/docker-compose.prod.yml restart nginx") | sudo crontab -
     
     log "SSL证书配置完成"
 }
