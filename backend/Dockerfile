@@ -1,14 +1,20 @@
 # 构建阶段
 FROM golang:1.23-alpine AS builder
 
-# 安装必要的工具
-RUN apk add --no-cache git ca-certificates tzdata
+# 配置阿里云镜像源以加速包安装
+RUN sed -i 's#dl-cdn.alpinelinux.org#mirrors.aliyun.com#g' /etc/apk/repositories \
+    && apk add --no-cache git ca-certificates tzdata
 
 # 设置工作目录
 WORKDIR /app
 
 # 复制go mod文件
 COPY go.mod go.sum ./
+
+# 配置Go模块代理（使用阿里云和七牛云镜像）
+ENV GOPROXY=https://goproxy.cn,https://mirrors.aliyun.com/goproxy/,direct \
+    GO111MODULE=on \
+    GOTOOLCHAIN=local
 
 # 下载依赖
 RUN go mod download
@@ -25,8 +31,9 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
 # 运行阶段
 FROM alpine:latest
 
-# 安装必要的工具
-RUN apk --no-cache add ca-certificates tzdata
+# 配置阿里云镜像源并安装必要的工具
+RUN sed -i 's#dl-cdn.alpinelinux.org#mirrors.aliyun.com#g' /etc/apk/repositories \
+    && apk --no-cache add ca-certificates tzdata wget
 
 # 设置时区
 ENV TZ=Asia/Shanghai
