@@ -34,7 +34,7 @@ services:
       - redis_data:/data
     networks:
       - blog_network
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    command: redis-server --appendonly yes --requirepass "${REDIS_PASSWORD}"
 
   # 后端API服务
   backend:
