@@ -6,8 +6,8 @@ services:
     image: redis:7-alpine
     container_name: blog_redis_prod
     restart: unless-stopped
-    expose:
-      - "6379"
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -36,8 +36,8 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
       - API_BASE_URL=https://www.godepth.top
-    expose:
-      - "3001"
+    ports:
+      - "3001:3001"
     depends_on:
       redis:
         condition: service_started
@@ -58,30 +58,9 @@ services:
         - VITE_API_BASE_URL=https://www.godepth.top
     container_name: blog_frontend_prod
     restart: unless-stopped
-    expose:
-      - "8080"
-    depends_on:
-      - backend
-    networks:
-      - blog_network
-
-  # Nginx反向代理
-  nginx:
-    image: nginx:alpine
-    container_name: blog_nginx_prod
-    restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./docker/nginx/nginx.prod.conf:/etc/nginx/nginx.conf
-      - ./docker/nginx/conf.d:/etc/nginx/conf.d
-      - ./docker/nginx/ssl:/etc/nginx/ssl
-      - ./data/uploads:/var/www/uploads
-      - ./logs/nginx:/var/log/nginx
-      - /etc/nginx/ssl:/etc/nginx/ssl
+      - "8080:8080"
     depends_on:
-      - frontend
       - backend
     networks:
       - blog_network

@@ -136,9 +136,9 @@ cleanup_existing() {
     docker rm temp-nginx 2>/dev/null || true
     
     # 检查端口占用
-    if netstat -tlnp 2>/dev/null | grep -q ":80\|:443"; then
-        warn "检测到端口 80/443 仍被占用"
-        netstat -tlnp 2>/dev/null | grep ":80\|:443" || true
+    if netstat -tlnp 2>/dev/null | grep -q ":8080\|:443"; then
+        warn "检测到端口 8080/443 仍被占用"
+        netstat -tlnp 2>/dev/null | grep ":8080\|:443" || true
     fi
     
     log "清理完成"
@@ -173,7 +173,7 @@ deploy_app() {
     
     # 等待服务启动
     log "等待服务启动..."
-    sleep 30
+    sleep 10
     
     # 检查服务状态
     if ! docker compose -f docker-compose.prod.yml ps | grep -q "Up"; then
@@ -196,7 +196,7 @@ verify_deployment() {
     netstat -tlnp 2>/dev/null | grep ":80\|:443" || true
     
     # 简单的健康检查
-    sleep 10
+    sleep 5
     if curl -f -s -k --connect-timeout 10 https://localhost/ > /dev/null 2>&1; then
         log "HTTPS 服务响应正常"
     else
