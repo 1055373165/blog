@@ -21,7 +21,7 @@ function useReadingProgress(
 ) {
   const [progress, setProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
-  const rafRef = useRef<number>();
+  const rafRef = useRef<number | null>(null);
 
   const calculateProgress = useCallback(() => {
     let element: Element | null = null;

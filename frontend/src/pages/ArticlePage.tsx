@@ -7,7 +7,8 @@ import MarkdownRenderer from '../components/MarkdownRenderer';
 import OptimizedImage from '../components/ui/OptimizedImage';
 import ReadingProgress from '../components/reading/ReadingProgress';
 import TableOfContents from '../components/reading/TableOfContents';
-import { useReadingTime, useReadingCompletion } from '../hooks/useReadingTime';
+import { useReadingTime } from '../hooks/useReadingTime';
+import { useReadingCompletion } from '../components/reading/ReadingProgress';
 import { formatDate, formatReadingTime } from '../utils';
 
 export default function ArticlePage() {

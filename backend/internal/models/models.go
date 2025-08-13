@@ -17,9 +17,9 @@ type BaseModel struct {
 // User 用户模型
 type User struct {
 	BaseModel
-	Email     string `json:"email" gorm:"uniqueIndex;not null"`
-	Name      string `json:"name" gorm:"not null"`
-	Password  string `json:"-" gorm:"not null"` // 不在JSON中显示密码
+	Email     string `json:"email" gorm:"uniqueIndex;not null;size:255"`
+	Name      string `json:"name" gorm:"not null;size:255"`
+	Password  string `json:"-" gorm:"not null;size:255"` // 不在JSON中显示密码
 	Avatar    string `json:"avatar"`
 	IsAdmin   bool   `json:"is_admin" gorm:"default:false"`
 	
@@ -30,8 +30,8 @@ type User struct {
 // Category 分类模型
 type Category struct {
 	BaseModel
-	Name         string `json:"name" gorm:"not null"`
-	Slug         string `json:"slug" gorm:"uniqueIndex;not null"`
+	Name         string `json:"name" gorm:"not null;size:255"`
+	Slug         string `json:"slug" gorm:"uniqueIndex;not null;size:255"`
 	Description  string `json:"description"`
 	ParentID     *uint  `json:"parent_id"`
 	ArticlesCount int   `json:"articles_count" gorm:"-"` // 不存储到数据库，仅用于API响应
@@ -45,8 +45,8 @@ type Category struct {
 // Tag 标签模型
 type Tag struct {
 	BaseModel
-	Name          string `json:"name" gorm:"not null"`
-	Slug          string `json:"slug" gorm:"uniqueIndex;not null"`
+	Name          string `json:"name" gorm:"not null;size:255"`
+	Slug          string `json:"slug" gorm:"uniqueIndex;not null;size:255"`
 	Color         string `json:"color"`
 	ArticlesCount int    `json:"articles_count" gorm:"-"` // 不存储到数据库
 	
@@ -57,8 +57,8 @@ type Tag struct {
 // Series 系列模型
 type Series struct {
 	BaseModel
-	Name          string `json:"name" gorm:"not null"`
-	Slug          string `json:"slug" gorm:"uniqueIndex;not null"`
+	Name          string `json:"name" gorm:"not null;size:255"`
+	Slug          string `json:"slug" gorm:"uniqueIndex;not null;size:255"`
 	Description   string `json:"description"`
 	ArticlesCount int    `json:"articles_count" gorm:"-"`
 	
@@ -69,8 +69,8 @@ type Series struct {
 // Article 文章模型
 type Article struct {
 	BaseModel
-	Title         string     `json:"title" gorm:"not null"`
-	Slug          string     `json:"slug" gorm:"uniqueIndex;not null"`
+	Title         string     `json:"title" gorm:"not null;size:255"`
+	Slug          string     `json:"slug" gorm:"uniqueIndex;not null;size:255"`
 	Excerpt       string     `json:"excerpt"`
 	Content       string     `json:"content" gorm:"type:text"`
 	CoverImage    string     `json:"cover_image"`
@@ -103,7 +103,7 @@ type Article struct {
 type ArticleView struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
 	ArticleID uint      `json:"article_id" gorm:"not null;index"`
-	IP        string    `json:"ip" gorm:"not null"`
+	IP        string    `json:"ip" gorm:"not null;size:45"`
 	UserAgent string    `json:"user_agent"`
 	ViewedAt  time.Time `json:"viewed_at" gorm:"autoCreateTime"`
 	
@@ -115,7 +115,7 @@ type ArticleView struct {
 type ArticleLike struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
 	ArticleID uint      `json:"article_id" gorm:"not null;index"`
-	IP        string    `json:"ip" gorm:"not null"`
+	IP        string    `json:"ip" gorm:"not null;size:45"`
 	LikedAt   time.Time `json:"liked_at" gorm:"autoCreateTime"`
 	
 	// 关联关系
@@ -142,7 +142,7 @@ type SearchIndex struct {
 type SearchStatistics struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
 	Query     string    `json:"query" gorm:"not null;index"`
-	IP        string    `json:"ip"`
+	IP        string    `json:"ip" gorm:"size:45"`
 	UserAgent string    `json:"user_agent"`
 	ResultCount int     `json:"result_count" gorm:"default:0"`
 	SearchedAt time.Time `json:"searched_at" gorm:"autoCreateTime"`
@@ -151,7 +151,7 @@ type SearchStatistics struct {
 // Config 系统配置模型
 type Config struct {
 	ID    uint   `json:"id" gorm:"primaryKey"`
-	Key   string `json:"key" gorm:"uniqueIndex;not null"`
+	Key   string `json:"key" gorm:"uniqueIndex;not null;size:255"`
 	Value string `json:"value" gorm:"type:text"`
 	Type  string `json:"type" gorm:"default:'string'"` // string, int, bool, json
 	Description string `json:"description"`

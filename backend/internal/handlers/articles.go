@@ -77,7 +77,7 @@ func GetArticles(c *gin.Context) {
 
 	// 搜索条件
 	if search != "" {
-		query = query.Where("title ILIKE ? OR content ILIKE ?", "%"+search+"%", "%"+search+"%")
+		query = query.Where("LOWER(title) LIKE LOWER(?) OR LOWER(content) LIKE LOWER(?)", "%"+search+"%", "%"+search+"%")
 	}
 
 	// 分类筛选

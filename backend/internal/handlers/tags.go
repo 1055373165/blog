@@ -49,7 +49,7 @@ func GetTags(c *gin.Context) {
 
 	// 搜索条件
 	if search != "" {
-		query = query.Where("name ILIKE ?", "%"+search+"%")
+		query = query.Where("LOWER(name) LIKE LOWER(?)", "%"+search+"%")
 	}
 
 	// 排序
@@ -87,7 +87,7 @@ func GetTags(c *gin.Context) {
 	var total int64
 	countQuery := database.DB.Model(&models.Tag{})
 	if search != "" {
-		countQuery = countQuery.Where("name ILIKE ?", "%"+search+"%")
+		countQuery = countQuery.Where("LOWER(name) LIKE LOWER(?)", "%"+search+"%")
 	}
 	countQuery.Count(&total)
 
@@ -684,7 +684,7 @@ func SearchTags(c *gin.Context) {
 	dbQuery := database.DB.Model(&models.Tag{})
 
 	if query != "" {
-		dbQuery = dbQuery.Where("name ILIKE ?", "%"+query+"%")
+		dbQuery = dbQuery.Where("LOWER(name) LIKE LOWER(?)", "%"+query+"%")
 	}
 
 	err := dbQuery.Order("name ASC").Limit(limit).Find(&tags).Error

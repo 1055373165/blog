@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -187,14 +188,18 @@ func (c *Config) validate() error {
 
 // GetDSN 获取数据库连接字符串
 func (c *Config) GetDSN() string {
+	// 对可能包含特殊字符的参数进行URL编码
+	escapedPassword := url.QueryEscape(c.Database.Password)
+	escapedTimeZone := url.QueryEscape(c.Database.TimeZone)
+	
 	// MySQL DSN格式: username:password@tcp(host:port)/dbname?charset=utf8mb4&parseTime=True&loc=Local
 	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=%s",
 		c.Database.User,
-		c.Database.Password,
+		escapedPassword,
 		c.Database.Host,
 		c.Database.Port,
 		c.Database.Name,
-		c.Database.TimeZone,
+		escapedTimeZone,
 	)
 }
 

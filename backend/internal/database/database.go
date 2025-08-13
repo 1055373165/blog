@@ -104,27 +104,68 @@ func AutoMigrate() error {
 	return nil
 }
 
-// createIndexes 创建数据库索引
+// createIndexes 创建数据库索引 (MySQL兼容)
 func createIndexes() error {
-	// 为文章表创建复合索引
-	DB.Exec("CREATE INDEX IF NOT EXISTS idx_articles_published ON articles(is_published, published_at DESC)")
-	DB.Exec("CREATE INDEX IF NOT EXISTS idx_articles_category ON articles(category_id, is_published, published_at DESC)")
-	DB.Exec("CREATE INDEX IF NOT EXISTS idx_articles_series ON articles(series_id, series_order)")
-
-	// 为文章点赞表创建唯一复合索引
-	DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_article_likes_unique ON article_likes(article_id, ip)")
-
-	// 为文章浏览表创建索引
-	DB.Exec("CREATE INDEX IF NOT EXISTS idx_article_views_article_date ON article_views(article_id, viewed_at)")
-
-	// 为搜索相关字段创建全文索引（MySQL）
-	DB.Exec("CREATE FULLTEXT INDEX IF NOT EXISTS idx_articles_search ON articles(title, content)")
-
-	// 为搜索统计表创建索引
-	DB.Exec("CREATE INDEX IF NOT EXISTS idx_search_statistics_query ON search_statistics(query)")
-	DB.Exec("CREATE INDEX IF NOT EXISTS idx_search_statistics_searched_at ON search_statistics(searched_at)")
+	// MySQL不支持CREATE INDEX IF NOT EXISTS，需要先检查索引是否存在
+	
+	// 检查并创建文章表复合索引
+	createIndexIfNotExists("idx_articles_published", "articles", "is_published, published_at DESC")
+	createIndexIfNotExists("idx_articles_category", "articles", "category_id, is_published, published_at DESC")
+	createIndexIfNotExists("idx_articles_series", "articles", "series_id, series_order")
+	
+	// 检查并创建文章点赞表唯一复合索引
+	createUniqueIndexIfNotExists("idx_article_likes_unique", "article_likes", "article_id, ip")
+	
+	// 检查并创建文章浏览表索引
+	createIndexIfNotExists("idx_article_views_article_date", "article_views", "article_id, viewed_at")
+	
+	// 检查并创建全文搜索索引
+	createFulltextIndexIfNotExists("idx_articles_search", "articles", "title, content")
+	
+	// 检查并创建搜索统计表索引
+	createIndexIfNotExists("idx_search_statistics_query", "search_statistics", "query")
+	createIndexIfNotExists("idx_search_statistics_searched_at", "search_statistics", "searched_at")
 
 	return nil
+}
+
+// createIndexIfNotExists 检查索引是否存在，不存在则创建
+func createIndexIfNotExists(indexName, tableName, columns string) {
+	var count int64
+	DB.Raw("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?", tableName, indexName).Scan(&count)
+	
+	if count == 0 {
+		sql := fmt.Sprintf("CREATE INDEX %s ON %s(%s)", indexName, tableName, columns)
+		if err := DB.Exec(sql).Error; err != nil {
+			log.Printf("创建索引失败 %s: %v", indexName, err)
+		}
+	}
+}
+
+// createUniqueIndexIfNotExists 检查唯一索引是否存在，不存在则创建
+func createUniqueIndexIfNotExists(indexName, tableName, columns string) {
+	var count int64
+	DB.Raw("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?", tableName, indexName).Scan(&count)
+	
+	if count == 0 {
+		sql := fmt.Sprintf("CREATE UNIQUE INDEX %s ON %s(%s)", indexName, tableName, columns)
+		if err := DB.Exec(sql).Error; err != nil {
+			log.Printf("创建唯一索引失败 %s: %v", indexName, err)
+		}
+	}
+}
+
+// createFulltextIndexIfNotExists 检查全文索引是否存在，不存在则创建
+func createFulltextIndexIfNotExists(indexName, tableName, columns string) {
+	var count int64
+	DB.Raw("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?", tableName, indexName).Scan(&count)
+	
+	if count == 0 {
+		sql := fmt.Sprintf("CREATE FULLTEXT INDEX %s ON %s(%s)", indexName, tableName, columns)
+		if err := DB.Exec(sql).Error; err != nil {
+			log.Printf("创建全文索引失败 %s: %v", indexName, err)
+		}
+	}
 }
 
 // createDefaultData 创建默认数据

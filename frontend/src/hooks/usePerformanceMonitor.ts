@@ -101,9 +101,10 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
           return newRatings;
         });
 
-        if (enableConsoleLog) {
-          console.log(`🚀 ${metricName.toUpperCase()}: ${value}ms (${rating})`);
-        }
+        // Console logging disabled
+        // if (enableConsoleLog) {
+        //   console.log(`🚀 ${metricName.toUpperCase()}: ${value}ms (${rating})`);
+        // }
 
         onMetric?.(metricName, value, rating);
       }
@@ -265,15 +266,13 @@ export type {
   PerformanceMonitorOptions 
 };
 
-// 简化版 Hook，仅用于开发环境调试
+// 简化版 Hook，仅用于开发环境调试 (已禁用)
 export function useDevPerformanceMonitor() {
-  return usePerformanceMonitor({
-    enableConsoleLog: true,
-    reportInterval: 10000, // 10秒上报一次
-    onMetric: (metric, value, rating) => {
-      if (rating === 'poor') {
-        console.warn(`⚠️ Performance issue detected: ${metric} = ${value}`);
-      }
-    }
-  });
+  // Performance monitoring disabled to improve page load speed
+  return {
+    startTracking: () => {},
+    stopTracking: () => {},
+    getMetrics: () => ({}),
+    resetMetrics: () => {}
+  };
 }

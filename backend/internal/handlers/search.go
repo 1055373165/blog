@@ -65,7 +65,7 @@ func SearchContent(c *gin.Context) {
 	
 	// 添加搜索条件
 	if query != "" {
-		searchCondition := "title ILIKE ? OR content ILIKE ? OR excerpt ILIKE ?"
+		searchCondition := "LOWER(title) LIKE LOWER(?) OR LOWER(content) LIKE LOWER(?) OR LOWER(excerpt) LIKE LOWER(?)"
 		searchTerm := "%" + query + "%"
 		dbQuery = dbQuery.Where(searchCondition, searchTerm, searchTerm, searchTerm)
 	}
@@ -212,7 +212,7 @@ func fallbackDatabaseSearch(query string, categoryIDs, tagIDs []string, page, li
 
 	// 全文搜索条件
 	if query != "" {
-		searchCondition := "title ILIKE ? OR content ILIKE ? OR excerpt ILIKE ?"
+		searchCondition := "LOWER(title) LIKE LOWER(?) OR LOWER(content) LIKE LOWER(?) OR LOWER(excerpt) LIKE LOWER(?)"
 		searchTerm := "%" + query + "%"
 		dbQuery = dbQuery.Where(searchCondition, searchTerm, searchTerm, searchTerm)
 	}
@@ -341,7 +341,7 @@ func SearchSuggestions(c *gin.Context) {
 	// 从文章标题中获取建议
 	var suggestions []string
 	err := database.DB.Model(&models.Article{}).
-		Where("is_published = ? AND title ILIKE ?", true, "%"+query+"%").
+		Where("is_published = ? AND LOWER(title) LIKE LOWER(?)", true, "%"+query+"%").
 		Limit(limit).
 		Pluck("title", &suggestions).Error
 
