@@ -59,7 +59,7 @@ services:
     container_name: blog_frontend_prod
     restart: unless-stopped
     expose:
-      - "80"
+      - "8080"
     depends_on:
       - backend
     networks:
