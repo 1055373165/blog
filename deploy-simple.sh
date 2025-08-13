@@ -2,6 +2,11 @@
 
 # 简化版部署脚本 - 不需要 sudo 权限
 # 需要管理员预先安装 Docker 和配置基础环境
+# 
+# 使用方法:
+#   ./deploy-simple.sh          # 快速部署（只重建前端，后端使用缓存）
+#   ./deploy-simple.sh --force  # 强制重建所有镜像
+#   ./deploy-simple.sh -f       # 强制重建所有镜像（简写）
 
 set -e
 
@@ -41,6 +46,22 @@ check_docker() {
     
     if ! docker ps &> /dev/null; then
         error "无法访问 Docker，请检查权限或联系管理员"
+    fi
+    
+    # 检查 Docker Compose 版本
+    if command -v docker-compose &> /dev/null; then
+        COMPOSE_VERSION=$(docker-compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        log "检测到 Docker Compose 版本: $COMPOSE_VERSION"
+        
+        # 如果版本小于 2.0，建议升级
+        if [[ $(echo "$COMPOSE_VERSION" | cut -d. -f1) -lt 2 ]]; then
+            warn "Docker Compose 版本较旧 ($COMPOSE_VERSION)，建议升级到 2.x 版本"
+            warn "或使用 'docker compose' 命令代替 'docker-compose'"
+        fi
+    elif docker compose version &> /dev/null; then
+        log "检测到 Docker Compose V2 (内置)"
+    else
+        error "未找到 Docker Compose，请先安装"
     fi
     
     log "Docker 检查通过"
@@ -131,13 +152,25 @@ cleanup_existing() {
 deploy_app() {
     log "部署应用..."
     
-    # 清理 Docker 资源
-    log "清理 Docker 资源..."
-    docker system prune -f --volumes || true
+    # 检查是否需要强制重建
+    FORCE_REBUILD=${1:-false}
     
-    # 构建并启动服务
-    log "构建镜像..."
-    docker-compose -f docker-compose.prod.yml build --no-cache
+    if [[ "$FORCE_REBUILD" == "true" ]]; then
+        log "强制重建所有镜像..."
+        docker-compose -f docker-compose.prod.yml build --no-cache
+    else
+        # 只重建前端（因为前端变更频繁），后端使用缓存
+        log "重建前端镜像（后端使用缓存以节省时间）..."
+        docker-compose -f docker-compose.prod.yml build --no-cache frontend
+        
+        # 后端使用缓存构建（如果镜像不存在才构建）
+        if ! docker images | grep -q "blog.*backend"; then
+            log "后端镜像不存在，首次构建..."
+            docker-compose -f docker-compose.prod.yml build backend
+        else
+            log "后端镜像已存在，跳过构建以节省时间"
+        fi
+    fi
     
     log "启动服务..."
     docker-compose -f docker-compose.prod.yml up -d
@@ -219,6 +252,13 @@ show_info() {
 
 # 主函数
 main() {
+    # 检查命令行参数
+    FORCE_REBUILD=false
+    if [[ "$1" == "--force" ]] || [[ "$1" == "-f" ]]; then
+        FORCE_REBUILD=true
+        log "启用强制重建模式"
+    fi
+    
     log "开始简化版博客系统部署..."
     
     check_docker
@@ -226,7 +266,7 @@ main() {
     create_directories
     cleanup_existing
     generate_test_ssl
-    deploy_app
+    deploy_app $FORCE_REBUILD
     verify_deployment
     show_info
     

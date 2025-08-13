@@ -66,10 +66,10 @@ type UploadConfig struct {
 
 // SearchConfig 搜索配置
 type SearchConfig struct {
-	IndexPath    string
-	EnableCache  bool
-	CacheTTL     time.Duration
-	BatchSize    int
+	IndexPath   string
+	EnableCache bool
+	CacheTTL    time.Duration
+	BatchSize   int
 }
 
 // CORSConfig CORS配置
@@ -117,7 +117,7 @@ func LoadConfig() error {
 			MaxLifetime:  getDurationEnv("DB_MAX_LIFETIME", "300s"),
 		},
 		JWT: JWTConfig{
-			Secret:    getEnv("JWT_SECRET", "default-secret-key-change-in-production"),
+			Secret:    getEnv("JWT_SECRET", "sunmengyu"),
 			ExpiresIn: getDurationEnv("JWT_EXPIRES_IN", "24h"),
 		},
 		Redis: RedisConfig{
@@ -298,20 +298,20 @@ func trimString(s string) string {
 	}
 	start := 0
 	end := len(s) - 1
-	
+
 	// 去除前面的空格
 	for start <= end && (s[start] == ' ' || s[start] == '\t' || s[start] == '\n' || s[start] == '\r') {
 		start++
 	}
-	
+
 	// 去除后面的空格
 	for end >= start && (s[end] == ' ' || s[end] == '\t' || s[end] == '\n' || s[end] == '\r') {
 		end--
 	}
-	
+
 	if start > end {
 		return ""
 	}
-	
+
 	return s[start : end+1]
 }
