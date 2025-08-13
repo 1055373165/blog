@@ -45,11 +45,13 @@ services:
     restart: unless-stopped
     environment:
       - GIN_MODE=release
+      - ENVIRONMENT=production
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_USER=blog_user
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - DB_NAME=blog_db
+      - DB_SSLMODE=disable
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
