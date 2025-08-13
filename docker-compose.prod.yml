@@ -79,6 +79,7 @@ services:
       - ./docker/nginx/ssl:/etc/nginx/ssl
       - ./data/uploads:/var/www/uploads
       - ./logs/nginx:/var/log/nginx
+      - /etc/nginx/ssl:/etc/nginx/ssl
     depends_on:
       - frontend
       - backend
