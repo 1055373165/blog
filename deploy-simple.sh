@@ -49,17 +49,13 @@ check_docker() {
     fi
     
     # 检查 Docker Compose 版本
-    if command -v docker-compose &> /dev/null; then
+    if docker compose version &> /dev/null; then
+        COMPOSE_VERSION=$(docker compose version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        log "检测到 Docker Compose V2 版本: $COMPOSE_VERSION"
+    elif command -v docker-compose &> /dev/null; then
         COMPOSE_VERSION=$(docker-compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-        log "检测到 Docker Compose 版本: $COMPOSE_VERSION"
-        
-        # 如果版本小于 2.0，建议升级
-        if [[ $(echo "$COMPOSE_VERSION" | cut -d. -f1) -lt 2 ]]; then
-            warn "Docker Compose 版本较旧 ($COMPOSE_VERSION)，建议升级到 2.x 版本"
-            warn "或使用 'docker compose' 命令代替 'docker-compose'"
-        fi
-    elif docker compose version &> /dev/null; then
-        log "检测到 Docker Compose V2 (内置)"
+        warn "检测到旧版 Docker Compose: $COMPOSE_VERSION"
+        warn "建议使用 'docker compose' 命令"
     else
         error "未找到 Docker Compose，请先安装"
     fi
@@ -130,9 +126,9 @@ cleanup_existing() {
     sudo systemctl stop nginx 2>/dev/null || true
     
     # 停止现有 Docker 容器
-    if docker-compose -f docker-compose.prod.yml ps | grep -q "Up"; then
+    if docker compose -f docker-compose.prod.yml ps | grep -q "Up"; then
         log "停止现有容器..."
-        docker-compose -f docker-compose.prod.yml down
+        docker compose -f docker-compose.prod.yml down
     fi
     
     # 清理临时容器
@@ -157,31 +153,31 @@ deploy_app() {
     
     if [[ "$FORCE_REBUILD" == "true" ]]; then
         log "强制重建所有镜像..."
-        docker-compose -f docker-compose.prod.yml build --no-cache
+        docker compose -f docker-compose.prod.yml build --no-cache
     else
         # 只重建前端（因为前端变更频繁），后端使用缓存
         log "重建前端镜像（后端使用缓存以节省时间）..."
-        docker-compose -f docker-compose.prod.yml build --no-cache frontend
+        docker compose -f docker-compose.prod.yml build --no-cache frontend
         
         # 后端使用缓存构建（如果镜像不存在才构建）
         if ! docker images | grep -q "blog.*backend"; then
             log "后端镜像不存在，首次构建..."
-            docker-compose -f docker-compose.prod.yml build backend
+            docker compose -f docker-compose.prod.yml build backend
         else
             log "后端镜像已存在，跳过构建以节省时间"
         fi
     fi
     
     log "启动服务..."
-    docker-compose -f docker-compose.prod.yml up -d
+    docker compose -f docker-compose.prod.yml up -d
     
     # 等待服务启动
     log "等待服务启动..."
     sleep 30
     
     # 检查服务状态
-    if ! docker-compose -f docker-compose.prod.yml ps | grep -q "Up"; then
-        error "服务启动失败，请检查日志: docker-compose -f docker-compose.prod.yml logs"
+    if ! docker compose -f docker-compose.prod.yml ps | grep -q "Up"; then
+        error "服务启动失败，请检查日志: docker compose -f docker-compose.prod.yml logs"
     fi
     
     log "应用部署完成"
@@ -193,7 +189,7 @@ verify_deployment() {
     
     # 检查容器状态
     log "容器状态:"
-    docker-compose -f docker-compose.prod.yml ps
+    docker compose -f docker-compose.prod.yml ps
     
     # 检查端口
     log "端口检查:"
@@ -233,10 +229,10 @@ show_info() {
     echo "HTTPS: https://$DOMAIN (自签名证书，会有安全警告)"
     echo ""
     echo -e "${YELLOW}常用命令:${NC}"
-    echo "查看状态: docker-compose -f docker-compose.prod.yml ps"
-    echo "查看日志: docker-compose -f docker-compose.prod.yml logs -f"
-    echo "重启服务: docker-compose -f docker-compose.prod.yml restart"
-    echo "停止服务: docker-compose -f docker-compose.prod.yml down"
+    echo "查看状态: docker compose -f docker-compose.prod.yml ps"
+    echo "查看日志: docker compose -f docker-compose.prod.yml logs -f"
+    echo "重启服务: docker compose -f docker-compose.prod.yml restart"
+    echo "停止服务: docker compose -f docker-compose.prod.yml down"
     echo ""
     echo -e "${YELLOW}服务端口:${NC}"
     echo "HTTP:  80"
