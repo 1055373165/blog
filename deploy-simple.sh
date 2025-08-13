@@ -169,7 +169,7 @@ deploy_app() {
     fi
     
     log "启动服务..."
-    docker compose -f docker-compose.prod.yml up -d
+    docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
     
     # 等待服务启动
     log "等待服务启动..."

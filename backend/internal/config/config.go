@@ -94,8 +94,8 @@ var GlobalConfig *Config
 // LoadConfig 加载配置
 func LoadConfig() error {
 	// 加载环境变量
-	if err := godotenv.Load(); err != nil {
-		fmt.Println("警告: 未找到 .env 文件，使用系统环境变量")
+	if err := godotenv.Load(".env.prod"); err != nil {
+		fmt.Println("警告: 未找到 .env.prod 文件，使用系统环境变量")
 	}
 
 	config := &Config{
@@ -191,7 +191,7 @@ func (c *Config) GetDSN() string {
 	// 对可能包含特殊字符的参数进行URL编码
 	escapedPassword := url.QueryEscape(c.Database.Password)
 	escapedTimeZone := url.QueryEscape(c.Database.TimeZone)
-	
+
 	// MySQL DSN格式: username:password@tcp(host:port)/dbname?charset=utf8mb4&parseTime=True&loc=Local
 	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=%s",
 		c.Database.User,
