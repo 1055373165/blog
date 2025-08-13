@@ -71,7 +71,7 @@ check_env() {
         error ".env.prod 文件不存在，请先创建"
     fi
     
-    if grep -q "your_strong_postgres_password_here" .env.prod; then
+    if grep -q "your_mysql_password_here" .env.prod; then
         warn "请修改 .env.prod 中的默认密码"
         read -p "是否继续？(y/N): " -n 1 -r
         echo

@@ -1,27 +1,4 @@
 services:
-  # PostgreSQL数据库
-  postgres:
-    image: postgres:15-alpine
-    container_name: blog_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: blog_db
-      POSTGRES_USER: blog_user
-      POSTGRES_PASSWORD: blog_password
-      PGDATA: /var/lib/postgresql/data/pgdata
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backend/migrations:/docker-entrypoint-initdb.d
-    ports:
-      - "5432:5432"
-    networks:
-      - blog_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U blog_user -d blog_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # Redis缓存（可选）
   redis:
     image: redis:7-alpine
@@ -44,20 +21,21 @@ services:
     restart: unless-stopped
     environment:
       - GIN_MODE=debug
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=blog_user
-      - DB_PASSWORD=blog_password
-      - DB_NAME=blog_db
+      - DB_HOST=host.docker.internal
+      - DB_PORT=3306
+      - DB_USER=${DB_USER:-root}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-blog_db}
+      - DB_TIMEZONE=Asia%2FShanghai
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     ports:
       - "3001:3001"
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - blog_network
     volumes:
@@ -100,8 +78,6 @@ services:
       - production
 
 volumes:
-  postgres_data:
-    driver: local
   redis_data:
     driver: local
 

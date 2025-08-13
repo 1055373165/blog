@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "afplay /Users/smy/Music/bell.wav"
+            "command": "afplay /Users/smy/Music/weixin.mp3"
           }
         ]
       }

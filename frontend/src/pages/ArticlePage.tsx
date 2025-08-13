@@ -1,14 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { articlesApi } from '../api';
 import { Article } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import MarkdownRenderer from '../components/MarkdownRenderer';
+import OptimizedImage from '../components/ui/OptimizedImage';
+import ReadingProgress from '../components/reading/ReadingProgress';
+import TableOfContents from '../components/reading/TableOfContents';
+import { useReadingTime, useReadingCompletion } from '../hooks/useReadingTime';
 import { formatDate, formatReadingTime } from '../utils';
 
 export default function ArticlePage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const contentRef = useRef<HTMLDivElement>(null);
+  
   const [article, setArticle] = useState<Article | null>(null);
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,6 +24,18 @@ export default function ArticlePage() {
   const [views_count, setViews_count] = useState(0);
   const [likeLoading, setLikeLoading] = useState(false);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+
+  // 阅读时间计算
+  const readingTime = useReadingTime(article?.content || '', {
+    includeImages: true,
+    includeTables: true
+  });
+
+  // 阅读完成监听
+  useReadingCompletion(() => {
+    console.log('文章阅读完成！');
+    // 可以在这里添加阅读完成的统计或其他逻辑
+  }, 85); // 阅读85%认为完成
 
   useEffect(() => {
     if (!slug) {
@@ -141,7 +159,18 @@ export default function ArticlePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <>
+      {/* 阅读进度条 */}
+      <ReadingProgress 
+        showPercentage={false}
+        threshold={0.1}
+        color="rgb(59, 130, 246)"
+      />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex gap-8">
+          {/* 主内容区 */}
+          <div className="flex-1 max-w-4xl">
       {/* Notification */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${
@@ -162,18 +191,23 @@ export default function ArticlePage() {
           </div>
         </div>
       )}
-      {/* Article Header */}
-      <article className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-        {/* Cover Image */}
-        {article.cover_image && (
-          <div className="aspect-video overflow-hidden">
-            <img
-              src={article.cover_image}
-              alt={article.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
+            {/* Article Header */}
+            <article 
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
+              role="article"
+              aria-labelledby="article-title"
+            >
+              {/* Cover Image */}
+              {article.cover_image && (
+                <OptimizedImage
+                  src={article.cover_image}
+                  alt={`${article.title} 的封面图片`}
+                  aspectRatio="16/9"
+                  priority={true}
+                  className="w-full h-full object-cover"
+                  placeholder="skeleton"
+                />
+              )}
 
         <div className="p-8">
           {/* Category and Series */}
@@ -204,10 +238,13 @@ export default function ArticlePage() {
             )}
           </div>
 
-          {/* Title */}
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-            {article.title}
-          </h1>
+              {/* Title */}
+              <h1 
+                id="article-title"
+                className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6 leading-tight"
+              >
+                {article.title}
+              </h1>
 
           {/* Meta Info */}
           <div className="flex flex-wrap items-center gap-6 pb-6 mb-8 border-b border-gray-200 dark:border-gray-700">
@@ -234,15 +271,15 @@ export default function ArticlePage() {
               发布于 {formatDate(article.published_at || article.created_at)}
             </div>
 
-            {/* Reading Time */}
-            {article.reading_time > 0 && (
+              {/* Reading Time - 使用新的阅读时间计算 */}
               <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                 </svg>
-                {formatReadingTime(article.reading_time)}
+                <span aria-label={`预计阅读时间: ${readingTime.estimatedTime}`}>
+                  {readingTime.text} · {readingTime.words} 字
+                </span>
               </div>
-            )}
 
             {/* Stats */}
             <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
@@ -292,18 +329,25 @@ export default function ArticlePage() {
             </div>
           )}
 
-          {/* Article Content */}
-          <MarkdownRenderer 
-            content={article.content}
-            className="prose-headings:text-gray-900 dark:prose-headings:text-white
-                       prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-a:text-primary-600 dark:prose-a:text-primary-400
-                       prose-strong:text-gray-900 dark:prose-strong:text-white prose-code:text-primary-600 dark:prose-code:text-primary-400
-                       prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800 prose-blockquote:border-primary-500"
-          />
-        </div>
-      </article>
+              {/* Article Content */}
+              <div 
+                ref={contentRef}
+                className="article-content"
+                role="main"
+                aria-label="文章内容"
+              >
+                <MarkdownRenderer 
+                  content={article.content}
+                  className="prose-headings:text-gray-900 dark:prose-headings:text-white
+                             prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-a:text-primary-600 dark:prose-a:text-primary-400
+                             prose-strong:text-gray-900 dark:prose-strong:text-white prose-code:text-primary-600 dark:prose-code:text-primary-400
+                             prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800 prose-blockquote:border-primary-500"
+                />
+              </div>
+            </div>
+            </article>
 
-      {/* Related Articles */}
+            {/* Related Articles */}
       {relatedArticles.length > 0 && (
         <section className="mt-12">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
@@ -317,13 +361,13 @@ export default function ArticlePage() {
                 className="block bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden"
               >
                 {relatedArticle.cover_image && (
-                  <div className="aspect-video overflow-hidden">
-                    <img
-                      src={relatedArticle.cover_image}
-                      alt={relatedArticle.title}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
+                  <OptimizedImage
+                    src={relatedArticle.cover_image}
+                    alt={`${relatedArticle.title} 的封面图片`}
+                    aspectRatio="16/9"
+                    className="hover:scale-105 transition-transform duration-300"
+                    placeholder="skeleton"
+                  />
                 )}
                 <div className="p-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 line-clamp-2 mb-2">
@@ -343,18 +387,34 @@ export default function ArticlePage() {
         </section>
       )}
 
-      {/* Navigation */}
-      <div className="mt-8 flex justify-center">
-        <Link
-          to="/"
-          className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        >
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          返回首页
-        </Link>
+            {/* Navigation */}
+            <div className="mt-8 flex justify-center">
+              <Link
+                to="/"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                aria-label="返回首页"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                返回首页
+              </Link>
+            </div>
+          </div>
+
+          {/* 侧边栏 - 目录导航 */}
+          <aside className="hidden lg:block w-80 flex-shrink-0">
+            <div className="sticky top-24">
+              <TableOfContents
+                contentSelector=".article-content"
+                maxLevel={3}
+                position="static"
+                className="mb-6"
+              />
+            </div>
+          </aside>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

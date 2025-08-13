@@ -20,6 +20,22 @@ export default {
           900: '#0c4a6e',
         },
       },
+      animation: {
+        'shimmer': 'shimmer 1.5s ease-in-out infinite',
+      },
+      keyframes: {
+        shimmer: {
+          '0%': {
+            'background-position': '0% 50%'
+          },
+          '50%': {
+            'background-position': '100% 50%'
+          },
+          '100%': {
+            'background-position': '0% 50%'
+          }
+        }
+      },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Consolas', 'monospace'],

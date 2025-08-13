@@ -187,13 +187,13 @@ func (c *Config) validate() error {
 
 // GetDSN 获取数据库连接字符串
 func (c *Config) GetDSN() string {
-	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=%s",
-		c.Database.Host,
+	// MySQL DSN格式: username:password@tcp(host:port)/dbname?charset=utf8mb4&parseTime=True&loc=Local
+	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=%s",
 		c.Database.User,
 		c.Database.Password,
-		c.Database.Name,
+		c.Database.Host,
 		c.Database.Port,
-		c.Database.SSLMode,
+		c.Database.Name,
 		c.Database.TimeZone,
 	)
 }

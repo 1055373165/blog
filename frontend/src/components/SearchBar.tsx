@@ -184,6 +184,10 @@ export default function SearchBar({
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
+          data-search-input
+          aria-label="搜索文章、分类、标签"
+          aria-describedby="search-help"
+          role="searchbox"
           className={`block w-full pl-10 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg
                      bg-white dark:bg-gray-800 text-gray-900 dark:text-white
                      placeholder-gray-500 dark:placeholder-gray-400

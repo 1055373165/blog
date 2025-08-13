@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"gorm.io/driver/postgres"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
@@ -38,7 +38,7 @@ func InitDB() error {
 
 	// 创建数据库连接
 	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logLevel),
 		NowFunc: func() time.Time {
 			return time.Now().Local()
@@ -117,8 +117,8 @@ func createIndexes() error {
 	// 为文章浏览表创建索引
 	DB.Exec("CREATE INDEX IF NOT EXISTS idx_article_views_article_date ON article_views(article_id, viewed_at)")
 
-	// 为搜索相关字段创建索引
-	DB.Exec("CREATE INDEX IF NOT EXISTS idx_articles_search ON articles USING gin(to_tsvector('english', title || ' ' || content))")
+	// 为搜索相关字段创建全文索引（MySQL）
+	DB.Exec("CREATE FULLTEXT INDEX IF NOT EXISTS idx_articles_search ON articles(title, content)")
 
 	// 为搜索统计表创建索引
 	DB.Exec("CREATE INDEX IF NOT EXISTS idx_search_statistics_query ON search_statistics(query)")

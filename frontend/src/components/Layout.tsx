@@ -4,12 +4,24 @@ import SearchBar from './SearchBar';
 import ThemeSettings from './ThemeSettings';
 import { BlogStats } from '../types';
 import { statsApi } from '../api';
+import { useKeyboardNavigation, ShortcutsHelp } from '../hooks/useKeyboardNavigation';
 
 export default function Layout() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [themeSettingsOpen, setThemeSettingsOpen] = useState(false);
   const [stats, setStats] = useState<BlogStats | null>(null);
+
+  // 键盘导航
+  const { 
+    isShortcutsHelpVisible, 
+    setIsShortcutsHelpVisible, 
+    shortcuts 
+  } = useKeyboardNavigation({
+    enableArrowKeys: false, // 在导航中禁用方向键
+    enableTabNavigation: true,
+    enableEscapeKey: true
+  });
 
   useEffect(() => {
     loadStats();
@@ -80,7 +92,10 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* 导航栏 */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <header 
+        className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700"
+        role="banner"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -108,7 +123,11 @@ export default function Layout() {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-1 items-center">
+            <nav 
+              className="hidden md:flex space-x-1 items-center"
+              role="navigation"
+              aria-label="主导航"
+            >
               {navigation.map((item) => (
                 <Link
                   key={item.name}
@@ -144,6 +163,9 @@ export default function Layout() {
                 type="button"
                 className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white p-2 rounded-md"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-menu"
+                aria-label={mobileMenuOpen ? '关闭菜单' : '打开菜单'}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {mobileMenuOpen ? (
@@ -158,7 +180,12 @@ export default function Layout() {
 
           {/* Mobile Navigation */}
           {mobileMenuOpen && (
-            <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-700">
+            <div 
+              id="mobile-menu"
+              className="md:hidden py-4 border-t border-gray-200 dark:border-gray-700"
+              role="navigation"
+              aria-label="移动端导航菜单"
+            >
               {/* Mobile Search */}
               <div className="px-3 pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
                 <SearchBar
@@ -207,7 +234,12 @@ export default function Layout() {
       </header>
 
       {/* 主内容区 */}
-      <main className="flex-1">
+      <main 
+        id="main"
+        className="flex-1"
+        role="main"
+        aria-label="主要内容"
+      >
         <Outlet />
       </main>
 
@@ -217,8 +249,19 @@ export default function Layout() {
         onClose={() => setThemeSettingsOpen(false)} 
       />
 
+      {/* 快捷键帮助 */}
+      <ShortcutsHelp
+        isVisible={isShortcutsHelpVisible}
+        onClose={() => setIsShortcutsHelpVisible(false)}
+        shortcuts={shortcuts}
+      />
+
       {/* 页脚 */}
-      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12">
+      <footer 
+        className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12"
+        role="contentinfo"
+        aria-label="网站信息"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* Quick Links */}

@@ -20,7 +20,11 @@
       "Bash(npm run build:*)",
       "Bash(docker exec:*)",
       "Bash(git add:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(pg_isready:*)",
+      "Bash(go get:*)",
+      "Bash(npx tsc:*)",
+      "Bash(./test_mysql_migration.sh:*)"
     ],
     "deny": []
   }
