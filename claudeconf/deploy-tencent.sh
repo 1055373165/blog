@@ -30,7 +30,7 @@ NC='\033[0m'
 
 # 配置变量
 DOMAIN="www.godepth.top"
-PROJECT_DIR="/opt/blog"
+PROJECT_DIR="/root/blog"
 MYSQL_ROOT_PASSWORD=""
 MYSQL_DB_PASSWORD=""
 JWT_SECRET=""
@@ -330,8 +330,12 @@ generate_ssl_certificate() {
 deploy_application() {
     log "部署应用..."
     
+    # 确保项目目录存在
+    mkdir -p $PROJECT_DIR/source
+    
     # 复制项目文件到部署目录
-    if [[ "$PWD" != "$PROJECT_DIR" ]]; then
+    if [[ "$PWD" != "$PROJECT_DIR/source" ]]; then
+        log "复制项目文件到 $PROJECT_DIR/source..."
         cp -r . $PROJECT_DIR/source/
     fi
     
