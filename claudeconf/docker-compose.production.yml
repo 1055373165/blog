@@ -1,0 +1,177 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库 (生产环境独立运行)
+  mysql:
+    image: mysql:8.0
+    container_name: blog_mysql_prod
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-blog_db}
+      MYSQL_USER: ${DB_USER:-blog_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./config/mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - ./logs/mysql:/var/log/mysql
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "3306:3306"
+    networks:
+      - blog_network
+    command: 
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --sql-mode=STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO
+      - --max-connections=1000
+      - --innodb-buffer-pool-size=256M
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: blog_redis_prod
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./config/redis/redis.conf:/etc/redis/redis.conf:ro
+    networks:
+      - blog_network
+    command: redis-server /etc/redis/redis.conf --requirepass "${REDIS_PASSWORD}"
+
+  # 后端API服务
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        - BUILD_ENV=production
+    container_name: blog_backend_prod
+    restart: unless-stopped
+    environment:
+      - GIN_MODE=release
+      - ENVIRONMENT=production
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=${DB_USER:-blog_user}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-blog_db}
+      - DB_TIMEZONE=Asia/Shanghai
+      - DB_SSLMODE=disable
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - API_BASE_URL=${API_BASE_URL:-https://www.godepth.top}
+      - UPLOAD_MAX_SIZE=${UPLOAD_MAX_SIZE:-10485760}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+    ports:
+      - "3001:3001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - blog_network
+    volumes:
+      - ./data/uploads:/app/uploads
+      - ./data/search_index:/app/search_index
+      - ./logs/app:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        - VITE_API_BASE_URL=${API_BASE_URL:-https://www.godepth.top}
+        - NODE_ENV=production
+    container_name: blog_frontend_prod
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - blog_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx 反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: blog_nginx_prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./config/ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+      - ./data/uploads:/var/www/uploads:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - blog_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 备份服务 (可选)
+  backup:
+    image: alpine:latest
+    container_name: blog_backup_prod
+    restart: "no"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - DB_NAME=${DB_NAME:-blog_db}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+    volumes:
+      - ./data/backups:/backups
+      - ./data/uploads:/data/uploads:ro
+      - ./scripts/backup.sh:/backup.sh:ro
+    networks:
+      - blog_network
+    depends_on:
+      - mysql
+    command: sh -c "apk add --no-cache mysql-client && crond -f"
+
+volumes:
+  mysql_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/blog/data/mysql
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/blog/data/redis
+
+networks:
+  blog_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
