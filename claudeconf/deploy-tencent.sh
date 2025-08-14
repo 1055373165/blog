@@ -164,6 +164,22 @@ update_system() {
 
 # 安装Docker
 install_docker() {
+    # 检查Docker是否已安装
+    if command -v docker >/dev/null 2>&1 && systemctl is-active --quiet docker; then
+        log "✓ Docker已安装并运行，跳过安装步骤"
+        
+        # 检查Docker Compose插件
+        if ! docker compose version >/dev/null 2>&1; then
+            log "安装Docker Compose插件..."
+            apt-get update -y
+            apt-get install -y docker-compose-plugin
+        else
+            log "✓ Docker Compose插件已安装"
+        fi
+        
+        return 0
+    fi
+    
     log "安装Docker..."
     
     # 移除旧版本
@@ -191,11 +207,40 @@ install_docker() {
         usermod -aG docker "$SUDO_USER"
     fi
     
-    log "Docker安装完成"
+    # 验证安装
+    if docker --version && docker compose version; then
+        log "✓ Docker安装完成"
+    else
+        error "Docker安装失败"
+    fi
 }
 
 # 安装MySQL
 install_mysql() {
+    # 检查MySQL是否已安装并运行
+    if command -v mysql >/dev/null 2>&1 && systemctl is-active --quiet mysql; then
+        log "✓ MySQL已安装并运行，跳过安装步骤"
+        
+        # 检查数据库连接
+        if mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1;" >/dev/null 2>&1; then
+            log "✓ MySQL root密码验证成功"
+        else
+            warn "MySQL root密码可能不正确，请手动检查"
+            echo -e "${YELLOW}当前配置的root密码: $MYSQL_ROOT_PASSWORD${NC}"
+        fi
+        
+        # 确保应用数据库和用户存在
+        log "检查并创建应用数据库..."
+        mysql -u root -p"$MYSQL_ROOT_PASSWORD" <<EOF || warn "数据库创建可能失败，请手动检查"
+CREATE DATABASE IF NOT EXISTS blog_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS 'blog_user'@'%' IDENTIFIED BY '$MYSQL_DB_PASSWORD';
+GRANT ALL PRIVILEGES ON blog_db.* TO 'blog_user'@'%';
+FLUSH PRIVILEGES;
+EOF
+        
+        return 0
+    fi
+    
     log "安装MySQL..."
     
     # 设置MySQL root密码
@@ -224,7 +269,12 @@ EOF
     sed -i 's/bind-address.*=.*127.0.0.1/bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf
     systemctl restart mysql
     
-    log "MySQL安装配置完成"
+    # 验证安装
+    if mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1;" >/dev/null 2>&1; then
+        log "✓ MySQL安装配置完成"
+    else
+        error "MySQL安装失败或密码配置错误"
+    fi
 }
 
 # 确保系统Nginx不冲突
