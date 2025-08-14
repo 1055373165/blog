@@ -330,17 +330,6 @@ generate_ssl_certificate() {
 deploy_application() {
     log "部署应用..."
     
-    # 确保项目目录存在
-    mkdir -p $PROJECT_DIR/source
-    
-    # 复制项目文件到部署目录
-    if [[ "$PWD" != "$PROJECT_DIR/source" ]]; then
-        log "复制项目文件到 $PROJECT_DIR/source..."
-        cp -r . $PROJECT_DIR/source/
-    fi
-    
-    cd $PROJECT_DIR/source
-    
     # 创建环境配置文件
     cat > .env.prod <<EOF
 # 数据库配置
