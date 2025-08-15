@@ -142,6 +142,8 @@ func LoadConfig() error {
 			AllowedOrigins: getSliceEnv("ALLOWED_ORIGINS", []string{
 				"http://localhost:3000",
 				"http://localhost:5173",
+				"http://localhost:5174",
+				"http://localhost:5175",
 			}),
 			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 			AllowedHeaders: []string{"Origin", "Content-Type", "Authorization"},

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { articlesApi } from '../api';
 import { apiClient } from '../api/client';
@@ -6,7 +6,7 @@ import { SearchFilters } from '../types';
 import ArticleCard from '../components/ArticleCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
-import SearchBar from '../components/SearchBar';
+import SearchBar, { SearchBarRef } from '../components/SearchBar';
 import AdvancedSearchFilter from '../components/AdvancedSearchFilter';
 import SavedSearches from '../components/SavedSearches';
 import SearchStats from '../components/SearchStats';
@@ -37,6 +37,7 @@ export default function SearchPage() {
     sort_order: 'desc',
   });
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const searchBarRef = useRef<SearchBarRef>(null);
 
   // Debounced search function
   const debouncedSearch = useCallback(
@@ -145,7 +146,25 @@ export default function SearchPage() {
   // Handle search with filters
   const handleSearch = () => {
     setCurrentPage(1);
-    debouncedSearch(filters, 1);
+    
+    // Get current query from SearchBar
+    const currentQuery = searchBarRef.current?.getCurrentQuery() || '';
+    
+    // Update filters with current query from input
+    const updatedFilters = { ...filters, query: currentQuery };
+    setFilters(updatedFilters);
+    setQuery(currentQuery);
+    
+    // Update URL parameters
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (currentQuery) {
+      newSearchParams.set('q', currentQuery);
+    } else {
+      newSearchParams.delete('q');
+    }
+    setSearchParams(newSearchParams);
+    
+    debouncedSearch(updatedFilters, 1);
   };
 
   // Reset all filters
@@ -201,6 +220,7 @@ export default function SearchPage() {
       {/* Search Bar */}
       <div className="max-w-2xl mx-auto mb-8">
         <SearchBar
+          ref={searchBarRef}
           initialQuery={query}
           placeholder="搜索文章、分类、标签..."
           size="lg"

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchSuggestions from './SearchSuggestions';
 import { debounce } from '../utils';
@@ -12,14 +12,18 @@ interface SearchBarProps {
   className?: string;
 }
 
-export default function SearchBar({
+export interface SearchBarRef {
+  getCurrentQuery: () => string;
+}
+
+const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(({
   initialQuery = '',
   placeholder = '搜索文章、分类、标签...',
   size = 'md',
   showSuggestions = true,
   onSearch,
   className = '',
-}: SearchBarProps) {
+}, ref) => {
   const [query, setQuery] = useState(initialQuery);
   const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +31,11 @@ export default function SearchBar({
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    getCurrentQuery: () => query,
+  }));
 
   // Sync with initialQuery prop changes
   useEffect(() => {
@@ -283,4 +292,6 @@ export default function SearchBar({
       )}
     </div>
   );
-}
+});
+
+export default SearchBar;
