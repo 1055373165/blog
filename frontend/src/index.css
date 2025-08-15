@@ -178,3 +178,60 @@ a {
 html {
   scroll-behavior: smooth;
 }
+
+/* Go Depth Hero Animations */
+@keyframes channel-flow {
+  0% {
+    opacity: 0.3;
+    transform: translateX(-100%);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.3;
+    transform: translateX(100%);
+  }
+}
+
+@keyframes gopher-breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes code-type {
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.channel-flow {
+  animation: channel-flow 3s ease-in-out infinite;
+}
+
+.gopher-breathe {
+  animation: gopher-breathe 2s ease-in-out infinite;
+}
+
+.delayed-300 {
+  animation-delay: 300ms;
+}
+
+.delayed-700 {
+  animation-delay: 700ms;
+}
+
+.delayed-1000 {
+  animation-delay: 1000ms;
+}
+
+.delay-1500 {
+  animation-delay: 1500ms;
+}

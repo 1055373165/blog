@@ -2,6 +2,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import SearchBar from './SearchBar';
 import ThemeSettings from './ThemeSettings';
+import GoDepthLogo from './GoDepthLogo';
 import { BlogStats } from '../types';
 import { statsApi } from '../api';
 import { useKeyboardNavigation, ShortcutsHelp } from '../hooks/useKeyboardNavigation';
@@ -101,14 +102,7 @@ export default function Layout() {
             {/* Logo */}
             <div className="flex items-center">
               <Link to="/" className="flex items-center">
-                <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <h1 className="ml-3 text-xl font-bold text-gray-900 dark:text-white">
-                  我的博客
-                </h1>
+                <GoDepthLogo size="sm" showText={true} animated={true} />
               </Link>
             </div>
 
