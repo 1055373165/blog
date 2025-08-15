@@ -201,7 +201,8 @@ function TocItemComponent({
   isCollapsed = false,
   onToggle,
   onClick,
-  autoCollapse = false
+  autoCollapse = false,
+  activeId
 }: {
   item: TocItem;
   isActive: boolean;
@@ -211,6 +212,7 @@ function TocItemComponent({
   onToggle?: (id: string) => void;
   onClick?: (id: string) => void;
   autoCollapse?: boolean;
+  activeId?: string;
 }) {
   const hasChildren = item.children && item.children.length > 0;
   const shouldShowChildren = hasChildren && (!autoCollapse || isActive || !isCollapsed);
@@ -299,12 +301,13 @@ function TocItemComponent({
             <TocItemComponent
               key={child.id}
               item={child}
-              isActive={child.id === item.id} // 这里应该传入真实的 activeId
+              isActive={child.id === activeId}
               level={level + 1}
               showNumbers={showNumbers}
               onToggle={onToggle}
               onClick={onClick}
               autoCollapse={autoCollapse}
+              activeId={activeId}
             />
           ))}
         </ul>
@@ -349,6 +352,9 @@ export default function TableOfContents({
   }, []);
 
   const handleItemClick = useCallback((id: string) => {
+    // 通知父组件项目被点击
+    onActiveChange?.(id);
+    
     // 点击时自动展开父级
     if (autoCollapse) {
       setCollapsedItems(prev => {
@@ -376,7 +382,7 @@ export default function TableOfContents({
         return newSet;
       });
     }
-  }, [autoCollapse, tocItems]);
+  }, [autoCollapse, tocItems, onActiveChange]);
 
   // 如果没有目录项，不渲染
   if (tocItems.length === 0) {
@@ -430,6 +436,7 @@ export default function TableOfContents({
             onToggle={isCollapsible ? toggleCollapse : undefined}
             onClick={handleItemClick}
             autoCollapse={autoCollapse}
+            activeId={activeId}
           />
         ))}
       </ul>

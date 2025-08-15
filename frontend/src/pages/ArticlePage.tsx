@@ -6,7 +6,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import OptimizedImage from '../components/ui/OptimizedImage';
 import ReadingProgress from '../components/reading/ReadingProgress';
-import TableOfContents from '../components/reading/TableOfContents';
+import CollapsibleTOC from '../components/reading/CollapsibleTOC';
 import { useReadingTime } from '../hooks/useReadingTime';
 import { useReadingCompletion } from '../components/reading/ReadingProgress';
 import { formatDate, formatReadingTime } from '../utils';
@@ -168,10 +168,9 @@ export default function ArticlePage() {
         color="rgb(59, 130, 246)"
       />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-8">
-          {/* 主内容区 */}
-          <div className="flex-1 max-w-4xl">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 主内容区 */}
+        <div className="w-full">
       {/* Notification */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${
@@ -401,20 +400,15 @@ export default function ArticlePage() {
                 返回首页
               </Link>
             </div>
-          </div>
-
-          {/* 侧边栏 - 目录导航 */}
-          <aside className="hidden lg:block w-80 flex-shrink-0">
-            <div className="sticky top-24">
-              <TableOfContents
-                contentSelector=".article-content"
-                maxLevel={3}
-                position="static"
-                className="mb-6"
-              />
-            </div>
-          </aside>
         </div>
+
+        {/* Substack-style Collapsible TOC */}
+        <CollapsibleTOC
+          contentSelector=".article-content"
+          maxLevel={3}
+          showNumbers={false}
+          autoCollapse={false}
+        />
       </div>
     </>
   );
