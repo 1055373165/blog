@@ -33,8 +33,8 @@ export default function SearchPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<SearchFilters>({
     query: searchParams.get('q') || '',
-    sortby: 'created_at',
-    sortOrder: 'desc',
+    sort_by: 'published_at',
+    sort_order: 'desc',
   });
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
@@ -63,8 +63,8 @@ export default function SearchPage() {
         if (searchFilters.is_published !== undefined) {
           queryParams.set('is_published', searchFilters.is_published.toString());
         }
-        if (searchFilters.sortby) queryParams.set('sort_by', searchFilters.sortby);
-        if (searchFilters.sortOrder) queryParams.set('sort_order', searchFilters.sortOrder);
+        if (searchFilters.sort_by) queryParams.set('sort_by', searchFilters.sort_by);
+        if (searchFilters.sort_order) queryParams.set('sort_order', searchFilters.sort_order);
 
         const data = await apiClient.get(`/api/search?${queryParams}`);
 
@@ -84,8 +84,8 @@ export default function SearchPage() {
     []
   );
 
-  // Handle search input changes
-  const handleSearchChange = (value: string) => {
+  // Handle search submission (only triggered by Enter or search button)
+  const handleSearchSubmit = (value: string) => {
     setQuery(value);
     setCurrentPage(1);
     
@@ -101,12 +101,8 @@ export default function SearchPage() {
     }
     setSearchParams(newSearchParams);
 
-    // Perform search
-    if (value.trim() || hasActiveFilters(updatedFilters)) {
-      debouncedSearch(updatedFilters, 1);
-    } else {
-      setResults(null);
-    }
+    // Perform search - always search when explicitly triggered
+    debouncedSearch(updatedFilters, 1);
   };
 
   // Handle page changes
@@ -156,8 +152,8 @@ export default function SearchPage() {
   const handleResetFilters = () => {
     const resetFilters: SearchFilters = {
       query: '',
-      sortby: 'created_at',
-      sortOrder: 'desc',
+      sort_by: 'published_at',
+      sort_order: 'desc',
     };
     setFilters(resetFilters);
     setQuery('');
@@ -174,8 +170,8 @@ export default function SearchPage() {
       filtersToCheck.date_from ||
       filtersToCheck.date_to ||
       filtersToCheck.is_published !== undefined ||
-      (filtersToCheck.sortby && filtersToCheck.sortby !== 'created_at') ||
-      (filtersToCheck.sortOrder && filtersToCheck.sortOrder !== 'desc')
+      (filtersToCheck.sort_by && filtersToCheck.sort_by !== 'published_at') ||
+      (filtersToCheck.sort_order && filtersToCheck.sort_order !== 'desc')
     );
   };
 
@@ -209,7 +205,7 @@ export default function SearchPage() {
           placeholder="搜索文章、分类、标签..."
           size="lg"
           showSuggestions={true}
-          onSearch={handleSearchChange}
+          onSearch={handleSearchSubmit}
           className="w-full"
         />
       </div>
@@ -236,7 +232,7 @@ export default function SearchPage() {
       </div>
 
       {/* Search Results */}
-      {(query || hasActiveFilters()) && (
+      {(query || hasActiveFilters() || results) && (
         <>
           {/* Results Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -291,7 +287,7 @@ export default function SearchPage() {
                   {error}
                 </p>
                 <button
-                  onClick={() => handleSearchChange(query)}
+                  onClick={() => handleSearchSubmit(query)}
                   className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
                 >
                   重试
@@ -531,7 +527,7 @@ export default function SearchPage() {
                     {['React', 'TypeScript', 'Go', '数据库', '前端', '后端'].map((term) => (
                       <button
                         key={term}
-                        onClick={() => handleSearchChange(term)}
+                        onClick={() => handleSearchSubmit(term)}
                         className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                       >
                         {term}

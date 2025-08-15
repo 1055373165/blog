@@ -12,17 +12,47 @@ const colorThemeOptions: Array<{ value: ColorTheme; label: string; icon: string 
   { value: 'system', label: '跟随系统', icon: '💻' },
 ];
 
-const codeThemeOptions: Array<{ value: CodeTheme; label: string; preview: string }> = [
-  { value: 'vs', label: 'VS Light', preview: '#FFFFFF' },
-  { value: 'vscDarkPlus', label: 'VS Dark+', preview: '#1E1E1E' },
-  { value: 'github', label: 'GitHub Light', preview: '#F6F8FA' },
-  { value: 'tomorrow', label: 'Tomorrow', preview: '#FFFFFF' },
-  { value: 'twilight', label: 'Twilight', preview: '#141414' },
-  { value: 'monokai', label: 'Monokai', preview: '#272822' },
-  { value: 'dracula', label: 'Dracula', preview: '#282A36' },
-  { value: 'nord', label: 'Nord', preview: '#2E3440' },
-  { value: 'oneLight', label: 'One Light', preview: '#FAFAFA' },
-  { value: 'oneDark', label: 'One Dark', preview: '#282C34' },
+const codeThemeOptions: Array<{ value: CodeTheme; label: string; preview: string; category: string }> = [
+  // 经典主题
+  { value: 'vs', label: 'VS Light', preview: '#FFFFFF', category: '经典' },
+  { value: 'vscDarkPlus', label: 'VS Dark+', preview: '#1E1E1E', category: '经典' },
+  { value: 'github', label: 'GitHub Light', preview: '#F6F8FA', category: '经典' },
+  { value: 'tomorrow', label: 'Tomorrow', preview: '#FFFFFF', category: '经典' },
+  { value: 'twilight', label: 'Twilight', preview: '#141414', category: '经典' },
+  { value: 'monokai', label: 'Monokai', preview: '#272822', category: '经典' },
+  { value: 'dracula', label: 'Dracula', preview: '#282A36', category: '经典' },
+  { value: 'nord', label: 'Nord', preview: '#2E3440', category: '经典' },
+  { value: 'oneLight', label: 'One Light', preview: '#FAFAFA', category: '经典' },
+  { value: 'oneDark', label: 'One Dark', preview: '#282C34', category: '经典' },
+  
+  // 现代化主题
+  { value: 'materialDark', label: 'Material Dark', preview: '#263238', category: '现代' },
+  { value: 'materialLight', label: 'Material Light', preview: '#FAFAFA', category: '现代' },
+  { value: 'atomDark', label: 'Atom Dark', preview: '#1D1F21', category: '现代' },
+  { value: 'coldarkCold', label: 'Coldark Cold', preview: '#E3F6F5', category: '现代' },
+  { value: 'coldarkDark', label: 'Coldark Dark', preview: '#111B27', category: '现代' },
+  { value: 'nightOwl', label: 'Night Owl', preview: '#011627', category: '现代' },
+  { value: 'synthwave84', label: 'Synthwave 84', preview: '#262335', category: '现代' },
+  { value: 'shadesOfPurple', label: 'Shades of Purple', preview: '#2D2B55', category: '现代' },
+  { value: 'lucario', label: 'Lucario', preview: '#2B3E50', category: '现代' },
+  { value: 'okaidia', label: 'Okaidia', preview: '#272822', category: '现代' },
+  { value: 'darcula', label: 'Darcula', preview: '#2B2B2B', category: '现代' },
+  { value: 'solarizedlight', label: 'Solarized Light', preview: '#FDF6E3', category: '现代' },
+  
+  // 双色主题
+  { value: 'duotoneDark', label: 'Duotone Dark', preview: '#2A2734', category: '双色' },
+  { value: 'duotoneLight', label: 'Duotone Light', preview: '#FAF8F5', category: '双色' },
+  
+  // Atelier 系列 - 精选几个最优雅的
+  { value: 'atelierForestLight', label: 'Forest Light', preview: '#F1F3F4', category: 'Atelier' },
+  { value: 'atelierForestDark', label: 'Forest Dark', preview: '#1B1918', category: 'Atelier' },
+  { value: 'atelierLakesideLight', label: 'Lakeside Light', preview: '#EBF8FF', category: 'Atelier' },
+  { value: 'atelierLakesideDark', label: 'Lakeside Dark', preview: '#161B1D', category: 'Atelier' },
+  { value: 'atelierSeasideLight', label: 'Seaside Light', preview: '#F4F9F4', category: 'Atelier' },
+  { value: 'atelierSeasideDark', label: 'Seaside Dark', preview: '#131513', category: 'Atelier' },
+  
+  // 极客主题
+  { value: 'geek', label: 'Geek 黑客', preview: '#000000', category: '极客' },
 ];
 
 const fontSizeOptions = [
@@ -133,35 +163,50 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
             {activeTab === 'code' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
                     代码高亮主题
                   </h3>
-                  <div className="grid grid-cols-1 gap-2">
-                    {codeThemeOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => updateCodeTheme(option.value)}
-                        className={`flex items-center p-3 rounded-lg border-2 transition-all ${
-                          settings.codeTheme === option.value
-                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                        }`}
-                      >
-                        <div 
-                          className="w-6 h-6 rounded border mr-3"
-                          style={{ backgroundColor: option.preview }}
-                        />
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {option.label}
-                        </span>
-                        {settings.codeTheme === option.value && (
-                          <svg className="w-4 h-4 ml-auto text-primary-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </button>
-                    ))}
-                  </div>
+                  
+                  {/* 按分类显示主题 */}
+                  {['极客', '现代', '经典', '双色', 'Atelier'].map((category) => {
+                    const categoryThemes = codeThemeOptions.filter(option => option.category === category);
+                    if (categoryThemes.length === 0) return null;
+                    
+                    return (
+                      <div key={category} className="mb-6">
+                        <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                          {category === '极客' && '🖥️ '}{category === '现代' && '🎨 '}{category === '经典' && '📚 '}{category === '双色' && '🎭 '}{category === 'Atelier' && '🏛️ '}
+                          {category === '极客' ? '极客主题' : category === '现代' ? '现代主题' : category === '经典' ? '经典主题' : category === '双色' ? '双色主题' : 'Atelier 系列'}
+                        </h4>
+                        <div className="grid grid-cols-1 gap-2">
+                          {categoryThemes.map((option) => (
+                            <button
+                              key={option.value}
+                              onClick={() => updateCodeTheme(option.value)}
+                              className={`flex items-center p-3 rounded-lg border-2 transition-all ${
+                                settings.codeTheme === option.value
+                                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                              }`}
+                            >
+                              <div 
+                                className="w-6 h-6 rounded border mr-3"
+                                style={{ backgroundColor: option.preview }}
+                              />
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                {option.label}
+                              </span>
+                              {settings.codeTheme === option.value && (
+                                <svg className="w-4 h-4 ml-auto text-primary-500" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="space-y-4">

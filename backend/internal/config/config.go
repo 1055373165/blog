@@ -107,9 +107,9 @@ func LoadConfig() error {
 		},
 		Database: DatabaseConfig{
 			Host:         getEnv("DB_HOST", "localhost"),
-			Port:         getEnv("DB_PORT", "5432"),
-			User:         getEnv("DB_USER", "postgres"),
-			Password:     getEnv("DB_PASSWORD", ""),
+			Port:         getEnv("DB_PORT", "3306"),
+			User:         getEnv("DB_USER", "root"),
+			Password:     getEnv("DB_PASSWORD", "1234"),
 			Name:         getEnv("DB_NAME", "blog_db"),
 			SSLMode:      getEnv("DB_SSLMODE", "disable"),
 			TimeZone:     getEnv("DB_TIMEZONE", "Asia/Shanghai"),

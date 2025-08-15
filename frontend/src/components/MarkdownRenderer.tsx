@@ -10,9 +10,48 @@ import {
   dracula,
   nord,
   oneLight,
-  oneDark
+  oneDark,
+  materialDark,
+  materialLight,
+  atomDark,
+  base16AteliersulphurpoolLight,
+  coldarkCold,
+  coldarkDark,
+  prism,
+  synthwave84,
+  nightOwl,
+  shadesOfPurple,
+  lucario,
+  duotoneDark,
+  duotoneLight,
+  okaidia,
+  solarizedlight,
+  darcula
 } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { github, monokai } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { 
+  github, 
+  monokai,
+  atelierCaveLight,
+  atelierCaveDark,
+  atelierDuneLight,
+  atelierDuneDark,
+  atelierEstuaryLight,
+  atelierEstuaryDark,
+  atelierForestLight,
+  atelierForestDark,
+  atelierHeathLight,
+  atelierHeathDark,
+  atelierLakesideLight,
+  atelierLakesideDark,
+  atelierPlateauLight,
+  atelierPlateauDark,
+  atelierSavannaLight,
+  atelierSavannaDark,
+  atelierSeasideLight,
+  atelierSeasideDark,
+  atelierSulphurpoolLight,
+  atelierSulphurpoolDark
+} from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface MarkdownRendererProps {
@@ -23,9 +62,83 @@ interface MarkdownRendererProps {
 export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
   const { settings, isDark } = useTheme();
 
+  // 自定义极客主题 - 纯黑色
+  const geekTheme = {
+    'code[class*="language-"]': {
+      color: '#00FF00',
+      background: '#000000',
+      textShadow: '0 0 2px #00FF00',
+      fontFamily: 'JetBrains Mono, Monaco, Consolas, monospace',
+      fontSize: '14px',
+      lineHeight: '1.5',
+      direction: 'ltr',
+      textAlign: 'left',
+      whiteSpace: 'pre',
+      wordSpacing: 'normal',
+      wordBreak: 'normal',
+      wordWrap: 'normal',
+      tabSize: '4',
+      hyphens: 'none',
+    },
+    'pre[class*="language-"]': {
+      color: '#00FF00',
+      background: '#000000',
+      textShadow: '0 0 2px #00FF00',
+      fontFamily: 'JetBrains Mono, Monaco, Consolas, monospace',
+      fontSize: '14px',
+      lineHeight: '1.5',
+      direction: 'ltr',
+      textAlign: 'left',
+      whiteSpace: 'pre',
+      wordSpacing: 'normal',
+      wordBreak: 'normal',
+      wordWrap: 'normal',
+      tabSize: '4',
+      hyphens: 'none',
+      padding: '1rem',
+      margin: '0',
+      overflow: 'auto',
+    },
+    'comment': { color: '#555555', fontStyle: 'italic' },
+    'prolog': { color: '#555555' },
+    'doctype': { color: '#555555' },
+    'cdata': { color: '#555555' },
+    'punctuation': { color: '#00FF00' },
+    'property': { color: '#00FFFF' },
+    'tag': { color: '#FF6600' },
+    'boolean': { color: '#FFFF00' },
+    'number': { color: '#FFFF00' },
+    'constant': { color: '#FFFF00' },
+    'symbol': { color: '#FFFF00' },
+    'deleted': { color: '#FF0000' },
+    'selector': { color: '#00FFFF' },
+    'attr-name': { color: '#00FFFF' },
+    'string': { color: '#FFFF00' },
+    'char': { color: '#FFFF00' },
+    'builtin': { color: '#00FFFF' },
+    'inserted': { color: '#00FF00' },
+    'operator': { color: '#FF6600' },
+    'entity': { color: '#FF6600' },
+    'url': { color: '#00FFFF' },
+    'variable': { color: '#00FFFF' },
+    'atrule': { color: '#FF6600' },
+    'attr-value': { color: '#FFFF00' },
+    'function': { color: '#FF6600' },
+    'class-name': { color: '#00FFFF' },
+    'keyword': { color: '#FF6600', fontWeight: 'bold' },
+    'regex': { color: '#FFFF00' },
+    'important': { color: '#FF0000', fontWeight: 'bold' },
+  };
+
   // 获取代码主题样式
   const getCodeStyle = () => {
+    // 如果是geek主题，返回自定义主题
+    if (settings.codeTheme === 'geek') {
+      return geekTheme;
+    }
+    
     const themeMap = {
+      // 经典主题
       vs,
       vscDarkPlus,
       github,
@@ -36,6 +149,46 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       nord,
       oneLight,
       oneDark,
+      
+      // 现代化主题 - Prism样式
+      materialDark,
+      materialLight,
+      atomDark,
+      coldarkCold,
+      coldarkDark,
+      prism,
+      synthwave84,
+      nightOwl,
+      shadesOfPurple,
+      lucario,
+      duotoneDark,
+      duotoneLight,
+      okaidia,
+      solarizedlight,
+      darcula,
+      base16AteliersulphurpoolLight,
+      
+      // 现代化主题 - HLJS样式
+      atelierCaveLight,
+      atelierCaveDark,
+      atelierDuneLight,
+      atelierDuneDark,
+      atelierEstuaryLight,
+      atelierEstuaryDark,
+      atelierForestLight,
+      atelierForestDark,
+      atelierHeathLight,
+      atelierHeathDark,
+      atelierLakesideLight,
+      atelierLakesideDark,
+      atelierPlateauLight,
+      atelierPlateauDark,
+      atelierSavannaLight,
+      atelierSavannaDark,
+      atelierSeasideLight,
+      atelierSeasideDark,
+      atelierSulphurpoolLight,
+      atelierSulphurpoolDark,
     };
     return themeMap[settings.codeTheme] || vscDarkPlus;
   };
@@ -71,20 +224,23 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             // 多行代码块
             if (!inline && codeString.includes('\n')) {
               return (
-                <div className="relative my-4">
-                  {language && (
-                    <div className="absolute top-2 right-2 text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded z-10">
-                      {language}
-                    </div>
-                  )}
+                <div className="my-1">
                   <SyntaxHighlighter
                     style={getCodeStyle()}
                     language={language || 'text'}
                     PreTag="div"
-                    className={`rounded-lg !mt-0 !mb-0 ${settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-lg' : settings.fontSize === 'xl' ? 'text-xl' : 'text-base'}`}
+                    className={`!mt-0 !mb-0 ${settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-lg' : settings.fontSize === 'xl' ? 'text-xl' : 'text-base'}`}
                     showLineNumbers={settings.lineNumbers}
                     wrapLines={settings.wordWrap}
                     wrapLongLines={settings.wordWrap}
+                    customStyle={{
+                      margin: 0,
+                      padding: '1rem',
+                      backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
+                      border: 'none',
+                      borderRadius: 0,
+                      fontFamily: 'JetBrains Mono, Monaco, Consolas, monospace',
+                    }}
                   >
                     {codeString.replace(/\n$/, '')}
                   </SyntaxHighlighter>
@@ -95,7 +251,12 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             // 行内代码
             return (
               <code
-                className="px-1.5 py-0.5 rounded text-sm font-mono bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
+                className={`px-2 py-1 font-mono bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 ${settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-base' : settings.fontSize === 'xl' ? 'text-lg' : 'text-sm'}`}
+                style={{
+                  backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
+                  color: isDark ? '#e5e7eb' : '#374151',
+                  fontFamily: 'JetBrains Mono, Monaco, Consolas, monospace',
+                }}
               >
                 {codeString}
               </code>
@@ -192,7 +353,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             <img
               src={src}
               alt={alt}
-              className="rounded-lg shadow-md max-w-full h-auto my-4"
+              className="max-w-full h-auto my-4"
               loading="lazy"
             />
           ),

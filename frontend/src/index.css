@@ -34,17 +34,40 @@ body {
   @apply bg-gray-400 dark:bg-gray-500;
 }
 
-/* 代码块样式 */
+/* 代码块样式 - 扁平设计 */
+:root {
+  --code-bg: #f3f4f6;
+  --code-text: #374151;
+  --inline-code-bg: #f3f4f6;
+  --inline-code-text: #374151;
+}
+
+[data-theme="dark"] {
+  --code-bg: #1f2937;
+  --code-text: #e5e7eb;
+  --inline-code-bg: #1f2937;
+  --inline-code-text: #e5e7eb;
+}
+
 pre {
-  @apply bg-gray-50 dark:bg-gray-800 rounded-lg p-4 overflow-x-auto;
+  @apply bg-gray-100 dark:bg-gray-800 p-4 overflow-x-auto font-mono leading-relaxed;
+  background-color: var(--code-bg);
+  color: var(--code-text);
+  border: none;
+  border-radius: 0;
+  margin: 0.25rem 0;
 }
 
 code {
-  @apply font-mono text-sm bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded;
+  @apply font-mono px-2 py-1 bg-gray-100 dark:bg-gray-800;
+  background-color: var(--inline-code-bg);
+  color: var(--inline-code-text);
+  border-radius: 0;
 }
 
 pre code {
   @apply bg-transparent p-0;
+  background-color: transparent;
 }
 
 /* 文本截断样式 */

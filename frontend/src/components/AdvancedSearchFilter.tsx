@@ -72,7 +72,7 @@ export default function AdvancedSearchFilter({
     if (filters.date_from) count++;
     if (filters.date_to) count++;
     if (filters.is_published !== undefined) count++;
-    if (filters.sort_by && filters.sort_by !== 'created_at') count++;
+    if (filters.sort_by && filters.sort_by !== 'published_at') count++;
     if (filters.sort_order && filters.sort_order !== 'desc') count++;
     return count;
   };
@@ -261,7 +261,7 @@ export default function AdvancedSearchFilter({
                     排序字段
                   </label>
                   <select
-                    value={filters.sort_by || 'created_at'}
+                    value={filters.sort_by || 'published_at'}
                     onChange={(e) => handleFilterChange('sort_by', e.target.value as any)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md
                                bg-white dark:bg-gray-800 text-gray-900 dark:text-white

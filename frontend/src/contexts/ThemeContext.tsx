@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 export type ColorTheme = 'light' | 'dark' | 'system';
 
 export type CodeTheme = 
+  // 经典主题
   | 'vs'
   | 'vscDarkPlus'  
   | 'github'
@@ -12,7 +13,47 @@ export type CodeTheme =
   | 'dracula'
   | 'nord'
   | 'oneLight'
-  | 'oneDark';
+  | 'oneDark'
+  // 现代化主题
+  | 'materialDark'
+  | 'materialLight'
+  | 'atomDark'
+  | 'coldarkCold'
+  | 'coldarkDark'
+  | 'prism'
+  | 'synthwave84'
+  | 'nightOwl'
+  | 'shadesOfPurple'
+  | 'lucario'
+  | 'duotoneDark'
+  | 'duotoneLight'
+  | 'okaidia'
+  | 'solarizedlight'
+  | 'darcula'
+  | 'base16AteliersulphurpoolLight'
+  // Atelier 系列
+  | 'atelierCaveLight'
+  | 'atelierCaveDark'
+  | 'atelierDuneLight'
+  | 'atelierDuneDark'
+  | 'atelierEstuaryLight'
+  | 'atelierEstuaryDark'
+  | 'atelierForestLight'
+  | 'atelierForestDark'
+  | 'atelierHeathLight'
+  | 'atelierHeathDark'
+  | 'atelierLakesideLight'
+  | 'atelierLakesideDark'
+  | 'atelierPlateauLight'
+  | 'atelierPlateauDark'
+  | 'atelierSavannaLight'
+  | 'atelierSavannaDark'
+  | 'atelierSeasideLight'
+  | 'atelierSeasideDark'
+  | 'atelierSulphurpoolLight'
+  | 'atelierSulphurpoolDark'
+  // 极客主题
+  | 'geek';
 
 interface ThemeSettings {
   colorTheme: ColorTheme;

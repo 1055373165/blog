@@ -28,6 +28,11 @@ export default function SearchBar({
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+  // Sync with initialQuery prop changes
+  useEffect(() => {
+    setQuery(initialQuery || '');
+  }, [initialQuery]);
+
   // Load recent searches from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('recent-searches');
@@ -67,7 +72,7 @@ export default function SearchBar({
     }
   };
 
-  // Handle input changes with debouncing
+  // Handle input changes with debouncing (only for suggestions, not search)
   const debouncedShowSuggestions = debounce(() => {
     if (query.length >= 2) {
       setShowSuggestionsPanel(true);
@@ -78,6 +83,7 @@ export default function SearchBar({
     const value = e.target.value;
     setQuery(value);
     
+    // Only show suggestions, don't trigger search
     if (showSuggestions) {
       if (value.length >= 2) {
         debouncedShowSuggestions();

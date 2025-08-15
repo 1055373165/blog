@@ -7,6 +7,8 @@ import MarkdownRenderer from '../components/MarkdownRenderer';
 import OptimizedImage from '../components/ui/OptimizedImage';
 import ReadingProgress from '../components/reading/ReadingProgress';
 import CollapsibleTOC from '../components/reading/CollapsibleTOC';
+import StripTOC from '../components/reading/StripTOC';
+import SubstackLayout from '../components/SubstackLayout';
 import { useReadingTime } from '../hooks/useReadingTime';
 import { useReadingCompletion } from '../components/reading/ReadingProgress';
 import { formatDate, formatReadingTime } from '../utils';
@@ -167,10 +169,7 @@ export default function ArticlePage() {
         threshold={0.1}
         color="rgb(59, 130, 246)"
       />
-      
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 主内容区 */}
-        <div className="w-full">
+
       {/* Notification */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${
@@ -191,25 +190,39 @@ export default function ArticlePage() {
           </div>
         </div>
       )}
-            {/* Article Header */}
-            <article 
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
-              role="article"
-              aria-labelledby="article-title"
-            >
-              {/* Cover Image */}
-              {article.cover_image && (
+
+      {/* Substack-style Layout */}
+      <SubstackLayout
+        tocContent={
+          <StripTOC
+            contentSelector=".article-content"
+            maxLevel={3}
+            showNumbers={false}
+          />
+        }
+      >
+        <div className="py-8">
+          {/* Article Header */}
+          <article 
+            className="bg-transparent"
+            role="article"
+            aria-labelledby="article-title"
+          >
+            {/* Cover Image */}
+            {article.cover_image && (
+              <div className="mb-8">
                 <OptimizedImage
                   src={article.cover_image}
                   alt={`${article.title} 的封面图片`}
                   aspectRatio="16/9"
                   priority={true}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover rounded-lg"
                   placeholder="skeleton"
                 />
-              )}
+              </div>
+            )}
 
-        <div className="p-8">
+            <div className="">
           {/* Category and Series */}
           <div className="flex flex-wrap items-center gap-3 mb-4">
             {article.category && (
@@ -246,8 +259,8 @@ export default function ArticlePage() {
                 {article.title}
               </h1>
 
-          {/* Meta Info */}
-          <div className="flex flex-wrap items-center gap-6 pb-6 mb-8 border-b border-gray-200 dark:border-gray-700">
+              {/* Meta Info */}
+              <div className="flex flex-wrap items-center gap-6 pb-6 mb-8 border-b border-gray-200 dark:border-gray-700">
             {/* Author */}
             <div className="flex items-center">
               <div className="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-semibold">
@@ -338,10 +351,15 @@ export default function ArticlePage() {
               >
                 <MarkdownRenderer 
                   content={article.content}
-                  className="prose-headings:text-gray-900 dark:prose-headings:text-white
-                             prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-a:text-primary-600 dark:prose-a:text-primary-400
-                             prose-strong:text-gray-900 dark:prose-strong:text-white prose-code:text-primary-600 dark:prose-code:text-primary-400
-                             prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800 prose-blockquote:border-primary-500"
+                  className="prose prose-lg max-w-none
+                             prose-headings:text-gray-900 dark:prose-headings:text-white
+                             prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-p:leading-relaxed
+                             prose-a:text-primary-600 dark:prose-a:text-primary-400
+                             prose-strong:text-gray-900 dark:prose-strong:text-white 
+                             prose-code:text-primary-600 dark:prose-code:text-primary-400
+                             prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800 
+                             prose-blockquote:border-primary-500
+                             prose-img:rounded-lg prose-img:shadow-sm"
                 />
               </div>
             </div>
@@ -358,7 +376,7 @@ export default function ArticlePage() {
               <Link
                 key={relatedArticle.id}
                 to={`/article/${relatedArticle.slug}`}
-                className="block bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden"
+                className="block bg-transparent hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors duration-200 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800"
               >
                 {relatedArticle.cover_image && (
                   <OptimizedImage
@@ -387,22 +405,24 @@ export default function ArticlePage() {
         </section>
       )}
 
-            {/* Navigation */}
-            <div className="mt-8 flex justify-center">
-              <Link
-                to="/"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                aria-label="返回首页"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                返回首页
-              </Link>
-            </div>
+          {/* Navigation */}
+          <div className="mt-12 flex justify-center">
+            <Link
+              to="/"
+              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              aria-label="返回首页"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              返回首页
+            </Link>
+          </div>
         </div>
+      </SubstackLayout>
 
-        {/* Substack-style Collapsible TOC */}
+      {/* Mobile TOC - Keep CollapsibleTOC for mobile devices */}
+      <div className="lg:hidden">
         <CollapsibleTOC
           contentSelector=".article-content"
           maxLevel={3}

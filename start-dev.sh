@@ -58,13 +58,13 @@ echo ""
 echo "📍 服务地址:"
 echo "   前端: http://localhost:5173"
 echo "   后端: http://localhost:3001"
-echo "   数据库: localhost:5432"
+echo "   数据库: localhost:3306"
 echo "   Redis: localhost:6379"
 echo ""
 echo "📖 常用命令:"
 echo "   停止服务: Ctrl+C"
 echo "   查看日志: docker-compose logs -f"
-echo "   重启数据库: docker-compose restart postgres"
+echo "   重启数据库: docker-compose restart mysql"
 echo ""
 echo "⚡ 按 Ctrl+C 停止所有服务"
 
@@ -73,3 +73,4 @@ trap 'echo "🛑 停止服务..."; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; 
 
 # 等待进程结束
 wait
+然后主题
