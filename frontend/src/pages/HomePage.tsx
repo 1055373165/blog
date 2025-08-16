@@ -6,6 +6,7 @@ import ArticleList from '../components/ArticleList';
 import LoadingSpinner from '../components/LoadingSpinner';
 import OptimizedImage from '../components/ui/OptimizedImage';
 import LayoutStabilizer, { CardSkeleton } from '../components/ui/LayoutStabilizer';
+import BookCarousel from '../components/BookCarousel';
 import { useDevPerformanceMonitor } from '../hooks/usePerformanceMonitor';
 import { formatDate } from '../utils';
 
@@ -205,6 +206,17 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* Book Carousel Section */}
+      <section className="mb-16">
+        <BookCarousel 
+          className="shadow-2xl"
+          autoPlay={true}
+          autoPlayInterval={1500}
+          showControls={true}
+          showDots={true}
+        />
+      </section>
 
       {/* Featured Articles */}
       {featuredArticles.length > 0 && (

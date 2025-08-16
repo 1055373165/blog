@@ -22,18 +22,8 @@ const getOptimizedSrc = (src: string, format?: 'webp' | 'jpg' | 'png' | 'auto', 
   // 如果是外部链接，直接返回
   if (src.startsWith('http')) return src;
   
+  // 暂时禁用WebP转换，直接返回原始路径
   // 简单的图片优化策略，实际项目中可以接入图片处理服务
-  const ext = src.split('.').pop()?.toLowerCase();
-  if (!ext) return src;
-  
-  // 根据浏览器支持返回WebP格式（如果支持的话）
-  const supportsWebP = typeof window !== 'undefined' && 
-    document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') === 0;
-  
-  if (format === 'auto' && supportsWebP && ext !== 'svg') {
-    return src.replace(`.${ext}`, '.webp');
-  }
-  
   return src;
 };
 
@@ -55,7 +45,7 @@ const useImageLazyLoading = (priority: boolean = false, threshold = 0.1) => {
       },
       { 
         threshold, 
-        rootMargin: '50px' // 提前50px开始加载
+        rootMargin: '200px' // 扩大预加载范围，确保轮播图中的图片能及时加载
       }
     );
 
@@ -119,15 +109,17 @@ export default function OptimizedImage({
   const optimizedSrc = getOptimizedSrc(src, format, quality);
 
   const handleImageLoad = useCallback(() => {
+    console.log(`图片加载成功: ${src}`);
     setLoaded(true);
     handleLoad();
     onLoad?.();
-  }, [handleLoad, onLoad]);
+  }, [handleLoad, onLoad, src]);
 
   const handleImageError = useCallback(() => {
+    console.error(`图片加载失败: ${src}`);
     setError(true);
     onError?.();
-  }, [onError]);
+  }, [onError, src]);
 
   // 骨架屏样式
   const skeletonClasses = clsx(
@@ -194,6 +186,13 @@ export default function OptimizedImage({
             objectFit: 'cover'
           }}
         />
+      )}
+      
+      {/* 调试信息 */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="absolute top-0 right-0 bg-black/50 text-white text-xs p-1 rounded">
+          {inView ? (loaded ? '✓' : '...') : '👁'}
+        </div>
       )}
       
       {/* 错误状态 */}
