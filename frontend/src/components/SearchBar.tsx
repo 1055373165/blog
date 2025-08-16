@@ -203,11 +203,13 @@ const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(({
           aria-label="搜索文章、分类、标签"
           aria-describedby="search-help"
           role="searchbox"
-          className={`block w-full pl-10 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg
+          className={`block w-full pl-10 pr-12 border border-gray-300 dark:border-gray-600 rounded-xl
                      bg-white dark:bg-gray-800 text-gray-900 dark:text-white
                      placeholder-gray-500 dark:placeholder-gray-400
-                     focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
-                     transition-colors duration-200 ${getSizeClasses()}`}
+                     focus:outline-none focus:ring-2 focus:ring-go-500 focus:border-transparent
+                     hover:border-gray-400 dark:hover:border-gray-500
+                     transition-all duration-200 shadow-sm hover:shadow-md
+                     ${getSizeClasses()}`}
         />
 
         {/* Clear Button */}
@@ -230,14 +232,14 @@ const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(({
         {/* Loading Indicator */}
         {isLoading && (
           <div className="absolute inset-y-0 right-3 flex items-center">
-            <div className="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-4 h-4 border-2 border-go-600 border-t-transparent rounded-full animate-spin"></div>
           </div>
         )}
 
         {/* Search Button */}
         <button
           type="submit"
-          className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
+          className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-go-600 dark:hover:text-go-400 transition-colors duration-200"
         >
           <svg className={getIconSize()} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -247,7 +249,7 @@ const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(({
 
       {/* Suggestions Panel */}
       {showSuggestions && showSuggestionsPanel && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 max-h-96 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-strong border border-gray-200 dark:border-gray-700 z-50 max-h-96 overflow-hidden backdrop-blur-sm">
           {/* Recent Searches */}
           {query.length < 2 && recentSearches.length > 0 && (
             <div className="py-2">

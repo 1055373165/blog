@@ -8,6 +8,36 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
+# 清理正在运行的服务与容器
+echo "🧹 清理端口占用与容器..."
+
+kill_by_port() {
+  local port="$1"
+  # 查找监听该端口的进程
+  local pids
+  pids=$(lsof -ti tcp:"$port" 2>/dev/null)
+  if [ -n "$pids" ]; then
+    echo "  终止占用端口 $port 的进程: $pids"
+    kill $pids 2>/dev/null || true
+    sleep 1
+    # 若仍存在则强杀
+    pids=$(lsof -ti tcp:"$port" 2>/dev/null)
+    if [ -n "$pids" ]; then
+      echo "  发送 SIGKILL 给残留进程: $pids"
+      kill -9 $pids 2>/dev/null || true
+    fi
+  else
+    echo "  端口 $port 空闲"
+  fi
+}
+
+kill_by_port 3001  # 后端
+kill_by_port 5173  # 前端
+
+# 关闭并清理容器（包含孤儿）
+docker-compose down --remove-orphans 2>/dev/null || true
+docker-compose rm -f 2>/dev/null || true
+
 # 检查MySQL是否运行
 echo "🔍 检查MySQL服务..."
 if ! nc -z localhost 3306 2>/dev/null; then
@@ -69,8 +99,7 @@ echo ""
 echo "⚡ 按 Ctrl+C 停止所有服务"
 
 # 捕获中断信号
-trap 'echo "🛑 停止服务..."; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; docker-compose down; exit 0' INT
+trap 'echo "🛑 停止服务..."; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; docker-compose down --remove-orphans; exit 0' INT
 
 # 等待进程结束
 wait
-然后主题

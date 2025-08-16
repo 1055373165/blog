@@ -34,7 +34,8 @@
       "Bash(go clean:*)",
       "Bash(rm:*)",
       "Bash(rg:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

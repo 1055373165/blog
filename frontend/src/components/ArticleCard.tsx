@@ -18,9 +18,9 @@ export default function ArticleCard({
   showStats = true
 }: ArticleCardProps) {
   const cardClasses = {
-    default: 'bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden',
-    compact: 'bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden',
-    featured: 'bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden border border-primary-200 dark:border-primary-700',
+    default: 'bg-white dark:bg-gray-800 rounded-xl shadow-soft hover:shadow-medium border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:-translate-y-1 overflow-hidden',
+    compact: 'bg-white dark:bg-gray-800 rounded-lg shadow-soft hover:shadow-medium border border-gray-100 dark:border-gray-800 transition-all duration-300 hover:-translate-y-0.5 overflow-hidden',
+    featured: 'bg-gradient-to-br from-white via-white to-go-50/30 dark:from-gray-800 dark:via-gray-800 dark:to-go-900/20 rounded-2xl shadow-strong hover:shadow-strong border-2 border-go-200 dark:border-go-800 transition-all duration-300 hover:-translate-y-2 overflow-hidden group',
   };
 
   const titleClasses = {
