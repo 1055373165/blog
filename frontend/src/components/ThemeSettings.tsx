@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useTheme, ColorTheme, CodeTheme } from '../contexts/ThemeContext';
+import { useTheme, ColorTheme, CodeTheme, FontFamily, FontWeight, LineHeight } from '../contexts/ThemeContext';
 
 interface ThemeSettingsProps {
   isOpen: boolean;
@@ -70,10 +70,11 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
     updateFontSize,
     updateLineNumbers,
     updateWordWrap,
+    updateFontSettings,
     resetToDefaults,
   } = useTheme();
 
-  const [activeTab, setActiveTab] = useState<'appearance' | 'code' | 'typography'>('appearance');
+  const [activeTab, setActiveTab] = useState<'appearance' | 'code' | 'typography' | 'fonts'>('appearance');
 
   if (!isOpen) return null;
 
@@ -109,6 +110,7 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
               { id: 'appearance' as const, label: '外观', icon: '🎨' },
               { id: 'code' as const, label: '代码', icon: '💻' },
               { id: 'typography' as const, label: '排版', icon: '📝' },
+              { id: 'fonts' as const, label: '字体', icon: '🅰️' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -278,6 +280,14 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
                 </div>
               </div>
             )}
+
+            {activeTab === 'fonts' && (
+              <div className="space-y-6">
+                <FontFamilySelector />
+                <FontWeightSelector />
+                <LineHeightSelector />
+              </div>
+            )}
           </div>
 
           {/* 底部操作 */}
@@ -291,6 +301,236 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// 字体系列选择器
+function FontFamilySelector() {
+  const { settings, updateFontSettings } = useTheme();
+
+  const fontFamilyOptions: Array<{ 
+    value: FontFamily; 
+    label: string; 
+    preview: string; 
+    category: string; 
+    description?: string; 
+  }> = [
+    // 系统字体
+    { value: 'system', label: '系统默认', preview: 'System UI', category: '系统' },
+    
+    // 西文字体
+    { value: 'inter', label: 'Inter', preview: 'Inter', category: '西文', description: '现代化无衬线字体' },
+    { value: 'roboto', label: 'Roboto', preview: 'Roboto', category: '西文', description: 'Google 设计' },
+    { value: 'open-sans', label: 'Open Sans', preview: 'Open Sans', category: '西文', description: '友好易读' },
+    { value: 'lato', label: 'Lato', preview: 'Lato', category: '西文', description: '优雅简洁' },
+    { value: 'source-sans-pro', label: 'Source Sans Pro', preview: 'Source Sans Pro', category: '西文', description: 'Adobe 出品' },
+    { value: 'poppins', label: 'Poppins', preview: 'Poppins', category: '西文', description: '几何圆润' },
+    { value: 'nunito', label: 'Nunito', preview: 'Nunito', category: '西文', description: '圆润友好' },
+    { value: 'work-sans', label: 'Work Sans', preview: 'Work Sans', category: '西文', description: '工作专用' },
+    
+    // 中文字体
+    { value: 'noto-sans-sc', label: 'Noto Sans SC', preview: '思源黑体', category: '中文', description: 'Google 中文字体' },
+    { value: 'source-han-sans', label: 'Source Han Sans', preview: '思源黑体', category: '中文', description: 'Adobe 中文字体' },
+    { value: 'pingfang-sc', label: 'PingFang SC', preview: '苹方', category: '中文', description: 'Apple 中文字体' },
+    { value: 'microsoft-yahei', label: 'Microsoft YaHei', preview: '微软雅黑', category: '中文', description: 'Windows 系统字体' },
+    { value: 'hiragino-sans-gb', label: 'Hiragino Sans GB', preview: '冬青黑体', category: '中文', description: 'macOS 中文字体' },
+    { value: 'dengxian', label: 'DengXian', preview: '等线', category: '中文', description: 'Office 字体' },
+    { value: 'simhei', label: 'SimHei', preview: '黑体', category: '中文', description: '经典黑体' },
+    { value: 'simsun', label: 'SimSun', preview: '宋体', category: '中文', description: '经典宋体' },
+    
+    // 等宽字体
+    { value: 'jetbrains-mono', label: 'JetBrains Mono', preview: 'JetBrains Mono', category: '等宽', description: '编程专用' },
+    { value: 'fira-code', label: 'Fira Code', preview: 'Fira Code', category: '等宽', description: '连字支持' },
+    { value: 'source-code-pro', label: 'Source Code Pro', preview: 'Source Code Pro', category: '等宽', description: 'Adobe 等宽' },
+    { value: 'cascadia-code', label: 'Cascadia Code', preview: 'Cascadia Code', category: '等宽', description: 'VS Code 字体' },
+    { value: 'sf-mono', label: 'SF Mono', preview: 'SF Mono', category: '等宽', description: 'Apple 等宽' },
+    { value: 'consolas', label: 'Consolas', preview: 'Consolas', category: '等宽', description: 'Windows 等宽' },
+    { value: 'menlo', label: 'Menlo', preview: 'Menlo', category: '等宽', description: 'macOS 等宽' },
+  ];
+
+  return (
+    <div>
+      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
+        字体系列
+      </h3>
+      
+      {/* 正文字体 */}
+      <div className="mb-6">
+        <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+          📖 正文字体
+        </h4>
+        <FontCategoryGrid
+          options={fontFamilyOptions}
+          currentValue={settings.fonts.body}
+          onSelect={(value) => updateFontSettings({ body: value })}
+        />
+      </div>
+
+      {/* 标题字体 */}
+      <div className="mb-6">
+        <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+          📝 标题字体
+        </h4>
+        <FontCategoryGrid
+          options={fontFamilyOptions}
+          currentValue={settings.fonts.heading}
+          onSelect={(value) => updateFontSettings({ heading: value })}
+        />
+      </div>
+
+      {/* 代码字体 */}
+      <div>
+        <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+          💻 代码字体
+        </h4>
+        <FontCategoryGrid
+          options={fontFamilyOptions.filter(opt => opt.category === '等宽')}
+          currentValue={settings.fonts.code}
+          onSelect={(value) => updateFontSettings({ code: value })}
+        />
+      </div>
+    </div>
+  );
+}
+
+// 字体粗细选择器
+function FontWeightSelector() {
+  const { settings, updateFontSettings } = useTheme();
+
+  const fontWeightOptions: Array<{ value: FontWeight; label: string; example: string }> = [
+    { value: 'thin', label: '极细', example: 'font-thin' },
+    { value: 'light', label: '细体', example: 'font-light' },
+    { value: 'normal', label: '正常', example: 'font-normal' },
+    { value: 'medium', label: '中等', example: 'font-medium' },
+    { value: 'semibold', label: '半粗', example: 'font-semibold' },
+    { value: 'bold', label: '粗体', example: 'font-bold' },
+  ];
+
+  return (
+    <div>
+      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+        字体粗细
+      </h3>
+      <div className="grid grid-cols-3 gap-2">
+        {fontWeightOptions.map((option) => (
+          <button
+            key={option.value}
+            onClick={() => updateFontSettings({ weight: option.value })}
+            className={`p-3 rounded-lg border-2 transition-all ${
+              settings.fonts.weight === option.value
+                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+            }`}
+          >
+            <div className={`${option.example} text-gray-900 dark:text-white text-lg`}>
+              Aa
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {option.label}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 行高选择器
+function LineHeightSelector() {
+  const { settings, updateFontSettings } = useTheme();
+
+  const lineHeightOptions: Array<{ value: LineHeight; label: string; example: string; description: string }> = [
+    { value: 'tight', label: '紧密', example: 'leading-tight', description: '适合标题' },
+    { value: 'normal', label: '正常', example: 'leading-normal', description: '平衡选择' },
+    { value: 'relaxed', label: '宽松', example: 'leading-relaxed', description: '易于阅读' },
+    { value: 'loose', label: '很宽松', example: 'leading-loose', description: '最大可读性' },
+  ];
+
+  return (
+    <div>
+      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+        行高
+      </h3>
+      <div className="grid grid-cols-2 gap-2">
+        {lineHeightOptions.map((option) => (
+          <button
+            key={option.value}
+            onClick={() => updateFontSettings({ lineHeight: option.value })}
+            className={`p-3 rounded-lg border-2 transition-all text-left ${
+              settings.fonts.lineHeight === option.value
+                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+            }`}
+          >
+            <div className={`${option.example} text-gray-900 dark:text-white font-medium`}>
+              {option.label}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {option.description}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 字体分类网格组件
+function FontCategoryGrid({ 
+  options, 
+  currentValue, 
+  onSelect 
+}: { 
+  options: Array<{ value: FontFamily; label: string; preview: string; category: string; description?: string }>; 
+  currentValue: FontFamily; 
+  onSelect: (value: FontFamily) => void; 
+}) {
+  const categories = ['系统', '中文', '西文', '等宽'];
+  
+  return (
+    <div className="space-y-4">
+      {categories.map((category) => {
+        const categoryOptions = options.filter(opt => opt.category === category);
+        if (categoryOptions.length === 0) return null;
+        
+        return (
+          <div key={category}>
+            <div className="grid grid-cols-1 gap-2">
+              {categoryOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => onSelect(option.value)}
+                  className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
+                    currentValue === option.value
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {option.label}
+                    </div>
+                    {option.description && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                        {option.description}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300 font-mono">
+                    {option.preview}
+                  </div>
+                  {currentValue === option.value && (
+                    <svg className="w-4 h-4 text-primary-500 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

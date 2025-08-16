@@ -186,10 +186,19 @@ func main() {
 			upload.POST("/image", middleware.AuthRequired(), handlers.UploadImage)
 			upload.POST("/file", middleware.AuthRequired(), handlers.UploadFile)
 		}
+
+		// 书籍相关路由
+		books := api.Group("/books")
+		{
+			books.GET("", handlers.GetBooks)
+			books.POST("/refresh", handlers.RefreshBooks)
+			books.GET("/metadata/:filename", handlers.GetBookMetadata)
+		}
 	}
 
 	// 静态文件服务
 	router.Static("/uploads", cfg.Upload.Path)
+	router.Static("/books", "../frontend/public/books")
 
 	// 启动服务器
 	serverAddr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)

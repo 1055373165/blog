@@ -4,6 +4,7 @@ export { apiClient } from './client';
 export { articlesApi } from './articles';
 export { categoriesApi } from './categories';
 export { tagsApi } from './tags';
+export * from './books';
 
 // 认证相关API
 export const authApi = {

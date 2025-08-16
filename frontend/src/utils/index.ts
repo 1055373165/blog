@@ -269,3 +269,6 @@ export function buildQueryString(params: Record<string, any>): string {
   
   return searchParams.toString();
 }
+
+// 导出缓存工具
+export * from './cache';

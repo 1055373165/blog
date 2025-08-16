@@ -14,7 +14,10 @@ html, body {
 }
 
 body {
-  @apply font-sans antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300;
+  @apply antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300;
+  font-family: var(--font-body, 'Inter', system-ui, sans-serif);
+  font-weight: var(--font-weight, 400);
+  line-height: var(--line-height, 1.5);
 }
 
 /* 滚动条样式 */
@@ -59,7 +62,8 @@ pre {
 }
 
 code {
-  @apply font-mono px-2 py-1 bg-gray-100 dark:bg-gray-800;
+  @apply px-2 py-1 bg-gray-100 dark:bg-gray-800;
+  font-family: var(--font-code, 'JetBrains Mono', 'Consolas', monospace);
   background-color: var(--inline-code-bg);
   color: var(--inline-code-text);
   border-radius: 0;
@@ -91,6 +95,13 @@ pre[class*="language-"] code {
 /* 行号样式 */
 .react-syntax-highlighter-line-number {
   @apply text-gray-400 dark:text-gray-500 select-none mr-4;
+}
+
+/* 标题样式 */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading, var(--font-body, 'Inter', system-ui, sans-serif));
+  font-weight: var(--font-weight, 600);
+  line-height: var(--line-height, 1.25);
 }
 
 /* 链接样式 */

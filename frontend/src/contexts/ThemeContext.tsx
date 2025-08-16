@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { applyFontSettings, preloadGoogleFonts } from '../utils/fontUtils';
 
 export type ColorTheme = 'light' | 'dark' | 'system';
 
@@ -55,12 +56,55 @@ export type CodeTheme =
   // 极客主题
   | 'geek';
 
+export type FontFamily = 
+  // 系统字体
+  | 'system'
+  // 西文字体
+  | 'inter'
+  | 'roboto'
+  | 'open-sans'
+  | 'lato'
+  | 'source-sans-pro'
+  | 'poppins'
+  | 'nunito'
+  | 'work-sans'
+  // 中文字体
+  | 'noto-sans-sc'
+  | 'source-han-sans'
+  | 'pingfang-sc'
+  | 'microsoft-yahei'
+  | 'hiragino-sans-gb'
+  | 'dengxian'
+  | 'simhei'
+  | 'simsun'
+  // 等宽字体
+  | 'jetbrains-mono'
+  | 'fira-code'
+  | 'source-code-pro'
+  | 'cascadia-code'
+  | 'sf-mono'
+  | 'consolas'
+  | 'menlo';
+
+export type FontWeight = 'thin' | 'light' | 'normal' | 'medium' | 'semibold' | 'bold';
+
+export type LineHeight = 'tight' | 'normal' | 'relaxed' | 'loose';
+
+export interface FontSettings {
+  body: FontFamily;
+  heading: FontFamily;
+  code: FontFamily;
+  weight: FontWeight;
+  lineHeight: LineHeight;
+}
+
 interface ThemeSettings {
   colorTheme: ColorTheme;
   codeTheme: CodeTheme;
   fontSize: 'sm' | 'base' | 'lg' | 'xl';
   lineNumbers: boolean;
   wordWrap: boolean;
+  fonts: FontSettings;
 }
 
 interface ThemeContextType {
@@ -71,6 +115,7 @@ interface ThemeContextType {
   updateFontSize: (size: ThemeSettings['fontSize']) => void;
   updateLineNumbers: (enabled: boolean) => void;
   updateWordWrap: (enabled: boolean) => void;
+  updateFontSettings: (fonts: Partial<FontSettings>) => void;
   resetToDefaults: () => void;
 }
 
@@ -80,6 +125,13 @@ const defaultSettings: ThemeSettings = {
   fontSize: 'base',
   lineNumbers: true,
   wordWrap: true,
+  fonts: {
+    body: 'system',
+    heading: 'system',
+    code: 'jetbrains-mono',
+    weight: 'normal',
+    lineHeight: 'normal',
+  },
 };
 
 const STORAGE_KEY = 'blog-theme-settings';
@@ -152,6 +204,20 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
   }, [settings]);
 
+  // 应用字体设置
+  useEffect(() => {
+    applyFontSettings(settings.fonts);
+    
+    // 预加载需要的Google Fonts
+    const fontsToPreload = [settings.fonts.body, settings.fonts.heading, settings.fonts.code];
+    preloadGoogleFonts(fontsToPreload);
+  }, [settings.fonts]);
+
+  // 初始化时应用字体设置
+  useEffect(() => {
+    applyFontSettings(settings.fonts);
+  }, []);
+
   const updateColorTheme = (theme: ColorTheme) => {
     setSettings(prev => ({ ...prev, colorTheme: theme }));
   };
@@ -172,6 +238,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     setSettings(prev => ({ ...prev, wordWrap: enabled }));
   };
 
+  const updateFontSettings = (fonts: Partial<FontSettings>) => {
+    setSettings(prev => ({ ...prev, fonts: { ...prev.fonts, ...fonts } }));
+  };
+
   const resetToDefaults = () => {
     setSettings(defaultSettings);
   };
@@ -184,6 +254,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     updateFontSize,
     updateLineNumbers,
     updateWordWrap,
+    updateFontSettings,
     resetToDefaults,
   };
 
