@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Quote } from '../../types';
 import { useResponsive, useTouch } from '../../hooks/useResponsive';
 import { useScrollLock } from '../../hooks/useScrollLock';
@@ -7,18 +7,41 @@ interface QuoteDetailModalProps {
   quote: Quote | null;
   isOpen: boolean;
   onClose: () => void;
+  onLike?: (quoteId: string, isLiked: boolean) => void;
+  onShare?: (quote: Quote) => void;
+  likesCount?: number;
+  isLiked?: boolean;
 }
 
-export default function QuoteDetailModal({ quote, isOpen, onClose }: QuoteDetailModalProps) {
+export default function QuoteDetailModal({ 
+  quote, 
+  isOpen, 
+  onClose, 
+  onLike, 
+  onShare, 
+  likesCount = 0, 
+  isLiked = false 
+}: QuoteDetailModalProps) {
   const [isFlipping, setIsFlipping] = useState(false);
   const [showContent, setShowContent] = useState(false);
+  const [localLikesCount, setLocalLikesCount] = useState(likesCount);
+  const [localIsLiked, setLocalIsLiked] = useState(isLiked);
+  const [isLiking, setIsLiking] = useState(false);
+  const [showShareTooltip, setShowShareTooltip] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const backContentRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const { isMobile, isTablet } = useResponsive();
   const isTouch = useTouch();
   
   // 使用滚动锁定Hook来保持滚动位置
   useScrollLock(isOpen);
+
+  // 同步props到本地状态
+  useEffect(() => {
+    setLocalLikesCount(likesCount);
+    setLocalIsLiked(isLiked);
+  }, [likesCount, isLiked]);
 
   // 处理打开动画
   useEffect(() => {
@@ -35,11 +58,98 @@ export default function QuoteDetailModal({ quote, isOpen, onClose }: QuoteDetail
     }
   }, [isOpen, quote]);
 
+  // 处理喜欢功能
+  const handleLike = useCallback(async () => {
+    if (!quote || isLiking) return;
+    
+    setIsLiking(true);
+    const newIsLiked = !localIsLiked;
+    const newCount = newIsLiked ? localLikesCount + 1 : localLikesCount - 1;
+    
+    // 乐观更新UI
+    setLocalIsLiked(newIsLiked);
+    setLocalLikesCount(newCount);
+    
+    try {
+      await onLike?.(quote.id, newIsLiked);
+    } catch (error) {
+      // 如果失败，回滚状态
+      setLocalIsLiked(!newIsLiked);
+      setLocalLikesCount(localLikesCount);
+      console.error('点赞失败:', error);
+    } finally {
+      setIsLiking(false);
+    }
+  }, [quote, localIsLiked, localLikesCount, isLiking, onLike]);
+
+  // 处理分享功能
+  const handleShare = useCallback(async () => {
+    if (!quote) return;
+    
+    const shareUrl = `https://www.godepth.top/quotes/${quote.id}`;
+    const shareText = `"${quote.text}" —— ${quote.author}`;
+    
+    try {
+      if (navigator.share) {
+        // 使用原生分享API
+        await navigator.share({
+          title: '技术箴言分享',
+          text: shareText,
+          url: shareUrl,
+        });
+      } else {
+        // 复制到剪贴板
+        await navigator.clipboard.writeText(`${shareText}\n\n查看详情：${shareUrl}`);
+        setShowShareTooltip(true);
+        setTimeout(() => setShowShareTooltip(false), 2000);
+      }
+      
+      onShare?.(quote);
+    } catch (error) {
+      console.error('分享失败:', error);
+      // 降级处理：手动复制
+      try {
+        await navigator.clipboard.writeText(`${shareText}\n\n查看详情：${shareUrl}`);
+        setShowShareTooltip(true);
+        setTimeout(() => setShowShareTooltip(false), 2000);
+      } catch (clipboardError) {
+        console.error('复制到剪贴板失败:', clipboardError);
+      }
+    }
+  }, [quote, onShare]);
+
   // 处理键盘事件
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
-        onClose();
+      if (!isOpen) return;
+      
+      switch (event.key) {
+        case 'Escape':
+          event.preventDefault();
+          handleClose();
+          break;
+        case 'l':
+        case 'L':
+          if (!event.ctrlKey && !event.altKey && !event.metaKey) {
+            event.preventDefault();
+            handleLike();
+          }
+          break;
+        case 's':
+        case 'S':
+          if (!event.ctrlKey && !event.altKey && !event.metaKey) {
+            event.preventDefault();
+            handleShare();
+          }
+          break;
+        case 'Enter':
+        case ' ':
+          // 如果关闭按钮是焦点，触发关闭
+          if (document.activeElement === closeButtonRef.current) {
+            event.preventDefault();
+            handleClose();
+          }
+          break;
       }
     };
 
@@ -50,7 +160,7 @@ export default function QuoteDetailModal({ quote, isOpen, onClose }: QuoteDetail
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, handleLike, handleShare]);
 
   // 处理关闭动画
   const handleClose = () => {
@@ -107,7 +217,13 @@ export default function QuoteDetailModal({ quote, isOpen, onClose }: QuoteDetail
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75 backdrop-blur-sm"
+      className={`
+        fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-500
+        ${isOpen 
+          ? 'bg-black bg-opacity-75 backdrop-blur-sm' 
+          : 'bg-black bg-opacity-0 backdrop-blur-none pointer-events-none'
+        }
+      `}
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
@@ -170,10 +286,23 @@ export default function QuoteDetailModal({ quote, isOpen, onClose }: QuoteDetail
               transform: 'rotateY(180deg)'
             }}
           >
-            <div className="w-full min-h-96 bg-white dark:bg-gray-800 rounded-xl flex overflow-hidden">
+            <div className="w-full min-h-96 bg-white dark:bg-gray-800 rounded-xl flex overflow-hidden relative">
+              {/* 关闭按钮 - 移动到右上角 */}
+              <button
+                ref={closeButtonRef}
+                onClick={handleClose}
+                className="absolute top-4 right-4 z-10 p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all duration-200 ease-in-out hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                aria-label="关闭详情模态框 (Esc)"
+                title="关闭 (Esc)"
+              >
+                <svg className="w-6 h-6 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
               {/* 左页 */}
               <div className="flex-1 p-8 border-r border-gray-200 dark:border-gray-700 flex flex-col min-h-96">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center mb-6 pr-12">
                   <div className="flex items-center">
                     <span className="text-2xl mr-3">{getCategoryIcon(quote.category)}</span>
                     <div>
@@ -185,15 +314,6 @@ export default function QuoteDetailModal({ quote, isOpen, onClose }: QuoteDetail
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={handleClose}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                    aria-label="关闭"
-                  >
-                    <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
                 </div>
 
                 {/* 箴言内容 */}
@@ -302,20 +422,70 @@ export default function QuoteDetailModal({ quote, isOpen, onClose }: QuoteDetail
                 {/* 相关操作 */}
                 <div className="mt-auto">
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                    <div className="flex gap-2">
-                      <button className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-md transition-colors">
-                        💾 收藏
+                    <div className="flex gap-3">
+                      {/* 喜欢按钮 */}
+                      <button 
+                        onClick={handleLike}
+                        disabled={isLiking}
+                        className={`
+                          flex-1 px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ease-in-out
+                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-offset-gray-900
+                          disabled:opacity-50 disabled:cursor-not-allowed
+                          ${localIsLiked 
+                            ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg' 
+                            : 'bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400'
+                          }
+                        `}
+                        aria-label={`${localIsLiked ? '取消喜欢' : '喜欢'} (L键)`}
+                        title={`${localIsLiked ? '取消喜欢' : '喜欢'} (L键)`}
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <span className={`text-base transition-transform duration-200 ${isLiking ? 'animate-pulse' : localIsLiked ? 'animate-bounce' : ''}`}>
+                            {localIsLiked ? '❤️' : '🤍'}
+                          </span>
+                          <span>
+                            {localIsLiked ? '已喜欢' : '喜欢'} 
+                            {localLikesCount > 0 && ` (${localLikesCount})`}
+                          </span>
+                        </div>
                       </button>
-                      <button className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md transition-colors">
-                        🔗 分享
-                      </button>
+                      
+                      {/* 分享按钮 */}
+                      <div className="relative flex-1">
+                        <button 
+                          onClick={handleShare}
+                          className="w-full px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 hover:shadow-lg"
+                          aria-label="分享箴言 (S键)"
+                          title="分享箴言 (S键)"
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-base">🔗</span>
+                            <span>分享</span>
+                          </div>
+                        </button>
+                        
+                        {/* 分享成功提示 */}
+                        {showShareTooltip && (
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-green-500 text-white text-xs rounded-md shadow-lg z-20 whitespace-nowrap">
+                            <div className="flex items-center gap-1">
+                              <span>✅</span>
+                              <span>链接已复制到剪贴板</span>
+                            </div>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-2 h-2 bg-green-500 rotate-45"></div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {/* 页脚信息 */}
-                  <div className="mt-4 text-center text-xs text-gray-400">
+                  <div className="mt-4 text-center text-xs text-gray-400 space-y-1">
                     <p>技术箴言 · 启发思考</p>
-                    <p className="mt-1">按 ESC 键关闭</p>
+                    <div className="flex flex-wrap justify-center gap-2 text-xs">
+                      <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-[10px]">Esc</kbd> 关闭</span>
+                      <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-[10px]">L</kbd> 喜欢</span>
+                      <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-[10px]">S</kbd> 分享</span>
+                    </div>
                   </div>
                 </div>
               </div>

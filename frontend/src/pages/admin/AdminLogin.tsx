@@ -15,7 +15,7 @@ export default function AdminLogin() {
 
   // 如果已登录且是管理员，重定向到管理后台
   useEffect(() => {
-    if (isAuthenticated && user?.isAdmin) {
+    if (isAuthenticated && user?.is_admin) {
       const from = location.state?.from?.pathname || '/admin';
       navigate(from, { replace: true });
     }

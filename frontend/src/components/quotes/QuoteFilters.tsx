@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo, useMemo, useCallback } from 'react';
 import { QuoteFilters as QuoteFiltersType, QuoteCategory } from '../../types';
 
 interface QuoteFiltersProps {
@@ -8,7 +8,16 @@ interface QuoteFiltersProps {
   availableTags: string[];
 }
 
-export default function QuoteFilters({ 
+// Precomputed category labels for better performance
+const CATEGORY_LABELS = {
+  programming: '编程',
+  architecture: '架构',
+  management: '管理',
+  philosophy: '哲学',
+  design: '设计',
+} as const;
+
+function QuoteFilters({ 
   filters, 
   onFiltersChange, 
   availableCategories, 
@@ -16,41 +25,49 @@ export default function QuoteFilters({
 }: QuoteFiltersProps) {
   const [searchInput, setSearchInput] = useState(filters.search || '');
 
-  const handleSearchSubmit = () => {
+  // Memoize event handlers to prevent unnecessary re-renders
+  const handleSearchSubmit = useCallback(() => {
     onFiltersChange({ ...filters, search: searchInput || undefined });
-  };
+  }, [onFiltersChange, filters, searchInput]);
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+  const handleSearchKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSearchSubmit();
     }
-  };
+  }, [handleSearchSubmit]);
 
-  const handleSearchInputChange = (value: string) => {
+  const handleSearchInputChange = useCallback((value: string) => {
     setSearchInput(value);
-  };
+  }, []);
 
-  const handleCategoryChange = (category: QuoteCategory | '') => {
+  const handleCategoryChange = useCallback((category: QuoteCategory | '') => {
     onFiltersChange({ ...filters, category: category || undefined });
-  };
+  }, [onFiltersChange, filters]);
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setSearchInput('');
     onFiltersChange({});
-  };
+  }, [onFiltersChange]);
 
-  const getCategoryLabel = (category: QuoteCategory) => {
-    const labels = {
-      programming: '编程',
-      architecture: '架构',
-      management: '管理',
-      philosophy: '哲学',
-      design: '设计',
-    };
-    return labels[category] || category;
-  };
-
-  const hasActiveFilters = !!(filters.search || filters.category || filters.tags?.length);
+  // Memoize computed values
+  const hasActiveFilters = useMemo(() => {
+    return !!(filters.search || filters.category || filters.tags?.length);
+  }, [filters.search, filters.category, filters.tags?.length]);
+  
+  const getCategoryLabel = useCallback((category: QuoteCategory) => {
+    return CATEGORY_LABELS[category] || category;
+  }, []);
+  
+  // Memoize search clear handler
+  const handleSearchClear = useCallback(() => {
+    setSearchInput('');
+    onFiltersChange({ ...filters, search: undefined });
+  }, [onFiltersChange, filters]);
+  
+  // Memoize category clear handler
+  const handleCategoryClear = useCallback(() => {
+    handleCategoryChange('');
+  }, [handleCategoryChange]);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-soft border border-gray-200 dark:border-gray-700 p-4">
@@ -128,10 +145,7 @@ export default function QuoteFilters({
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200">
                 搜索: "{filters.search}"
                 <button
-                  onClick={() => {
-                    setSearchInput('');
-                    onFiltersChange({ ...filters, search: undefined });
-                  }}
+                  onClick={handleSearchClear}
                   className="ml-1 hover:text-primary-600 dark:hover:text-primary-300"
                 >
                   ×
@@ -143,7 +157,7 @@ export default function QuoteFilters({
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
                 分类: {getCategoryLabel(filters.category)}
                 <button
-                  onClick={() => handleCategoryChange('')}
+                  onClick={handleCategoryClear}
                   className="ml-1 hover:text-green-600 dark:hover:text-green-300"
                 >
                   ×
@@ -156,3 +170,15 @@ export default function QuoteFilters({
     </div>
   );
 }
+
+// Export memoized component
+export default memo(QuoteFilters, (prevProps, nextProps) => {
+  // Custom comparison to prevent unnecessary re-renders
+  return (
+    JSON.stringify(prevProps.filters) === JSON.stringify(nextProps.filters) &&
+    prevProps.availableCategories.length === nextProps.availableCategories.length &&
+    prevProps.availableCategories.every((cat, i) => cat === nextProps.availableCategories[i]) &&
+    prevProps.availableTags.length === nextProps.availableTags.length &&
+    prevProps.onFiltersChange === nextProps.onFiltersChange
+  );
+});

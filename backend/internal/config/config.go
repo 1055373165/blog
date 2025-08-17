@@ -93,9 +93,12 @@ var GlobalConfig *Config
 
 // LoadConfig 加载配置
 func LoadConfig() error {
-	// 加载环境变量
-	if err := godotenv.Load(".env.prod"); err != nil {
-		fmt.Println("警告: 未找到 .env.prod 文件，使用系统环境变量")
+	// 加载环境变量，优先加载本地 .env 文件
+	if err := godotenv.Load(".env"); err != nil {
+		// 如果本地 .env 不存在，尝试加载根目录的 .env.prod
+		if err := godotenv.Load("../.env.prod"); err != nil {
+			fmt.Println("警告: 未找到环境配置文件，使用系统环境变量")
+		}
 	}
 
 	config := &Config{

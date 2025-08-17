@@ -275,9 +275,9 @@ CREATE TABLE `search_logs` (
 
 -- 插入默认数据
 
--- 默认管理员用户 (密码: admin123)
+-- 默认管理员用户 (密码: password)
 INSERT IGNORE INTO `users` (`id`, `username`, `email`, `password_hash`, `display_name`, `role`, `status`, `email_verified`) VALUES
-(1, 'admin', 'admin@example.com', '$2a$10$YourHashedPasswordHere', 'Administrator', 'admin', 'active', TRUE);
+(1, 'admin', 'admin@blog.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrator', 'admin', 'active', TRUE);
 
 -- 默认分类
 INSERT IGNORE INTO `categories` (`id`, `name`, `slug`, `description`, `sort_order`) VALUES

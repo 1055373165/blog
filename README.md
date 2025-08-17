@@ -105,7 +105,7 @@ docker-compose ps
 
 ### 默认账户
 
-- **管理员**: admin@blog.com / admin123
+- **管理员**: admin@blog.com / password
 
 ## 项目进展
 

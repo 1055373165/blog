@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { Quote } from '../../types';
 import { useResponsive, useTouch } from '../../hooks/useResponsive';
 
@@ -12,7 +12,38 @@ interface QuoteCardProps {
   'data-quote-id'?: string;
 }
 
-export default function QuoteCard({ 
+// 预计算的分类相关数据，避免每次渲染时重复计算
+const CATEGORY_COLORS = {
+  programming: 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200',
+  architecture: 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200',
+  management: 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200',
+  philosophy: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
+  design: 'bg-pink-100 dark:bg-pink-900 text-pink-800 dark:text-pink-200',
+} as const;
+
+const CATEGORY_ICONS = {
+  programming: '💻',
+  architecture: '🏗️',
+  management: '👥',
+  philosophy: '🧠',
+  design: '🎨',
+} as const;
+
+const CATEGORY_LABELS = {
+  programming: '编程智慧',
+  architecture: '架构思维',
+  management: '管理哲学',
+  philosophy: '人生哲理',
+  design: '设计美学',
+} as const;
+
+const DIFFICULTY_LABELS = {
+  beginner: '初级',
+  intermediate: '中级',
+  advanced: '高级',
+} as const;
+
+function QuoteCard({ 
   quote, 
   onClick, 
   className = '', 
@@ -21,57 +52,56 @@ export default function QuoteCard({
   tabIndex = 0,
   ...props
 }: QuoteCardProps) {
-  const { isMobile, isTablet } = useResponsive();
+  const { isMobile } = useResponsive();
   const isTouch = useTouch();
-  const getCategoryColor = (category: Quote['category']) => {
-    const colors = {
-      programming: 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200',
-      architecture: 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200',
-      management: 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200',
-      philosophy: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
-      design: 'bg-pink-100 dark:bg-pink-900 text-pink-800 dark:text-pink-200',
+  
+  // Memoize computed values to prevent recalculation on every render
+  const categoryColor = useMemo(() => {
+    return CATEGORY_COLORS[quote.category] || CATEGORY_COLORS.programming;
+  }, [quote.category]);
+  
+  const categoryIcon = useMemo(() => {
+    return CATEGORY_ICONS[quote.category] || '💡';
+  }, [quote.category]);
+  
+  const categoryLabel = useMemo(() => {
+    return CATEGORY_LABELS[quote.category] || '技术箴言';
+  }, [quote.category]);
+  
+  const difficultyLabel = useMemo(() => {
+    return quote.difficulty ? DIFFICULTY_LABELS[quote.difficulty] : '';
+  }, [quote.difficulty]);
+  
+  // Memoize truncated text for performance
+  const truncatedText = useMemo(() => {
+    return quote.text.length > 50 ? `${quote.text.substring(0, 50)}...` : quote.text;
+  }, [quote.text]);
+  
+  // Memoize displayed tags to avoid recalculation
+  const displayTags = useMemo(() => {
+    const maxTags = isMobile ? 2 : 3;
+    return {
+      visible: quote.tags.slice(0, maxTags),
+      remaining: Math.max(0, quote.tags.length - maxTags)
     };
-    return colors[category] || colors.programming;
-  };
+  }, [quote.tags, isMobile]);
+  
+  // Memoize aria-label to avoid string concatenation on every render
+  const ariaLabel = useMemo(() => {
+    return `箴言：${truncatedText}，作者：${quote.author}，分类：${categoryLabel}${quote.difficulty ? `，难度：${difficultyLabel}` : ''}`;
+  }, [truncatedText, quote.author, categoryLabel, quote.difficulty, difficultyLabel]);
 
-  const getCategoryIcon = (category: Quote['category']) => {
-    const icons = {
-      programming: '💻',
-      architecture: '🏗️',
-      management: '👥',
-      philosophy: '🧠',
-      design: '🎨',
-    };
-    return icons[category] || '💡';
-  };
-
-  const getCategoryLabel = (category: Quote['category']) => {
-    const labels = {
-      programming: '编程智慧',
-      architecture: '架构思维',
-      management: '管理哲学',
-      philosophy: '人生哲理',
-      design: '设计美学',
-    };
-    return labels[category] || '技术箴言';
-  };
-
-  const getDifficultyLabel = (difficulty: Quote['difficulty']) => {
-    const labels = {
-      beginner: '初级',
-      intermediate: '中级',
-      advanced: '高级',
-    };
-    return difficulty ? labels[difficulty] : '';
-  };
-
-  // 处理键盘事件
-  const handleKeyDown = (event: React.KeyboardEvent) => {
+  // Memoize event handlers to prevent unnecessary re-renders
+  const handleClick = useCallback(() => {
+    onClick(quote);
+  }, [onClick, quote]);
+  
+  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       onClick(quote);
     }
-  };
+  }, [onClick, quote]);
 
   return (
     <div
@@ -86,11 +116,11 @@ export default function QuoteCard({
         ${className}
       `}
       style={style}
-      onClick={() => onClick(quote)}
+      onClick={handleClick}
       onKeyDown={handleKeyDown}
       tabIndex={tabIndex}
       role="button"
-      aria-label={`箴言：${quote.text.substring(0, 50)}${quote.text.length > 50 ? '...' : ''}，作者：${quote.author}，分类：${getCategoryLabel(quote.category)}${quote.difficulty ? `，难度：${getDifficultyLabel(quote.difficulty)}` : ''}`}
+      aria-label={ariaLabel}
       aria-describedby={`quote-${quote.id}-description`}
       {...props}
     >
@@ -99,21 +129,21 @@ export default function QuoteCard({
         <span 
           className={`
             inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-            ${getCategoryColor(quote.category)}
+            ${categoryColor}
           `}
-          aria-label={`分类：${getCategoryLabel(quote.category)}`}
+          aria-label={`分类：${categoryLabel}`}
         >
-          <span className="mr-1" aria-hidden="true">{getCategoryIcon(quote.category)}</span>
-          {getCategoryLabel(quote.category)}
+          <span className="mr-1" aria-hidden="true">{categoryIcon}</span>
+          {categoryLabel}
         </span>
         
         {quote.difficulty && (
           <span 
             className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded"
-            aria-label={`难度：${getDifficultyLabel(quote.difficulty)}`}
-            title={`难度：${getDifficultyLabel(quote.difficulty)}`}
+            aria-label={`难度：${difficultyLabel}`}
+            title={`难度：${difficultyLabel}`}
           >
-            {getDifficultyLabel(quote.difficulty)}
+            {difficultyLabel}
           </span>
         )}
       </div>
@@ -155,26 +185,24 @@ export default function QuoteCard({
         </div>
 
         {/* 标签 - 移动端优化 */}
-        {quote.tags.length > 0 && (
+        {displayTags.visible.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-3" role="list" aria-label="相关标签">
-            {quote.tags.slice(0, isMobile ? 2 : 3).map((tag) => (
+            {displayTags.visible.map((tag) => (
               <span
                 key={tag}
-                className={`inline-block px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded ${
-                  isMobile ? 'text-xs' : 'text-xs'
-                }`}
+                className="inline-block px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded"
                 role="listitem"
               >
                 #{tag}
               </span>
             ))}
-            {quote.tags.length > (isMobile ? 2 : 3) && (
+            {displayTags.remaining > 0 && (
               <span 
                 className="text-xs text-gray-400 px-2 py-1"
                 role="listitem"
-                aria-label={`还有 ${quote.tags.length - (isMobile ? 2 : 3)} 个标签`}
+                aria-label={`还有 ${displayTags.remaining} 个标签`}
               >
-                +{quote.tags.length - (isMobile ? 2 : 3)}
+                +{displayTags.remaining}
               </span>
             )}
           </div>
@@ -190,3 +218,20 @@ export default function QuoteCard({
     </div>
   );
 }
+
+// Memoize the component with custom comparison
+export default memo(QuoteCard, (prevProps, nextProps) => {
+  // Only re-render if relevant props have changed
+  return (
+    prevProps.quote.id === nextProps.quote.id &&
+    prevProps.quote.text === nextProps.quote.text &&
+    prevProps.quote.author === nextProps.quote.author &&
+    prevProps.quote.category === nextProps.quote.category &&
+    prevProps.quote.difficulty === nextProps.quote.difficulty &&
+    prevProps.quote.tags.length === nextProps.quote.tags.length &&
+    prevProps.quote.tags.every((tag, i) => tag === nextProps.quote.tags[i]) &&
+    prevProps.isFocused === nextProps.isFocused &&
+    prevProps.tabIndex === nextProps.tabIndex &&
+    prevProps.className === nextProps.className
+  );
+});

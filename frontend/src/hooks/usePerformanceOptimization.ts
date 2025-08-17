@@ -1,49 +1,49 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { Quote, ViewMode } from '../types';
 
-// 性能监控Hook - 彻底修复无限渲染问题
+// 高性能监控Hook - 减少性能开销
 export function usePerformanceMonitor(componentName: string) {
   const renderCountRef = useRef(0);
   const lastUpdateTimeRef = useRef(Date.now());
-  const mountTimeRef = useRef(Date.now());
+  const warningThrottleRef = useRef(0);
   
-  // 使用静态值而不是状态，避免触发重新渲染
+  // 使用更轻量的metrics存储
   const metricsRef = useRef({
     renderCount: 0,
-    averageRenderTime: 0,
     lastRenderDuration: 0,
   });
 
-  // 每次渲染时更新计数，但不触发状态更新
-  renderCountRef.current += 1;
-  const currentTime = Date.now();
-  const renderDuration = currentTime - lastUpdateTimeRef.current;
-  lastUpdateTimeRef.current = currentTime;
-
-  // 更新metrics ref，但不触发重新渲染
-  metricsRef.current = {
-    renderCount: renderCountRef.current,
-    averageRenderTime: metricsRef.current.renderCount > 0
-      ? (metricsRef.current.averageRenderTime * (metricsRef.current.renderCount - 1) + renderDuration) / metricsRef.current.renderCount
-      : renderDuration,
-    lastRenderDuration: renderDuration,
-  };
-
-  // 开发环境下的性能警告（仅在必要时，避免触发额外渲染）
+  // 只在开发环境下进行性能监控
   if (process.env.NODE_ENV === 'development') {
-    if (renderDuration > 100) {
-      console.warn(`${componentName} render took ${renderDuration}ms, consider optimization`);
-    }
-    if (renderCountRef.current > 100 && renderCountRef.current % 50 === 0) {
-      console.warn(`${componentName} has rendered ${renderCountRef.current} times - possible infinite render loop`);
+    renderCountRef.current += 1;
+    const currentTime = Date.now();
+    const renderDuration = currentTime - lastUpdateTimeRef.current;
+    lastUpdateTimeRef.current = currentTime;
+
+    // 更新metrics
+    metricsRef.current = {
+      renderCount: renderCountRef.current,
+      lastRenderDuration: renderDuration,
+    };
+
+    // 节流警告输出，避免控制台spam
+    const now = Date.now();
+    if (now - warningThrottleRef.current > 5000) { // 5秒节流
+      if (renderDuration > 50) {
+        console.warn(`[Performance] ${componentName} render took ${renderDuration}ms`);
+        warningThrottleRef.current = now;
+      }
+      if (renderCountRef.current > 50 && renderCountRef.current % 25 === 0) {
+        console.warn(`[Performance] ${componentName} has rendered ${renderCountRef.current} times`);
+        warningThrottleRef.current = now;
+      }
     }
   }
 
-  // 返回当前metrics的快照，而不是响应式状态
+  // 返回轻量级metrics
   return {
-    renderCount: renderCountRef.current,
-    averageRenderTime: metricsRef.current.averageRenderTime,
-    lastRenderDuration: renderDuration,
+    renderCount: metricsRef.current.renderCount,
+    lastRenderDuration: metricsRef.current.lastRenderDuration,
   };
 }
 

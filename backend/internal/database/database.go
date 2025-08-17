@@ -176,7 +176,7 @@ func createDefaultData() error {
 
 	if adminCount == 0 {
 		// 加密默认密码
-		hashedPassword, err := auth.HashPassword("admin123")
+		hashedPassword, err := auth.HashPassword("password")
 		if err != nil {
 			log.Printf("默认管理员密码加密失败: %v", err)
 			return nil
@@ -191,7 +191,7 @@ func createDefaultData() error {
 		if err := DB.Create(&admin).Error; err != nil {
 			log.Printf("创建默认管理员失败: %v", err)
 		} else {
-			log.Println("默认管理员创建成功 (admin@blog.com / admin123)")
+			log.Println("默认管理员创建成功 (admin@blog.com / password)")
 		}
 	}
 

@@ -18,8 +18,11 @@ export default function QuotesPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [userViewModePreference, setUserViewModePreference] = useState<ViewMode>();
   
-  // 性能监控
-  const performanceMetrics = usePerformanceMonitor('QuotesPage');
+  // 暂时禁用性能监控，避免性能开销
+  // const performanceMetrics = process.env.NODE_ENV === 'development' 
+  //   ? usePerformanceMonitor('QuotesPage')
+  //   : { renderCount: 0, lastRenderDuration: 0 };
+  const performanceMetrics = { renderCount: 0, lastRenderDuration: 0 };
   
   // 直接使用过滤器，不使用防抖
   const { quotes, loading, error, refetch, retryCount } = useQuotes(filters);
@@ -69,13 +72,39 @@ export default function QuotesPage() {
     setUserViewModePreference(newMode);
   }, []);
 
-  // 预计算统计信息 - 移到组件顶层
-  const authorsCount = useMemo(() => new Set(quotes.map(q => q.author)).size, [quotes]);
-  const categoriesCount = useMemo(() => new Set(quotes.map(q => q.category)).size, [quotes]);
-  const availableCategories = useMemo(() => Array.from(new Set(quotes.map(q => q.category))), [quotes]);
-  const availableTags = useMemo(() => Array.from(new Set(quotes.flatMap(q => q.tags))), [quotes]);
+  // 优化的统计信息计算 - 使用更高效的算法
+  const { authorsCount, categoriesCount, availableCategories, availableTags } = useMemo(() => {
+    if (quotes.length === 0) {
+      return {
+        authorsCount: 0,
+        categoriesCount: 0,
+        availableCategories: [],
+        availableTags: []
+      };
+    }
+    
+    const authorsSet = new Set<string>();
+    const categoriesSet = new Set<string>();
+    const tagsSet = new Set<string>();
+    
+    // 单次遍历计算所有统计信息
+    for (const quote of quotes) {
+      authorsSet.add(quote.author);
+      categoriesSet.add(quote.category);
+      for (const tag of quote.tags) {
+        tagsSet.add(tag);
+      }
+    }
+    
+    return {
+      authorsCount: authorsSet.size,
+      categoriesCount: categoriesSet.size,
+      availableCategories: Array.from(categoriesSet),
+      availableTags: Array.from(tagsSet)
+    };
+  }, [quotes]);
 
-  // 处理视图模式切换的键盘快捷键 - 优化依赖项
+  // 优化的键盘快捷键处理 - 减少依赖项
   const handleViewModeKeyDown = useCallback((event: KeyboardEvent) => {
     // 防止在模态框打开或输入框聚焦时处理
     if (document.querySelector('[role="dialog"]') || 
@@ -84,16 +113,12 @@ export default function QuotesPage() {
       return;
     }
 
+    // 缓存视图模式数组
     const viewModes: ViewMode[] = ['grid', 'list', 'detailed', 'masonry'];
     
     switch (event.key) {
       case '1':
-        if (!event.ctrlKey && !event.altKey && !event.metaKey) {
-          // 如果有聚焦的箴言，数字键用于导航
-          if (focusedQuoteId) {
-            return;
-          }
-          // 如果没有聚焦的箴言，切换到网格视图
+        if (!event.ctrlKey && !event.altKey && !event.metaKey && !focusedQuoteId) {
           event.preventDefault();
           handleViewModeChange('grid');
         }
@@ -118,7 +143,6 @@ export default function QuotesPage() {
         break;
       case 'v':
       case 'V':
-        // V 键循环切换视图模式
         if (!event.ctrlKey && !event.altKey && !event.metaKey) {
           event.preventDefault();
           const currentIndex = viewModes.indexOf(viewMode);
@@ -127,20 +151,20 @@ export default function QuotesPage() {
         }
         break;
     }
-  }, [viewMode, handleViewModeChange, focusedQuoteId]); // 移除quotes依赖，避免不必要的重新渲染
+  }, [viewMode, handleViewModeChange, focusedQuoteId]);
 
-  // 键盘事件监听
+  // 优化的键盘事件监听 - 使用单一处理函数
+  const combinedKeyHandler = useCallback((event: KeyboardEvent) => {
+    handleKeyDown(event);
+    handleViewModeKeyDown(event);
+  }, [handleKeyDown, handleViewModeKeyDown]);
+  
   useEffect(() => {
-    const combinedKeyHandler = (event: KeyboardEvent) => {
-      handleKeyDown(event);
-      handleViewModeKeyDown(event);
-    };
-    
     document.addEventListener('keydown', combinedKeyHandler);
     return () => {
       document.removeEventListener('keydown', combinedKeyHandler);
     };
-  }, [handleKeyDown, handleViewModeKeyDown]);
+  }, [combinedKeyHandler]);
 
   if (loading) {
     return (
@@ -253,7 +277,7 @@ export default function QuotesPage() {
                    viewMode === 'list' ? '列表视图' :
                    viewMode === 'detailed' ? '详细视图' : '瀑布流视图'}
                 </span>
-                {process.env.NODE_ENV === 'development' && (
+                {process.env.NODE_ENV === 'development' && performanceMetrics.renderCount > 0 && (
                   <>
                     <span className="hidden lg:inline">•</span>
                     <span className="hidden lg:inline text-xs">

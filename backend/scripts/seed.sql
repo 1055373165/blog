@@ -2,7 +2,7 @@
 
 -- 插入默认管理员用户
 INSERT INTO users (email, name, password, is_admin) VALUES 
-('admin@blog.com', '管理员', '$2a$10$N0HDPqPXOLLH2l6YBJHrzu9KlLJH7mKQ0pRY9U9dJf2VF7zPYGF5W', true)
+('admin@blog.com', '管理员', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', true)
 ON CONFLICT (email) DO NOTHING;
 
 -- 插入默认分类

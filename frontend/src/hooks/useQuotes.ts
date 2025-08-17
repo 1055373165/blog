@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Quote, QuoteFilters } from '../types';
 import { quotesData } from '../data/quotes';
 
@@ -18,11 +18,19 @@ export function useQuotes(filters: QuoteFilters = {}): UseQuotesReturn {
   const [retryCount, setRetryCount] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
-  const filterQuotes = (allQuotes: Quote[], filters: QuoteFilters): Quote[] => {
+  // 优化的过滤函数，使用useCallback缓存结果
+  const filterQuotes = useCallback((allQuotes: Quote[], filters: QuoteFilters): Quote[] => {
+    // 如果没有过滤条件，直接返回所有数据
+    if (!filters.search && !filters.category && !filters.difficulty && (!filters.tags || filters.tags.length === 0)) {
+      return allQuotes;
+    }
+    
+    // 预处理搜索条件
+    const searchLower = filters.search?.toLowerCase();
+    
     return allQuotes.filter(quote => {
-      // 搜索过滤
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
+      // 搜索过滤 - 优化性能
+      if (searchLower) {
         const matchesSearch = 
           quote.text.toLowerCase().includes(searchLower) ||
           quote.author.toLowerCase().includes(searchLower) ||
@@ -50,7 +58,7 @@ export function useQuotes(filters: QuoteFilters = {}): UseQuotesReturn {
 
       return true;
     });
-  };
+  }, []);
 
   const fetchQuotes = async () => {
     try {
@@ -116,15 +124,17 @@ export function useQuotes(filters: QuoteFilters = {}): UseQuotesReturn {
     fetchQuotes();
   };
 
+  // 使用useMemo优化过滤器依赖项
+  const filterDeps = useMemo(() => ({
+    search: filters.search,
+    category: filters.category,
+    difficulty: filters.difficulty,
+    tags: filters.tags?.join(',') || ''
+  }), [filters.search, filters.category, filters.difficulty, filters.tags]);
+  
   useEffect(() => {
     fetchQuotes();
-  }, [
-    filters.search, 
-    filters.category, 
-    filters.difficulty,
-    // 为了避免tags数组引用变化导致的重新渲染，使用JSON.stringify
-    JSON.stringify(filters.tags)
-  ]);
+  }, [filterDeps.search, filterDeps.category, filterDeps.difficulty, filterDeps.tags]);
 
   return {
     quotes,
