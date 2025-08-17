@@ -36,9 +36,17 @@ export default function CategoriesPage() {
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center">
-          <p className="text-red-600 dark:text-red-400">{error}</p>
+          <div className="max-w-md mx-auto card shadow-strong p-8">
+            <svg className="w-20 h-20 text-red-400 mx-auto mb-6 animate-bounce-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 font-heading">
+              加载分类失败
+            </h3>
+            <p className="text-red-600 dark:text-red-400 text-lg leading-relaxed">{error}</p>
+          </div>
         </div>
       </div>
     );
@@ -53,22 +61,28 @@ export default function CategoriesPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* 页面标题 */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6 font-heading text-shadow-sm">
           文章分类
         </h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400">
-          按主题分类浏览所有文章内容
+        <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed mb-8">
+          按主题分类浏览所有文章内容，探索不同技术领域的知识分享
         </p>
+        <div className="flex items-center justify-center space-x-2 text-go-600 dark:text-go-400">
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+          </svg>
+          <span className="font-medium">分类导航</span>
+        </div>
       </div>
 
       {/* 分类列表 */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="card shadow-medium overflow-hidden">
         <div className="divide-y divide-gray-200 dark:divide-gray-700">
         {parentCategories.map((category) => {
           const subCategories = getSubCategories(category.id);
           
           return (
-            <div key={category.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+            <div key={category.id} className="group hover:bg-go-50/50 dark:hover:bg-go-900/10 transition-all duration-200">
                 {/* 父分类 */}
                 <Link
                   to={`/category/${category.slug}`}
@@ -76,14 +90,14 @@ export default function CategoriesPage() {
                 >
                   <div className="flex items-center space-x-4 flex-1 min-w-0">
                     <div className="flex-shrink-0">
-                      <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center group-hover:bg-primary-200 dark:group-hover:bg-primary-900/50 transition-colors">
-                        <svg className="w-5 h-5 text-primary-600 dark:text-primary-400" fill="currentColor" viewBox="0 0 20 20">
+                      <div className="w-12 h-12 bg-gradient-to-br from-go-100 to-go-200 dark:from-go-900/50 dark:to-go-800/50 rounded-xl flex items-center justify-center group-hover:shadow-soft transition-all duration-200">
+                        <svg className="w-6 h-6 text-go-600 dark:text-go-400 group-hover:scale-110 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
                         </svg>
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-go-600 dark:group-hover:text-go-400 transition-colors duration-200 font-heading">
                         {category.name}
                       </h3>
                       {category.description && (
@@ -94,11 +108,11 @@ export default function CategoriesPage() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                    <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
+                    <span className="bg-go-100 dark:bg-go-900/30 text-go-700 dark:text-go-300 px-3 py-1.5 rounded-xl font-semibold">
                       {(category as any).articles_count || 0} 篇
                     </span>
                     {subCategories.length > 0 && (
-                      <span className="text-primary-600 dark:text-primary-400">
+                      <span className="text-purple-600 dark:text-purple-400 font-medium">
                         {subCategories.length} 个子分类
                       </span>
                     )}

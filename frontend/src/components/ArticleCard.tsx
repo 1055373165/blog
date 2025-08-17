@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Article } from '../types';
 import { formatDate, formatReadingTime } from '../utils';
+import { useEffect, useRef } from 'react';
 
 interface ArticleCardProps {
   article: Article;
@@ -17,6 +18,8 @@ export default function ArticleCard({
   showTags = true,
   showStats = true
 }: ArticleCardProps) {
+  const cardRef = useRef<HTMLElement>(null);
+
   const cardClasses = {
     default: 'bg-white dark:bg-gray-800 rounded-xl shadow-soft hover:shadow-medium border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:-translate-y-1 overflow-hidden',
     compact: 'bg-white dark:bg-gray-800 rounded-lg shadow-soft hover:shadow-medium border border-gray-100 dark:border-gray-800 transition-all duration-300 hover:-translate-y-0.5 overflow-hidden',
@@ -24,13 +27,13 @@ export default function ArticleCard({
   };
 
   const titleClasses = {
-    default: 'text-xl font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 line-clamp-2 mb-2',
-    compact: 'text-lg font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 line-clamp-1 mb-1',
-    featured: 'text-2xl font-bold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 line-clamp-2 mb-3',
+    default: 'text-xl font-semibold text-gray-900 dark:text-white hover:text-go-600 dark:hover:text-go-400 line-clamp-2 mb-3 transition-colors duration-200',
+    compact: 'text-lg font-semibold text-gray-900 dark:text-white hover:text-go-600 dark:hover:text-go-400 line-clamp-1 mb-2 transition-colors duration-200',
+    featured: 'text-2xl font-bold text-gray-900 dark:text-white hover:text-go-600 dark:hover:text-go-400 line-clamp-2 mb-4 group-hover:text-go-700 dark:group-hover:text-go-300 transition-colors duration-300',
   };
 
   return (
-    <article className={cardClasses[variant]}>
+    <article ref={cardRef} className={cardClasses[variant]}>
       {/* Cover Image */}
       {article.cover_image && variant !== 'compact' && (
         <div className="aspect-video overflow-hidden">
@@ -48,9 +51,9 @@ export default function ArticleCard({
           <div className="mb-2">
             <Link
               to={`/category/${article.category.slug}`}
-              className="inline-block px-2 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 
-                         bg-primary-100 dark:bg-primary-900/30 rounded-full hover:bg-primary-200 
-                         dark:hover:bg-primary-900/50 transition-colors"
+              className="inline-block px-3 py-1.5 text-xs font-medium text-go-700 dark:text-go-300 
+                         bg-go-100 dark:bg-go-900/30 rounded-full hover:bg-go-200 
+                         dark:hover:bg-go-900/50 transition-all duration-200 hover:scale-105"
             >
               {article.category.name}
             </Link>
@@ -152,7 +155,7 @@ export default function ArticleCard({
           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             <Link
               to={`/series/${article.series.slug}`}
-              className="inline-flex items-center text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+              className="inline-flex items-center text-sm text-go-600 dark:text-go-400 hover:text-go-700 dark:hover:text-go-300 transition-colors duration-200"
             >
               <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />

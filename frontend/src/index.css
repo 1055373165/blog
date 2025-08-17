@@ -37,6 +37,62 @@ body {
   @apply bg-gray-400 dark:bg-gray-500;
 }
 
+/* 智能光标动画 */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px currentColor; }
+  50% { box-shadow: 0 0 15px currentColor, 0 0 25px currentColor; }
+}
+
+@keyframes smart-cursor-bounce {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.smart-cursor {
+  animation: smart-cursor-bounce 2s infinite ease-in-out;
+}
+
+.smart-tooltip {
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+
+/* 代码区域增强样式 */
+.smart-code-area {
+  position: relative;
+  background: rgba(0, 216, 255, 0.05);
+  border: 1px solid rgba(0, 216, 255, 0.2);
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.smart-code-area:hover {
+  background: rgba(0, 216, 255, 0.1);
+  border-color: rgba(0, 216, 255, 0.4);
+  box-shadow: 0 0 10px rgba(0, 216, 255, 0.2);
+}
+
+/* 隐藏默认光标在智能光标区域 */
+.smart-cursor-active {
+  cursor: none !important;
+}
+
+.smart-cursor-active * {
+  cursor: none !important;
+}
+
 /* 代码块样式 - 扁平设计 */
 :root {
   --code-bg: #f3f4f6;
@@ -88,6 +144,54 @@ pre[class*="language-"] {
   padding: 0;
 }
 
+/* 无障碍支持样式 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 跳过导航链接 */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #000;
+  color: #fff;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 9999;
+  border-radius: 4px;
+}
+
+.skip-link:focus {
+  top: 6px;
+}
+
+/* 键盘导航焦点增强 */
+*:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* 减少动效的无障碍支持 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 pre[class*="language-"] code {
   @apply bg-transparent p-4 block overflow-x-auto;
 }
@@ -130,6 +234,59 @@ a {
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
+}
+
+/* 3D 翻书动画样式 */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* 翻书动画关键帧 */
+@keyframes book-flip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(180deg);
+  }
+}
+
+.book-flip-animation {
+  animation: book-flip 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 页面翻转效果 */
+.page-flip {
+  transform-origin: left center;
+  transform-style: preserve-3d;
+}
+
+/* 文本逐渐显示动画 */
+@keyframes text-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.text-reveal {
+  animation: text-reveal 0.6s ease-out 0.3s both;
 }
 
 /* Go Depth Hero Animations */

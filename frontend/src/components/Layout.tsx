@@ -5,7 +5,6 @@ import ThemeSettings from './ThemeSettings';
 import GoDepthLogo from './GoDepthLogo';
 import { BlogStats } from '../types';
 import { statsApi } from '../api';
-import { useKeyboardNavigation, ShortcutsHelp } from '../hooks/useKeyboardNavigation';
 
 export default function Layout() {
   const location = useLocation();
@@ -13,16 +12,6 @@ export default function Layout() {
   const [themeSettingsOpen, setThemeSettingsOpen] = useState(false);
   const [stats, setStats] = useState<BlogStats | null>(null);
 
-  // 键盘导航
-  const { 
-    isShortcutsHelpVisible, 
-    setIsShortcutsHelpVisible, 
-    shortcuts 
-  } = useKeyboardNavigation({
-    enableArrowKeys: false, // 在导航中禁用方向键
-    enableTabNavigation: true,
-    enableEscapeKey: true
-  });
 
   useEffect(() => {
     loadStats();
@@ -44,6 +33,7 @@ export default function Layout() {
     { name: '分类', href: '/categories', icon: 'folder' },
     { name: '标签', href: '/tags', icon: 'tag' },
     { name: '系列', href: '/series', icon: 'collection' },
+    { name: '箴言', href: '/quotes', icon: 'quote' },
     { name: '搜索', href: '/search', icon: 'search' },
   ];
 
@@ -81,6 +71,11 @@ export default function Layout() {
           <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
         </svg>
       ),
+      quote: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M6.5 10c-.223 0-.437.034-.65.065.069-.232.14-.468.254-.68.114-.308.292-.575.469-.844.148-.291.409-.488.601-.737.201-.242.475-.403.692-.604.213-.21.492-.315.714-.463.232-.133.434-.28.65-.35l.539-.222.474-.197-.485-1.938-.597.144c-.191.048-.424.104-.689.171-.271.05-.56.187-.882.312-.318.142-.686.238-1.028.466-.344.218-.741.4-1.091.692-.339.301-.748.562-1.05.945-.33.358-.656.734-.909 1.162-.293.408-.492.856-.702 1.299-.19.443-.343.896-.468 1.336-.237.882-.343 1.72-.384 2.437-.034.718-.014 1.315.028 1.747.015.204.043.402.063.539l.025.168.026-.006A4.5 4.5 0 1 0 6.5 10zm11 0c-.223 0-.437.034-.65.065.069-.232.14-.468.254-.68.114-.308.292-.575.469-.844.148-.291.409-.488.601-.737.201-.242.475-.403.692-.604.213-.21.492-.315.714-.463.232-.133.434-.28.65-.35l.539-.222.474-.197-.485-1.938-.597.144c-.191.048-.424.104-.689.171-.271.05-.56.187-.882.312-.318.142-.686.238-1.028.466-.344.218-.741.4-1.091.692-.339.301-.748.562-1.05.945-.33.358-.656.734-.909 1.162-.293.408-.492.856-.702 1.299-.19.443-.343.896-.468 1.336-.237.882-.343 1.72-.384 2.437-.034.718-.014 1.315.028 1.747.015.204.043.402.063.539l.025.168.026-.006A4.5 4.5 0 1 0 17.5 10z"/>
+        </svg>
+      ),
       search: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
@@ -91,7 +86,7 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* 导航栏 */}
       <header 
         className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700"
@@ -243,12 +238,6 @@ export default function Layout() {
         onClose={() => setThemeSettingsOpen(false)} 
       />
 
-      {/* 快捷键帮助 */}
-      <ShortcutsHelp
-        isVisible={isShortcutsHelpVisible}
-        onClose={() => setIsShortcutsHelpVisible(false)}
-        shortcuts={shortcuts}
-      />
 
       {/* 页脚 */}
       <footer 
@@ -310,6 +299,7 @@ export default function Layout() {
           </div>
         </div>
       </footer>
+
     </div>
   );
 }

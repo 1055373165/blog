@@ -38,7 +38,11 @@
       "Bash(mkdir:*)",
       "Bash(make:*)",
       "Bash(open http://localhost:5173)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "WebSearch",
+      "Bash(open http://localhost:5173/quotes)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

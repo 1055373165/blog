@@ -78,16 +78,21 @@ export default function AdminLayout() {
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:relative ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-go-50 to-white dark:from-go-900/20 dark:to-gray-800">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <div className="w-10 h-10 bg-gradient-to-br from-go-500 to-go-600 rounded-xl flex items-center justify-center shadow-soft">
+              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
               </svg>
             </div>
-            <h1 className="ml-3 text-xl font-bold text-gray-900 dark:text-white">
-              管理后台
-            </h1>
+            <div className="ml-3">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                管理控制台
+              </h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Go Tech Blog
+              </p>
+            </div>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -99,49 +104,70 @@ export default function AdminLayout() {
           </button>
         </div>
 
-        <nav className="mt-6 px-3 pb-20">
-          <div className="space-y-1">
+        <nav className="mt-8 px-4 pb-20">
+          <div className="space-y-2">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
-                className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                   isActive(item.href)
-                    ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? 'bg-go-100 dark:bg-go-900/30 text-go-700 dark:text-go-300 shadow-soft border border-go-200 dark:border-go-800'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-medium'
                 }`}
                 onClick={() => setSidebarOpen(false)}
               >
-                {getIcon(item.icon)}
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                  isActive(item.href)
+                    ? 'bg-go-200 dark:bg-go-800'
+                    : 'bg-gray-100 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-600'
+                }`}>
+                  {getIcon(item.icon)}
+                </div>
                 <span className="ml-3">{item.name}</span>
+                {isActive(item.href) && (
+                  <div className="ml-auto w-2 h-2 bg-go-500 rounded-full"></div>
+                )}
               </Link>
             ))}
           </div>
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <div className="mb-3 flex items-center">
-            <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">
-                {user?.name?.charAt(0) || 'A'}
-              </span>
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-750">
+          <div className="mb-4 p-3 bg-white dark:bg-gray-800 rounded-xl shadow-soft border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center mb-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-go-500 to-go-600 rounded-xl flex items-center justify-center shadow-soft">
+                <span className="text-white text-sm font-bold">
+                  {user?.name?.charAt(0).toUpperCase() || 'A'}
+                </span>
+              </div>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  {user?.name}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {user?.email}
+                </p>
+              </div>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {user?.name}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {user?.email}
-              </p>
+            
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center px-2 py-1 bg-go-100 dark:bg-go-900/30 text-go-700 dark:text-go-300 text-xs font-medium rounded-full">
+                管理员
+              </span>
+              <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                在线
+              </div>
             </div>
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Link
               to="/"
-              className="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              className="flex items-center px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
             >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
               返回前台
@@ -149,9 +175,9 @@ export default function AdminLayout() {
             
             <button
               onClick={() => logout()}
-              className="flex items-center w-full text-left text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              className="flex items-center w-full px-3 py-2 text-left text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200"
             >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
               退出登录
@@ -163,25 +189,32 @@ export default function AdminLayout() {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <div className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 lg:hidden">
+        <div className="sticky top-0 z-30 bg-gradient-to-r from-white via-go-50/30 to-white dark:from-gray-800 dark:via-go-900/10 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700 backdrop-blur-sm lg:hidden">
           <div className="flex items-center justify-between h-16 px-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              className="w-10 h-10 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-              管理后台
-            </h1>
-            <div></div>
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-go-500 to-go-600 rounded-lg flex items-center justify-center shadow-soft mr-2">
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <h1 className="text-lg font-bold text-gray-900 dark:text-white">
+                管理控制台
+              </h1>
+            </div>
+            <div className="w-10"></div>
           </div>
         </div>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
+        <main className="flex-1 overflow-auto bg-gradient-to-br from-gray-50 via-white to-go-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-go-900/20">
           <Outlet />
         </main>
       </div>

@@ -54,29 +54,28 @@ export default function TagPage() {
 
   if (error || !tag) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center py-12">
-          <div className="max-w-md mx-auto">
-            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-            </svg>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-go-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-go-900/20 flex items-center justify-center">
+        <div className="max-w-md mx-auto px-4">
+          <div className="card p-8 text-center">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+            </div>
+            
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               标签未找到
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              {error || '请求的标签不存在'}
+            
+            <p className="text-gray-600 dark:text-gray-400 mb-8">
+              {error || '请求的标签不存在或已被删除'}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/"
-                className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
-              >
+            
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link to="/" className="btn btn-primary">
                 返回首页
               </Link>
-              <Link
-                to="/tags"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
+              <Link to="/tags" className="btn btn-outline">
                 浏览所有标签
               </Link>
             </div>
@@ -87,103 +86,153 @@ export default function TagPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Tag Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex-1">
-            {/* Breadcrumb */}
-            <nav className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
-              <Link to="/" className="hover:text-primary-600 dark:hover:text-primary-400">
-                首页
-              </Link>
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
-              <Link to="/tags" className="hover:text-primary-600 dark:hover:text-primary-400">
-                标签
-              </Link>
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
-              <span className="text-gray-900 dark:text-white">{tag.name}</span>
-            </nav>
+    <>
+      {/* Hero Section with Gradient Background */}
+      <div className="bg-gradient-to-br from-gray-50 via-white to-go-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-go-900/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Breadcrumb */}
+          <nav className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-8">
+            <Link to="/" className="hover:text-go-600 dark:hover:text-go-400 transition-colors">
+              首页
+            </Link>
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            </svg>
+            <Link to="/tags" className="hover:text-go-600 dark:hover:text-go-400 transition-colors">
+              标签
+            </Link>
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            </svg>
+            <span className="text-gray-900 dark:text-white">{tag.name}</span>
+          </nav>
 
-            {/* Tag Info */}
-            <div className="flex items-center mb-4">
-              <div
-                className="inline-flex items-center px-4 py-2 text-lg font-semibold text-white rounded-full mr-4"
-                style={{ backgroundColor: tag.color || '#6366f1' }}
-              >
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                </svg>
-                #{tag.name}
+          {/* Tag Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex-1">
+              <div className="flex items-center mb-4">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center mr-4 shadow-soft"
+                  style={{ backgroundColor: `${tag.color || '#14b8a6'}20` }}
+                >
+                  <svg className="w-6 h-6" fill={tag.color || '#14b8a6'} viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-go-100 dark:bg-go-900/30 text-go-700 dark:text-go-300 mb-2">
+                    标签
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              
+              <div className="flex items-center mb-4">
+                <div
+                  className="inline-flex items-center px-4 py-2 text-lg font-semibold text-white rounded-xl mr-4 shadow-soft"
+                  style={{ backgroundColor: tag.color || '#14b8a6' }}
+                >
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  #{tag.name}
+                </div>
+              </div>
+              
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                {tag.name}
+              </h1>
+              
+              <p className="text-xl text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                浏览所有标记为 "#{tag.name}" 的文章，探索相关主题的深度内容。
+              </p>
+              
+              <div className="flex items-center text-gray-500 dark:text-gray-400">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                 </svg>
-                {tag.articles_count || 0} 篇文章
+                <span className="text-lg font-medium">{tag.articles_count || 0}</span>
+                <span className="ml-1">篇文章</span>
               </div>
             </div>
 
-            <p className="text-gray-600 dark:text-gray-300">
-              浏览所有标记为 "#{tag.name}" 的文章，探索相关主题的深度内容。
-            </p>
-          </div>
-
-          {/* Tag Visual */}
-          <div className="hidden md:block ml-8">
-            <div 
-              className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg"
-              style={{ backgroundColor: `${tag.color || '#6366f1'}20`, borderColor: tag.color || '#6366f1' }}
-            >
-              <svg className="w-10 h-10" fill={tag.color || '#6366f1'} viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-              </svg>
+            {/* Large Tag Visual */}
+            <div className="hidden lg:block">
+              <div 
+                className="w-24 h-24 rounded-2xl flex items-center justify-center shadow-soft"
+                style={{ 
+                  background: `linear-gradient(135deg, ${tag.color || '#14b8a6'}20, ${tag.color || '#14b8a6'}40)`,
+                  border: `2px solid ${tag.color || '#14b8a6'}30`
+                }}
+              >
+                <svg className="w-12 h-12" fill={tag.color || '#14b8a6'} viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Tag Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {tag.articles_count || 0}
+      {/* Tag Stats */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 mb-8">
+        <div className="card p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-go-100 dark:bg-go-900/30 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-go-600 dark:text-go-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                {tag.articles_count || 0}
+              </div>
+              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                相关文章
+              </div>
             </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              相关文章
+            
+            <div className="text-center">
+              <div className="w-12 h-12 bg-go-100 dark:bg-go-900/30 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-go-600 dark:text-go-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                {tag.created_at ? new Date(tag.created_at).getFullYear() || '未知' : '未知'}
+              </div>
+              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                创建年份
+              </div>
             </div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {tag.created_at ? new Date(tag.created_at).getFullYear() || '未知' : '未知'}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              创建年份
-            </div>
-          </div>
-          <div className="text-center">
-            <div 
-              className="inline-block w-8 h-8 rounded-full"
-              style={{ backgroundColor: tag.color || '#6366f1' }}
-            />
-            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              标签色彩
+            
+            <div className="text-center">
+              <div className="w-12 h-12 bg-go-100 dark:bg-go-900/30 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <div 
+                  className="w-6 h-6 rounded-lg shadow-soft"
+                  style={{ backgroundColor: tag.color || '#14b8a6' }}
+                />
+              </div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                自定义
+              </div>
+              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                标签色彩
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Articles List */}
-      <ArticleList
-        fetchArticles={fetchTagArticles}
-        variant="default"
-        columns={2}
-        initialPage={1}
-        pageSize={20}
-      />
-    </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <ArticleList
+          fetchArticles={fetchTagArticles}
+          variant="default"
+          columns={2}
+          initialPage={1}
+          pageSize={20}
+        />
+      </div>
+    </>
   );
 }

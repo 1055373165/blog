@@ -14,6 +14,7 @@ import TagsPage from './pages/TagsPage';
 import TagPage from './pages/TagPage';
 import SeriesPage from './pages/SeriesPage';
 import SeriesDetailPage from './pages/SeriesDetailPage';
+import QuotesPage from './pages/QuotesPage';
 import SearchPage from './pages/SearchPage';
 import ArticlePreviewPage from './pages/ArticlePreviewPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -73,6 +74,7 @@ function AppContent() {
                 <Route path="tag/:slug" element={<TagPage />} />
                 <Route path="series" element={<SeriesPage />} />
                 <Route path="series/:slug" element={<SeriesDetailPage />} />
+                <Route path="quotes" element={<QuotesPage />} />
                 <Route path="search" element={<SearchPage />} />
               </Route>
 

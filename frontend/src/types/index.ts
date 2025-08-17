@@ -223,3 +223,38 @@ export interface NavItem {
   children?: NavItem[];
   adminOnly?: boolean;
 }
+
+// 箴言相关类型
+export type QuoteCategory = 'programming' | 'architecture' | 'management' | 'philosophy' | 'design';
+
+
+export interface Quote {
+  id: string;
+  text: string;
+  author: string;
+  source?: string;
+  category: QuoteCategory;
+  tags: string[];
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  createdAt: string;
+  // 新增中文解释字段
+  chineseExplanation?: string;
+}
+
+export interface QuoteFilters {
+  search?: string;
+  category?: QuoteCategory;
+  tags?: string[];
+  difficulty?: Quote['difficulty'];
+}
+
+
+// 箴言视图模式类型
+export type ViewMode = 'grid' | 'list' | 'detailed' | 'masonry';
+
+export interface ViewModeConfig {
+  mode: ViewMode;
+  label: string;
+  description: string;
+  icon: string;
+}

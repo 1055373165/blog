@@ -78,17 +78,7 @@ export default function HomePage() {
         
         <div className="relative text-center py-20 px-4">
           {/* Logo & Brand */}
-          <div className="mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-go-500 to-go-700 rounded-2xl mb-6 shadow-lg gopher-breathe">
-              {/* Go Gopher Inspired Icon */}
-              <svg className="w-12 h-12 text-white" viewBox="0 0 48 48" fill="currentColor">
-                <circle cx="24" cy="20" r="8" />
-                <circle cx="20" cy="18" r="1.5" />
-                <circle cx="28" cy="18" r="1.5" />
-                <path d="M16 32c0-4.4 3.6-8 8-8s8 3.6 8 8v8H16v-8z" />
-                <path d="M12 28c-2.2 0-4 1.8-4 4s1.8 4 4 4h2v-8h-2zM36 28c2.2 0 4 1.8 4 4s-1.8 4-4 4h-2v-8h2z" />
-              </svg>
-            </div>
+          <div className="mb-8 -mt-10 md:-mt-12">
             <h1 className="text-5xl md:text-7xl font-bold mb-4">
               <span className="bg-gradient-to-r from-gray-900 via-go-800 to-gray-900 dark:from-white dark:via-go-300 dark:to-white bg-clip-text text-transparent">
                 Go Depth
@@ -197,9 +187,15 @@ export default function HomePage() {
               </div>
               <div className="font-mono text-sm text-left">
                 <div className="text-purple-400">package <span className="text-white">main</span></div>
-                <div className="mt-2 text-purple-400">import <span className="text-green-400">"fmt"</span></div>
+                <div className="text-purple-400"><br></br>import <span className="text-green-400">"fmt"</span></div>
                 <div className="mt-4 text-purple-400">func <span className="text-blue-400">main</span><span className="text-white">() {"{"}</span></div>
-                <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"Welcome to Go Depth!"</span>)</div>
+                <div className="space-y-3">
+                  <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"Hello! Welcome to my blog. My name is Sun Mengyu, and I'm a programming enthusiast."</span>)</div>
+                  <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"I'm deeply interested in Golang, microservices, software architecture, design patterns, underlying systems (operating systems and computer networks), distributed systems, cryptocurrencies, and DevOps."</span>)</div>
+                  <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"I enjoy reading technical books in English, studying low-level source code (Golang, Linux, etc.), exploring Mac productivity tools, and AI coding (ClaudeCode, Windsurf, Kiro etc.)."</span>)</div>
+                  <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"I hope to keep a sense of passion and respect for technology, continually improve my skills, and create value with a team that shares big ambitions."</span>)</div>
+                  <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"Every programmer should aspire to write elegant code—code as graceful as poetry."</span>)</div>
+                </div>
                 <div className="text-white">{"}"}</div>
               </div>
             </div>
@@ -380,6 +376,7 @@ export default function HomePage() {
           pageSize={12}
         />
       </section>
+
     </div>
   );
 }
