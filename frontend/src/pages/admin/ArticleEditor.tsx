@@ -4,6 +4,7 @@ import type { Article, CreateArticleInput, UpdateArticleInput, Category, Tag, Se
 import { articlesApi, categoriesApi, tagsApi } from '../../api';
 import seriesApi from '../../services/seriesApi';
 import MarkdownEditor from '../../components/MarkdownEditor';
+import EnhancedArticleEditor from '../../components/editor/EnhancedArticleEditor';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import FileImport from '../../components/FileImport';
 import RSSImport from '../../components/RSSImport';
@@ -28,6 +29,9 @@ export default function ArticleEditor() {
     metaDescription: '',
     metaKeywords: '',
   });
+
+  // Editor preferences
+  const [editorType, setEditorType] = useState<'enhanced' | 'markdown'>('enhanced');
 
   // UI state
   const [loading, setLoading] = useState(false);
@@ -287,6 +291,61 @@ export default function ArticleEditor() {
     setError(errorMessage);
   };
 
+  // Enhanced editor auto-save handler
+  const handleEnhancedAutoSave = async (content: string) => {
+    if (!isEditing || !formData.title.trim()) return;
+    
+    // Update form data with new content
+    const updatedFormData = { ...formData, content };
+    setFormData(updatedFormData);
+    
+    // Save silently
+    await handleSave(true);
+  };
+
+  // Content validation
+  const validateContent = () => {
+    const issues = [];
+    
+    if (!formData.title.trim()) {
+      issues.push('标题不能为空');
+    } else if (formData.title.length > 200) {
+      issues.push('标题过长，建议不超过200字符');
+    }
+    
+    if (!formData.content.trim()) {
+      issues.push('文章内容不能为空');
+    } else if (formData.content.length < 100) {
+      issues.push('文章内容过短，建议至少100字符');
+    }
+    
+    if (!formData.excerpt.trim() && formData.content.length > 0) {
+      issues.push('建议添加文章摘要');
+    }
+    
+    if (!formData.categoryId) {
+      issues.push('建议选择文章分类');
+    }
+    
+    if (formData.tagIds.length === 0) {
+      issues.push('建议为文章添加标签');
+    }
+    
+    return issues;
+  };
+
+  // Get content statistics
+  const getContentStats = () => {
+    const content = formData.content || '';
+    const words = content.length;
+    const paragraphs = content.split('\n\n').filter(p => p.trim()).length;
+    const readingTime = Math.ceil(words / 200);
+    const images = (content.match(/!\[.*?\]\(.*?\)/g) || []).length;
+    const links = (content.match(/\[.*?\]\(.*?\)/g) || []).length;
+    
+    return { words, paragraphs, readingTime, images, links };
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -437,14 +496,55 @@ export default function ArticleEditor() {
 
                 {/* Content Editor */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    文章内容 *
-                  </label>
-                  <MarkdownEditor
-                    value={formData.content}
-                    onChange={(value) => handleInputChange('content', value)}
-                    height={500}
-                  />
+                  <div className="flex items-center justify-between mb-4">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      文章内容 *
+                    </label>
+                    <div className="flex items-center space-x-3">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">编辑器类型:</span>
+                      <div className="flex rounded-lg shadow-sm overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => setEditorType('enhanced')}
+                          className={`px-3 py-1.5 text-xs font-medium border transition-all duration-200 ${
+                            editorType === 'enhanced'
+                              ? 'bg-primary-600 text-white border-primary-600'
+                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          增强编辑器
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditorType('markdown')}
+                          className={`px-3 py-1.5 text-xs font-medium border-t border-b border-r rounded-r-lg transition-all duration-200 ${
+                            editorType === 'markdown'
+                              ? 'bg-primary-600 text-white border-primary-600'
+                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          Markdown
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {editorType === 'enhanced' ? (
+                    <EnhancedArticleEditor
+                      value={formData.content}
+                      onChange={(value) => handleInputChange('content', value)}
+                      onAutoSave={handleEnhancedAutoSave}
+                      height={500}
+                      autoSaveInterval={15000} // 15 seconds
+                      placeholder="开始编写你的精彩文章..."
+                    />
+                  ) : (
+                    <MarkdownEditor
+                      value={formData.content}
+                      onChange={(value) => handleInputChange('content', value)}
+                      height={500}
+                    />
+                  )}
                 </div>
               </div>
             )}
@@ -660,26 +760,103 @@ export default function ArticleEditor() {
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   文章统计
                 </h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <span className="text-gray-600 dark:text-gray-400 font-medium">字数</span>
-                    <span className="font-semibold text-go-600 dark:text-go-400">
-                      {formData.content.length.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <span className="text-gray-600 dark:text-gray-400 font-medium">段落</span>
-                    <span className="font-semibold text-go-600 dark:text-go-400">
-                      {formData.content.split('\n\n').length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <span className="text-gray-600 dark:text-gray-400 font-medium">预计阅读</span>
-                    <span className="font-semibold text-go-600 dark:text-go-400">
-                      {Math.ceil(formData.content.length / 200)} 分钟
-                    </span>
-                  </div>
+                <div className="space-y-3">
+                  {(() => {
+                    const stats = getContentStats();
+                    return (
+                      <>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center">
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            字数
+                          </span>
+                          <span className="font-semibold text-primary-600 dark:text-primary-400">
+                            {stats.words.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center">
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                            </svg>
+                            段落
+                          </span>
+                          <span className="font-semibold text-primary-600 dark:text-primary-400">
+                            {stats.paragraphs}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center">
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            预计阅读
+                          </span>
+                          <span className="font-semibold text-primary-600 dark:text-primary-400">
+                            {stats.readingTime} 分钟
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center">
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            图片
+                          </span>
+                          <span className="font-semibold text-primary-600 dark:text-primary-400">
+                            {stats.images}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center">
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                            </svg>
+                            链接
+                          </span>
+                          <span className="font-semibold text-primary-600 dark:text-primary-400">
+                            {stats.links}
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
+              </div>
+
+              {/* Content Validation */}
+              <div className="card p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  内容检查
+                </h3>
+                {(() => {
+                  const issues = validateContent();
+                  return (
+                    <div className="space-y-3">
+                      {issues.length === 0 ? (
+                        <div className="flex items-center p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg">
+                          <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <span className="text-sm font-medium">内容检查通过</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {issues.map((issue, index) => (
+                            <div key={index} className="flex items-start p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded-lg">
+                              <svg className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              <span className="text-sm">{issue}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Publish Status */}

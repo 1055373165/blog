@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { Quote } from '../../types';
 import { useResponsive, useTouch } from '../../hooks/useResponsive';
 import { useScrollLock } from '../../hooks/useScrollLock';
@@ -11,6 +11,9 @@ interface QuoteDetailModalProps {
   onShare?: (quote: Quote) => void;
   likesCount?: number;
   isLiked?: boolean;
+  // 新增导航支持
+  quotes?: Quote[];
+  onNavigateToQuote?: (quote: Quote) => void;
 }
 
 export default function QuoteDetailModal({ 
@@ -20,10 +23,12 @@ export default function QuoteDetailModal({
   onLike, 
   onShare, 
   likesCount = 0, 
-  isLiked = false 
+  isLiked = false,
+  quotes = [],
+  onNavigateToQuote
 }: QuoteDetailModalProps) {
-  const [isFlipping, setIsFlipping] = useState(false);
-  const [showContent, setShowContent] = useState(false);
+  // 移除动画相关状态
+  const [showContent, setShowContent] = useState(true);
   const [localLikesCount, setLocalLikesCount] = useState(likesCount);
   const [localIsLiked, setLocalIsLiked] = useState(isLiked);
   const [isLiking, setIsLiking] = useState(false);
@@ -43,19 +48,9 @@ export default function QuoteDetailModal({
     setLocalIsLiked(isLiked);
   }, [likesCount, isLiked]);
 
-  // 处理打开动画
+  // 直接显示内容，无动画延迟
   useEffect(() => {
-    if (isOpen && quote) {
-      setIsFlipping(true);
-      // 延迟显示背面内容，让翻转动画更自然
-      const timer = setTimeout(() => {
-        setShowContent(true);
-      }, 300);
-      return () => clearTimeout(timer);
-    } else {
-      setIsFlipping(false);
-      setShowContent(false);
-    }
+    setShowContent(isOpen && !!quote);
   }, [isOpen, quote]);
 
   // 处理喜欢功能
@@ -82,43 +77,47 @@ export default function QuoteDetailModal({
     }
   }, [quote, localIsLiked, localLikesCount, isLiking, onLike]);
 
-  // 处理分享功能
+  // 优化分享功能 - 直接复制链接
   const handleShare = useCallback(async () => {
     if (!quote) return;
     
     const shareUrl = `https://www.godepth.top/quotes/${quote.id}`;
-    const shareText = `"${quote.text}" —— ${quote.author}`;
     
     try {
-      if (navigator.share) {
-        // 使用原生分享API
-        await navigator.share({
-          title: '技术箴言分享',
-          text: shareText,
-          url: shareUrl,
-        });
-      } else {
-        // 复制到剪贴板
-        await navigator.clipboard.writeText(`${shareText}\n\n查看详情：${shareUrl}`);
-        setShowShareTooltip(true);
-        setTimeout(() => setShowShareTooltip(false), 2000);
-      }
-      
+      // 直接复制链接到剪贴板
+      await navigator.clipboard.writeText(shareUrl);
+      setShowShareTooltip(true);
+      setTimeout(() => setShowShareTooltip(false), 2000);
       onShare?.(quote);
     } catch (error) {
-      console.error('分享失败:', error);
-      // 降级处理：手动复制
-      try {
-        await navigator.clipboard.writeText(`${shareText}\n\n查看详情：${shareUrl}`);
-        setShowShareTooltip(true);
-        setTimeout(() => setShowShareTooltip(false), 2000);
-      } catch (clipboardError) {
-        console.error('复制到剪贴板失败:', clipboardError);
-      }
+      console.error('复制链接失败:', error);
+      // 降级处理：显示链接供用户手动复制
+      const fallbackText = `无法自动复制，请手动复制链接：${shareUrl}`;
+      alert(fallbackText);
     }
   }, [quote, onShare]);
 
-  // 处理键盘事件
+  // 获取当前箴言在列表中的索引
+  const currentIndex = useMemo(() => {
+    if (!quote || !quotes.length) return -1;
+    return quotes.findIndex(q => q.id === quote.id);
+  }, [quote, quotes]);
+
+  // 导航到上一个箴言
+  const handlePrevious = useCallback(() => {
+    if (currentIndex > 0 && onNavigateToQuote) {
+      onNavigateToQuote(quotes[currentIndex - 1]);
+    }
+  }, [currentIndex, quotes, onNavigateToQuote]);
+
+  // 导航到下一个箴言
+  const handleNext = useCallback(() => {
+    if (currentIndex < quotes.length - 1 && onNavigateToQuote) {
+      onNavigateToQuote(quotes[currentIndex + 1]);
+    }
+  }, [currentIndex, quotes, onNavigateToQuote]);
+
+  // 处理键盘事件（包含导航功能）
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!isOpen) return;
@@ -127,6 +126,14 @@ export default function QuoteDetailModal({
         case 'Escape':
           event.preventDefault();
           handleClose();
+          break;
+        case 'ArrowLeft':
+          event.preventDefault();
+          handlePrevious();
+          break;
+        case 'ArrowRight':
+          event.preventDefault();
+          handleNext();
           break;
         case 'l':
         case 'L':
@@ -160,15 +167,12 @@ export default function QuoteDetailModal({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, handleLike, handleShare]);
+  }, [isOpen, handleLike, handleShare, handlePrevious, handleNext]);
 
-  // 处理关闭动画
+  // 直接关闭，无动画延迟
   const handleClose = () => {
-    setIsFlipping(false);
     setShowContent(false);
-    setTimeout(() => {
-      onClose();
-    }, 300);
+    onClose();
   };
 
   // 点击背景关闭
@@ -230,63 +234,42 @@ export default function QuoteDetailModal({
       aria-labelledby="quote-title"
       aria-describedby="quote-content"
     >
-      {/* 翻书动画容器 */}
+      {/* 直接显示内容容器 */}
       <div 
         ref={modalRef}
-        className="relative w-full max-w-6xl h-auto min-h-96 perspective-1000"
-        style={{ perspective: '1000px' }}
+        className="relative w-full max-w-6xl h-auto min-h-96"
       >
-        {/* 书本 */}
-        <div 
-          className={`
-            relative w-full h-full duration-700 transform-style-preserve-3d transition-transform
-            ${isFlipping ? 'rotate-y-180' : ''}
-          `}
-          style={{ 
-            transformStyle: 'preserve-3d',
-            transition: 'transform 0.7s cubic-bezier(0.4, 0, 0.2, 1)'
-          }}
-        >
-          {/* 书的正面（封面） */}
-          <div 
-            className="absolute inset-0 backface-hidden rounded-xl shadow-2xl"
-            style={{ backfaceVisibility: 'hidden' }}
-          >
-            <div className={`
-              w-full h-full rounded-xl bg-gradient-to-br ${getCategoryColor(quote.category)}
-              flex flex-col items-center justify-center text-white p-8 relative overflow-hidden
-            `}>
-              {/* 装饰性背景 */}
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute top-4 left-4 text-6xl opacity-50">📖</div>
-                <div className="absolute bottom-4 right-4 text-4xl opacity-30">✨</div>
-                <div className="absolute top-1/2 left-8 text-2xl opacity-40 transform -rotate-12">💭</div>
-              </div>
+        {/* 内容卡片 */}
+        <div className="relative w-full h-full">
+          {/* 导航按钮 - 左 */}
+          {quotes.length > 1 && currentIndex > 0 && (
+            <button
+              onClick={handlePrevious}
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 p-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full shadow-lg transition-all duration-200 ease-in-out hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              aria-label="上一个箴言 (←)"
+              title="上一个箴言 (←)"
+            >
+              <svg className="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
 
-              {/* 内容 */}
-              <div className="text-center z-10">
-                <div className="text-6xl mb-4">{getCategoryIcon(quote.category)}</div>
-                <h2 className="text-2xl font-bold mb-2">{getCategoryLabel(quote.category)}</h2>
-                <p className="text-lg opacity-90 mb-6">点击查看详情</p>
-                <div className="w-16 h-0.5 bg-white opacity-50 mx-auto"></div>
-              </div>
+          {/* 导航按钮 - 右 */}
+          {quotes.length > 1 && currentIndex < quotes.length - 1 && (
+            <button
+              onClick={handleNext}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-20 p-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full shadow-lg transition-all duration-200 ease-in-out hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              aria-label="下一个箴言 (→)"
+              title="下一个箴言 (→)"
+            >
+              <svg className="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
 
-              {/* 点击提示 */}
-              <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-sm opacity-75 animate-pulse">
-                点击任意位置翻开
-              </div>
-            </div>
-          </div>
-
-          {/* 书的背面（内容） */}
-          <div 
-            className="absolute inset-0 backface-hidden rounded-xl shadow-2xl rotate-y-180"
-            style={{ 
-              backfaceVisibility: 'hidden',
-              transform: 'rotateY(180deg)'
-            }}
-          >
-            <div className="w-full min-h-96 bg-white dark:bg-gray-800 rounded-xl flex overflow-hidden relative">
+          <div className="w-full min-h-96 bg-white dark:bg-gray-800 rounded-xl flex overflow-hidden relative shadow-2xl">
               {/* 关闭按钮 - 移动到右上角 */}
               <button
                 ref={closeButtonRef}
@@ -485,12 +468,17 @@ export default function QuoteDetailModal({
                       <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-[10px]">Esc</kbd> 关闭</span>
                       <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-[10px]">L</kbd> 喜欢</span>
                       <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-[10px]">S</kbd> 分享</span>
+                      {quotes.length > 1 && (
+                        <>
+                          <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-[10px]">←</kbd> 上一个</span>
+                          <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-[10px]">→</kbd> 下一个</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
         </div>
       </div>
     </div>

@@ -43,7 +43,8 @@
       "Bash(open http://localhost:5173/quotes)",
       "Bash(npm run typecheck:*)",
       "Bash(npm run:*)",
-      "Bash(yarn dev:*)"
+      "Bash(yarn dev:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

@@ -392,6 +392,8 @@ export default function QuotesPage() {
         quote={selectedQuote}
         isOpen={!!selectedQuote}
         onClose={handleDetailClose}
+        quotes={quotes}
+        onNavigateToQuote={setSelectedQuote}
       />
       
       {/* 页面级别的键盘导航说明 */}
