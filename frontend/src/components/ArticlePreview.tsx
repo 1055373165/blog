@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
+import HTMLRenderer from './HTMLRenderer';
 import type { CreateArticleInput } from '../types';
 
 interface ArticlePreviewProps {
@@ -14,6 +15,15 @@ interface ArticlePreviewProps {
 
 export default function ArticlePreview({ article, className = '' }: ArticlePreviewProps) {
   const estimatedReadingTime = Math.ceil(article.content.length / 200);
+  
+  // 检测内容格式 - 如果包含HTML标签，则认为是HTML格式
+  const isHTMLContent = (content: string): boolean => {
+    // 检查是否包含常见的HTML标签
+    const htmlTagRegex = /<\/?(?:h[1-6]|p|div|span|img|a|strong|em|ul|ol|li|blockquote|code|pre|table|tr|td|th)(?:\s[^>]*)?>(?!.*<\/markdown>)/i;
+    return htmlTagRegex.test(content);
+  };
+  
+  const isHTML = isHTMLContent(article.content);
   
   return (
     <div className={`max-w-4xl mx-auto ${className}`}>
@@ -79,86 +89,90 @@ export default function ArticlePreview({ article, className = '' }: ArticlePrevi
 
       {/* Article Content */}
       <article className="prose prose-lg dark:prose-invert max-w-none">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[
-            rehypeHighlight,
-            rehypeSlug,
-            [rehypeAutolinkHeadings, { behavior: 'wrap' }]
-          ]}
-          components={{
-            code({ node, inline, className, children, ...props }: any) {
-              const match = /language-(\w+)/.exec(className || '');
-              return !inline && match ? (
-                <SyntaxHighlighter
-                  style={oneLight as any}
-                  language={match[1]}
-                  PreTag="div"
-                  {...props}
-                >
-                  {String(children).replace(/\n$/, '')}
-                </SyntaxHighlighter>
-              ) : (
-                <code className={className} {...props}>
-                  {children}
-                </code>
-              );
-            },
-            img({ node, ...props }: any) {
-              return (
-                <img
-                  {...props}
-                  className="rounded-lg shadow-md max-w-full h-auto"
-                  loading="lazy"
-                />
-              );
-            },
-            blockquote({ node, children, ...props }: any) {
-              return (
-                <blockquote
-                  className="border-l-4 border-primary-500 bg-gray-50 dark:bg-gray-800 p-4 my-4 italic"
-                  {...props}
-                >
-                  {children}
-                </blockquote>
-              );
-            },
-            table({ node, children, ...props }: any) {
-              return (
-                <div className="overflow-x-auto my-6">
-                  <table
-                    className="min-w-full border border-gray-300 dark:border-gray-600"
+        {isHTML ? (
+          <HTMLRenderer content={article.content || '暂无内容'} />
+        ) : (
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[
+              rehypeHighlight,
+              rehypeSlug,
+              [rehypeAutolinkHeadings, { behavior: 'wrap' }]
+            ]}
+            components={{
+              code({ node, inline, className, children, ...props }: any) {
+                const match = /language-(\w+)/.exec(className || '');
+                return !inline && match ? (
+                  <SyntaxHighlighter
+                    style={oneLight as any}
+                    language={match[1]}
+                    PreTag="div"
+                    {...props}
+                  >
+                    {String(children).replace(/\n$/, '')}
+                  </SyntaxHighlighter>
+                ) : (
+                  <code className={className} {...props}>
+                    {children}
+                  </code>
+                );
+              },
+              img({ node, ...props }: any) {
+                return (
+                  <img
+                    {...props}
+                    className="rounded-lg shadow-md max-w-full h-auto"
+                    loading="lazy"
+                  />
+                );
+              },
+              blockquote({ node, children, ...props }: any) {
+                return (
+                  <blockquote
+                    className="border-l-4 border-primary-500 bg-gray-50 dark:bg-gray-800 p-4 my-4 italic"
                     {...props}
                   >
                     {children}
-                  </table>
-                </div>
-              );
-            },
-            th({ node, children, ...props }: any) {
-              return (
-                <th
-                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 font-semibold text-left"
-                  {...props}
-                >
-                  {children}
-                </th>
-              );
-            },
-            td({ node, children, ...props }: any) {
-              return (
-                <td
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600"
-                  {...props}
-                >
-                  {children}
-                </td>
-              );
-            },
-          }}
-        >
-          {article.content || '暂无内容'}
-        </ReactMarkdown>
+                  </blockquote>
+                );
+              },
+              table({ node, children, ...props }: any) {
+                return (
+                  <div className="overflow-x-auto my-6">
+                    <table
+                      className="min-w-full border border-gray-300 dark:border-gray-600"
+                      {...props}
+                    >
+                      {children}
+                    </table>
+                  </div>
+                );
+              },
+              th({ node, children, ...props }: any) {
+                return (
+                  <th
+                    className="px-4 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 font-semibold text-left"
+                    {...props}
+                  >
+                    {children}
+                  </th>
+                );
+              },
+              td({ node, children, ...props }: any) {
+                return (
+                  <td
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600"
+                    {...props}
+                  >
+                    {children}
+                  </td>
+                );
+              },
+            }}
+          >
+            {article.content || '暂无内容'}
+          </ReactMarkdown>
+        )}
       </article>
 
       {/* Article Footer */}
