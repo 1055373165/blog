@@ -245,11 +245,11 @@ export default function QuoteDetailModal({
           {quotes.length > 1 && currentIndex > 0 && (
             <button
               onClick={handlePrevious}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 p-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full shadow-lg transition-all duration-200 ease-in-out hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 z-20 p-2 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-700 rounded-full shadow-md backdrop-blur-sm transition-all duration-200 ease-in-out hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-500 opacity-70 hover:opacity-100"
               aria-label="上一个箴言 (←)"
               title="上一个箴言 (←)"
             >
-              <svg className="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
@@ -259,11 +259,11 @@ export default function QuoteDetailModal({
           {quotes.length > 1 && currentIndex < quotes.length - 1 && (
             <button
               onClick={handleNext}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-20 p-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full shadow-lg transition-all duration-200 ease-in-out hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 z-20 p-2 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-700 rounded-full shadow-md backdrop-blur-sm transition-all duration-200 ease-in-out hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-500 opacity-70 hover:opacity-100"
               aria-label="下一个箴言 (→)"
               title="下一个箴言 (→)"
             >
-              <svg className="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>

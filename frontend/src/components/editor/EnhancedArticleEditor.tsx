@@ -313,6 +313,10 @@ export default function EnhancedArticleEditor({
     onChange(html);
   }, [convertMarkdownToHtml, onChange]);
 
+  // Store cursor position for markdown textarea
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const cursorPositionRef = useRef<number>(0);
+
   // Handle media upload
   const handleMediaUpload = useCallback((url: string, alt?: string) => {
     if (mode === 'rich' && editor) {
@@ -470,6 +474,21 @@ export default function EnhancedArticleEditor({
     }
   }, [value, markdownContent, convertHtmlToMarkdown]);
 
+  // Restore cursor position after markdown content updates
+  useEffect(() => {
+    if (mode === 'markdown' && textareaRef.current && cursorPositionRef.current > 0) {
+      const textarea = textareaRef.current;
+      const position = Math.min(cursorPositionRef.current, textarea.value.length);
+      
+      // Use requestAnimationFrame to ensure DOM updates are complete
+      requestAnimationFrame(() => {
+        if (textarea === document.activeElement) {
+          textarea.setSelectionRange(position, position);
+        }
+      });
+    }
+  }, [markdownContent, mode]);
+
   // Add event listeners for clipboard paste and drag & drop
   useEffect(() => {
     const editorElement = document.querySelector('.enhanced-article-editor');
@@ -593,8 +612,21 @@ export default function EnhancedArticleEditor({
 
         {mode === 'markdown' && (
           <textarea
+            ref={textareaRef}
             value={markdownContent}
-            onChange={(e) => handleMarkdownChange(e.target.value)}
+            onChange={(e) => {
+              // Store cursor position before update
+              cursorPositionRef.current = e.target.selectionStart;
+              handleMarkdownChange(e.target.value);
+            }}
+            onKeyUp={(e) => {
+              // Update cursor position on key events
+              cursorPositionRef.current = (e.target as HTMLTextAreaElement).selectionStart;
+            }}
+            onMouseUp={(e) => {
+              // Update cursor position on mouse events
+              cursorPositionRef.current = (e.target as HTMLTextAreaElement).selectionStart;
+            }}
             placeholder={placeholder}
             className="w-full h-full p-4 resize-none border-none focus:outline-none bg-transparent text-gray-900 dark:text-white font-mono text-sm leading-relaxed"
             style={{ minHeight: height - 100 }}
@@ -621,7 +653,10 @@ export default function EnhancedArticleEditor({
                     
                     // Set cursor position after the inserted image
                     setTimeout(() => {
-                      textarea.selectionStart = textarea.selectionEnd = start + imageMarkdown.length + 4;
+                      if (textareaRef.current) {
+                        textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + imageMarkdown.length + 4;
+                        cursorPositionRef.current = start + imageMarkdown.length + 4;
+                      }
                     }, 0);
                   }
                   break;

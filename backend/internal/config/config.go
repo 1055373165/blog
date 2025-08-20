@@ -20,6 +20,7 @@ type Config struct {
 	Search   SearchConfig
 	CORS     CORSConfig
 	App      AppConfig
+	Claude   ClaudeConfig
 }
 
 // ServerConfig 服务器配置
@@ -87,6 +88,14 @@ type AppConfig struct {
 	Environment string
 	LogLevel    string
 	Debug       bool
+}
+
+// ClaudeConfig Claude API配置
+type ClaudeConfig struct {
+	APIKey  string
+	BaseURL string
+	Model   string
+	Timeout time.Duration
 }
 
 var GlobalConfig *Config
@@ -157,6 +166,12 @@ func LoadConfig() error {
 			Environment: getEnv("ENVIRONMENT", "development"),
 			LogLevel:    getEnv("LOG_LEVEL", "info"),
 			Debug:       getBoolEnv("DEBUG", false),
+		},
+		Claude: ClaudeConfig{
+			APIKey:  getEnv("CLAUDE_API_KEY", ""),
+			BaseURL: getEnv("CLAUDE_BASE_URL", "https://api.anthropic.com"),
+			Model:   getEnv("CLAUDE_MODEL", "claude-3-haiku-20240307"),
+			Timeout: getDurationEnv("CLAUDE_TIMEOUT", "30s"),
 		},
 	}
 

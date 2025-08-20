@@ -190,9 +190,10 @@ func main() {
 		// 书籍相关路由
 		books := api.Group("/books")
 		{
-			books.GET("", handlers.GetBooks)
+			books.GET("", handlers.GetBooksSimple)
 			books.POST("/refresh", handlers.RefreshBooks)
 			books.GET("/metadata/:filename", handlers.GetBookMetadata)
+			books.GET("/description", handlers.GetBookDetailedDescription)
 		}
 	}
 

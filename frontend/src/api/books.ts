@@ -7,6 +7,11 @@ export interface Book {
   filename: string;
   title: string;
   description: string;
+  detailed_description?: string; // 新增：详细描述
+  category?: string;             // 新增：分类
+  difficulty?: string;           // 新增：难度等级
+  tags?: string[];               // 新增：标签
+  author?: string;               // 新增：作者
   url: string;
   created_at: string;
 }

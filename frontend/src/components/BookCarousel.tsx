@@ -109,6 +109,7 @@ export default function BookCarousel({
     setCurrentIndex(index);
   }, []);
 
+
   // 检测移动设备
   useEffect(() => {
     const checkIsMobile = () => {
@@ -190,7 +191,7 @@ export default function BookCarousel({
 
   return (
     <div 
-      className={`relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-slate-800 dark:to-indigo-900/20 rounded-3xl ${className}`}
+      className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-white/95 via-blue-50/80 to-purple-50/70 dark:from-gray-800/95 dark:via-gray-900/90 dark:to-gray-800/80 backdrop-blur-xl ${className}`}
       role="region"
       aria-label="Go语言书籍展示"
     >
@@ -288,10 +289,8 @@ export default function BookCarousel({
                       ${!isCenter ? 'hover:scale-105' : 'hover:scale-115 md:hover:scale-135'}
                     `}
                     onClick={() => {
-                      if (!isCenter) {
-                        // 直接跳转到点击的书籍的真实索引
-                        goToSlide(book.realIndex);
-                      }
+                      // 点击任何书籍都直接跳转到对应的书籍索引
+                      goToSlide(book.realIndex);
                     }}
                   >
                     {/* 书籍阴影 */}
@@ -324,19 +323,6 @@ export default function BookCarousel({
                         onError={() => console.error(`图片加载失败: ${book.filename}`)}
                       />
 
-                      {/* 书籍信息遮罩 */}
-                      {isCenter && (
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                            <h3 className="font-bold text-sm md:text-base mb-1 line-clamp-2">
-                              {book.title}
-                            </h3>
-                            <p className="text-xs md:text-sm opacity-90 line-clamp-2">
-                              {book.description}
-                            </p>
-                          </div>
-                        </div>
-                      )}
 
                       {/* 中心焦点指示器 */}
                       {isCenter && (
@@ -432,10 +418,11 @@ export default function BookCarousel({
         {/* 键盘操作提示 */}
         {hasBooks && !loading && (
           <div className="text-center mt-6 text-sm text-gray-500 dark:text-gray-400">
-            <p>使用 ← → 键导航，空格键控制播放</p>
+            <p>使用 ← → 键导航，空格键控制播放，点击书籍切换到对应位置</p>
           </div>
         )}
       </div>
+
     </div>
   );
 }

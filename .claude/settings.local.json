@@ -44,7 +44,9 @@
       "Bash(npm run typecheck:*)",
       "Bash(npm run:*)",
       "Bash(yarn dev:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(go fmt:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

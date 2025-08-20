@@ -1,23 +1,86 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&family=Poppins:wght@100;200;300;400;500;600;700;800;900&family=Source+Code+Pro:wght@200;300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* 字体变量定义 */
+:root {
+  /* 字体族 */
+  --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Poppins', 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Source Code Pro', 'Fira Code', monospace;
+  
+  /* 字体重量 */
+  --font-weight-thin: 100;
+  --font-weight-extralight: 200;
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
+  
+  /* 行高 */
+  --line-height-none: 1;
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 2;
+  
+  /* 字间距 */
+  --letter-spacing-tighter: -0.05em;
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0em;
+  --letter-spacing-wide: 0.025em;
+  --letter-spacing-wider: 0.05em;
+  --letter-spacing-widest: 0.1em;
+  
+  /* 字体大小缩放 */
+  --text-scale-ratio: 1.25;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --text-6xl: 3.75rem;
+  --text-7xl: 4.5rem;
+  --text-8xl: 6rem;
+  --text-9xl: 8rem;
+}
+
 /* 基础样式 */
-* {
+*,
+*::before,
+*::after {
   @apply box-border;
 }
 
-html, body {
-  @apply h-full;
+html {
+  @apply h-full scroll-smooth;
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
-  @apply antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300;
-  font-family: var(--font-body, 'Inter', system-ui, sans-serif);
-  font-weight: var(--font-weight, 400);
-  line-height: var(--line-height, 1.5);
+  @apply h-full antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+  letter-spacing: var(--letter-spacing-normal);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  font-variant-ligatures: contextual;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* 滚动条样式 */
@@ -201,11 +264,115 @@ pre[class*="language-"] code {
   @apply text-gray-400 dark:text-gray-500 select-none mr-4;
 }
 
-/* 标题样式 */
+/* 标题层次系统 */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading, var(--font-body, 'Inter', system-ui, sans-serif));
-  font-weight: var(--font-weight, 600);
-  line-height: var(--line-height, 1.25);
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+  color: inherit;
+  margin: 0;
+}
+
+h1 {
+  font-size: var(--text-4xl);
+  font-weight: var(--font-weight-extrabold);
+  line-height: var(--line-height-none);
+  letter-spacing: var(--letter-spacing-tighter);
+}
+
+h2 {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+}
+
+h3 {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-snug);
+}
+
+h4 {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+h5 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-medium);
+}
+
+h6 {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+/* 响应式标题 */
+@media (min-width: 640px) {
+  h1 { font-size: var(--text-5xl); }
+  h2 { font-size: var(--text-4xl); }
+  h3 { font-size: var(--text-3xl); }
+}
+
+@media (min-width: 1024px) {
+  h1 { font-size: var(--text-6xl); }
+  h2 { font-size: var(--text-5xl); }
+  h3 { font-size: var(--text-4xl); }
+}
+
+/* 段落和文本样式 */
+p {
+  line-height: var(--line-height-relaxed);
+  margin: 0;
+}
+
+.lead {
+  @apply text-xl text-gray-600 dark:text-gray-300;
+  font-weight: var(--font-weight-light);
+  line-height: var(--line-height-relaxed);
+}
+
+.small {
+  @apply text-sm text-gray-500 dark:text-gray-400;
+  line-height: var(--line-height-normal);
+}
+
+.caption {
+  @apply text-xs text-gray-500 dark:text-gray-400;
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+/* 代码和等宽字体 */
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+  font-feature-settings: 'calt' 1, 'liga' 1;
+}
+
+/* 强调文本 */
+strong, b {
+  font-weight: var(--font-weight-semibold);
+}
+
+em, i {
+  font-style: italic;
+}
+
+/* 列表样式优化 */
+ul, ol {
+  line-height: var(--line-height-relaxed);
+}
+
+/* 引用样式 */
+blockquote {
+  @apply border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic;
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-relaxed);
 }
 
 /* 链接样式 */

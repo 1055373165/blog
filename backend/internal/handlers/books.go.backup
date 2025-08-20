@@ -1,0 +1,804 @@
+package handlers
+
+import (
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"time"
+
+	"github.com/gin-gonic/gin"
+)
+
+// Book 书籍信息结构
+type Book struct {
+	ID                  string    `json:"id"`
+	Filename            string    `json:"filename"`
+	Title               string    `json:"title"`
+	Description         string    `json:"description"`
+	DetailedDescription string    `json:"detailed_description"` // 新增：详细描述
+	Category            string    `json:"category"`             // 新增：分类
+	Difficulty          string    `json:"difficulty"`           // 新增：难度等级
+	Tags                []string  `json:"tags"`                 // 新增：标签
+	Author              string    `json:"author"`               // 新增：作者
+	URL                 string    `json:"url"`
+	CreatedAt           time.Time `json:"created_at"`
+}
+
+// BookResponse API响应结构
+type BookResponse struct {
+	Success bool   `json:"success"`
+	Data    []Book `json:"data"`
+	Message string `json:"message,omitempty"`
+}
+
+// 支持的图片格式
+var supportedImageFormats = map[string]bool{
+	".jpg":  true,
+	".jpeg": true,
+	".png":  true,
+	".webp": true,
+	".gif":  true,
+}
+
+// BookDetail 详细书籍信息结构
+type BookDetail struct {
+	Title               string
+	Description         string
+	DetailedDescription string
+	Category            string
+	Difficulty          string
+	Tags                []string
+	Author              string
+}
+
+// 基于实际书籍文件名的详细信息映射
+var bookDatabase = map[string]BookDetail{
+	"100 个 Go 语言典型错误": {
+		Title:       "100 个 Go 语言典型错误",
+		Description: "Go语言开发中常见错误与最佳实践指南",
+		DetailedDescription: `这是一本专门针对Go语言开发中常见错误的实战指南。作者通过总结100个在Go开发过程中最容易犯的错误，从语法陷阱、并发编程、内存管理到性能优化等各个方面，帮助开发者避免常见的坑。
+
+每个错误案例都包含：
+• 错误代码示例与正确写法对比
+• 深入的原理分析和最佳实践建议  
+• 实际项目中的应用场景和解决方案
+
+适合有一定Go基础的开发者深入学习，是提升代码质量和开发效率的必备参考书。通过学习这些典型错误，你将能够写出更健壮、更高效的Go代码。`,
+		Category:   "最佳实践",
+		Difficulty: "intermediate",
+		Tags:       []string{"错误处理", "最佳实践", "调试", "代码质量"},
+		Author:     "技术专家",
+	},
+	"Go Web 编程": {
+		Title:       "Go Web 编程",
+		Description: "使用Go语言构建现代Web应用的完整指南",
+		DetailedDescription: `一本全面介绍如何使用Go语言开发Web应用程序的权威指南。从HTTP基础到高级Web框架，从模板系统到数据库操作，涵盖了Web开发的各个方面。
+
+主要内容包括：
+• Go标准库net/http包的深入使用
+• 主流Web框架Gin、Echo的实战应用
+• RESTful API设计与实现
+• 数据库集成与ORM使用
+• 中间件开发与鉴权机制
+• 模板引擎与前后端分离
+• 部署与性能优化策略
+
+通过丰富的实例和项目实战，帮助读者快速掌握Go Web开发的核心技能，构建高性能、可扩展的Web应用程序。`,
+		Category:   "Web开发",
+		Difficulty: "intermediate",
+		Tags:       []string{"Web开发", "HTTP", "API", "数据库", "框架"},
+		Author:     "Web开发专家",
+	},
+	"Go 中的函数式编程": {
+		Title:       "Go 中的函数式编程",
+		Description: "在Go语言中应用函数式编程思想与模式",
+		DetailedDescription: `探索在Go语言中应用函数式编程范式的深度指南。虽然Go不是纯函数式语言，但它支持许多函数式编程特性，本书将教你如何有效利用这些特性。
+
+核心内容：
+• 函数式编程基本概念与原理
+• Go中的高阶函数与闭包应用
+• 不可变数据结构的设计与实现
+• Map、Filter、Reduce等函数式操作
+• 函数组合与管道模式
+• 纯函数设计与副作用控制
+• 函数式并发编程模式
+
+通过理论与实践相结合的方式，帮助Go开发者掌握函数式编程思维，写出更简洁、更可测试、更容易推理的代码。`,
+		Category:   "编程范式",
+		Difficulty: "advanced",
+		Tags:       []string{"函数式编程", "高阶函数", "闭包", "不可变", "设计模式"},
+		Author:     "函数式编程专家",
+	},
+	"Go 并发-开发者的工具和技术": {
+		Title:       "Go 并发：开发者的工具和技术",
+		Description: "掌握Go语言并发编程的工具、技术和最佳实践",
+		DetailedDescription: `这是一本专门讲解Go语言并发编程的实战指南。Go语言以其优雅的并发模型而闻名，本书将深入探讨goroutine和channel的使用技巧。
+
+深入讲解：
+• Goroutine的创建、管理和生命周期
+• Channel的各种类型与通信模式
+• Select语句的高级用法与超时处理
+• Context包在并发控制中的应用
+• 并发安全的数据结构设计
+• 常见的并发模式与反模式
+• 性能监控与调试技巧
+• 分布式系统中的并发处理
+
+结合实际项目案例，从基础概念到高级技巧，帮助开发者构建高性能、可扩展的并发应用程序。`,
+		Category:   "并发编程",
+		Difficulty: "intermediate",
+		Tags:       []string{"并发", "goroutine", "channel", "性能", "分布式"},
+		Author:     "并发编程专家",
+	},
+	"Go 领域模型-使用Go构建现代商业软件": {
+		Title:       "Go 领域模型：使用Go构建现代商业软件",
+		Description: "领域驱动设计在Go语言中的实践与应用",
+		DetailedDescription: `一本专注于使用Go语言实施领域驱动设计（DDD）的实战指南。教授如何在Go项目中应用DDD理念构建复杂的商业软件系统。
+
+主要内容：
+• 领域驱动设计核心概念与原理
+• Go语言中的领域模型设计
+• 聚合根、实体、值对象的Go实现
+• 仓储模式与工作单元在Go中的应用
+• 领域服务与应用服务的分离
+• 事件驱动架构与消息传递
+• 微服务架构下的领域边界划分
+• 测试驱动开发在DDD中的实践
+
+通过真实的商业案例，展示如何用Go语言构建可维护、可扩展的企业级应用系统。`,
+		Category:   "软件架构",
+		Difficulty: "advanced",
+		Tags:       []string{"DDD", "领域模型", "架构设计", "企业级", "微服务"},
+		Author:     "架构设计专家",
+	},
+	"Go 高效并发": {
+		Title:       "Go 高效并发",
+		Description: "Go语言高效并发编程技术与实践",
+		DetailedDescription: `专注于Go语言并发编程效率提升的高级指南。深入探讨如何编写高效、稳定的并发程序，避免常见的并发陷阱。
+
+重点内容：
+• 并发编程的核心原理与底层机制
+• Goroutine池的设计与实现
+• Channel的高级用法与性能优化
+• 锁机制与无锁编程技巧
+• 内存模型与可见性保证
+• 并发程序的性能分析与调优
+• 常见并发bug的识别与修复
+• 生产环境的并发监控与诊断
+
+结合大量的性能测试数据和优化案例，帮助开发者掌握Go并发编程的精髓，构建高效稳定的并发系统。`,
+		Category:   "并发编程",
+		Difficulty: "advanced",
+		Tags:       []string{"高效并发", "性能优化", "并发调试", "内存模型", "锁机制"},
+		Author:     "并发专家",
+	},
+	"Head First 设计模式（第二版）": {
+		Title:       "Head First 设计模式（第二版）",
+		Description: "以独特的方式学习设计模式的经典教程",
+		DetailedDescription: `这是设计模式学习的经典之作。采用Head First系列独特的教学方法，通过大量的图解、实例和互动练习，让复杂的设计模式概念变得生动有趣。
+
+特色内容：
+• 23种经典设计模式的生动讲解
+• 大量的图解和实际场景应用
+• 互动式学习体验与练习题
+• 面向对象设计原则的深入理解
+• 模式之间的关系与组合使用
+• 现代软件开发中的模式应用
+• 反模式识别与避免策略
+
+第二版更新了现代编程语言的例子，增加了更多实际项目案例，是学习设计模式不可多得的优秀教材。`,
+		Category:   "设计模式",
+		Difficulty: "intermediate",
+		Tags:       []string{"设计模式", "面向对象", "软件设计", "重构", "架构"},
+		Author:     "Eric Freeman & Elisabeth Robson",
+	},
+	"Linux:Unix系统编程": {
+		Title:       "Linux/Unix系统编程",
+		Description: "Linux/Unix环境下的系统级编程完整指南",
+		DetailedDescription: `深入介绍Linux/Unix系统编程的权威指南。从基础的系统调用到高级的系统编程技术，全面覆盖了系统级开发的各个方面。
+
+核心内容：
+• 系统调用与库函数的深入理解
+• 文件I/O与文件系统编程
+• 进程创建、管理与进程间通信
+• 线程编程与同步机制
+• 信号处理与异步编程
+• 网络编程与套接字通信
+• 内存管理与共享内存
+• 系统性能监控与调试技术
+
+特别适合需要进行底层开发的程序员，以及希望深入理解操作系统工作原理的开发者。配合Go语言使用，可以构建高性能的系统级应用。`,
+		Category:   "系统编程",
+		Difficulty: "advanced",
+		Tags:       []string{"系统编程", "Linux", "Unix", "系统调用", "底层开发"},
+		Author:     "系统编程专家",
+	},
+	"UNIX 编程艺术": {
+		Title:       "UNIX 编程艺术",
+		Description: "UNIX编程哲学与设计理念的经典著作",
+		DetailedDescription: `这是一部关于UNIX编程哲学和设计理念的经典著作。作者Eric S. Raymond深入阐述了UNIX系统的设计思想，这些理念至今仍影响着现代软件开发。
+
+主要思想：
+• UNIX编程的17个基本原则
+• "做一件事并做好"的设计哲学
+• 组合小工具解决复杂问题
+• 文本流处理与管道机制
+• 配置文件与数据格式设计
+• 用户界面设计的最佳实践
+• 开源开发模式与社区协作
+• 软件工程中的简洁性原则
+
+这本书不仅讲述技术实现，更重要的是传达了一种编程思维方式。对于Go开发者来说，理解这些设计原则有助于构建更优雅的软件系统。`,
+		Category:   "编程哲学",
+		Difficulty: "intermediate",
+		Tags:       []string{"UNIX", "编程哲学", "设计原则", "软件工程", "开源"],
+		Author:     "Eric S. Raymond",
+	},
+	"UNIX网络编程卷 1：套接字联网 API": {
+		Title:       "UNIX网络编程卷1：套接字联网API",
+		Description: "网络编程领域的权威经典教程",
+		DetailedDescription: `网络编程领域的权威经典，被誉为"网络编程圣经"。深入讲解套接字API的使用，是每个网络程序员的必读之作。
+
+详细内容：
+• TCP/UDP协议的深入理解
+• 套接字编程模型与API详解
+• 客户端-服务器程序设计
+• I/O复用技术（select、poll、epoll）
+• 高级套接字选项与特性
+• IPv4/IPv6双栈编程
+• 原始套接字与包捕获
+• 网络程序的调试与性能优化
+
+对于Go网络编程开发者来说，这本书提供了底层网络编程的扎实基础。理解这些概念有助于更好地使用Go的net包进行高性能网络开发。`,
+		Category:   "网络编程",
+		Difficulty: "advanced",
+		Tags:       []string{"网络编程", "套接字", "TCP/UDP", "I/O复用", "协议"],
+		Author:     "W. Richard Stevens",
+	},
+	"代码整洁之道": {
+		Title:       "代码整洁之道",
+		Description: "编写可读、可维护代码的经典指南",
+		DetailedDescription: `Robert C. Martin（Uncle Bob）的经典著作，教授如何编写干净、可读、可维护的代码。这些原则适用于任何编程语言，包括Go语言开发。
+
+核心内容：
+• 整洁代码的基本原则与特征
+• 有意义的命名与函数设计
+• 注释的正确使用与误区避免
+• 代码格式化与组织结构
+• 错误处理的最佳实践
+• 单元测试与测试驱动开发
+• 类和对象的设计原则
+• 代码重构的策略与技巧
+
+通过大量的代码示例和重构案例，展示如何将糟糕的代码转变为优雅的代码。对于Go开发者来说，这些原则可以帮助写出更专业的Go代码。`,
+		Category:   "代码质量",
+		Difficulty: "intermediate",
+		Tags:       []string{"代码整洁", "重构", "代码规范", "可维护性", "最佳实践"},
+		Author:     "Robert C. Martin",
+	},
+	"使用 Go 实践高性能": {
+		Title:       "使用 Go 实践高性能",
+		Description: "Go语言高性能编程技术与优化策略",
+		DetailedDescription: `专注于Go语言性能优化的实战指南。从理论到实践，全面介绍如何构建高性能的Go应用程序。
+
+主要内容：
+• Go程序性能分析工具的使用
+• 内存分配与垃圾收集优化
+• CPU密集型任务的优化技巧
+• I/O操作的性能提升策略
+• 并发程序的性能调优
+• 数据结构选择与算法优化
+• 网络编程的性能最佳实践
+• 生产环境的监控与诊断
+
+结合实际的基准测试和优化案例，帮助开发者识别性能瓶颈，掌握系统性的性能优化方法。适合需要构建高性能系统的Go开发者深入学习。`,
+		Category:   "性能优化",
+		Difficulty: "advanced",
+		Tags:       []string{"高性能", "性能优化", "基准测试", "内存管理", "并发优化"},
+		Author:     "性能优化专家",
+	},
+	"使用 Go 构建调度器": {
+		Title:       "使用 Go 构建调度器",
+		Description: "用Go语言设计与实现任务调度系统",
+		DetailedDescription: `深入探讨如何使用Go语言构建高效可靠的任务调度系统。从简单的定时任务到复杂的分布式调度器，涵盖了调度系统设计的各个方面。
+
+核心内容：
+• 调度器的基本概念与设计模式
+• 时间轮算法与优先级队列实现
+• 分布式调度系统的架构设计
+• 任务持久化与故障恢复机制
+• 集群协调与负载均衡策略
+• 监控指标与健康检查
+• 任务依赖管理与工作流引擎
+• 高可用性与容错设计
+
+通过构建一个完整的调度系统项目，让读者掌握系统级软件开发的核心技能。适合希望深入理解分布式系统和任务调度原理的开发者。`,
+		Category:   "系统设计",
+		Difficulty: "advanced",
+		Tags:       []string{"调度器", "任务调度", "分布式系统", "系统设计", "高可用"},
+		Author:     "系统架构师",
+	},
+	"使用 Golang 实践软件工程": {
+		Title:       "使用 Golang 实践软件工程",
+		Description: "Go语言在软件工程中的实践与应用",
+		DetailedDescription: `全面介绍如何在软件工程实践中应用Go语言。从项目管理到代码质量，从测试策略到部署运维，涵盖软件开发生命周期的各个环节。
+
+详细内容：
+• Go项目的结构设计与组织方式
+• 依赖管理与模块化开发
+• 代码质量控制与静态分析
+• 持续集成与持续部署实践
+• 测试策略与测试金字塔
+• 文档编写与API设计规范
+• 版本控制与发布管理
+• 监控、日志与运维最佳实践
+
+结合实际的企业级项目经验，展示如何用Go语言构建可维护、可扩展的软件系统。适合团队技术负责人和高级开发者参考学习。`,
+		Category:   "软件工程",
+		Difficulty: "intermediate",
+		Tags:       []string{"软件工程", "项目管理", "代码质量", "CI/CD", "团队协作"},
+		Author:     "软件工程专家",
+	},
+	"使用测试学习 Go": {
+		Title:       "使用测试学习 Go",
+		Description: "通过测试驱动开发学习Go语言编程",
+		DetailedDescription: `一种独特的Go语言学习方法：通过编写测试来学习语言特性。这种学习方式不仅让你掌握Go语言，同时培养良好的测试习惯。
+
+学习内容：
+• Go语言基础语法与特性
+• 测试驱动开发（TDD）方法论
+• Go标准库的测试与使用
+• 单元测试、集成测试的编写
+• 基准测试与性能测试
+• Mock对象与依赖注入
+• 测试覆盖率与质量评估
+• 持续集成中的自动化测试
+
+每个章节都以测试为起点，通过红-绿-重构的循环来学习新概念。这种方法确保学到的代码都是经过测试验证的，培养编写可靠代码的习惯。`,
+		Category:   "学习教程",
+		Difficulty: "beginner",
+		Tags:       []string{"TDD", "测试", "Go基础", "学习方法", "代码质量"},
+		Author:     "测试专家",
+	},
+	"在 Go 中应用 TDD": {
+		Title:       "在 Go 中应用 TDD",
+		Description: "测试驱动开发在Go语言项目中的实践应用",
+		DetailedDescription: `深入探讨测试驱动开发（TDD）在Go语言项目中的应用。从TDD基本原理到实际项目实践，全面掌握这种高效的开发方法。
+
+核心内容：
+• TDD的核心思想与开发流程
+• Go语言测试框架与工具使用
+• 单元测试的设计与实现策略
+• 集成测试与端到端测试
+• 测试替身（Mock、Stub、Fake）的应用
+• 遗留代码的测试策略
+• TDD在团队开发中的实践
+• 测试质量的评估与改进
+
+通过真实项目案例，展示TDD如何提高代码质量、减少bug、改善设计。帮助Go开发者建立正确的测试观念，掌握TDD的精髓。`,
+		Category:   "测试开发",
+		Difficulty: "intermediate",
+		Tags:       []string{"TDD", "测试驱动", "单元测试", "代码设计", "开发方法论"},
+		Author:     "TDD实践专家",
+	},
+	"操作系统导论": {
+		Title:       "操作系统导论",
+		Description: "现代操作系统原理与实现的入门指南",
+		DetailedDescription: `一本优秀的操作系统教材，以清晰易懂的方式介绍现代操作系统的核心概念和实现原理。对于系统级编程和Go语言底层理解都很有帮助。
+
+主要内容：
+• 进程与线程的概念与实现
+• CPU调度算法与策略
+• 内存管理与虚拟内存系统
+• 文件系统的设计与实现
+• I/O系统与设备管理
+• 同步与互斥机制
+• 分布式系统基础
+• 系统安全与保护机制
+
+书中结合了大量的实例和动手练习，帮助读者深入理解操作系统的工作原理。对于Go开发者来说，理解这些底层概念有助于编写更高效的程序。`,
+		Category:   "操作系统",
+		Difficulty: "intermediate",
+		Tags:       []string{"操作系统", "进程", "内存管理", "文件系统", "系统原理"},
+		Author:     "Remzi H. Arpaci-Dusseau",
+	},
+	"更高效的 Go ": {
+		Title:       "更高效的 Go",
+		Description: "提升Go语言开发效率的实用技巧与最佳实践",
+		DetailedDescription: `专注于提升Go语言开发效率的实用指南。从代码编写技巧到开发工具使用，全面提升Go编程的效率和质量。
+
+实用技巧：
+• Go语言惯用法与代码风格
+• 高效的IDE配置与插件使用
+• 调试技巧与问题定位方法
+• 代码生成工具与模板使用
+• 性能分析与优化工具链
+• 自动化测试与持续集成
+• 第三方库的选择与集成
+• 生产环境的部署与监控
+
+通过大量的实际案例和技巧分享，帮助Go开发者建立高效的开发工作流程。适合有一定Go基础，希望进一步提升开发效率的程序员。`,
+		Category:   "开发效率",
+		Difficulty: "intermediate",
+		Tags:       []string{"开发效率", "最佳实践", "工具使用", "代码风格", "工作流程"},
+		Author:     "Go效率专家",
+	},
+	"深入理解 Go 并发编程（鸟窝老师）": {
+		Title:       "深入理解 Go 并发编程（鸟窝老师）",
+		Description: "Go并发编程的深度剖析与实战应用",
+		DetailedDescription: `鸟窝老师关于Go并发编程的深度解析。作为Go语言社区的知名专家，作者以其丰富的实践经验，深入浅出地讲解Go并发编程的方方面面。
+
+深度内容：
+• Go并发模型的底层实现原理
+• Goroutine调度器的工作机制
+• Channel的内部结构与通信原理
+• 内存模型与并发安全保证
+• 常见并发模式的深入分析
+• 并发程序的调试与性能调优
+• 生产环境的并发问题排查
+• 高级并发技巧与最佳实践
+
+结合作者在大型互联网公司的实战经验，提供了很多生产环境中的真实案例和解决方案。是Go并发编程领域的优秀参考资料。`,
+		Category:   "并发编程",
+		Difficulty: "advanced",
+		Tags:       []string{"并发编程", "底层原理", "性能调优", "生产实践", "深度解析"},
+		Author:     "鸟窝（韩茹）",
+	},
+	"深入理解 Linux 网络（彦飞老师）": {
+		Title:       "深入理解 Linux 网络（彦飞老师）",
+		Description: "Linux网络编程与网络协议栈的深度解析",
+		DetailedDescription: `彦飞老师关于Linux网络编程的深度解析。从网络协议栈到高性能网络编程，全面剖析Linux网络系统的工作原理。
+
+深入内容：
+• Linux网络协议栈的实现原理
+• 套接字API的底层机制
+• 高性能网络I/O模型比较
+• 网络性能优化与调优技巧
+• 网络编程中的常见问题与解决方案
+• 抓包分析与网络调试方法
+• 云原生网络架构设计
+• 网络安全与防护策略
+
+对于Go网络编程开发者来说，理解Linux网络的底层原理有助于构建更高效的网络应用。书中的性能优化技巧可以直接应用到Go网络程序中。`,
+		Category:   "网络编程",
+		Difficulty: "advanced",
+		Tags:       []string{"Linux网络", "协议栈", "网络编程", "性能优化", "底层原理"},
+		Author:     "张彦飞",
+	},
+	"深入理解 Linux 进程与内存（彦飞老师）": {
+		Title:       "深入理解 Linux 进程与内存（彦飞老师）",
+		Description: "Linux进程管理与内存系统的深度剖析",
+		DetailedDescription: `彦飞老师关于Linux进程与内存管理的深度解析。详细讲解Linux系统中进程的创建、调度、内存管理等核心机制。
+
+核心内容：
+• Linux进程的生命周期管理
+• 进程调度算法与调度策略
+• 虚拟内存系统的实现原理
+• 内存分配与回收机制
+• 进程间通信的各种方式
+• 内存映射与共享内存技术
+• 系统调用的实现机制
+• 性能监控与问题诊断方法
+
+对于Go开发者来说，深入理解这些系统级概念有助于：
+• 优化Go程序的内存使用
+• 理解Go运行时的工作原理  
+• 提升系统级编程能力
+• 解决复杂的性能问题`,
+		Category:   "系统编程",
+		Difficulty: "advanced",
+		Tags:       []string{"Linux系统", "进程管理", "内存管理", "系统调用", "底层原理"},
+		Author:     "张彦飞",
+	},
+	"深入理解计算机系统（神书）": {
+		Title:       "深入理解计算机系统（神书）",
+		Description: "计算机系统的经典教材，程序员必读的系统级编程圣经",
+		DetailedDescription: `被誉为"神书"的计算机系统经典教材。从程序员的角度深入浅出地介绍计算机系统的实现原理，是系统级编程的必备参考。
+
+经典内容：
+• 信息的表示与处理
+• 程序的机器级表示
+• 处理器架构设计
+• 优化程序性能的技术
+• 内存层次结构
+• 链接与加载过程
+• 异常控制流
+• 虚拟内存系统
+• 系统级I/O编程
+• 网络编程基础
+• 并发编程原理
+
+这本书将底层的硬件实现与上层的软件应用有机结合，帮助程序员建立系统级的思维方式。对于Go开发者来说，理解这些概念有助于：
+• 编写更高效的Go程序
+• 理解Go运行时的底层机制
+• 解决复杂的系统级问题`,
+		Category:   "计算机系统",
+		Difficulty: "advanced",
+		Tags:       []string{"计算机系统", "系统级编程", "底层原理", "性能优化", "经典教材"},
+		Author:     "Randal E. Bryant & David R. O'Hallaron",
+	},
+	"超越高效 Go 的第 1 部分：实现高性能代码": {
+		Title:       "超越高效 Go 的第1部分：实现高性能代码",
+		Description: "Go语言高性能代码编写的进阶指南",
+		DetailedDescription: `这是一个系列教程的第一部分，专注于如何编写高性能的Go代码。从基础优化到高级技巧，全面提升Go程序的执行效率。
+
+性能优化内容：
+• Go程序性能分析方法与工具
+• CPU密集型代码的优化策略
+• 内存分配优化与垃圾回收调优
+• 算法与数据结构的性能考量
+• 编译器优化与汇编级分析
+• 基准测试的设计与实施
+• 性能回归的识别与预防
+• 生产环境的性能监控
+
+通过深入的性能分析和大量的优化案例，帮助Go开发者掌握性能优化的系统方法。适合追求极致性能的高级Go开发者学习。`,
+		Category:   "性能优化",
+		Difficulty: "advanced",
+		Tags:       []string{"高性能", "代码优化", "性能分析", "基准测试", "系统级优化"},
+		Author:     "高性能编程专家",
+	},
+	"超越高效Go第2部分：追求高质量代码": {
+		Title:       "超越高效Go第2部分：追求高质量代码",
+		Description: "Go语言高质量代码编写的完整指南",
+		DetailedDescription: `系列教程的第二部分，从性能转向质量，专注于如何编写高质量、可维护的Go代码。涵盖代码设计、架构模式、测试策略等多个方面。
+
+高质量代码内容：
+• 代码设计原则与最佳实践
+• 清晰的架构设计与模块化
+• 错误处理的优雅实现
+• 接口设计与依赖注入
+• 代码审查与质量控制
+• 测试策略与覆盖率提升
+• 文档编写与代码可读性
+• 重构技巧与代码演进
+
+结合实际项目经验，展示如何在保持高性能的同时，确保代码的长期可维护性。帮助开发者建立全面的代码质量观念。`,
+		Category:   "代码质量",
+		Difficulty: "advanced",
+		Tags:       []string{"代码质量", "软件设计", "架构模式", "可维护性", "最佳实践"},
+		Author:     "代码质量专家",
+	},
+	"重构（改善既有代码的设计）": {
+		Title:       "重构：改善既有代码的设计",
+		Description: "代码重构的经典指南，改善代码结构与设计的权威教材",
+		DetailedDescription: `Martin Fowler的经典著作，系统地介绍了代码重构的理论、方法和实践。这是每个程序员都应该掌握的核心技能。
+
+重构精髓：
+• 重构的基本原则与时机判断
+• 代码异味的识别与分析
+• 90多种重构技法的详细说明
+• 重构与测试的协调配合
+• 重构工具的使用与自动化
+• 大型重构项目的管理策略
+• 重构中的风险控制
+• 团队重构的协作模式
+
+每种重构技法都包含：动机、做法、示例代码。虽然书中使用Java示例，但这些重构原则完全适用于Go语言开发。掌握重构技能可以让Go代码持续保持健康状态。`,
+		Category:   "代码重构",
+		Difficulty: "intermediate",
+		Tags:       []string{"重构", "代码设计", "代码异味", "软件维护", "设计模式"},
+		Author:     "Martin Fowler",
+	},
+	"高级 Golang 编程方式": {
+		Title:       "高级 Golang 编程方式",
+		Description: "Go语言高级编程技巧与实践模式",
+		DetailedDescription: `深入探讨Go语言的高级编程技巧和实践模式。适合有一定Go基础，希望进一步提升编程水平的开发者。
+
+高级技巧：
+• Go语言的高级特性与惯用法
+• 接口的高级用法与设计模式
+• 反射机制的原理与应用
+• 泛型编程的最佳实践
+• 代码生成与元编程技术
+• 插件系统的设计与实现
+• 内存池与对象池的优化
+• 高级并发模式与工具
+
+通过深入的案例分析和实战项目，展示如何在实际开发中应用这些高级技巧。帮助Go开发者从初级向高级过渡，掌握企业级开发所需的核心技能。`,
+		Category:   "高级编程",
+		Difficulty: "advanced",
+		Tags:       []string{"高级编程", "设计模式", "反射", "泛型", "元编程"},
+		Author:     "Go高级编程专家",
+	},
+}
+
+// 智能书籍信息生成器
+func generateBookInfo(filename string) (title, description, detailedDescription, category, difficulty, author string, tags []string) {
+	// 移除扩展名
+	name := strings.TrimSuffix(filename, filepath.Ext(filename))
+	
+	// 查找精确匹配
+	if detail, exists := bookDatabase[name]; exists {
+		return detail.Title, detail.Description, detail.DetailedDescription,
+			detail.Category, detail.Difficulty, detail.Author, detail.Tags
+	}
+	
+	// 如果没有精确匹配，使用默认生成
+	return generateDefaultBookInfo(name)
+}
+
+func generateDefaultBookInfo(name string) (title, description, detailedDescription, category, difficulty, author string, tags []string) {
+	// 智能标题美化
+	title = strings.ReplaceAll(name, "_", " ")
+	title = strings.ReplaceAll(title, "-", " ")
+	
+	// 检测常见的技术关键词
+	lowerName := strings.ToLower(name)
+	
+	// 根据文件名模式智能生成标题和描述
+	switch {
+	case strings.Contains(lowerName, "image") && strings.Contains(lowerName, "202"):
+		// 截图格式的文件名
+		return "Go编程技术图解", "Go语言技术概念与实践图解说明", 
+			   "通过图解的方式展示Go语言的核心概念和编程技巧，适合视觉学习者快速掌握Go语言要点。",
+			   "学习教程", "beginner", "技术专家", []string{"图解", "Go基础", "可视化学习"}
+	case strings.Contains(lowerName, "go"):
+		return "Go语言编程指南", "深入浅出Go语言编程技术", 
+			   "全面介绍Go语言的编程技术，从基础语法到高级特性，适合不同水平的开发者学习参考。",
+			   "编程语言", "intermediate", "Go专家", []string{"Go语言", "编程指南", "技术学习"}
+	case strings.Contains(lowerName, "book"):
+		return "技术编程手册", "全面的编程技术参考指南", 
+			   "涵盖多种编程技术的综合性参考手册，适合作为日常开发工作的技术查询工具。",
+			   "技术参考", "intermediate", "技术专家", []string{"编程手册", "技术参考", "工具书"}
+	default:
+		// 默认美化处理
+		title = strings.Title(title)
+		if title == "" {
+			title = "Go编程技术读物"
+		}
+		return title, "精选技术读物，助力编程技能提升", 
+			   "这是一本精心挑选的技术读物，内容丰富实用，能够帮助开发者提升编程技能和技术水平。",
+			   "技术读物", "intermediate", "技术专家", []string{"技术学习", "编程提升", "开发指南"}
+	}
+}
+
+// GetBooks 获取书籍列表API
+func GetBooks(c *gin.Context) {
+	// 书籍目录路径
+	booksPath := "../frontend/public/books"
+	
+	// 检查目录是否存在
+	if _, err := os.Stat(booksPath); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, BookResponse{
+			Success: false,
+			Message: "书籍目录不存在",
+		})
+		return
+	}
+	
+	// 读取目录内容
+	files, err := ioutil.ReadDir(booksPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, BookResponse{
+			Success: false,
+			Message: "读取书籍目录失败",
+		})
+		return
+	}
+	
+	var books []Book
+	
+	// 遍历文件
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		
+		filename := file.Name()
+		ext := strings.ToLower(filepath.Ext(filename))
+		
+		// 检查是否为支持的图片格式
+		if !supportedImageFormats[ext] {
+			continue
+		}
+		
+		// 生成书籍信息
+		title, description, detailedDescription, category, difficulty, author, tags := generateBookInfo(filename)
+		
+		book := Book{
+			ID:                  generateBookID(filename),
+			Filename:            filename,
+			Title:               title,
+			Description:         description,
+			DetailedDescription: detailedDescription,
+			Category:            category,
+			Difficulty:          difficulty,
+			Tags:                tags,
+			Author:              author,
+			URL:                 fmt.Sprintf("/books/%s", filename),
+			CreatedAt:           file.ModTime(),
+		}
+		
+		books = append(books, book)
+	}
+	
+	// 按创建时间排序（最新的在前）
+	sort.Slice(books, func(i, j int) bool {
+		return books[i].CreatedAt.After(books[j].CreatedAt)
+	})
+	
+	c.JSON(http.StatusOK, BookResponse{
+		Success: true,
+		Data:    books,
+		Message: fmt.Sprintf("成功获取 %d 本书籍", len(books)),
+	})
+}
+
+// 生成书籍ID（基于文件名的简单hash）
+func generateBookID(filename string) string {
+	// 使用文件名前8个字符作为ID，如果不足则使用完整文件名
+	name := strings.TrimSuffix(filename, filepath.Ext(filename))
+	if len(name) >= 8 {
+		return name[:8]
+	}
+	return name
+}
+
+// RefreshBooks 刷新书籍缓存API（预留给将来使用）
+func RefreshBooks(c *gin.Context) {
+	// 这里可以实现缓存刷新逻辑
+	// 目前直接调用GetBooks即可，因为我们没有实现缓存
+	GetBooks(c)
+}
+
+// GetBookMetadata 获取书籍元数据API（可扩展用于获取更详细的信息）
+func GetBookMetadata(c *gin.Context) {
+	filename := c.Param("filename")
+	if filename == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "文件名不能为空",
+		})
+		return
+	}
+	
+	// 检查文件是否存在
+	booksPath := "../frontend/public/books"
+	filePath := filepath.Join(booksPath, filename)
+	
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"error":   "文件不存在",
+		})
+		return
+	}
+	
+	// 获取文件信息
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "获取文件信息失败",
+		})
+		return
+	}
+	
+	title, description, detailedDescription, category, difficulty, author, tags := generateBookInfo(filename)
+	
+	metadata := map[string]interface{}{
+		"id":                   generateBookID(filename),
+		"filename":             filename,
+		"title":                title,
+		"description":          description,
+		"detailed_description": detailedDescription,
+		"category":             category,
+		"difficulty":           difficulty,
+		"tags":                 tags,
+		"author":               author,
+		"url":                  fmt.Sprintf("/books/%s", filename),
+		"size":                 fileInfo.Size(),
+		"created_at":           fileInfo.ModTime(),
+		"extension":            filepath.Ext(filename),
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    metadata,
+	})
+}

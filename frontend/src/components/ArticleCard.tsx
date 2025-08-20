@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { Article } from '../types';
 import { formatDate, formatReadingTime } from '../utils';
 import { useEffect, useRef } from 'react';
+import Card from './ui/Card';
+import Button from './ui/Button';
 
 interface ArticleCardProps {
   article: Article;
@@ -18,12 +20,29 @@ export default function ArticleCard({
   showTags = true,
   showStats = true
 }: ArticleCardProps) {
-  const cardRef = useRef<HTMLElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  const cardClasses = {
-    default: 'bg-white dark:bg-gray-800 rounded-xl shadow-soft hover:shadow-medium border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:-translate-y-1 overflow-hidden',
-    compact: 'bg-white dark:bg-gray-800 rounded-lg shadow-soft hover:shadow-medium border border-gray-100 dark:border-gray-800 transition-all duration-300 hover:-translate-y-0.5 overflow-hidden',
-    featured: 'bg-gradient-to-br from-white via-white to-go-50/30 dark:from-gray-800 dark:via-gray-800 dark:to-go-900/20 rounded-2xl shadow-strong hover:shadow-strong border-2 border-go-200 dark:border-go-800 transition-all duration-300 hover:-translate-y-2 overflow-hidden group',
+  // 根据变体选择 Card 的样式
+  const getCardVariant = () => {
+    switch (variant) {
+      case 'featured':
+        return 'gradient';
+      case 'compact':
+        return 'default';
+      default:
+        return 'elevated';
+    }
+  };
+
+  const getCardSize = () => {
+    switch (variant) {
+      case 'featured':
+        return 'lg';
+      case 'compact':
+        return 'sm';
+      default:
+        return 'md';
+    }
   };
 
   const titleClasses = {
@@ -33,22 +52,22 @@ export default function ArticleCard({
   };
 
   return (
-    <article ref={cardRef} className={cardClasses[variant]}>
-      {/* Cover Image */}
-      {article.cover_image && variant !== 'compact' && (
-        <div className="aspect-video overflow-hidden">
-          <img
-            src={article.cover_image}
-            alt={article.title}
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-          />
-        </div>
-      )}
-
-      <div className={variant === 'featured' ? 'p-6' : 'p-4'}>
+    <Card 
+      ref={cardRef} 
+      variant={getCardVariant()}
+      size={getCardSize()}
+      hoverable
+      animated
+      image={article.cover_image && variant !== 'compact' ? article.cover_image : undefined}
+      imageAlt={article.title}
+      imagePosition={article.cover_image && variant !== 'compact' ? 'top' : undefined}
+      className={variant === 'featured' ? 'group' : ''}
+    >
+      {/* 文章内容 */}
+      <div className="space-y-3">
         {/* Category */}
         {showCategory && article.category && (
-          <div className="mb-2">
+          <div>
             <Link
               to={`/category/${article.category.slug}`}
               className="inline-block px-3 py-1.5 text-xs font-medium text-go-700 dark:text-go-300 
@@ -152,7 +171,7 @@ export default function ArticleCard({
 
         {/* Series Info */}
         {article.series && variant !== 'compact' && (
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
             <Link
               to={`/series/${article.series.slug}`}
               className="inline-flex items-center text-sm text-go-600 dark:text-go-400 hover:text-go-700 dark:hover:text-go-300 transition-colors duration-200"
@@ -165,7 +184,26 @@ export default function ArticleCard({
             </Link>
           </div>
         )}
+
+        {/* 阅读按钮 */}
+        {variant !== 'compact' && (
+          <div className="pt-3">
+            <Link to={`/article/${article.slug}`}>
+              <Button 
+                variant={variant === 'featured' ? 'glass' : 'ghost'} 
+                size="sm"
+                rightIcon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                }
+              >
+                阅读更多
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
-    </article>
+    </Card>
   );
 }
