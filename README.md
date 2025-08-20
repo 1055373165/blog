@@ -1,124 +1,302 @@
-# 现代极简博客系统
+# Modern Blog System
 
-一个专注于强大分类和搜索功能的个人博客系统。
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go](https://img.shields.io/badge/Go-1.23+-00ADD8?logo=go&logoColor=white)](https://golang.org/)
+[![React](https://img.shields.io/badge/React-19+-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
-## 功能特色
+A modern, minimal blog system focused on powerful categorization and search capabilities with professional content management features.
 
-### 🎯 核心功能
-- **强大的分类系统**: 多层级分类、标签云、系列文章管理
-- **智能搜索**: 全文搜索、高级筛选、相关文章推荐
-- **现代化设计**: 极简风格、响应式布局、深色模式
-- **优秀的阅读体验**: Markdown支持、代码高亮、阅读进度
+## ✨ Features
 
-### 📚 分类和搜索能力
-- 多维度分类：主分类 → 子分类 → 标签
-- 全文搜索：支持标题、内容、摘要搜索
-- 高级筛选：分类+标签+时间+阅读量等组合筛选
-- 智能推荐：基于内容相似度的相关文章推荐
-- 搜索统计：热门搜索词和文章阅读统计
+### 🎯 Core Functionality
+- **Advanced Categorization**: Multi-level categories, tag clouds, article series management
+- **Intelligent Search**: Full-text search with Bleve, advanced filtering, related article recommendations
+- **Modern Design**: Minimalist UI, responsive layout, dark mode support
+- **Excellent Reading Experience**: Markdown support, syntax highlighting, reading progress tracking
+- **Content Management**: Rich text editor with TipTap, image uploads, article drafts
+- **Quote System**: Curated quotes with advanced filtering and display modes
 
-## 技术架构
+### 📚 Search & Organization
+- Multi-dimensional categorization: Categories → Subcategories → Tags
+- Full-text search: Title, content, and excerpt search powered by Bleve
+- Advanced filtering: Category + tag + date + view count combinations
+- Smart recommendations: Content-based article suggestions
+- Search analytics: Popular search terms and reading statistics
+
+### 🛠️ Technical Highlights
+- **Full-Stack TypeScript**: Type-safe development across frontend and backend
+- **Modern React**: React 19 with hooks, context, and performance optimizations
+- **Go Backend**: High-performance API with Gin framework and GORM
+- **Search Engine**: Bleve full-text search with Chinese language support
+- **Responsive UI**: Tailwind CSS with mobile-first design
+- **Docker Ready**: Complete containerization for easy deployment
+
+## 🏗️ Architecture
 
 ```
 blog/
-├── frontend/          # React + TypeScript + Vite
-├── backend/           # Node.js + Express + TypeScript
-├── docker/            # Docker 配置文件
-├── docs/              # 项目文档
-└── README.md          # 项目说明
+├── frontend/           # React 19 + TypeScript + Vite
+│   ├── src/
+│   │   ├── components/     # Reusable UI components
+│   │   ├── pages/          # Route components
+│   │   ├── contexts/       # React contexts
+│   │   ├── hooks/          # Custom hooks
+│   │   └── utils/          # Utilities and helpers
+│   └── package.json
+├── backend/            # Go + Gin + GORM
+│   ├── cmd/               # Application entry points
+│   ├── internal/          # Private application code
+│   │   ├── handlers/      # HTTP handlers
+│   │   ├── models/        # Data models
+│   │   ├── services/      # Business logic
+│   │   └── middleware/    # HTTP middleware
+│   ├── pkg/              # Public libraries
+│   └── go.mod
+├── docker/            # Docker configuration
+├── scripts/           # Development and deployment scripts
+└── docker-compose.yml
 ```
 
-### 技术栈
-- **前端**: React 18, TypeScript, Vite, Tailwind CSS
-- **后端**: Node.js, Express, TypeScript, Prisma ORM  
-- **数据库**: PostgreSQL, Redis
-- **部署**: Docker, Docker Compose, Nginx
+## 🚀 Tech Stack
 
-## 🚀 快速开始
+### Frontend
+- **React 19** - Latest React with concurrent features
+- **TypeScript 5.8+** - Type-safe JavaScript
+- **Vite** - Fast build tool and dev server
+- **Tailwind CSS** - Utility-first CSS framework
+- **React Router** - Client-side routing
+- **React Query** - Server state management
+- **TipTap** - Rich text editor
+- **Lucide React** - Modern icon library
 
-### 一键启动（推荐）
+### Backend  
+- **Go 1.23+** - Modern, efficient backend language
+- **Gin** - High-performance HTTP web framework
+- **GORM** - Developer-friendly ORM
+- **Bleve** - Full-text search and indexing
+- **JWT** - Secure authentication
+- **bcrypt** - Password hashing
+
+### Database & Infrastructure
+- **MySQL 8+** - Primary database
+- **Redis 7** - Caching and session storage
+- **Docker** - Containerization
+- **Docker Compose** - Multi-container orchestration
+- **Nginx** - Reverse proxy and static file serving
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Go 1.23+**
+- **Node.js 18+** 
+- **MySQL 8+**
+- **Docker & Docker Compose** (recommended)
+
+### One-Click Setup (Recommended)
 
 ```bash
-# 确保Docker已运行，然后执行：
+# Clone the repository
+git clone <repository-url>
+cd blog
+
+# Ensure Docker is running, then execute:
 ./start-dev.sh
 ```
 
-脚本会自动：
-- 启动PostgreSQL和Redis数据库
-- 安装依赖并启动后端服务 (端口 3001)
-- 安装依赖并启动前端服务 (端口 3000)
+The script will automatically:
+- Start MySQL and Redis databases
+- Install dependencies and start backend service (port 3001)
+- Install dependencies and start frontend service (port 5173)
 
-### 手动启动
+### Manual Setup
 
-#### 开发环境要求
-- Node.js >= 18
-- Go >= 1.21
-- PostgreSQL >= 14
-- Redis >= 6 (可选)
-- Docker & Docker Compose
-
-#### 1. 启动数据库服务
+#### 1. Database Setup
 ```bash
-# 使用Docker启动数据库
-docker-compose up -d postgres redis
+# Start databases with Docker
+docker-compose up -d redis
+
+# For MySQL, ensure it's running on localhost:3306
+# macOS: brew services start mysql
+# Ubuntu: sudo systemctl start mysql
 ```
 
-#### 2. 配置环境变量
+#### 2. Environment Configuration
 ```bash
-# 复制环境配置文件
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-
-# 根据需要修改配置
+# Create environment files
+echo "DB_PASSWORD=your_mysql_password" > .env
+echo "VITE_API_BASE_URL=http://localhost:3001" > frontend/.env
 ```
 
-#### 3. 启动后端服务
+#### 3. Backend Setup
 ```bash
 cd backend
-make deps    # 安装Go依赖
-make dev     # 启动开发服务器
+make deps    # Install Go dependencies
+make dev     # Start development server
 ```
 
-#### 4. 启动前端服务
+#### 4. Frontend Setup
 ```bash
 cd frontend
-npm install  # 安装依赖
-npm run dev  # 启动开发服务器
+yarn install  # Install dependencies
+yarn dev      # Start development server
 ```
 
-### 生产部署
+### Production Deployment
 
 ```bash
-# 构建和启动所有服务
+# Build and start all services
 docker-compose --profile production up -d
 
-# 查看服务状态
+# Check service status
 docker-compose ps
 ```
 
-### 服务地址
+## 🌐 Service URLs
 
-- 🎨 **前端**: http://localhost:3000
-- 🔧 **后端API**: http://localhost:3001
-- 🗄️ **数据库**: localhost:5432
-- 🔴 **Redis**: localhost:6379
+| Service | Development | Production |
+|---------|-------------|------------|
+| 🎨 Frontend | http://localhost:5173 | http://localhost:3000 |
+| 🔧 Backend API | http://localhost:3001 | http://localhost:3001 |
+| 🗄️ MySQL | localhost:3306 | localhost:3306 |
+| 🔴 Redis | localhost:6379 | localhost:6379 |
 
-### 默认账户
+### Default Credentials
 
-- **管理员**: admin@blog.com / password
+- **Admin**: admin@blog.com / password
 
-## 项目进展
+## 📖 API Documentation
 
-- [x] 项目结构搭建
-- [ ] 后端API开发
-- [ ] 前端界面开发
-- [ ] 搜索功能实现
-- [ ] 部署配置
+The backend provides a RESTful API with the following main endpoints:
 
-## 贡献指南
+### Articles
+- `GET /api/articles` - List articles with pagination and filtering
+- `GET /api/articles/:id` - Get article details  
+- `POST /api/articles` - Create new article (admin)
+- `PUT /api/articles/:id` - Update article (admin)
+- `DELETE /api/articles/:id` - Delete article (admin)
 
-欢迎提交Issue和Pull Request来改进这个项目。
+### Categories & Tags
+- `GET /api/categories` - List all categories
+- `GET /api/tags` - List all tags
+- `GET /api/categories/:id/articles` - Articles by category
+- `GET /api/tags/:id/articles` - Articles by tag
 
-## 许可证
+### Search
+- `GET /api/search` - Full-text search with filters
+- `GET /api/search/suggestions` - Search suggestions
 
-MIT License
+### Authentication
+- `POST /api/auth/login` - Admin login
+- `POST /api/auth/logout` - Logout
+- `GET /api/auth/me` - Current user info
+
+## 🧪 Development
+
+### Running Tests
+```bash
+# Backend tests
+cd backend
+go test ./...
+
+# Frontend tests
+cd frontend
+yarn test
+```
+
+### Code Quality
+```bash
+# Lint Go code
+cd backend
+go fmt ./...
+go vet ./...
+
+# Lint TypeScript/React
+cd frontend
+yarn lint
+yarn typecheck
+```
+
+## 🚀 Deployment
+
+### Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+# Database
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=blog_db
+
+# JWT
+JWT_SECRET=your_jwt_secret
+
+# Server
+PORT=3001
+GIN_MODE=release
+```
+
+### Docker Production Build
+
+```bash
+# Build production images
+docker-compose -f docker-compose.prod.yml build
+
+# Deploy with production profile
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+## 📄 Project Status
+
+- [x] ✅ Project structure and architecture
+- [x] ✅ Go backend with Gin framework  
+- [x] ✅ React frontend with TypeScript
+- [x] ✅ Full-text search with Bleve
+- [x] ✅ Article management system
+- [x] ✅ Category and tag system
+- [x] ✅ Quote management feature
+- [x] ✅ Image upload functionality
+- [x] ✅ Responsive UI design
+- [x] ✅ Docker containerization
+- [x] ✅ Development tooling
+- [ ] 🔄 Unit test coverage
+- [ ] 🔄 CI/CD pipeline
+- [ ] 🔄 Performance monitoring
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our contributing guidelines:
+
+1. **Fork** the repository
+2. **Create** a feature branch: `git checkout -b feature/amazing-feature`  
+3. **Commit** your changes: `git commit -m 'Add amazing feature'`
+4. **Push** to the branch: `git push origin feature/amazing-feature`
+5. **Submit** a Pull Request
+
+### Development Guidelines
+
+- Follow Go standards and idiomatic patterns
+- Use TypeScript for type safety
+- Write clear, documented code
+- Include tests for new features
+- Follow the existing code style
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with [Go](https://golang.org/) and [React](https://reactjs.org/)
+- Search powered by [Bleve](https://blevesearch.com/)
+- UI components with [Tailwind CSS](https://tailwindcss.com/)
+- Icons from [Lucide](https://lucide.dev/)
+
+---
+
+**Star ⭐ this repository if you find it helpful!**
