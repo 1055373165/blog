@@ -93,7 +93,7 @@ export default function ArticleEditor() {
           excerpt: article.excerpt,
           coverImage: article.coverImage || '',
           categoryId: article.categoryId || '',
-          tagIds: article.tags.map(tag => tag.id),
+          tagIds: (article.tags || []).map(tag => tag.id),
           seriesId: article.seriesId || '',
           seriesOrder: article.seriesOrder,
           isPublished: article.isPublished,
@@ -101,7 +101,7 @@ export default function ArticleEditor() {
           metaDescription: article.metaDescription || '',
           metaKeywords: article.metaKeywords || '',
         });
-        setSelectedTags(article.tags.map(tag => tag.id));
+        setSelectedTags((article.tags || []).map(tag => tag.id));
         setHasUnsavedChanges(false);
       } else {
         throw new Error('加载文章失败');
@@ -142,9 +142,10 @@ export default function ArticleEditor() {
   };
 
   const handleTagToggle = (tagId: string) => {
-    const newSelectedTags = selectedTags.includes(tagId)
-      ? selectedTags.filter(id => id !== tagId)
-      : [...selectedTags, tagId];
+    const currentTags = selectedTags || [];
+    const newSelectedTags = currentTags.includes(tagId)
+      ? currentTags.filter(id => id !== tagId)
+      : [...currentTags, tagId];
     
     setSelectedTags(newSelectedTags);
     handleInputChange('tagIds', newSelectedTags);
@@ -183,7 +184,7 @@ export default function ArticleEditor() {
       
       const payload = {
         ...formData,
-        tagIds: selectedTags,
+        tagIds: selectedTags || [],
       };
 
       let response;
@@ -613,7 +614,7 @@ export default function ArticleEditor() {
                     className="input"
                   >
                     <option value="">选择分类</option>
-                    {categories.map((category) => (
+                    {(categories || []).map((category) => (
                       <option key={category.id} value={category.id}>
                         {category.name}
                       </option>
@@ -633,7 +634,7 @@ export default function ArticleEditor() {
                       className="input flex-1"
                     >
                       <option value="">选择系列</option>
-                      {series.map((s) => (
+                      {(series || []).map((s) => (
                         <option key={s.id} value={s.id}>
                           {s.name}
                         </option>
@@ -736,11 +737,11 @@ export default function ArticleEditor() {
                   文章标签
                 </h3>
                 <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {tags.map((tag) => (
+                  {(tags || []).map((tag) => (
                     <label key={tag.id} className="flex items-center group cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={selectedTags.includes(tag.id)}
+                        checked={(selectedTags || []).includes(tag.id)}
                         onChange={() => handleTagToggle(tag.id)}
                         className="rounded border-gray-300 dark:border-gray-600 text-go-600 focus:ring-go-500 dark:bg-gray-700"
                       />

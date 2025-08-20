@@ -39,6 +39,22 @@ export interface Category {
   updated_at: string;
 }
 
+// 分类创建请求类型
+export interface CreateCategoryRequest {
+  name: string;
+  slug?: string;
+  description?: string;
+  parent_id?: number;
+}
+
+// 分类更新请求类型
+export interface UpdateCategoryRequest {
+  name?: string;
+  slug?: string;
+  description?: string;
+  parent_id?: number;
+}
+
 // 标签相关类型
 export interface Tag {
   id: number;
@@ -114,6 +130,17 @@ export interface CreateArticleInput {
 
 export interface UpdateArticleInput extends Partial<CreateArticleInput> {
   id: number;
+}
+
+// 分类创建/更新输入类型
+export interface CreateCategoryRequest {
+  name: string;
+  slug?: string;
+  description?: string;
+  parent_id?: number;
+}
+
+export interface UpdateCategoryRequest extends Partial<CreateCategoryRequest> {
 }
 
 // 搜索相关类型
