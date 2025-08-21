@@ -31,6 +31,7 @@ import AdminTags from './pages/admin/AdminTags';
 // 布局组件
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
+import PerformanceOptimizer from './components/PerformanceOptimizer';
 
 // 创建 QueryClient 实例
 const queryClient = new QueryClient({
@@ -59,10 +60,11 @@ function AppContent() {
   };
 
   return (
-    <Router>
-      <div className={`min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300 ${getFontSizeClass()}`}>
-        <Suspense fallback={<LoadingSpinner />}>
-        <Routes>
+    <PerformanceOptimizer>
+      <Router>
+        <div className={`min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300 ${getFontSizeClass()}`}>
+          <Suspense fallback={<LoadingSpinner />}>
+          <Routes>
               {/* 前台路由 */}
               <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
@@ -94,10 +96,11 @@ function AppContent() {
 
               {/* 404页面 */}
               <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-              </Suspense>
-            </div>
-          </Router>
+              </Routes>
+                </Suspense>
+              </div>
+            </Router>
+    </PerformanceOptimizer>
   );
 }
 

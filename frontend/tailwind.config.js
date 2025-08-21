@@ -184,6 +184,16 @@ export default {
         'float-delayed': 'float 3s ease-in-out infinite 1s',
         'text-reveal': 'textReveal 0.8s ease-out',
         'glass-shimmer': 'glassShimmer 3s ease-in-out infinite',
+        'particle-float': 'particleFloat 6s ease-in-out infinite',
+        'glow-pulse': 'glowPulse 2s ease-in-out infinite alternate',
+        'depth-float': 'depthFloat 4s ease-in-out infinite',
+        'matrix-rain': 'matrixRain 20s linear infinite',
+        'code-glow': 'codeGlow 3s ease-in-out infinite alternate',
+        'wave-motion': 'waveMotion 15s ease-in-out infinite',
+        'grid-shift': 'gridShift 20s linear infinite',
+        'particle-drift': 'particleDrift 30s linear infinite',
+        'background-pulse': 'backgroundPulse 4s ease-in-out infinite',
+        'scroll-glow': 'scrollGlow 2s ease-in-out infinite alternate',
       },
       keyframes: {
         shimmer: {
@@ -278,6 +288,135 @@ export default {
           '100%': {
             background: 'linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%)',
             transform: 'translateX(100%)'
+          }
+        },
+        particleFloat: {
+          '0%, 100%': { 
+            transform: 'translateY(0px) rotateZ(0deg)',
+            opacity: '0.4'
+          },
+          '50%': { 
+            transform: 'translateY(-20px) rotateZ(180deg)',
+            opacity: '0.8'
+          }
+        },
+        glowPulse: {
+          '0%': { 
+            boxShadow: '0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor',
+            filter: 'brightness(1)'
+          },
+          '100%': { 
+            boxShadow: '0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor',
+            filter: 'brightness(1.2)'
+          }
+        },
+        depthFloat: {
+          '0%, 100%': { 
+            transform: 'translateZ(0px) rotateX(0deg) rotateY(0deg)'
+          },
+          '25%': { 
+            transform: 'translateZ(20px) rotateX(5deg) rotateY(5deg)'
+          },
+          '50%': { 
+            transform: 'translateZ(10px) rotateX(-5deg) rotateY(-5deg)'
+          },
+          '75%': { 
+            transform: 'translateZ(30px) rotateX(2deg) rotateY(-2deg)'
+          }
+        },
+        matrixRain: {
+          '0%': { 
+            transform: 'translateY(-100vh)',
+            opacity: '0'
+          },
+          '10%': { 
+            opacity: '1'
+          },
+          '90%': { 
+            opacity: '1'
+          },
+          '100%': { 
+            transform: 'translateY(100vh)',
+            opacity: '0'
+          }
+        },
+        codeGlow: {
+          '0%': { 
+            textShadow: '0 0 5px rgba(59, 130, 246, 0.5)',
+            filter: 'brightness(1)'
+          },
+          '100%': { 
+            textShadow: '0 0 20px rgba(59, 130, 246, 0.8), 0 0 30px rgba(59, 130, 246, 0.6)',
+            filter: 'brightness(1.1)'
+          }
+        },
+        waveMotion: {
+          '0%, 100%': { 
+            transform: 'translateY(0px) scale(1) rotate(0deg)'
+          },
+          '25%': { 
+            transform: 'translateY(-10px) scale(1.05) rotate(1deg)'
+          },
+          '50%': { 
+            transform: 'translateY(0px) scale(1.1) rotate(0deg)'
+          },
+          '75%': { 
+            transform: 'translateY(10px) scale(1.05) rotate(-1deg)'
+          }
+        },
+        gridShift: {
+          '0%': { 
+            transform: 'translate(0, 0)'
+          },
+          '25%': { 
+            transform: 'translate(-5px, -5px)'
+          },
+          '50%': { 
+            transform: 'translate(5px, -5px)'
+          },
+          '75%': { 
+            transform: 'translate(-5px, 5px)'
+          },
+          '100%': { 
+            transform: 'translate(0, 0)'
+          }
+        },
+        particleDrift: {
+          '0%': { 
+            transform: 'translateY(0px) translateX(0px) rotate(0deg)',
+            opacity: '0.2'
+          },
+          '25%': { 
+            opacity: '0.6'
+          },
+          '50%': { 
+            transform: 'translateY(-20px) translateX(10px) rotate(180deg)',
+            opacity: '0.8'
+          },
+          '75%': { 
+            opacity: '0.4'
+          },
+          '100%': { 
+            transform: 'translateY(0px) translateX(0px) rotate(360deg)',
+            opacity: '0.2'
+          }
+        },
+        backgroundPulse: {
+          '0%, 100%': { 
+            opacity: '0.3',
+            transform: 'scale(1)'
+          },
+          '50%': { 
+            opacity: '0.6',
+            transform: 'scale(1.02)'
+          }
+        },
+        scrollGlow: {
+          '0%': { 
+            boxShadow: '0 0 5px rgba(59, 130, 246, 0.3)'
+          },
+          '100%': { 
+            boxShadow: '0 0 20px rgba(59, 130, 246, 0.6), 0 0 30px rgba(14, 165, 233, 0.4)'
           }
         }
       },
@@ -495,6 +634,121 @@ export default {
           '&:hover': {
             'box-shadow': '0 0 30px rgba(59, 130, 246, 0.5)',
           },
+        },
+        '.bg-gradient-radial': {
+          background: 'radial-gradient(circle, var(--tw-gradient-stops))',
+        },
+        '.bg-gradient-conic': {
+          background: 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+        },
+        '.perspective-1000': {
+          perspective: '1000px',
+        },
+        '.preserve-3d': {
+          'transform-style': 'preserve-3d',
+        },
+        '.backface-hidden': {
+          'backface-visibility': 'hidden',
+        },
+        '.animate-matrix': {
+          '@apply animate-matrix-rain': {},
+        },
+        '.shadow-4xl': {
+          'box-shadow': '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 25px 50px -12px rgba(59, 130, 246, 0.15)',
+        },
+        '.shadow-neon': {
+          'box-shadow': '0 0 5px currentColor, 0 0 20px currentColor, 0 0 35px currentColor',
+        },
+        '.bg-animated-grid': {
+          backgroundImage: 'linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
+          animation: 'gridShift 20s linear infinite',
+        },
+        '.scrollbar-thin': {
+          'scrollbar-width': 'thin',
+          'scrollbar-color': 'rgb(59 130 246) rgb(243 244 246)',
+        },
+        '.scrollbar-thin::-webkit-scrollbar': {
+          width: '4px',
+        },
+        '.scrollbar-thin::-webkit-scrollbar-track': {
+          backgroundColor: 'rgb(243 244 246)',
+          borderRadius: '2px',
+        },
+        '.scrollbar-thin::-webkit-scrollbar-thumb': {
+          backgroundColor: 'rgb(59 130 246)',
+          borderRadius: '2px',
+        },
+        '.scrollbar-thin::-webkit-scrollbar-thumb:hover': {
+          backgroundColor: 'rgb(37 99 235)',
+        },
+        // 无障碍性样式
+        '.sr-only': {
+          position: 'absolute',
+          width: '1px',
+          height: '1px',
+          padding: '0',
+          margin: '-1px',
+          overflow: 'hidden',
+          clip: 'rect(0, 0, 0, 0)',
+          whiteSpace: 'nowrap',
+          border: '0',
+        },
+        '.not-sr-only': {
+          position: 'static',
+          width: 'auto',
+          height: 'auto',
+          padding: '0',
+          margin: '0',
+          overflow: 'visible',
+          clip: 'auto',
+          whiteSpace: 'normal',
+        },
+        '.focus-within\\:not-sr-only:focus-within': {
+          position: 'static',
+          width: 'auto',
+          height: 'auto',
+          padding: '0',
+          margin: '0',
+          overflow: 'visible',
+          clip: 'auto',
+          whiteSpace: 'normal',
+        },
+        // 键盘导航样式
+        '.keyboard-user *:focus': {
+          outline: '2px solid rgb(59 130 246)',
+          outlineOffset: '2px',
+        },
+        // 高对比度样式
+        '.high-contrast': {
+          filter: 'contrast(150%)',
+        },
+        '.high-contrast .text-gray-500': {
+          color: 'rgb(0 0 0)',
+        },
+        '.high-contrast .dark .text-gray-500': {
+          color: 'rgb(255 255 255)',
+        },
+        // 减少动画样式
+        '.reduced-motion *': {
+          animationDuration: '0.01ms !important',
+          animationIterationCount: '1 !important',
+          transitionDuration: '0.01ms !important',
+        },
+        // 跳过链接样式
+        '.skip-link': {
+          position: 'absolute',
+          top: '-40px',
+          left: '6px',
+          backgroundColor: 'rgb(59 130 246)',
+          color: 'white',
+          padding: '8px',
+          textDecoration: 'none',
+          borderRadius: '4px',
+          zIndex: '1000',
+        },
+        '.skip-link:focus': {
+          top: '6px',
         },
       }
       

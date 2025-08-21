@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Button from './Button';
 import { clsx } from 'clsx';
@@ -7,33 +7,140 @@ interface HeroProps {
   className?: string;
 }
 
-// 动态背景粒子组件
+// 增强的3D视差粒子背景组件
 const ParticleBackground = () => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const { clientX, clientY } = e;
+      const { innerWidth, innerHeight } = window;
+      setMousePosition({
+        x: (clientX / innerWidth - 0.5) * 2,
+        y: (clientY / innerHeight - 0.5) * 2
+      });
+    };
+
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   return (
-    <div className="absolute inset-0 overflow-hidden">
-      {/* 大型装饰圆形 */}
-      <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-primary-500/20 to-accent-purple-500/20 rounded-full blur-3xl animate-float" />
-      <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-go-500/20 to-accent-pink-500/20 rounded-full blur-3xl animate-float-delayed" />
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-br from-accent-orange-500/10 to-primary-500/10 rounded-full blur-3xl animate-pulse-slow" />
-      
-      {/* 流动的渐变线条 */}
-      <div className="absolute top-20 left-0 w-full h-1 bg-gradient-to-r from-transparent via-go-500/30 to-transparent animate-channel-flow" />
-      <div className="absolute top-32 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary-500/30 to-transparent animate-channel-flow" style={{ animationDelay: '1s' }} />
-      <div className="absolute top-44 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent-purple-500/30 to-transparent animate-channel-flow" style={{ animationDelay: '2s' }} />
-      
-      {/* 小粒子 */}
-      {Array.from({ length: 20 }).map((_, i) => (
-        <div
-          key={i}
-          className="absolute w-2 h-2 bg-primary-400/30 rounded-full animate-float"
+    <div className="absolute inset-0 overflow-hidden" style={{ perspective: '1000px' }}>
+      {/* 3D视差背景层 */}
+      <div 
+        className="absolute inset-0 opacity-60"
+        style={{
+          transform: `translateZ(-100px) scale(1.1) translate3d(${mousePosition.x * 10}px, ${mousePosition.y * 10}px, 0) translateY(${scrollY * 0.3}px)`,
+          transformStyle: 'preserve-3d'
+        }}
+      >
+        {/* 大型装饰圆形 - 增强3D效果 */}
+        <div 
+          className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-primary-500/20 to-accent-purple-500/20 rounded-full blur-3xl animate-float"
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 5}s`,
-            animationDuration: `${3 + Math.random() * 4}s`
+            transform: `translate3d(${mousePosition.x * 15}px, ${mousePosition.y * 15}px, 0) rotateX(${mousePosition.y * 5}deg) rotateY(${mousePosition.x * 5}deg)`
           }}
         />
-      ))}
+        <div 
+          className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-go-500/20 to-accent-pink-500/20 rounded-full blur-3xl animate-float-delayed"
+          style={{
+            transform: `translate3d(${mousePosition.x * -12}px, ${mousePosition.y * -12}px, 0) rotateX(${mousePosition.y * -5}deg) rotateY(${mousePosition.x * -5}deg)`
+          }}
+        />
+        <div 
+          className="absolute top-1/2 left-1/2 w-80 h-80 bg-gradient-to-br from-accent-orange-500/10 to-primary-500/10 rounded-full blur-3xl animate-pulse-slow"
+          style={{
+            transform: `translate(-50%, -50%) translate3d(${mousePosition.x * 8}px, ${mousePosition.y * 8}px, 0) rotateZ(${mousePosition.x * 2}deg)`
+          }}
+        />
+      </div>
+      
+      {/* 中层粒子 - 不同的视差速度 */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          transform: `translateZ(-50px) translate3d(${mousePosition.x * 20}px, ${mousePosition.y * 20}px, 0) translateY(${scrollY * 0.5}px)`
+        }}
+      >
+        {/* 流动的渐变线条 - 增强交互 */}
+        <div 
+          className="absolute top-20 left-0 w-full h-1 bg-gradient-to-r from-transparent via-go-500/30 to-transparent animate-channel-flow"
+          style={{
+            transform: `scaleX(${1 + Math.abs(mousePosition.x) * 0.2})`,
+            opacity: 0.7 + Math.abs(mousePosition.x) * 0.3
+          }}
+        />
+        <div 
+          className="absolute top-32 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary-500/30 to-transparent animate-channel-flow"
+          style={{ 
+            animationDelay: '1s',
+            transform: `scaleX(${1 + Math.abs(mousePosition.y) * 0.2})`,
+            opacity: 0.7 + Math.abs(mousePosition.y) * 0.3
+          }}
+        />
+        <div 
+          className="absolute top-44 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent-purple-500/30 to-transparent animate-channel-flow"
+          style={{ 
+            animationDelay: '2s',
+            transform: `scaleX(${1 + Math.abs(mousePosition.x + mousePosition.y) * 0.1})`,
+            opacity: 0.7 + Math.abs(mousePosition.x + mousePosition.y) * 0.15
+          }}
+        />
+      </div>
+      
+      {/* 前景粒子层 - 最快的视差移动 */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          transform: `translate3d(${mousePosition.x * 30}px, ${mousePosition.y * 30}px, 0) translateY(${scrollY * 0.8}px)`
+        }}
+      >
+        {/* 增强的小粒子系统 */}
+        {Array.from({ length: 30 }).map((_, i) => {
+          const size = 2 + Math.random() * 4;
+          const opacity = 0.2 + Math.random() * 0.4;
+          const hue = ['primary', 'go', 'accent-purple', 'accent-orange'][Math.floor(Math.random() * 4)];
+          
+          return (
+            <div
+              key={i}
+              className={`absolute w-${Math.floor(size)} h-${Math.floor(size)} bg-${hue}-400/30 rounded-full animate-float`}
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 5}s`,
+                animationDuration: `${3 + Math.random() * 4}s`,
+                opacity,
+                transform: `scale(${0.5 + Math.random() * 1.5}) translate3d(${mousePosition.x * (i % 3) * 5}px, ${mousePosition.y * (i % 3) * 5}px, 0)`,
+                boxShadow: `0 0 ${size * 2}px currentColor`
+              }}
+            />
+          );
+        })}
+      </div>
+
+      {/* 鼠标跟随光效 */}
+      <div 
+        className="absolute pointer-events-none"
+        style={{
+          left: `${(mousePosition.x + 1) * 50}%`,
+          top: `${(mousePosition.y + 1) * 50}%`,
+          transform: 'translate(-50%, -50%)'
+        }}
+      >
+        <div className="w-40 h-40 bg-gradient-radial from-white/10 via-primary-500/5 to-transparent rounded-full animate-pulse" />
+      </div>
     </div>
   );
 };
@@ -75,39 +182,124 @@ const TypewriterText = ({ texts, speed = 100 }: { texts: string[]; speed?: numbe
   );
 };
 
-// 3D 卡片组件
+// 增强的3D互动卡片组件
 const FloatingCard = ({ 
   children, 
   className, 
-  delay = 0 
+  delay = 0,
+  depth = 0
 }: { 
   children: React.ReactNode; 
   className?: string; 
   delay?: number;
-}) => (
-  <div 
-    className={clsx(
-      'bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl border border-white/20 dark:border-gray-800/20 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105',
-      className
-    )}
-    style={{ animationDelay: `${delay}ms` }}
-  >
-    {children}
-  </div>
-);
+  depth?: number;
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [rotateX, setRotateX] = useState(0);
+  const [rotateY, setRotateY] = useState(0);
+  
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const rotateXValue = (e.clientY - centerY) / 10;
+    const rotateYValue = (e.clientX - centerX) / 10;
+    
+    setRotateX(-rotateXValue);
+    setRotateY(rotateYValue);
+  };
+  
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setRotateX(0);
+    setRotateY(0);
+  };
+  
+  return (
+    <div 
+      className={clsx(
+        'bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl border border-white/20 dark:border-gray-800/20 rounded-2xl p-6 shadow-2xl transition-all duration-500 cursor-pointer',
+        isHovered && 'shadow-4xl scale-105',
+        className
+      )}
+      style={{ 
+        animationDelay: `${delay}ms`,
+        transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(${depth}px) ${isHovered ? 'translateY(-10px)' : ''}`,
+        transformStyle: 'preserve-3d'
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div 
+        className="relative z-10"
+        style={{
+          transform: `translateZ(${depth + 20}px)`
+        }}
+      >
+        {children}
+      </div>
+      
+      {/* 3D深度阴影 */}
+      {isHovered && (
+        <div 
+          className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-go-500/10 rounded-2xl blur-xl opacity-50 transition-opacity duration-500"
+          style={{
+            transform: `translateZ(${depth - 10}px)`
+          }}
+        />
+      )}
+    </div>
+  );
+};
 
-// 特性图标
-const FeatureIcon = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <div className={clsx('w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg', className)}>
-    {children}
+// 互动状态指示器
+const StatusIndicator = ({ isActive, label }: { isActive: boolean; label: string }) => (
+  <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300">
+    <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
+      isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+    }`} />
+    <span>{label}</span>
   </div>
 );
 
 export default function Hero({ className }: HeroProps) {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isInView, setIsInView] = useState(false);
+  const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsLoaded(true);
+    
+    // 鼠标位置追踪
+    const handleMouseMove = (e: MouseEvent) => {
+      const { clientX, clientY } = e;
+      const { innerWidth, innerHeight } = window;
+      setMousePosition({
+        x: (clientX / innerWidth - 0.5) * 2,
+        y: (clientY / innerHeight - 0.5) * 2
+      });
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    
+    // Intersection Observer
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      { threshold: 0.3 }
+    );
+    
+    if (heroRef.current) {
+      observer.observe(heroRef.current);
+    }
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      observer.disconnect();
+    };
   }, []);
 
   const typewriterTexts = [
@@ -119,7 +311,17 @@ export default function Hero({ className }: HeroProps) {
   ];
 
   return (
-    <section className={clsx('relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900', className)}>
+    <section 
+      ref={heroRef}
+      className={clsx(
+        'relative min-h-screen flex items-center justify-center overflow-hidden',
+        'bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20',
+        'dark:from-gray-900 dark:via-gray-800 dark:to-gray-900',
+        'transition-all duration-1000',
+        isInView && 'animate-fade-in',
+        className
+      )}
+    >
       {/* 动态背景 */}
       <ParticleBackground />
       
@@ -179,16 +381,41 @@ export default function Hero({ className }: HeroProps) {
             </Link>
           </div>
 
-          {/* 滚动提示 */}
+          {/* 状态指示器 */}
+          <div className={clsx('flex justify-center space-x-8 mb-8', isLoaded && 'animate-fade-in')} style={{ animationDelay: '300ms' }}>
+            <StatusIndicator isActive={isInView} label="视窗内" />
+            <StatusIndicator isActive={isLoaded} label="已加载" />
+            <StatusIndicator isActive={Math.abs(mousePosition.x) > 0.1 || Math.abs(mousePosition.y) > 0.1} label="交互中" />
+          </div>
+          
+          {/* 增强的滚动提示 */}
           <div className={clsx('pt-8', isLoaded && 'animate-fade-in')} style={{ animationDelay: '400ms' }}>
             <div className="flex flex-col items-center text-gray-500 dark:text-gray-400">
-              <span className="text-sm mb-2">向下滚动探索更多</span>
-              <svg className="w-6 h-6 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
-              {/* Code Snippet Teaser */}
-              <div className="mt-16 max-w-6xl mx-auto">
-                <div className="bg-gray-900 dark:bg-gray-950 rounded-xl p-6 shadow-2xl border border-gray-700">
+              <span className="text-sm mb-2 relative">
+                向下滚动探索更多
+                <div className="absolute -inset-2 bg-gradient-to-r from-primary-500/20 to-go-500/20 rounded-lg blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              </span>
+              <div className="relative group cursor-pointer">
+                <svg 
+                  className="w-6 h-6 animate-bounce transition-transform duration-300 group-hover:scale-110" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                  style={{
+                    transform: `translateY(${Math.sin(Date.now() / 1000) * 3}px)`,
+                    filter: 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.3))'
+                  }}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+                <div className="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-go-500/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              </div>
+              {/* 增强的Code Snippet */}
+              <FloatingCard className="mt-16 max-w-6xl mx-auto" depth={20}>
+                <div className="bg-gray-900 dark:bg-gray-950 rounded-xl p-6 shadow-2xl border border-gray-700 relative overflow-hidden">
+                  {/* 代码背景效果 */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-purple-900/10 to-green-900/20 opacity-50" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-go-500/10 to-transparent rounded-bl-full" />
                   <div className="flex items-center mb-4">
                     <div className="flex space-x-2">
                       <div className="w-3 h-3 bg-red-500 rounded-full"></div>
@@ -221,7 +448,7 @@ export default function Hero({ className }: HeroProps) {
                     <div className="text-white">{"}"}</div>
                   </div>
                 </div>
-              </div>
+              </FloatingCard>
             </div>
           </div>
         </div>

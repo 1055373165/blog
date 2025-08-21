@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import SearchBar from './SearchBar';
 import ThemeSettings from './ThemeSettings';
 import GoDepthLogo from './GoDepthLogo';
+import FloatingNavigation from './FloatingNavigation';
+import AnimatedBackground from './AnimatedBackground';
 import { BlogStats } from '../types';
 import { statsApi } from '../api';
 
@@ -86,10 +88,20 @@ export default function Layout() {
   };
 
   return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* 导航栏 */}
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative">
+      {/* 动态背景 */}
+      <AnimatedBackground 
+        variant="grid" 
+        intensity="medium" 
+        enableScrollEffect={true}
+      />
+      
+      {/* 悬浮导航 */}
+      <FloatingNavigation />
+      
+      {/* 传统导航栏 - 隐藏于桌面端 */}
       <header 
-        className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700"
+        className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 hidden md:block"
         role="banner"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -111,28 +123,8 @@ export default function Layout() {
               />
             </div>
 
-            {/* Desktop Navigation */}
-            <nav 
-              className="hidden md:flex space-x-1 items-center"
-              role="navigation"
-              aria-label="主导航"
-            >
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive(item.href)
-                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  {getIcon(item.icon)}
-                  <span className="ml-2">{item.name}</span>
-                </Link>
-              ))}
-              
-              {/* Theme Settings Button */}
+            {/* 仅显示主题设置按钮 */}
+            <div className="hidden md:flex items-center">
               <button
                 type="button"
                 onClick={() => setThemeSettingsOpen(true)}
@@ -144,10 +136,21 @@ export default function Layout() {
                 </svg>
                 <span className="ml-2">主题</span>
               </button>
-            </nav>
+            </div>
 
-            {/* Mobile menu button */}
-            <div className="md:hidden">
+            {/* Mobile search and theme toggle */}
+            <div className="md:hidden flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={() => setThemeSettingsOpen(true)}
+                className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                title="主题设置"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                </svg>
+              </button>
+              
               <button
                 type="button"
                 className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white p-2 rounded-md"
@@ -225,7 +228,7 @@ export default function Layout() {
       {/* 主内容区 */}
       <main 
         id="main"
-        className="flex-1"
+        className="flex-1 relative z-10"
         role="main"
         aria-label="主要内容"
       >
@@ -241,7 +244,7 @@ export default function Layout() {
 
       {/* 页脚 */}
       <footer 
-        className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12"
+        className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12 relative z-10"
         role="contentinfo"
         aria-label="网站信息"
       >
