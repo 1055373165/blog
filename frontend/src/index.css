@@ -25,13 +25,13 @@
   }
 
   .premium-card-compact {
-    @apply transition-all duration-400 ease-out;
+    @apply transition-all duration-300 ease-out;
     @apply hover:-translate-y-0.5 hover:shadow-lg;
     @apply relative;
   }
 
   .premium-card-featured {
-    @apply transition-all duration-600 ease-out;
+    @apply transition-all duration-500 ease-out;
     @apply hover:-translate-y-2 hover:shadow-2xl;
     @apply relative overflow-hidden;
   }
@@ -39,7 +39,7 @@
   .premium-card-featured::after {
     content: '';
     @apply absolute inset-0 bg-gradient-to-br from-go-500/5 via-transparent to-blue-500/5;
-    @apply opacity-0 transition-opacity duration-400;
+    @apply opacity-0 transition-opacity duration-300;
     @apply pointer-events-none;
   }
 
