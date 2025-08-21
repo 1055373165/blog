@@ -6,6 +6,64 @@
 
 /* Enhanced card animations and effects */
 @layer utilities {
+  /* Premium Article Card Animations */
+  .premium-card-default {
+    @apply transition-all duration-500 ease-out;
+    @apply hover:-translate-y-1 hover:shadow-xl;
+    @apply relative overflow-hidden;
+  }
+
+  .premium-card-default::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-br from-white/5 to-transparent;
+    @apply opacity-0 transition-opacity duration-300;
+    @apply pointer-events-none;
+  }
+
+  .premium-card-default:hover::before {
+    @apply opacity-100;
+  }
+
+  .premium-card-compact {
+    @apply transition-all duration-400 ease-out;
+    @apply hover:-translate-y-0.5 hover:shadow-lg;
+    @apply relative;
+  }
+
+  .premium-card-featured {
+    @apply transition-all duration-600 ease-out;
+    @apply hover:-translate-y-2 hover:shadow-2xl;
+    @apply relative overflow-hidden;
+  }
+
+  .premium-card-featured::after {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-br from-go-500/5 via-transparent to-blue-500/5;
+    @apply opacity-0 transition-opacity duration-400;
+    @apply pointer-events-none;
+  }
+
+  .premium-card-featured:hover::after {
+    @apply opacity-100;
+  }
+
+  /* Glass morphism effects for modern look */
+  .glass-effect {
+    @apply backdrop-blur-sm bg-white/80 dark:bg-gray-900/80;
+    @apply border border-white/20 dark:border-gray-700/50;
+  }
+
+  /* Micro-interaction animations */
+  .micro-bounce {
+    @apply transition-transform duration-200 ease-out;
+    @apply hover:scale-105 active:scale-95;
+  }
+
+  .subtle-glow {
+    @apply transition-shadow duration-300;
+    @apply hover:shadow-lg hover:shadow-go-500/10;
+  }
+  
   /* Custom card hover animations */
   .card-hover-lift {
     @apply transition-all duration-500 ease-out;
@@ -38,6 +96,44 @@
   .text-fade-enhance {
     @apply transition-colors duration-300;
     @apply group-hover:text-gray-700 dark:group-hover:text-gray-200;
+  }
+
+  /* Professional Typography */
+  .article-title {
+    @apply font-semibold tracking-tight leading-tight;
+    line-height: 1.3;
+    font-optical-sizing: auto;
+  }
+
+  .article-excerpt {
+    @apply leading-relaxed;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+  }
+
+  .article-meta {
+    @apply font-medium;
+    letter-spacing: 0.025em;
+  }
+
+  /* Smooth text rendering */
+  .text-render-optimized {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Professional spacing system */
+  .compact-spacing > * + * {
+    margin-top: 0.5rem;
+  }
+
+  .comfortable-spacing > * + * {
+    margin-top: 0.75rem;
+  }
+
+  .generous-spacing > * + * {
+    margin-top: 1rem;
   }
   
   /* Custom gradient borders */
