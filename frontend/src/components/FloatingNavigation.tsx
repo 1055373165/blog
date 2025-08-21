@@ -36,7 +36,18 @@ interface FloatingNavigationProps {
 
 export default function FloatingNavigation({ className }: FloatingNavigationProps) {
   const location = useLocation();
-  const { theme, toggleTheme } = useTheme();
+  const { settings, isDark, updateColorTheme } = useTheme();
+  
+  // Theme toggle function
+  const toggleTheme = () => {
+    if (settings.colorTheme === 'dark') {
+      updateColorTheme('light');
+    } else if (settings.colorTheme === 'light') {
+      updateColorTheme('system');
+    } else {
+      updateColorTheme('dark');
+    }
+  };
   const [isScrolled, setIsScrolled] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
@@ -205,9 +216,9 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
                 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
                 'hover:bg-gray-100 dark:hover:bg-gray-800'
               )}
-              title={`切换到${theme === 'dark' ? '明亮' : '暗黑'}模式`}
+              title={`切换主题模式 (当前: ${settings.colorTheme === 'dark' ? '暗黑' : settings.colorTheme === 'light' ? '明亮' : '跟随系统'})`}
             >
-              {theme === 'dark' ? (
+              {isDark ? (
                 <SunIcon className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
               ) : (
                 <MoonIcon className="w-5 h-5 group-hover:-rotate-12 transition-transform duration-500" />

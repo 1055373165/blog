@@ -4,6 +4,128 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Enhanced card animations and effects */
+@layer utilities {
+  /* Custom card hover animations */
+  .card-hover-lift {
+    @apply transition-all duration-500 ease-out;
+    @apply hover:-translate-y-2 hover:shadow-2xl;
+  }
+  
+  .card-hover-glow {
+    @apply relative transition-all duration-300;
+  }
+  
+  .card-hover-glow::before {
+    content: '';
+    @apply absolute inset-0 rounded-inherit;
+    @apply bg-gradient-to-r from-go-500/10 via-blue-500/10 to-purple-500/10;
+    @apply opacity-0 transition-opacity duration-300;
+    @apply pointer-events-none;
+    z-index: -1;
+  }
+  
+  .card-hover-glow:hover::before {
+    @apply opacity-100;
+  }
+  
+  /* Enhanced text animations */
+  .text-slide-in {
+    @apply transition-transform duration-300 ease-out;
+    @apply group-hover:translate-x-1;
+  }
+  
+  .text-fade-enhance {
+    @apply transition-colors duration-300;
+    @apply group-hover:text-gray-700 dark:group-hover:text-gray-200;
+  }
+  
+  /* Custom gradient borders */
+  .border-gradient {
+    @apply relative;
+  }
+  
+  .border-gradient::before {
+    content: '';
+    @apply absolute inset-0 rounded-inherit;
+    @apply bg-gradient-to-r from-go-300 via-blue-300 to-purple-300;
+    @apply dark:from-go-600 dark:via-blue-600 dark:to-purple-600;
+    @apply opacity-0 group-hover:opacity-100 transition-opacity duration-300;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    padding: 2px;
+    z-index: -1;
+  }
+  
+  /* Staggered animations for tags */
+  .animate-stagger {
+    animation: slideInUp 0.4s ease-out forwards;
+  }
+  
+  .animate-stagger-1 { animation-delay: 0.1s; }
+  .animate-stagger-2 { animation-delay: 0.2s; }
+  .animate-stagger-3 { animation-delay: 0.3s; }
+  
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Progress indicator dots */
+  .progress-dots {
+    @apply flex items-center space-x-1;
+  }
+  
+  .progress-dots .dot {
+    @apply w-1.5 h-1.5 rounded-full;
+    @apply bg-go-300 dark:bg-go-600;
+    @apply transition-all duration-300;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  
+  .progress-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+  .progress-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+  .progress-dots .dot:nth-child(4) { animation-delay: 0.6s; }
+  .progress-dots .dot:nth-child(5) { animation-delay: 0.8s; }
+  
+  @keyframes pulse-dot {
+    0%, 100% { 
+      transform: scale(1);
+      opacity: 0.6;
+    }
+    50% { 
+      transform: scale(1.2);
+      opacity: 1;
+    }
+  }
+  
+  /* Focus states for accessibility */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-go-500 focus:ring-opacity-50;
+    @apply dark:focus:ring-go-400;
+  }
+  
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .card-hover-lift,
+    .text-slide-in,
+    .text-fade-enhance,
+    .animate-stagger,
+    .progress-dots .dot {
+      @apply transition-none !important;
+      animation: none !important;
+    }
+  }
+}
+
 /* 字体变量定义 */
 :root {
   /* 字体族 */
