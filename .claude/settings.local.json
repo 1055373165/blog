@@ -46,7 +46,8 @@
       "Bash(yarn dev:*)",
       "Bash(npm install:*)",
       "Bash(go fmt:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(open http://localhost:5173/articles)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
