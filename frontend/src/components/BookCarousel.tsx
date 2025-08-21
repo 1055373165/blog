@@ -113,7 +113,7 @@ export default function BookCarousel({
   }, []);
 
 
-  // 检测移动设备和鼠标交互
+  // 检测移动设备
   useEffect(() => {
     const checkIsMobile = () => {
       setIsMobile(window.innerWidth < 768);
