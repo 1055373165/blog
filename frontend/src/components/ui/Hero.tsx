@@ -99,36 +99,6 @@ const ParticleBackground = () => {
         />
       </div>
       
-      {/* 前景粒子层 - 最快的视差移动 */}
-      <div 
-        className="absolute inset-0"
-        style={{
-          transform: `translate3d(${mousePosition.x * 30}px, ${mousePosition.y * 30}px, 0) translateY(${scrollY * 0.8}px)`
-        }}
-      >
-        {/* 增强的小粒子系统 */}
-        {Array.from({ length: 30 }).map((_, i) => {
-          const size = 2 + Math.random() * 4;
-          const opacity = 0.2 + Math.random() * 0.4;
-          const hue = ['primary', 'go', 'accent-purple', 'accent-orange'][Math.floor(Math.random() * 4)];
-          
-          return (
-            <div
-              key={i}
-              className={`absolute w-${Math.floor(size)} h-${Math.floor(size)} bg-${hue}-400/30 rounded-full animate-float`}
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${3 + Math.random() * 4}s`,
-                opacity,
-                transform: `scale(${0.5 + Math.random() * 1.5}) translate3d(${mousePosition.x * (i % 3) * 5}px, ${mousePosition.y * (i % 3) * 5}px, 0)`,
-                boxShadow: `0 0 ${size * 2}px currentColor`
-              }}
-            />
-          );
-        })}
-      </div>
 
       {/* 鼠标跟随光效 */}
       <div 
