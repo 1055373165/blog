@@ -337,7 +337,7 @@ export default function BookCarousel({
               <p className="text-gray-500 dark:text-gray-400 text-sm text-center">请将图书图片放入 /frontend/public/books/ 目录</p>
             </div>
           ) : (
-            {/* 3D书架展示区域 */}
+            // 3D书架展示区域
             <div 
               className="relative"
               style={{

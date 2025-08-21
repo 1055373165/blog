@@ -1,1 +1,262 @@
-import React, { useEffect, useState } from 'react';\nimport { usePerformanceMonitor } from '../hooks/usePerformanceOptimization';\nimport { useReducedMotion, useHighContrast, useSkipLinks } from '../hooks/useAccessibility';\nimport { clsx } from 'clsx';\n\ninterface PerformanceOptimizerProps {\n  children: React.ReactNode;\n  enablePerformanceMonitoring?: boolean;\n  enableAccessibilityFeatures?: boolean;\n}\n\n// 性能监控面板 (仅开发环境)\nconst PerformanceMonitorPanel = () => {\n  const performance = usePerformanceMonitor('App');\n  const [isVisible, setIsVisible] = useState(false);\n\n  if (process.env.NODE_ENV !== 'development') {\n    return null;\n  }\n\n  return (\n    <>\n      <button\n        onClick={() => setIsVisible(!isVisible)}\n        className=\"fixed bottom-4 left-4 z-50 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg hover:bg-gray-800 transition-colors\"\n        title=\"性能监控面板\"\n      >\n        📊 性能\n      </button>\n      \n      {isVisible && (\n        <div className=\"fixed bottom-16 left-4 z-50 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl text-xs space-y-2 max-w-xs\">\n          <h3 className=\"font-bold text-gray-900 dark:text-white\">性能监控</h3>\n          <div className=\"space-y-1 text-gray-600 dark:text-gray-400\">\n            <div>渲染次数: {performance.renderCount}</div>\n            <div>最后渲染耗时: {performance.lastRenderDuration}ms</div>\n            <div className={clsx(\n              'px-2 py-1 rounded text-white text-xs',\n              performance.lastRenderDuration > 50 ? 'bg-red-500' :\n              performance.lastRenderDuration > 20 ? 'bg-yellow-500' :\n              'bg-green-500'\n            )}>\n              {performance.lastRenderDuration > 50 ? '性能较差' :\n               performance.lastRenderDuration > 20 ? '性能一般' :\n               '性能良好'}\n            </div>\n          </div>\n        </div>\n      )}\n    </>\n  );\n};\n\n// 无障碍性辅助功能组件\nconst AccessibilityEnhancer = ({ children }: { children: React.ReactNode }) => {\n  const prefersReducedMotion = useReducedMotion();\n  const prefersHighContrast = useHighContrast();\n  const { addSkipLink, SkipLinks } = useSkipLinks();\n  const [hasKeyboardUser, setHasKeyboardUser] = useState(false);\n\n  useEffect(() => {\n    // 添加跳过链接\n    addSkipLink('#main', '跳转到主要内容');\n    addSkipLink('#navigation', '跳转到导航');\n    addSkipLink('#footer', '跳转到页脚');\n  }, [addSkipLink]);\n\n  useEffect(() => {\n    // 检测键盘用户\n    const handleKeyDown = (e: KeyboardEvent) => {\n      if (e.key === 'Tab') {\n        setHasKeyboardUser(true);\n        document.body.classList.add('keyboard-user');\n      }\n    };\n\n    const handleMouseDown = () => {\n      setHasKeyboardUser(false);\n      document.body.classList.remove('keyboard-user');\n    };\n\n    document.addEventListener('keydown', handleKeyDown);\n    document.addEventListener('mousedown', handleMouseDown);\n\n    return () => {\n      document.removeEventListener('keydown', handleKeyDown);\n      document.removeEventListener('mousedown', handleMouseDown);\n    };\n  }, []);\n\n  useEffect(() => {\n    // 应用用户首选项\n    const root = document.documentElement;\n    \n    if (prefersReducedMotion) {\n      root.classList.add('motion-reduce');\n      // 禁用或减少动画\n      const style = document.createElement('style');\n      style.textContent = `\n        .motion-reduce *,\n        .motion-reduce *::before,\n        .motion-reduce *::after {\n          animation-duration: 0.01ms !important;\n          animation-iteration-count: 1 !important;\n          transition-duration: 0.01ms !important;\n          scroll-behavior: auto !important;\n        }\n      `;\n      document.head.appendChild(style);\n    } else {\n      root.classList.remove('motion-reduce');\n    }\n\n    if (prefersHighContrast) {\n      root.classList.add('high-contrast');\n    } else {\n      root.classList.remove('high-contrast');\n    }\n  }, [prefersReducedMotion, prefersHighContrast]);\n\n  return (\n    <>\n      <SkipLinks />\n      <div \n        className={clsx(\n          hasKeyboardUser && 'keyboard-navigation-active',\n          prefersHighContrast && 'high-contrast',\n          prefersReducedMotion && 'reduced-motion'\n        )}\n      >\n        {children}\n      </div>\n    </>\n  );\n};\n\n// 图片预加载组件\nconst ImagePreloader = ({ urls }: { urls: string[] }) => {\n  useEffect(() => {\n    const preloadImages = async () => {\n      const promises = urls.map(url => {\n        return new Promise((resolve, reject) => {\n          const img = new Image();\n          img.onload = resolve;\n          img.onerror = reject;\n          img.src = url;\n        });\n      });\n\n      try {\n        await Promise.allSettled(promises);\n      } catch (error) {\n        console.warn('Some images failed to preload:', error);\n      }\n    };\n\n    if (urls.length > 0) {\n      preloadImages();\n    }\n  }, [urls]);\n\n  return null;\n};\n\n// 字体预加载组件\nconst FontPreloader = ({ fonts }: { fonts: string[] }) => {\n  useEffect(() => {\n    const preloadFonts = async () => {\n      if ('fonts' in document) {\n        try {\n          await Promise.all(\n            fonts.map(font => (document as any).fonts.load(font))\n          );\n        } catch (error) {\n          console.warn('Some fonts failed to preload:', error);\n        }\n      }\n    };\n\n    if (fonts.length > 0) {\n      preloadFonts();\n    }\n  }, [fonts]);\n\n  return null;\n};\n\n// 资源优化组件\nconst ResourceOptimizer = () => {\n  useEffect(() => {\n    // 预加载关键资源\n    const criticalImages = [\n      // 可以在这里添加关键图片路径\n    ];\n\n    const criticalFonts = [\n      '16px Inter',\n      '14px JetBrains Mono',\n      'bold 24px Inter'\n    ];\n\n    // DNS预解析\n    const dnsPrefetch = [\n      '//fonts.googleapis.com',\n      '//fonts.gstatic.com'\n    ];\n\n    dnsPrefetch.forEach(domain => {\n      const link = document.createElement('link');\n      link.rel = 'dns-prefetch';\n      link.href = domain;\n      document.head.appendChild(link);\n    });\n  }, []);\n\n  return (\n    <>\n      <ImagePreloader urls={[]} />\n      <FontPreloader fonts={['16px Inter', '14px JetBrains Mono']} />\n    </>\n  );\n};\n\n// 主优化器组件\nexport default function PerformanceOptimizer({\n  children,\n  enablePerformanceMonitoring = true,\n  enableAccessibilityFeatures = true\n}: PerformanceOptimizerProps) {\n  const [isReady, setIsReady] = useState(false);\n\n  useEffect(() => {\n    // 等待关键资源加载完成\n    const timer = setTimeout(() => {\n      setIsReady(true);\n    }, 100);\n\n    return () => clearTimeout(timer);\n  }, []);\n\n  if (!isReady) {\n    return (\n      <div className=\"flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900\">\n        <div className=\"text-center\">\n          <div className=\"animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4\"></div>\n          <p className=\"text-gray-600 dark:text-gray-400\">正在优化加载...</p>\n        </div>\n      </div>\n    );\n  }\n\n  const content = enableAccessibilityFeatures ? (\n    <AccessibilityEnhancer>{children}</AccessibilityEnhancer>\n  ) : (\n    children\n  );\n\n  return (\n    <>\n      <ResourceOptimizer />\n      {content}\n      {enablePerformanceMonitoring && <PerformanceMonitorPanel />}\n    </>\n  );\n}"
+import React, { useEffect, useState } from 'react';
+import { usePerformanceMonitor } from '../hooks/usePerformanceOptimization';
+import { useReducedMotion, useHighContrast, useSkipLinks } from '../hooks/useAccessibility';
+import { clsx } from 'clsx';
+
+interface PerformanceOptimizerProps {
+  children: React.ReactNode;
+  enablePerformanceMonitoring?: boolean;
+  enableAccessibilityFeatures?: boolean;
+}
+
+// 性能监控面板 (仅开发环境)
+const PerformanceMonitorPanel = () => {
+  const performance = usePerformanceMonitor('App');
+  const [isVisible, setIsVisible] = useState(false);
+
+  if (process.env.NODE_ENV !== 'development') {
+    return null;
+  }
+
+  return (
+    <>
+      <button
+        onClick={() => setIsVisible(!isVisible)}
+        className="fixed bottom-4 left-4 z-50 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg hover:bg-gray-800 transition-colors"
+        title="性能监控面板"
+      >
+        📊 性能
+      </button>
+      
+      {isVisible && (
+        <div className="fixed bottom-16 left-4 z-50 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl text-xs space-y-2 max-w-xs">
+          <h3 className="font-bold text-gray-900 dark:text-white">性能监控</h3>
+          <div className="space-y-1 text-gray-600 dark:text-gray-400">
+            <div>渲染次数: {performance.renderCount}</div>
+            <div>最后渲染耗时: {performance.lastRenderDuration}ms</div>
+            <div className={clsx(
+              'px-2 py-1 rounded text-white text-xs',
+              performance.lastRenderDuration > 50 ? 'bg-red-500' :
+              performance.lastRenderDuration > 20 ? 'bg-yellow-500' :
+              'bg-green-500'
+            )}>
+              {performance.lastRenderDuration > 50 ? '性能较差' :
+               performance.lastRenderDuration > 20 ? '性能一般' :
+               '性能良好'}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+// 无障碍性辅助功能组件
+const AccessibilityEnhancer = ({ children }: { children: React.ReactNode }) => {
+  const prefersReducedMotion = useReducedMotion();
+  const prefersHighContrast = useHighContrast();
+  const { addSkipLink } = useSkipLinks();
+  const [hasKeyboardUser, setHasKeyboardUser] = useState(false);
+
+  useEffect(() => {
+    // 添加跳过链接
+    addSkipLink('#main', '跳转到主要内容');
+    addSkipLink('#navigation', '跳转到导航');
+    addSkipLink('#footer', '跳转到页脚');
+  }, [addSkipLink]);
+
+  useEffect(() => {
+    // 检测键盘用户
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        setHasKeyboardUser(true);
+        document.body.classList.add('keyboard-user');
+      }
+    };
+
+    const handleMouseDown = () => {
+      setHasKeyboardUser(false);
+      document.body.classList.remove('keyboard-user');
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleMouseDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleMouseDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    // 应用用户首选项
+    const root = document.documentElement;
+    
+    if (prefersReducedMotion) {
+      root.classList.add('motion-reduce');
+      // 禁用或减少动画
+      const style = document.createElement('style');
+      style.textContent = `
+        .motion-reduce *,
+        .motion-reduce *::before,
+        .motion-reduce *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      `;
+      document.head.appendChild(style);
+    } else {
+      root.classList.remove('motion-reduce');
+    }
+
+    if (prefersHighContrast) {
+      root.classList.add('high-contrast');
+    } else {
+      root.classList.remove('high-contrast');
+    }
+  }, [prefersReducedMotion, prefersHighContrast]);
+
+  return (
+    <div 
+      className={clsx(
+        hasKeyboardUser && 'keyboard-navigation-active',
+        prefersHighContrast && 'high-contrast',
+        prefersReducedMotion && 'reduced-motion'
+      )}
+    >
+      {children}
+    </div>
+  );
+};
+
+// 图片预加载组件
+const ImagePreloader = ({ urls }: { urls: string[] }) => {
+  useEffect(() => {
+    const preloadImages = async () => {
+      const promises = urls.map(url => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = url;
+        });
+      });
+
+      try {
+        await Promise.allSettled(promises);
+      } catch (error) {
+        console.warn('Some images failed to preload:', error);
+      }
+    };
+
+    if (urls.length > 0) {
+      preloadImages();
+    }
+  }, [urls]);
+
+  return null;
+};
+
+// 字体预加载组件
+const FontPreloader = ({ fonts }: { fonts: string[] }) => {
+  useEffect(() => {
+    const preloadFonts = async () => {
+      if ('fonts' in document) {
+        try {
+          await Promise.all(
+            fonts.map(font => (document as any).fonts.load(font))
+          );
+        } catch (error) {
+          console.warn('Some fonts failed to preload:', error);
+        }
+      }
+    };
+
+    if (fonts.length > 0) {
+      preloadFonts();
+    }
+  }, [fonts]);
+
+  return null;
+};
+
+// 资源优化组件
+const ResourceOptimizer = () => {
+  useEffect(() => {
+    // 预加载关键资源
+    const criticalImages = [
+      // 可以在这里添加关键图片路径
+    ];
+
+    const criticalFonts = [
+      '16px Inter',
+      '14px JetBrains Mono',
+      'bold 24px Inter'
+    ];
+
+    // DNS预解析
+    const dnsPrefetch = [
+      '//fonts.googleapis.com',
+      '//fonts.gstatic.com'
+    ];
+
+    dnsPrefetch.forEach(domain => {
+      const link = document.createElement('link');
+      link.rel = 'dns-prefetch';
+      link.href = domain;
+      document.head.appendChild(link);
+    });
+  }, []);
+
+  return (
+    <>
+      <ImagePreloader urls={[]} />
+      <FontPreloader fonts={['16px Inter', '14px JetBrains Mono']} />
+    </>
+  );
+};
+
+// 主优化器组件
+export default function PerformanceOptimizer({
+  children,
+  enablePerformanceMonitoring = true,
+  enableAccessibilityFeatures = true
+}: PerformanceOptimizerProps) {
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    // 等待关键资源加载完成
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!isReady) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">正在优化加载...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const content = enableAccessibilityFeatures ? (
+    <AccessibilityEnhancer>{children}</AccessibilityEnhancer>
+  ) : (
+    children
+  );
+
+  return (
+    <>
+      <ResourceOptimizer />
+      {content}
+      {enablePerformanceMonitoring && <PerformanceMonitorPanel />}
+    </>
+  );
+}
