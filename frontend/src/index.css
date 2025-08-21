@@ -329,50 +329,9 @@ body {
   50% { box-shadow: 0 0 15px currentColor, 0 0 25px currentColor; }
 }
 
-@keyframes smart-cursor-bounce {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-50%, -50%) scale(1.1); }
-}
-
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
 }
-
-.smart-cursor {
-  animation: smart-cursor-bounce 2s infinite ease-in-out;
-}
-
-.smart-tooltip {
-  backdrop-filter: blur(8px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-}
-
-
-/* 代码区域增强样式 */
-.smart-code-area {
-  position: relative;
-  background: rgba(0, 216, 255, 0.05);
-  border: 1px solid rgba(0, 216, 255, 0.2);
-  border-radius: 6px;
-  padding: 4px 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.smart-code-area:hover {
-  background: rgba(0, 216, 255, 0.1);
-  border-color: rgba(0, 216, 255, 0.4);
-  box-shadow: 0 0 10px rgba(0, 216, 255, 0.2);
-}
-
-/* 隐藏默认光标在智能光标区域 - 临时禁用测试 */
-/* .smart-cursor-active {
-  cursor: none !important;
-}
-
-.smart-cursor-active * {
-  cursor: none !important;
-} */
 
 /* 代码块样式 - 扁平设计 */
 :root {
