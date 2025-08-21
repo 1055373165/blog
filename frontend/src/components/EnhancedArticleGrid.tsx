@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import { Article } from '../types';
 import OptimizedImage from './ui/OptimizedImage';
 import { formatDate } from '../utils';
@@ -82,8 +81,12 @@ const EnhancedArticleCard = ({
     }
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    // 直接导航到文章页面
+    window.location.href = `/article/${article.slug}`;
+  };
+
   return (
-    <Link to={`/article/${article.slug}`}>
       <article
         ref={cardRef}
         className={clsx(
@@ -100,6 +103,7 @@ const EnhancedArticleCard = ({
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={handleMouseLeave}
+        onClick={handleClick}
       >
         {/* 悬浮光效 */}
         <div className={clsx(
@@ -218,7 +222,6 @@ const EnhancedArticleCard = ({
           isHovered && 'shadow-[0_0_30px_rgba(59,130,246,0.15)] ring-1 ring-primary-500/20'
         )} />
       </article>
-    </Link>
   );
 };
 
