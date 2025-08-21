@@ -27,13 +27,13 @@ export default function ArticleCard({
     switch (variant) {
       case 'featured':
         return {
-          variant: 'premium' as const,
+          variant: 'gradient' as const,
           size: 'lg' as const,
           className: 'group premium-card-featured'
         };
       case 'compact':
         return {
-          variant: 'modern' as const,
+          variant: 'elevated' as const,
           size: 'sm' as const,
           className: 'group premium-card-compact'
         };

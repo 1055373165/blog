@@ -36,7 +36,6 @@ export default function BookCarousel({
   const [isMobile, setIsMobile] = useState(false);
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
 
@@ -120,21 +119,12 @@ export default function BookCarousel({
       setIsMobile(window.innerWidth < 768);
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!carouselRef.current) return;
-      const rect = carouselRef.current.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width;
-      const y = (e.clientY - rect.top) / rect.height;
-      setMousePosition({ x: x - 0.5, y: y - 0.5 });
-    };
 
     checkIsMobile();
     window.addEventListener('resize', checkIsMobile);
-    document.addEventListener('mousemove', handleMouseMove);
     
     return () => {
       window.removeEventListener('resize', checkIsMobile);
-      document.removeEventListener('mousemove', handleMouseMove);
     };
   }, []);
 
@@ -221,10 +211,6 @@ export default function BookCarousel({
       aria-label="Go语言书籍展示"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      style={{
-        transform: `perspective(1000px) rotateX(${mousePosition.y * 2}deg) rotateY(${mousePosition.x * 2}deg)`,
-        transformStyle: 'preserve-3d'
-      }}
     >
       {/* 增强的3D背景装饰 */}
       <div className="absolute inset-0">
@@ -232,20 +218,14 @@ export default function BookCarousel({
         <div className="absolute inset-0 opacity-10 dark:opacity-20">
           <div 
             className="absolute top-10 left-10 w-32 h-32 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-full blur-3xl animate-float"
-            style={{
-              transform: `translate3d(${mousePosition.x * 20}px, ${mousePosition.y * 20}px, 0)`
-            }}
           />
           <div 
             className="absolute bottom-10 right-10 w-40 h-40 bg-gradient-to-br from-purple-400 to-pink-600 rounded-full blur-3xl animate-float-delayed"
-            style={{
-              transform: `translate3d(${mousePosition.x * -15}px, ${mousePosition.y * -15}px, 0)`
-            }}
           />
           <div 
             className="absolute top-1/2 left-1/2 w-60 h-60 bg-gradient-to-br from-green-400 to-blue-600 rounded-full blur-3xl opacity-30 animate-pulse-slow"
             style={{
-              transform: `translate(-50%, -50%) translate3d(${mousePosition.x * 10}px, ${mousePosition.y * 10}px, 0) scale(${1 + Math.abs(mousePosition.x) * 0.1})`
+              transform: `translate(-50%, -50%)`
             }}
           />
         </div>
@@ -381,7 +361,6 @@ export default function BookCarousel({
                           translateY(${-heightOffset}px)
                           rotateY(${(index - centerIndex) * 8}deg)
                           scale(${isCenter ? 1.15 : isAdjacent ? 1.0 : 0.85})
-                          ${!isCenter ? `rotateX(${mousePosition.y * 5}deg)` : ''}
                         `,
                         transformStyle: 'preserve-3d',
                         filter: `brightness(${isCenter ? 1.1 : isAdjacent ? 0.95 : 0.8}) contrast(${isCenter ? 1.1 : 1})`
