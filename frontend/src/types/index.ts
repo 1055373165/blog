@@ -7,11 +7,22 @@ export interface ApiResponse<T> {
 }
 
 export interface PaginatedResponse<T> {
-  items: T[];
+  articles: T[];
   total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  current_page: number;
+  per_page: number;
+  total_pages: number;
+  // 兼容性别名
+  items?: T[];
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+  pagination?: {
+    current: number;
+    total: number;
+    per_page: number;
+    total_pages: number;
+  };
 }
 
 // 用户相关类型
