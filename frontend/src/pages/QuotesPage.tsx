@@ -9,7 +9,6 @@ import ViewModeSelector from '../components/quotes/ViewModeSelector';
 import QuoteDetailModal from '../components/quotes/QuoteDetailModal';
 import { useQuotes } from '../hooks/useQuotes';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
-import { usePerformanceMonitor, useOptimalViewMode } from '../hooks/usePerformanceOptimization';
 import { QuoteErrorBoundary } from '../components/ErrorBoundary';
 
 export default function QuotesPage() {

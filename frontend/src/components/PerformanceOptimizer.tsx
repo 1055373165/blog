@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { usePerformanceMonitor } from '../hooks/usePerformanceOptimization';
+import { usePerformanceMonitor } from '../hooks/usePerformanceMonitor';
 import { useReducedMotion, useHighContrast, useSkipLinks } from '../hooks/useAccessibility';
 import { clsx } from 'clsx';
 
@@ -9,9 +9,12 @@ interface PerformanceOptimizerProps {
   enableAccessibilityFeatures?: boolean;
 }
 
-// 性能监控面板 (仅开发环境)
+// 性能监控面板 (仅开发环境) - 使用 Web Vitals 实现
 const PerformanceMonitorPanel = () => {
-  const performance = usePerformanceMonitor('App');
+  const { metrics, ratings, performanceScore, isGoodPerformance } = usePerformanceMonitor({
+    enableConsoleLog: false, // 禁用控制台日志避免性能影响
+    reportInterval: 10000    // 10秒上报间隔
+  });
   const [isVisible, setIsVisible] = useState(false);
 
   if (process.env.NODE_ENV !== 'development') {
@@ -25,24 +28,28 @@ const PerformanceMonitorPanel = () => {
         className="fixed bottom-4 left-4 z-50 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg hover:bg-gray-800 transition-colors"
         title="性能监控面板"
       >
-        📊 性能
+        📊 性能 {performanceScore}
       </button>
       
       {isVisible && (
-        <div className="fixed bottom-16 left-4 z-50 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl text-xs space-y-2 max-w-xs">
-          <h3 className="font-bold text-gray-900 dark:text-white">性能监控</h3>
+        <div className="fixed bottom-16 left-4 z-50 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl text-xs space-y-2 max-w-sm">
+          <h3 className="font-bold text-gray-900 dark:text-white">Web Vitals 监控</h3>
           <div className="space-y-1 text-gray-600 dark:text-gray-400">
-            <div>渲染次数: {performance.renderCount}</div>
-            <div>最后渲染耗时: {performance.lastRenderDuration}ms</div>
+            <div>性能得分: {performanceScore}/100</div>
+            {metrics.lcp && <div>LCP: {metrics.lcp.toFixed(1)}ms ({ratings.lcp})</div>}
+            {metrics.fcp && <div>FCP: {metrics.fcp.toFixed(1)}ms</div>}
+            {metrics.cls && <div>CLS: {metrics.cls.toFixed(3)} ({ratings.cls})</div>}
+            {metrics.fid && <div>FID: {metrics.fid.toFixed(1)}ms ({ratings.fid})</div>}
+            {metrics.inp && <div>INP: {metrics.inp.toFixed(1)}ms ({ratings.inp})</div>}
             <div className={clsx(
               'px-2 py-1 rounded text-white text-xs',
-              performance.lastRenderDuration > 50 ? 'bg-red-500' :
-              performance.lastRenderDuration > 20 ? 'bg-yellow-500' :
-              'bg-green-500'
+              !isGoodPerformance ? 'bg-red-500' :
+              performanceScore > 80 ? 'bg-green-500' :
+              'bg-yellow-500'
             )}>
-              {performance.lastRenderDuration > 50 ? '性能较差' :
-               performance.lastRenderDuration > 20 ? '性能一般' :
-               '性能良好'}
+              {!isGoodPerformance ? '需要优化' :
+               performanceScore > 80 ? '性能良好' :
+               '性能一般'}
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 interface PerformanceMetrics {
   renderCount: number;
@@ -21,42 +21,68 @@ export const usePerformanceMonitor = (componentName: string): PerformanceMetrics
   const renderCountRef = useRef(0);
   const renderTimesRef = useRef<number[]>([]);
   const lastRenderStartRef = useRef<number>(0);
+  const isFirstRender = useRef(true);
 
+  // 🔧 FIX: Use useLayoutEffect to measure render time without causing re-renders
   useEffect(() => {
-    lastRenderStartRef.current = performance.now();
+    // Record render count without triggering state update
     renderCountRef.current += 1;
-
-    const renderEndTime = performance.now();
-    const renderDuration = renderEndTime - lastRenderStartRef.current;
     
-    renderTimesRef.current.push(renderDuration);
-    if (renderTimesRef.current.length > 10) {
-      renderTimesRef.current.shift();
+    // Only update metrics every 10 renders to prevent excessive updates
+    if (renderCountRef.current % 10 === 0 || isFirstRender.current) {
+      const renderEndTime = performance.now();
+      const renderDuration = isFirstRender.current ? 0 : renderEndTime - lastRenderStartRef.current;
+      
+      if (!isFirstRender.current) {
+        renderTimesRef.current.push(renderDuration);
+        if (renderTimesRef.current.length > 10) {
+          renderTimesRef.current.shift();
+        }
+      }
+
+      const averageTime = renderTimesRef.current.length > 0 
+        ? renderTimesRef.current.reduce((sum, time) => sum + time, 0) / renderTimesRef.current.length 
+        : 0;
+
+      // 🎯 FIX: Only update state when necessary, not on every render
+      setMetrics(prev => ({
+        ...prev,
+        renderCount: renderCountRef.current,
+        lastRenderDuration: Math.round(renderDuration * 100) / 100,
+        averageRenderTime: Math.round(averageTime * 100) / 100
+      }));
+
+      isFirstRender.current = false;
     }
-
-    const averageTime = renderTimesRef.current.reduce((sum, time) => sum + time, 0) / renderTimesRef.current.length;
-
-    setMetrics(prev => ({
-      ...prev,
-      renderCount: renderCountRef.current,
-      lastRenderDuration: Math.round(renderDuration * 100) / 100,
-      averageRenderTime: Math.round(averageTime * 100) / 100
-    }));
-  });
+    
+    // Set up for next render measurement
+    lastRenderStartRef.current = performance.now();
+  }, [componentName]); // 🔧 FIX: Add dependency array with componentName
 
   useEffect(() => {
     // 监控内存使用（如果支持）
     const updateMemoryUsage = () => {
       if ('memory' in performance) {
         const memory = (performance as any).memory;
-        setMetrics(prev => ({
-          ...prev,
-          memoryUsage: Math.round(memory.usedJSHeapSize / 1024 / 1024 * 100) / 100
-        }));
+        const newMemoryUsage = Math.round(memory.usedJSHeapSize / 1024 / 1024 * 100) / 100;
+        
+        // 🎯 OPTIMIZATION: Only update if memory usage changed significantly (>1MB)
+        setMetrics(prev => {
+          const memoryDiff = Math.abs(newMemoryUsage - prev.memoryUsage);
+          if (memoryDiff > 1) {
+            return {
+              ...prev,
+              memoryUsage: newMemoryUsage
+            };
+          }
+          return prev;
+        });
       }
     };
 
-    const interval = setInterval(updateMemoryUsage, 2000);
+    // 🔧 OPTIMIZATION: Increase interval to reduce frequency
+    const interval = setInterval(updateMemoryUsage, 5000);
+    updateMemoryUsage(); // Initial call
     return () => clearInterval(interval);
   }, []);
 
@@ -73,20 +99,33 @@ export const useVirtualScroll = <T>(
   const [scrollTop, setScrollTop] = useState(0);
   const [containerRef, setContainerRef] = useState<HTMLElement | null>(null);
 
-  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
-  const endIndex = Math.min(
-    items.length - 1,
-    Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
-  );
+  // 🎯 OPTIMIZATION: Memoize calculations to prevent unnecessary recalculations
+  const { startIndex, endIndex, visibleItems, totalHeight, offsetY } = useMemo(() => {
+    const start = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
+    const end = Math.min(
+      items.length - 1,
+      Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
+    );
 
-  const visibleItems = items.slice(startIndex, endIndex + 1);
-  const totalHeight = items.length * itemHeight;
-  const offsetY = startIndex * itemHeight;
+    return {
+      startIndex: start,
+      endIndex: end,
+      visibleItems: items.slice(start, end + 1),
+      totalHeight: items.length * itemHeight,
+      offsetY: start * itemHeight
+    };
+  }, [scrollTop, items, containerHeight, itemHeight, overscan]);
 
+  // 🔧 OPTIMIZATION: Throttle scroll updates to improve performance
   const handleScroll = useCallback((e: Event) => {
     const target = e.target as HTMLElement;
-    setScrollTop(target.scrollTop);
-  }, []);
+    const newScrollTop = target.scrollTop;
+    
+    // Only update if scroll difference is significant (>= itemHeight/2)
+    if (Math.abs(newScrollTop - scrollTop) >= itemHeight / 2) {
+      setScrollTop(newScrollTop);
+    }
+  }, [scrollTop, itemHeight]);
 
   useEffect(() => {
     if (!containerRef) return;
@@ -251,6 +290,11 @@ export const useBatchedUpdates = <T>(initialState: T) => {
 
     timeoutRef.current = setTimeout(() => {
       setState(prevState => {
+        // 🎯 OPTIMIZATION: Only update if there are actual changes
+        if (pendingUpdatesRef.current.length === 0) {
+          return prevState;
+        }
+
         let newState = { ...prevState };
         
         pendingUpdatesRef.current.forEach(update => {
@@ -258,10 +302,21 @@ export const useBatchedUpdates = <T>(initialState: T) => {
         });
 
         pendingUpdatesRef.current = [];
-        return newState;
+        
+        // 🔧 OPTIMIZATION: Compare states to prevent unnecessary updates
+        const hasChanges = Object.keys(newState).some(
+          key => newState[key as keyof T] !== prevState[key as keyof T]
+        );
+        
+        return hasChanges ? newState : prevState;
       });
     }, 16); // 约60fps
 
+    // 🔧 FIX: Don't return cleanup function from update function
+  }, []);
+
+  // 🔧 OPTIMIZATION: Cleanup timeout on unmount
+  useEffect(() => {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
