@@ -152,7 +152,7 @@ const TypewriterText = ({ texts, speed = 100 }: { texts: string[]; speed?: numbe
   );
 };
 
-// 增强的3D互动卡片组件
+// 简化的静态卡片组件（移除3D陀螺仪效果）
 const FloatingCard = ({ 
   children, 
   className, 
@@ -165,59 +165,27 @@ const FloatingCard = ({
   depth?: number;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [rotateX, setRotateX] = useState(0);
-  const [rotateY, setRotateY] = useState(0);
-  
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const rotateXValue = (e.clientY - centerY) / 10;
-    const rotateYValue = (e.clientX - centerX) / 10;
-    
-    setRotateX(-rotateXValue);
-    setRotateY(rotateYValue);
-  };
-  
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    setRotateX(0);
-    setRotateY(0);
-  };
   
   return (
     <div 
       className={clsx(
-        'bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl border border-white/20 dark:border-gray-800/20 rounded-2xl p-6 shadow-2xl transition-all duration-500 cursor-pointer',
-        isHovered && 'shadow-4xl scale-105',
+        'bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl border border-white/20 dark:border-gray-800/20 rounded-2xl p-6 shadow-2xl transition-all duration-500',
+        isHovered && 'shadow-4xl',
         className
       )}
       style={{ 
-        animationDelay: `${delay}ms`,
-        transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(${depth}px) ${isHovered ? 'translateY(-10px)' : ''}`,
-        transformStyle: 'preserve-3d'
+        animationDelay: `${delay}ms`
       }}
-      onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={handleMouseLeave}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <div 
-        className="relative z-10"
-        style={{
-          transform: `translateZ(${depth + 20}px)`
-        }}
-      >
+      <div className="relative z-10">
         {children}
       </div>
       
-      {/* 3D深度阴影 */}
+      {/* 静态阴影效果 */}
       {isHovered && (
-        <div 
-          className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-go-500/10 rounded-2xl blur-xl opacity-50 transition-opacity duration-500"
-          style={{
-            transform: `translateZ(${depth - 10}px)`
-          }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-go-500/10 rounded-2xl blur-xl opacity-50 transition-opacity duration-500" />
       )}
     </div>
   );
@@ -351,12 +319,6 @@ export default function Hero({ className }: HeroProps) {
             </Link>
           </div>
 
-          {/* 状态指示器 */}
-          <div className={clsx('flex justify-center space-x-8 mb-8', isLoaded && 'animate-fade-in')} style={{ animationDelay: '300ms' }}>
-            <StatusIndicator isActive={isInView} label="视窗内" />
-            <StatusIndicator isActive={isLoaded} label="已加载" />
-            <StatusIndicator isActive={Math.abs(mousePosition.x) > 0.1 || Math.abs(mousePosition.y) > 0.1} label="交互中" />
-          </div>
           
           {/* 增强的滚动提示 */}
           <div className={clsx('pt-8', isLoaded && 'animate-fade-in')} style={{ animationDelay: '400ms' }}>
