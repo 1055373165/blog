@@ -5,7 +5,7 @@ import {
   HomeIcon, 
   DocumentTextIcon, 
   BookOpenIcon, 
-  ChatBubbleQuoteIcon,
+  ChatBubbleBottomCenterTextIcon,
   MagnifyingGlassIcon,
   SunIcon,
   MoonIcon,
@@ -26,7 +26,7 @@ const navigationItems: NavigationItem[] = [
   { name: '首页', href: '/', icon: HomeIcon, description: '回到首页' },
   { name: '文章', href: '/articles', icon: DocumentTextIcon, description: '技术文章' },
   { name: '系列', href: '/series', icon: BookOpenIcon, description: '文章系列' },
-  { name: '箴言', href: '/quotes', icon: ChatBubbleQuoteIcon, description: '技术箴言' },
+  { name: '箴言', href: '/quotes', icon: ChatBubbleBottomCenterTextIcon, description: '技术箴言' },
   { name: '搜索', href: '/search', icon: MagnifyingGlassIcon, description: '搜索内容' },
 ];
 
