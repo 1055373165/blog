@@ -185,8 +185,6 @@ export default function ArticleCard({
           </div>
         )}
 
-        </div> {/* Close the content area div */}
-        
         {/* 阅读按钮 */}
         {variant !== 'compact' && (
           <div className="pt-4 mt-4 border-t border-gray-100 dark:border-gray-700 group-hover:border-gray-200 dark:group-hover:border-gray-600 transition-colors duration-300">
