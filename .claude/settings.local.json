@@ -48,7 +48,8 @@
       "Bash(go fmt:*)",
       "Bash(sed:*)",
       "Bash(open http://localhost:5173/articles)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(jobs)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

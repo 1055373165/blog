@@ -7,6 +7,8 @@ import {
   BookOpenIcon, 
   ChatBubbleBottomCenterTextIcon,
   MagnifyingGlassIcon,
+  FolderIcon,
+  TagIcon,
   SunIcon,
   MoonIcon,
   Bars3Icon,
@@ -25,6 +27,8 @@ interface NavigationItem {
 const navigationItems: NavigationItem[] = [
   { name: '首页', href: '/', icon: HomeIcon, description: '回到首页' },
   { name: '文章', href: '/articles', icon: DocumentTextIcon, description: '技术文章' },
+  { name: '分类', href: '/categories', icon: FolderIcon, description: '文章分类' },
+  { name: '标签', href: '/tags', icon: TagIcon, description: '文章标签' },
   { name: '系列', href: '/series', icon: BookOpenIcon, description: '文章系列' },
   { name: '箴言', href: '/quotes', icon: ChatBubbleBottomCenterTextIcon, description: '技术箴言' },
   { name: '搜索', href: '/search', icon: MagnifyingGlassIcon, description: '搜索内容' },
@@ -117,9 +121,11 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
         const shortcuts: { [key: string]: string } = {
           '1': '/',
           '2': '/articles',
-          '3': '/series',
-          '4': '/quotes',
-          '5': '/search'
+          '3': '/categories',
+          '4': '/tags',
+          '5': '/series',
+          '6': '/quotes',
+          '7': '/search'
         };
         
         if (shortcuts[key]) {
