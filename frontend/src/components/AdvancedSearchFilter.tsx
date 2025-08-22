@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { SearchFilters, Category, Tag, Series } from '../types';
 import { categoriesApi, tagsApi } from '../api';
 
@@ -66,7 +66,8 @@ export default function AdvancedSearchFilter({
 
   const getActiveFiltersCount = () => {
     let count = 0;
-    if (filters.category_id) count++;
+    // Only count category filter if there are multiple categories
+    if (filters.category_id && categories.length > 1) count++;
     if (filters.tag_ids && filters.tag_ids.length > 0) count++;
     if (filters.series_id) count++;
     if (filters.date_from) count++;
@@ -78,6 +79,38 @@ export default function AdvancedSearchFilter({
   };
 
   const hasActiveFilters = getActiveFiltersCount() > 0;
+
+  // Quick date filter helper functions
+  const getQuickDateRange = (days: number) => {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - days);
+    return {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0]
+    };
+  };
+
+  const getActiveQuickFilter = useMemo(() => {
+    if (!filters.date_from || !filters.date_to) return null;
+    
+    const quickFilters = [
+      { label: '今天', days: 0 },
+      { label: '本周', days: 7 },
+      { label: '本月', days: 30 },
+      { label: '3个月', days: 90 },
+      { label: '半年', days: 180 },
+      { label: '一年', days: 365 },
+    ];
+    
+    for (const filter of quickFilters) {
+      const range = getQuickDateRange(filter.days);
+      if (filters.date_from === range.startDate && filters.date_to === range.endDate) {
+        return filter.label;
+      }
+    }
+    return null;
+  }, [filters.date_from, filters.date_to]);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
@@ -129,26 +162,28 @@ export default function AdvancedSearchFilter({
             </div>
           ) : (
             <>
-              {/* Category Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  分类
-                </label>
-                <select
-                  value={filters.category_id || ''}
-                  onChange={(e) => handleFilterChange('category_id', e.target.value || undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md
-                             bg-white dark:bg-gray-800 text-gray-900 dark:text-white
-                             focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="">所有分类</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.parent && '└ '}{category.name} ({category.articles_count})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Category Filter - Only show if there are multiple categories */}
+              {categories.length > 1 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    分类
+                  </label>
+                  <select
+                    value={filters.category_id || ''}
+                    onChange={(e) => handleFilterChange('category_id', e.target.value || undefined)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md
+                               bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                               focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="">所有分类</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.parent && '└ '}{category.name} ({category.articles_count})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Tags Filter */}
               <div>
@@ -305,24 +340,26 @@ export default function AdvancedSearchFilter({
                     { label: '3个月', days: 90 },
                     { label: '半年', days: 180 },
                     { label: '一年', days: 365 },
-                  ].map(({ label, days }) => (
-                    <button
-                      key={label}
-                      onClick={() => {
-                        const endDate = new Date();
-                        const startDate = new Date();
-                        startDate.setDate(endDate.getDate() - days);
-                        
-                        handleFilterChange('date_from', startDate.toISOString().split('T')[0]);
-                        handleFilterChange('date_to', endDate.toISOString().split('T')[0]);
-                      }}
-                      className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md
-                                 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700
-                                 transition-colors"
-                    >
-                      {label}
-                    </button>
-                  ))}
+                  ].map(({ label, days }) => {
+                    const isActive = getActiveQuickFilter === label;
+                    return (
+                      <button
+                        key={label}
+                        onClick={() => {
+                          const range = getQuickDateRange(days);
+                          handleFilterChange('date_from', range.startDate);
+                          handleFilterChange('date_to', range.endDate);
+                        }}
+                        className={`px-3 py-1 text-sm border rounded-md transition-colors ${
+                          isActive
+                            ? 'bg-primary-600 border-primary-600 text-white shadow-sm'
+                            : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                   <button
                     onClick={() => {
                       handleFilterChange('date_from', undefined);
