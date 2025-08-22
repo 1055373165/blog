@@ -363,7 +363,7 @@ export default function BookCarousel({
                           scale(${isCenter ? 1.15 : isAdjacent ? 1.0 : 0.85})
                         `,
                         transformStyle: 'preserve-3d',
-                        filter: `brightness(${isCenter ? 1.1 : isAdjacent ? 0.95 : 0.8}) contrast(${isCenter ? 1.1 : 1})`
+                        filter: `brightness(${isCenter ? 1.0 : isAdjacent ? 0.95 : 0.8}) contrast(1.0)`
                       }}
                       onClick={() => goToSlide(book.realIndex)}
                     >
@@ -407,14 +407,13 @@ export default function BookCarousel({
                           aspectRatio="3/4"
                           className={clsx(
                             'w-32 md:w-40 lg:w-48 transition-all duration-700 relative z-10',
-                            isCenter && 'brightness-110 contrast-110',
                             isAdjacent && 'brightness-95',
                             isEdge && 'brightness-75',
                             'group-hover:brightness-110 group-hover:contrast-105'
                           )}
                           style={{
                             transform: 'translateZ(5px)',
-                            filter: `saturate(${isCenter ? 1.1 : 0.9}) hue-rotate(${isCenter ? '5deg' : '0deg'})`
+                            filter: `saturate(${isCenter ? 1.0 : 0.9}) hue-rotate(0deg)`
                           }}
                           sizes="(max-width: 768px) 128px, (max-width: 1024px) 160px, 192px"
                           placeholder="skeleton"

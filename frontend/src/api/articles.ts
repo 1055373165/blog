@@ -17,7 +17,7 @@ export const articlesApi = {
     categoryId?: string;
     tagIds?: string[];
     seriesId?: string;
-    isPublished?: boolean;
+    is_published?: boolean;
     sort_by?: string;
     sort_order?: 'asc' | 'desc';
   }) {
@@ -101,7 +101,7 @@ export const articlesApi = {
     const response = await articlesApi.getArticles({
       page: 1,
       limit,
-      isPublished: true,
+      is_published: true,
       sort_by: 'published_at',
       sort_order: 'desc'
     });
