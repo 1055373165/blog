@@ -49,7 +49,8 @@
       "Bash(sed:*)",
       "Bash(open http://localhost:5173/articles)",
       "Bash(git commit:*)",
-      "Bash(jobs)"
+      "Bash(jobs)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
