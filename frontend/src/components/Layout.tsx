@@ -101,7 +101,7 @@ export default function Layout() {
       
       {/* 传统导航栏 - 隐藏于桌面端 */}
       <header 
-        className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 hidden md:block"
+        className="bg-gray-50 dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700 hidden md:block"
         role="banner"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -111,16 +111,6 @@ export default function Layout() {
               <Link to="/" className="flex items-center">
                 <GoDepthLogo size="sm" showText={true} animated={true} />
               </Link>
-            </div>
-
-            {/* Search Bar (Desktop) */}
-            <div className="hidden md:block flex-1 max-w-lg mx-8">
-              <SearchBar
-                placeholder="搜索文章..."
-                size="sm"
-                showSuggestions={true}
-                className="w-full"
-              />
             </div>
 
             {/* 仅显示主题设置按钮 */}
@@ -244,7 +234,7 @@ export default function Layout() {
 
       {/* 页脚 */}
       <footer 
-        className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12 relative z-10"
+        className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 mt-12 relative z-10"
         role="contentinfo"
         aria-label="网站信息"
       >
