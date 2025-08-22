@@ -7,6 +7,7 @@ interface PerformanceOptimizerProps {
   children: React.ReactNode;
   enablePerformanceMonitoring?: boolean;
   enableAccessibilityFeatures?: boolean;
+  enableSkipLinks?: boolean;
 }
 
 // 性能监控面板 (仅开发环境) - 使用 Web Vitals 实现
@@ -59,18 +60,20 @@ const PerformanceMonitorPanel = () => {
 };
 
 // 无障碍性辅助功能组件
-const AccessibilityEnhancer = ({ children }: { children: React.ReactNode }) => {
+const AccessibilityEnhancer = ({ children, enableSkipLinks = true }: { children: React.ReactNode, enableSkipLinks?: boolean }) => {
   const prefersReducedMotion = useReducedMotion();
   const prefersHighContrast = useHighContrast();
   const { addSkipLink } = useSkipLinks();
   const [hasKeyboardUser, setHasKeyboardUser] = useState(false);
 
   useEffect(() => {
-    // 添加跳过链接
-    addSkipLink('#main', '跳转到主要内容');
-    addSkipLink('#navigation', '跳转到导航');
-    addSkipLink('#footer', '跳转到页脚');
-  }, [addSkipLink]);
+    // 只有在启用跳过链接时才添加
+    if (enableSkipLinks) {
+      addSkipLink('#main', '跳转到主要内容');
+      addSkipLink('#navigation', '跳转到导航');
+      addSkipLink('#footer', '跳转到页脚');
+    }
+  }, [addSkipLink, enableSkipLinks]);
 
   useEffect(() => {
     // 检测键盘用户

@@ -101,7 +101,7 @@ export default function Layout() {
       
       {/* 传统导航栏 - 隐藏于桌面端 */}
       <header 
-        className="bg-gray-50 dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700 hidden md:block"
+        className="bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700 hidden md:block"
         role="banner"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

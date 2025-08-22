@@ -215,10 +215,6 @@ export default function QuotesPage() {
       role="main"
       aria-label="技术箴言页面"
     >
-      {/* 跳过导航链接 */}
-      <a href="#main-content" className="skip-link">
-        跳到主要内容
-      </a>
       
       {/* 屏幕阅读器宣布区域 */}
       <div 
