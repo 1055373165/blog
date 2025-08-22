@@ -256,7 +256,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(({
 
       {/* Glass 效果光影 */}
       {isGlass && (
-        <div className="absolute inset-0 rounded-inherit">
+        <div className="absolute inset-0 rounded-inherit pointer-events-none">
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent rounded-inherit" />
           <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-xl transform -translate-x-4 -translate-y-4" />
         </div>
@@ -264,12 +264,12 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(({
 
       {/* 悬浮发光效果 */}
       {variant === 'floating' && (
-        <div className="absolute -inset-1 bg-gradient-to-r from-primary-500/20 to-accent-purple-500/20 rounded-inherit blur opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute -inset-1 bg-gradient-to-r from-primary-500/20 to-accent-purple-500/20 rounded-inherit blur opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
       )}
 
       {/* 渐变边框效果 */}
       {variant === 'gradient' && (
-        <div className="absolute inset-0 rounded-inherit bg-gradient-to-r from-primary-500/20 via-transparent to-accent-purple-500/20 opacity-0 hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 rounded-inherit bg-gradient-to-r from-primary-500/20 via-transparent to-accent-purple-500/20 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
       )}
     </div>
   );
