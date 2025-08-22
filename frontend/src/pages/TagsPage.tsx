@@ -219,18 +219,25 @@ export default function TagsPage() {
                     to={`/tag/${tag.slug}`}
                     className="group relative inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 hover:shadow-medium"
                     style={{
-                      backgroundColor: tag.color + '20',
+                      backgroundColor: tag.color + '18',
                       color: tag.color,
-                      border: `2px solid ${tag.color}40`,
+                      border: `2px solid ${tag.color}35`,
                     }}
                   >
                     <span className="mr-2">#</span>
                     <span>{tag.name}</span>
-                    <span className="ml-2 text-xs opacity-75 bg-white dark:bg-gray-800 px-1.5 py-0.5 rounded-full">
+                    <span 
+                      className="ml-2 text-xs font-medium px-1.5 py-0.5 rounded-full transition-all duration-200 group-hover:scale-105"
+                      style={{
+                        backgroundColor: tag.color + '25',
+                        color: tag.color,
+                        border: `1px solid ${tag.color}40`
+                      }}
+                    >
                       {tag.articles_count}
                     </span>
                     <div 
-                      className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-10 transition-opacity"
+                      className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-8 transition-opacity"
                       style={{ backgroundColor: tag.color }}
                     />
                   </Link>
@@ -261,23 +268,42 @@ export default function TagsPage() {
                 <Link
                   key={tag.id}
                   to={`/tag/${tag.slug}`}
-                  className="group card p-4 hover:shadow-medium hover:border-go-300 dark:hover:border-go-600 transition-all duration-200"
+                  className="group card p-4 transition-all duration-200 hover:shadow-medium hover:-translate-y-0.5"
+                  style={{
+                    borderLeft: `4px solid ${tag.color}`,
+                    backgroundColor: `${tag.color}05`,
+                  }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div 
-                        className="w-4 h-4 rounded-full mr-3 shadow-soft"
+                        className="w-4 h-4 rounded-full mr-3 shadow-soft transition-all duration-200 group-hover:scale-110"
                         style={{ backgroundColor: tag.color }}
                       />
-                      <span className="font-medium text-gray-900 dark:text-white group-hover:text-go-600 dark:group-hover:text-go-400 transition-colors">
+                      <span 
+                        className="font-medium transition-colors duration-200"
+                        style={{ color: tag.color }}
+                      >
                         {tag.name}
                       </span>
                     </div>
                     <div className="flex items-center">
-                      <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">
+                      <span 
+                        className="text-sm font-medium px-2 py-1 rounded-full transition-all duration-200 group-hover:scale-105"
+                        style={{
+                          backgroundColor: tag.color + '15',
+                          color: tag.color,
+                          border: `1px solid ${tag.color}25`
+                        }}
+                      >
                         {tag.articles_count}
                       </span>
-                      <svg className="w-4 h-4 text-gray-400 group-hover:text-go-500 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                      <svg 
+                        className="w-4 h-4 ml-2 transition-all duration-200 group-hover:translate-x-0.5"
+                        style={{ color: tag.color + '80' }}
+                        fill="currentColor" 
+                        viewBox="0 0 20 20"
+                      >
                         <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
@@ -311,16 +337,23 @@ export default function TagsPage() {
                   to={`/tag/${tag.slug}`}
                   className="group inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105 hover:shadow-medium"
                   style={{
-                    backgroundColor: tag.color + '15',
+                    backgroundColor: tag.color + '12',
                     color: tag.color,
-                    border: `1px solid ${tag.color}30`,
+                    border: `1px solid ${tag.color}28`,
                   }}
                 >
-                  <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-3 h-3 mr-1.5 opacity-80" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                   </svg>
                   {tag.name}
-                  <span className="ml-2 text-xs opacity-60 bg-white dark:bg-gray-800 px-1.5 py-0.5 rounded-full">
+                  <span 
+                    className="ml-2 text-xs font-medium px-1.5 py-0.5 rounded-full transition-all duration-200 group-hover:scale-105"
+                    style={{
+                      backgroundColor: tag.color + '20',
+                      color: tag.color,
+                      border: `1px solid ${tag.color}35`
+                    }}
+                  >
                     {tag.articles_count}
                   </span>
                 </Link>
