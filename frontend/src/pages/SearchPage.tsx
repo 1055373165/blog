@@ -54,11 +54,11 @@ export default function SearchPage() {
         queryParams.set('limit', '12');
         queryParams.set('highlight', 'true');
         
-        if (searchFilters.category_id) queryParams.set('category_id', searchFilters.category_id);
+        if (searchFilters.category_id) queryParams.set('category_id', searchFilters.category_id.toString());
         if (searchFilters.tag_ids && searchFilters.tag_ids.length > 0) {
           queryParams.set('tag_ids', searchFilters.tag_ids.join(','));
         }
-        if (searchFilters.series_id) queryParams.set('series_id', searchFilters.series_id);
+        if (searchFilters.series_id) queryParams.set('series_id', searchFilters.series_id.toString());
         if (searchFilters.date_from) queryParams.set('date_from', searchFilters.date_from);
         if (searchFilters.date_to) queryParams.set('date_to', searchFilters.date_to);
         if (searchFilters.is_published !== undefined) {

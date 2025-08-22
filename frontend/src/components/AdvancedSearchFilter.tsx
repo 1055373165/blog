@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { SearchFilters, Category, Tag, Series } from '../types';
-import { categoriesApi, tagsApi } from '../api';
+import { categoriesApi, tagsApi, seriesApi } from '../api';
 
 interface AdvancedSearchFilterProps {
   filters: SearchFilters;
@@ -23,19 +23,22 @@ export default function AdvancedSearchFilter({
   const [tags, setTags] = useState<Tag[]>([]);
   const [series, setSeries] = useState<Series[]>([]);
   const [loading, setLoading] = useState(false);
+  const [tagSearchQuery, setTagSearchQuery] = useState('');
 
-  // Load categories and tags for filter options
+  // Load categories, tags, and series for filter options
   useEffect(() => {
     const loadFilterOptions = async () => {
       try {
         setLoading(true);
-        const [categoriesRes, tagsRes] = await Promise.all([
+        const [categoriesRes, tagsRes, seriesRes] = await Promise.all([
           categoriesApi.getCategories({ limit: 100 }),
           tagsApi.getTags({ limit: 100, sortBy: 'articles_count', sortOrder: 'desc' }),
+          seriesApi.getSeries(1, 100),
         ]);
         
         setCategories(categoriesRes.data.items || []);
         setTags(tagsRes.data.items || []);
+        setSeries(seriesRes.items || []);
       } catch (error) {
         console.error('Failed to load filter options:', error);
       } finally {
@@ -69,7 +72,7 @@ export default function AdvancedSearchFilter({
     // Only count category filter if there are multiple categories
     if (filters.category_id && categories.length > 1) count++;
     if (filters.tag_ids && filters.tag_ids.length > 0) count++;
-    if (filters.series_id) count++;
+    if (filters.series_id && series.length > 0) count++;
     if (filters.date_from) count++;
     if (filters.date_to) count++;
     if (filters.is_published !== undefined) count++;
@@ -190,8 +193,26 @@ export default function AdvancedSearchFilter({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   标签
                 </label>
+                {/* Tag Search Input */}
+                <div className="mb-3">
+                  <input
+                    type="text"
+                    placeholder="搜索标签..."
+                    value={tagSearchQuery}
+                    onChange={(e) => setTagSearchQuery(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md
+                               bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm
+                               focus:outline-none focus:ring-2 focus:ring-primary-500
+                               placeholder-gray-400 dark:placeholder-gray-500"
+                  />
+                </div>
                 <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                  {tags.map((tag) => {
+                  {tags
+                    .filter(tag => 
+                      tagSearchQuery === '' || 
+                      tag.name.toLowerCase().includes(tagSearchQuery.toLowerCase())
+                    )
+                    .map((tag) => {
                     const isSelected = filters.tag_ids?.includes(tag.id) || false;
                     return (
                       <button
@@ -219,6 +240,29 @@ export default function AdvancedSearchFilter({
                   </div>
                 )}
               </div>
+
+              {/* Series Filter - Only show if there are series */}
+              {series.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    系列
+                  </label>
+                  <select
+                    value={filters.series_id || ''}
+                    onChange={(e) => handleFilterChange('series_id', e.target.value ? parseInt(e.target.value) : undefined)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md
+                               bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                               focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="">所有系列</option>
+                    {series.map((seriesItem) => (
+                      <option key={seriesItem.id} value={seriesItem.id}>
+                        {seriesItem.name} ({seriesItem.articles_count || 0})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Date Range Filter */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
