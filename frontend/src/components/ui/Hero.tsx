@@ -274,7 +274,6 @@ export default function Hero({ className }: HeroProps) {
             </div>
             
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-gray-900 dark:text-white leading-tight">
-              <span className="block text-gradient-primary">Go Depth</span>
               <span className="block text-4xl md:text-5xl lg:text-6xl font-light text-gray-600 dark:text-gray-300 mt-4">
                 Deep Dive into <TypewriterText texts={typewriterTexts} />
               </span>
