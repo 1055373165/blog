@@ -47,7 +47,8 @@
       "Bash(npm install:*)",
       "Bash(go fmt:*)",
       "Bash(sed:*)",
-      "Bash(open http://localhost:5173/articles)"
+      "Bash(open http://localhost:5173/articles)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
