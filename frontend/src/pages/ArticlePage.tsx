@@ -73,8 +73,9 @@ export default function ArticlePage() {
         // 获取相关文章
         try {
           const relatedResponse = await articlesApi.getRelatedArticles(articleData.id.toString(), 4);
-          // 去重处理，防止重复的ID导致React key警告
-          const uniqueRelatedArticles = relatedResponse.data.filter(
+          // 确保data存在且为数组，然后去重处理
+          const articles = relatedResponse.data || [];
+          const uniqueRelatedArticles = articles.filter(
             (article: Article, index: number, self: Article[]) => 
               index === self.findIndex(a => a.id === article.id)
           );
@@ -200,7 +201,6 @@ export default function ArticlePage() {
           <StripTOC
             contentSelector=".article-content"
             maxLevel={3}
-            showNumbers={false}
           />
         }
       >
@@ -435,7 +435,6 @@ export default function ArticlePage() {
         <CollapsibleTOC
           contentSelector=".article-content"
           maxLevel={3}
-          showNumbers={false}
           autoCollapse={false}
         />
       </div>

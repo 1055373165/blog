@@ -77,7 +77,7 @@ export const articlesApi = {
 
   // 点赞/取消点赞文章
   async toggleLike(id: string) {
-    return apiClient.post<{ liked: boolean; likesCount: number }>(`/api/articles/${id}/like`);
+    return apiClient.post<{ liked: boolean; likes_count: number }>(`/api/articles/${id}/like`);
   },
 
   // 获取相关文章

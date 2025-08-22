@@ -7,17 +7,28 @@ export default function ArticlesPage() {
     const response = await articlesApi.getArticles({
       page,
       limit,
-      is_published: true,
+      isPublished: true,
       sort_by: 'published_at',
       sort_order: 'desc',
     });
-    // 转换API返回的数据格式为ArticleList期望的格式
+    // 返回符合PaginatedResponse<Article>接口的数据格式
     return {
+      articles: response.data.articles || [],
+      total: response.data.total || 0,
+      current_page: response.data.current_page || page,
+      per_page: response.data.per_page || limit,
+      total_pages: response.data.total_pages || 1,
+      // 保持兼容性别名
       items: response.data.articles || [],
-      total: response.data.pagination?.total || 0,
-      page: response.data.pagination?.page || page,
-      limit: response.data.pagination?.limit || limit,
-      totalPages: response.data.pagination?.total_pages || 1,
+      page: response.data.current_page || page,
+      limit: response.data.per_page || limit,
+      totalPages: response.data.total_pages || 1,
+      pagination: {
+        current: response.data.current_page || page,
+        total: response.data.total || 0,
+        per_page: response.data.per_page || limit,
+        total_pages: response.data.total_pages || 1,
+      },
     };
   };
 
