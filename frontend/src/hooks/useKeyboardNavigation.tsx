@@ -18,6 +18,7 @@ interface KeyboardNavigationOptions {
   enableEscapeKey?: boolean; // 启用 Esc 键关闭功能
   focusTrapSelector?: string; // 焦点陷阱选择器
   skipLinkTarget?: string; // 跳过链接目标
+  enableSkipLink?: boolean; // 是否创建跳过链接
   shortcuts?: KeyboardShortcut[]; // 自定义快捷键
 }
 
@@ -167,6 +168,7 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
     enableEscapeKey = true,
     focusTrapSelector,
     skipLinkTarget = 'main',
+    enableSkipLink = true,
     shortcuts = []
   } = options;
 
@@ -251,6 +253,8 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
 
   // 跳过链接功能
   const createSkipLink = useCallback(() => {
+    if (!enableSkipLink) return;
+    
     const existingSkipLink = document.querySelector('[data-skip-link]');
     if (existingSkipLink) return;
 
@@ -270,7 +274,7 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
     });
 
     document.body.insertBefore(skipLink, document.body.firstChild);
-  }, [skipLinkTarget]);
+  }, [skipLinkTarget, enableSkipLink]);
 
   // 显示快捷键帮助
   const showShortcutsHelp = useCallback(() => {

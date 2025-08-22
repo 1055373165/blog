@@ -232,7 +232,8 @@ const ResourceOptimizer = () => {
 export default function PerformanceOptimizer({
   children,
   enablePerformanceMonitoring = true,
-  enableAccessibilityFeatures = true
+  enableAccessibilityFeatures = true,
+  enableSkipLinks = true
 }: PerformanceOptimizerProps) {
   const [isReady, setIsReady] = useState(false);
 
@@ -257,7 +258,7 @@ export default function PerformanceOptimizer({
   }
 
   const content = enableAccessibilityFeatures ? (
-    <AccessibilityEnhancer>{children}</AccessibilityEnhancer>
+    <AccessibilityEnhancer enableSkipLinks={enableSkipLinks}>{children}</AccessibilityEnhancer>
   ) : (
     children
   );
