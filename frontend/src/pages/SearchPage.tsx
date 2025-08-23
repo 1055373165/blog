@@ -7,7 +7,6 @@ import ArticleCard from '../components/ArticleCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
 import SearchBar, { SearchBarRef } from '../components/SearchBar';
-import AdvancedSearchFilter from '../components/AdvancedSearchFilter';
 import SavedSearches from '../components/SavedSearches';
 import SearchStats from '../components/SearchStats';
 import { debounce } from '../utils';
@@ -36,7 +35,6 @@ export default function SearchPage() {
     sort_by: 'published_at',
     sort_order: 'desc',
   });
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const searchBarRef = useRef<SearchBarRef>(null);
 
   // Debounced search function
@@ -54,18 +52,6 @@ export default function SearchPage() {
         queryParams.set('limit', '12');
         queryParams.set('highlight', 'true');
         
-        if (searchFilters.category_id) queryParams.set('category_id', searchFilters.category_id.toString());
-        if (searchFilters.tag_ids && searchFilters.tag_ids.length > 0) {
-          queryParams.set('tag_ids', searchFilters.tag_ids.join(','));
-        }
-        if (searchFilters.series_id) queryParams.set('series_id', searchFilters.series_id.toString());
-        if (searchFilters.date_from) queryParams.set('date_from', searchFilters.date_from);
-        if (searchFilters.date_to) queryParams.set('date_to', searchFilters.date_to);
-        if (searchFilters.is_published !== undefined) {
-          queryParams.set('is_published', searchFilters.is_published.toString());
-        }
-        if (searchFilters.sort_by) queryParams.set('sort_by', searchFilters.sort_by);
-        if (searchFilters.sort_order) queryParams.set('sort_order', searchFilters.sort_order);
 
         const data = await apiClient.get(`/api/search?${queryParams}`);
 
@@ -113,18 +99,6 @@ export default function SearchPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handle filter changes
-  const handleFiltersChange = (newFilters: SearchFilters) => {
-    setFilters(newFilters);
-    setQuery(newFilters.query || '');
-    
-    // Update URL parameters
-    const newSearchParams = new URLSearchParams();
-    if (newFilters.query) {
-      newSearchParams.set('q', newFilters.query);
-    }
-    setSearchParams(newSearchParams);
-  };
 
   // Handle loading saved search
   const handleLoadSavedSearch = (savedFilters: SearchFilters) => {
@@ -143,29 +117,6 @@ export default function SearchPage() {
     debouncedSearch(savedFilters, 1);
   };
 
-  // Handle search with filters
-  const handleSearch = () => {
-    setCurrentPage(1);
-    
-    // Get current query from SearchBar
-    const currentQuery = searchBarRef.current?.getCurrentQuery() || '';
-    
-    // Update filters with current query from input
-    const updatedFilters = { ...filters, query: currentQuery };
-    setFilters(updatedFilters);
-    setQuery(currentQuery);
-    
-    // Update URL parameters
-    const newSearchParams = new URLSearchParams(searchParams);
-    if (currentQuery) {
-      newSearchParams.set('q', currentQuery);
-    } else {
-      newSearchParams.delete('q');
-    }
-    setSearchParams(newSearchParams);
-    
-    debouncedSearch(updatedFilters, 1);
-  };
 
   // Reset all filters
   const handleResetFilters = () => {
@@ -180,19 +131,6 @@ export default function SearchPage() {
     setSearchParams(new URLSearchParams());
   };
 
-  // Check if there are active filters (excluding default query and sort)
-  const hasActiveFilters = (filtersToCheck: SearchFilters = filters) => {
-    return !!(
-      filtersToCheck.category_id ||
-      (filtersToCheck.tag_ids && filtersToCheck.tag_ids.length > 0) ||
-      filtersToCheck.series_id ||
-      filtersToCheck.date_from ||
-      filtersToCheck.date_to ||
-      filtersToCheck.is_published !== undefined ||
-      (filtersToCheck.sort_by && filtersToCheck.sort_by !== 'published_at') ||
-      (filtersToCheck.sort_order && filtersToCheck.sort_order !== 'desc')
-    );
-  };
 
   // Initial search on component mount
   useEffect(() => {
@@ -232,29 +170,17 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* Advanced Filters and Saved Searches */}
-      <div className="space-y-6 mb-12">
-        <AdvancedSearchFilter
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onSearch={handleSearch}
-          onReset={handleResetFilters}
-          isOpen={showAdvancedFilters}
-          onToggle={() => setShowAdvancedFilters(!showAdvancedFilters)}
+      {/* Saved Searches */}
+      <div className="flex justify-center mb-12">
+        <SavedSearches
+          currentFilters={filters}
+          onLoadSearch={handleLoadSavedSearch}
+          className="inline-block"
         />
-        
-        {/* Saved Searches */}
-        <div className="flex justify-center">
-          <SavedSearches
-            currentFilters={filters}
-            onLoadSearch={handleLoadSavedSearch}
-            className="inline-block"
-          />
-        </div>
       </div>
 
       {/* Search Results */}
-      {(query || hasActiveFilters() || results) && (
+      {(query || results) && (
         <>
           {/* Results Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -273,21 +199,6 @@ export default function SearchPage() {
               )}
             </div>
 
-            {/* Active Filters Summary */}
-            {hasActiveFilters() && results && results.documents.length > 0 && (
-              <div className="flex items-center space-x-3 text-sm bg-purple-50 dark:bg-purple-900/20 px-4 py-3 rounded-xl border border-purple-200 dark:border-purple-700">
-                <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" />
-                </svg>
-                <span className="text-purple-700 dark:text-purple-300 font-medium">已应用高级筛选</span>
-                <button
-                  onClick={() => setShowAdvancedFilters(true)}
-                  className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium underline transition-colors duration-200"
-                >
-                  查看筛选条件
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Loading State */}
@@ -443,8 +354,8 @@ export default function SearchPage() {
         </>
       )}
 
-      {/* Search Tips and Stats (when no query and no filters) */}
-      {!query && !hasActiveFilters() && (
+      {/* Search Tips and Stats (when no query) */}
+      {!query && (
         <div className="max-w-6xl mx-auto space-y-12">
           {/* Search Stats */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -456,34 +367,17 @@ export default function SearchPage() {
                 快速开始
               </h3>
               <div className="space-y-6">
-                <button
-                  onClick={() => setShowAdvancedFilters(true)}
-                  className="w-full flex items-center justify-between p-4 text-left border border-go-200 dark:border-go-700 rounded-xl hover:bg-go-50 dark:hover:bg-go-900/20 hover:shadow-soft transition-all duration-200 group"
-                >
-                  <div className="flex items-center">
-                    <svg className="w-6 h-6 text-go-600 dark:text-go-400 mr-4 group-hover:scale-110 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-base font-semibold text-gray-900 dark:text-white">打开高级筛选</span>
-                  </div>
-                  <svg className="w-5 h-5 text-gray-400 group-hover:text-go-600 dark:group-hover:text-go-400 group-hover:translate-x-1 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-                
-                <div className="border-t border-go-200 dark:border-go-700 pt-6">
-                  <p className="text-sm text-go-700 dark:text-go-300 font-semibold mb-4">快速搜索建议:</p>
-                  <div className="flex flex-wrap gap-3">
-                    {['React', 'TypeScript', 'Go', '数据库', '前端', '后端'].map((term) => (
-                      <button
-                        key={term}
-                        onClick={() => handleSearchSubmit(term)}
-                        className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-go-100 dark:hover:bg-go-900/30 hover:text-go-700 dark:hover:text-go-300 hover:shadow-soft hover:-translate-y-0.5 transition-all duration-200 font-medium"
-                      >
-                        {term}
-                      </button>
-                    ))}
-                  </div>
+                <p className="text-sm text-go-700 dark:text-go-300 font-semibold mb-4">快速搜索建议:</p>
+                <div className="flex flex-wrap gap-3">
+                  {['React', 'TypeScript', 'Go', '数据库', '前端', '后端'].map((term) => (
+                    <button
+                      key={term}
+                      onClick={() => handleSearchSubmit(term)}
+                      className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-go-100 dark:hover:bg-go-900/30 hover:text-go-700 dark:hover:text-go-300 hover:shadow-soft hover:-translate-y-0.5 transition-all duration-200 font-medium"
+                    >
+                      {term}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>

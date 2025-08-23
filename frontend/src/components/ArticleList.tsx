@@ -6,7 +6,7 @@ import LoadingSpinner from './LoadingSpinner';
 import Pagination from './Pagination';
 import { formatDate } from '../utils';
 
-type ViewMode = 'card' | 'list' | 'icon' | 'column';
+type ViewMode = 'card' | 'timeline' | 'column';
 
 interface ArticleListProps {
   fetchArticles: (page: number, limit: number) => Promise<PaginatedResponse<Article>>;
@@ -81,11 +81,8 @@ export default function ArticleList({
   };
 
   const getLayoutClasses = () => {
-    if (viewMode === 'list') {
-      return 'space-y-4';
-    }
-    if (viewMode === 'icon') {
-      return 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4';
+    if (viewMode === 'timeline') {
+      return 'space-y-6';
     }
     if (viewMode === 'column') {
       return 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4';
@@ -104,8 +101,7 @@ export default function ArticleList({
 
     const modes: { mode: ViewMode; icon: string; title: string }[] = [
       { mode: 'card', icon: '■', title: '卡片视图' },
-      { mode: 'list', icon: '☰', title: '列表视图' },
-      { mode: 'icon', icon: '⚏', title: '图标视图' },
+      { mode: 'timeline', icon: '◉', title: '时间轴视图' },
       { mode: 'column', icon: '|||', title: '分栏视图' },
     ];
 
@@ -136,92 +132,66 @@ export default function ArticleList({
   };
 
   const renderArticleItem = (article: Article) => {
-    if (viewMode === 'list') {
+    if (viewMode === 'timeline') {
       return (
-        <Link
-          key={article.id}
-          to={`/article/${article.slug}`}
-          className="flex bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow"
-        >
-          {article.cover_image && (
-            <div className="w-32 h-24 flex-shrink-0">
-              <img
-                src={article.cover_image}
-                alt={article.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-          <div className="flex-1 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
-                {article.title}
-              </h3>
-              {showStats && (
-                <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                  <span>👁 {article.views_count || 0}</span>
-                  <span>❤ {article.likes_count || 0}</span>
+        <div key={article.id} className="relative pl-8">
+          {/* Timeline line */}
+          <div className="absolute left-0 top-0 bottom-0 w-px bg-gray-300 dark:bg-gray-600"></div>
+          {/* Timeline dot */}
+          <div className="absolute left-0 top-4 w-2 h-2 bg-primary-500 rounded-full transform -translate-x-1/2"></div>
+          
+          <Link
+            to={`/article/${article.slug}`}
+            className="block bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-start gap-4">
+              {article.cover_image && (
+                <div className="w-16 h-16 flex-shrink-0">
+                  <img
+                    src={article.cover_image}
+                    alt={article.title}
+                    className="w-full h-full object-cover rounded"
+                  />
                 </div>
               )}
-            </div>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
-              {article.excerpt || article.content?.substring(0, 120) + '...'}
-            </p>
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-3">
-                {showCategory && article.category && (
-                  <span className="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded text-xs">
-                    {article.category.name}
-                  </span>
-                )}
-                {showTags && article.tags && article.tags.length > 0 && (
-                  <div className="flex gap-1">
-                    {article.tags.slice(0, 2).map((tag) => (
-                      <span key={tag.id} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
-                        #{tag.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <time className="text-sm font-medium text-primary-600 dark:text-primary-400">
+                    {formatDate(article.published_at || article.created_at)}
+                  </time>
+                  {showCategory && article.category && (
+                    <span className="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded text-xs">
+                      {article.category.name}
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors mb-2">
+                  {article.title}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
+                  {article.excerpt || article.content?.substring(0, 150) + '...'}
+                </p>
+                <div className="flex items-center justify-between">
+                  {showTags && article.tags && article.tags.length > 0 && (
+                    <div className="flex gap-1">
+                      {article.tags.slice(0, 3).map((tag) => (
+                        <span key={tag.id} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
+                          #{tag.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {showStats && (
+                    <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                      <span>👁 {article.views_count || 0}</span>
+                      <span>❤ {article.likes_count || 0}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <span className="text-gray-500 dark:text-gray-400">
-                {formatDate(article.published_at || article.created_at)}
-              </span>
             </div>
-          </div>
-        </Link>
-      );
-    }
-
-    if (viewMode === 'icon') {
-      return (
-        <Link
-          key={article.id}
-          to={`/article/${article.slug}`}
-          className="text-center group cursor-pointer block"
-        >
-          <div className="w-16 h-16 mx-auto mb-2 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center group-hover:bg-primary-200 dark:group-hover:bg-primary-900/50 transition-colors">
-            {article.cover_image ? (
-              <img
-                src={article.cover_image}
-                alt={article.title}
-                className="w-12 h-12 rounded-full object-cover"
-              />
-            ) : (
-              <svg className="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            )}
-          </div>
-          <h4 className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2">
-            {article.title}
-          </h4>
-          {showStats && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              👁 {article.views_count || 0}
-            </p>
-          )}
-        </Link>
+          </Link>
+        </div>
       );
     }
 
