@@ -41,8 +41,8 @@ export default function HomePage() {
           page: 1,
           limit: 12,
           is_published: true,
-          sortBy: 'published_at',
-          sortOrder: 'desc',
+          sort_by: 'published_at',
+          sort_order: 'desc',
         });
         setRecentArticles(recentResponse.data.articles || []);
       } catch (error) {
