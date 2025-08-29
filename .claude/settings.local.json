@@ -55,7 +55,8 @@
       "Bash(git push:*)",
       "Bash(nginx:*)",
       "Bash(docker run:*)",
-      "Bash(docker logs:*)"
+      "Bash(docker logs:*)",
+      "Bash(docker-compose:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
