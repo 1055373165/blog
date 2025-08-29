@@ -36,6 +36,8 @@ export default function EnhancedArticleEditor({
   
   // Upload image to server (real implementation)
   const uploadImageToServer = useCallback(async (file: File): Promise<string> => {
+    console.log('开始上传图片:', file.name, file.size);
+    
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -43,6 +45,8 @@ export default function EnhancedArticleEditor({
 
       // 调用后端图片上传API
       const token = localStorage.getItem('auth_token');
+      console.log('认证token存在:', !!token);
+      
       const response = await fetch('/api/upload/image', {
         method: 'POST',
         body: formData,
@@ -52,14 +56,20 @@ export default function EnhancedArticleEditor({
         },
       });
 
+      console.log('上传响应状态:', response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('上传失败响应:', errorText);
+        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
       }
 
       const result = await response.json();
+      console.log('上传响应数据:', result);
       
       // 检查后端返回的格式
       if (result.success && result.data && result.data.url) {
+        console.log('上传成功，返回URL:', result.data.url);
         return result.data.url;
       } else {
         throw new Error(result.message || 'Upload response missing URL');
@@ -70,22 +80,13 @@ export default function EnhancedArticleEditor({
       // 检查是否是认证错误
       const token = localStorage.getItem('auth_token');
       if (!token) {
+        alert('请先登录后再上传图片');
         throw new Error('请先登录后再上传图片');
       }
       
-      // 如果上传失败，生成一个本地可访问的临时方案
-      // 在生产环境中，这应该显示错误并要求用户重试
-      const tempUrl = URL.createObjectURL(file);
-      
-      // 存储到 localStorage 作为临时方案（仅用于演示）
-      const fileReader = new FileReader();
-      fileReader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        localStorage.setItem(`image_${tempUrl}`, base64);
-      };
-      fileReader.readAsDataURL(file);
-      
-      return tempUrl;
+      // 上传失败，抛出错误而不是使用临时方案
+      alert(`图片上传失败: ${error instanceof Error ? error.message : '未知错误'}\n请重试或联系管理员`);
+      throw error;
     }
   }, []);
   const [mode, setMode] = useState<'rich' | 'markdown' | 'preview'>('rich');
