@@ -71,7 +71,7 @@ openssl rsa -in config/ssl/privkey.pem -check -noout
 ```bash
 # 测试HTTPS连接
 curl -I https://godepth.top/health
-curl -I https://www.godepth.top/health
+curl -I http://www.godepth.top/health
 
 # 验证HTTP重定向
 curl -I http://godepth.top/health

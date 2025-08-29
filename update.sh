@@ -105,14 +105,14 @@ verify_update() {
     log "验证更新..."
     
     # 检查网站访问
-    if curl -f -s -o /dev/null https://www.godepth.top; then
+    if curl -f -s -o /dev/null http://www.godepth.top; then
         log "网站访问正常"
     else
         error "网站访问失败，正在回滚..."
     fi
     
     # 检查API
-    if curl -f -s -o /dev/null https://www.godepth.top/api/health; then
+    if curl -f -s -o /dev/null http://www.godepth.top/api/health; then
         log "API服务正常"
     else
         warn "API服务可能存在问题"
@@ -184,7 +184,7 @@ main() {
     echo "           更新完成！"
     echo "================================================"
     echo -e "${NC}"
-    echo "网站地址: https://www.godepth.top"
+    echo "网站地址: http://www.godepth.top"
     echo ""
     echo "检查服务状态: docker-compose -f docker-compose.prod.yml ps"
     echo "查看日志: docker-compose -f docker-compose.prod.yml logs -f"

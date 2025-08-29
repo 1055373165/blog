@@ -75,9 +75,9 @@ chmod +x deploy.sh
 
 部署完成后，访问以下地址验证：
 
-- 🌐 **网站首页**: https://www.godepth.top
-- ⚙️ **管理后台**: https://www.godepth.top/admin
-- 🔍 **API健康检查**: https://www.godepth.top/api/health
+- 🌐 **网站首页**: http://www.godepth.top
+- ⚙️ **管理后台**: http://www.godepth.top/admin
+- 🔍 **API健康检查**: http://www.godepth.top/api/health
 
 ### 5. 管理命令
 

@@ -55,7 +55,7 @@ cd frontend
 
 # 创建前端生产环境变量
 cat > .env.production <<EOF
-VITE_API_BASE_URL=https://www.godepth.top${VITE_API_BASE_URL:-https://www.godepth.top}
+VITE_API_BASE_URL=http://www.godepth.top${VITE_API_BASE_URL:-http://www.godepth.top}
 EOF
 
 # 安装依赖并构建
@@ -112,7 +112,7 @@ echo ""
 echo "📍 服务地址:"
 echo "   前端: http://$(curl -s ifconfig.me 2>/dev/null || echo 'YOUR_SERVER_IP'):3000"
 echo "   后端: http://$(curl -s ifconfig.me 2>/dev/null || echo 'YOUR_SERVER_IP'):3001"
-echo "   域名: https://www.godepth.top (如已配置DNS)"
+echo "   域名: http://www.godepth.top (如已配置DNS)"
 echo ""
 echo "📊 服务状态:"
 echo "   后端PID: $(cat logs/app/backend.pid 2>/dev/null || echo '未知')"

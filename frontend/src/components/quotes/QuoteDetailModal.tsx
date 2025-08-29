@@ -81,7 +81,7 @@ export default function QuoteDetailModal({
   const handleShare = useCallback(async () => {
     if (!quote) return;
     
-    const shareUrl = `https://www.godepth.top/quotes/${quote.id}`;
+    const shareUrl = `http://www.godepth.top/quotes/${quote.id}`;
     
     try {
       // 直接复制链接到剪贴板

@@ -433,7 +433,7 @@ main() {
     echo -e "${NC}"
     echo "当前版本: $current_version"
     echo "更新日志: $LOG_FILE"
-    echo "访问地址: https://www.godepth.top"
+    echo "访问地址: http://www.godepth.top"
 }
 
 # 错误处理

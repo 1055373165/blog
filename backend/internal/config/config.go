@@ -105,7 +105,7 @@ func LoadConfig() error {
 	// 尝试加载环境变量文件，优先级：.env > ../.env.prod > 系统环境变量
 	envFiles := []string{".env", "../.env.prod", "/app/.env.prod"}
 	loaded := false
-	
+
 	for _, file := range envFiles {
 		if err := godotenv.Load(file); err == nil {
 			fmt.Printf("已加载配置文件: %s\n", file)
@@ -113,7 +113,7 @@ func LoadConfig() error {
 			break
 		}
 	}
-	
+
 	if !loaded {
 		fmt.Println("未找到配置文件，使用系统环境变量")
 	}
@@ -164,7 +164,7 @@ func LoadConfig() error {
 				"http://localhost:5173",
 				"http://localhost:5174",
 				"http://localhost:5175",
-				"https://www.godepth.top",
+				"http://www.godepth.top",
 				"https://godepth.top",
 			}),
 			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},

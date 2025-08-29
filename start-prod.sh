@@ -64,7 +64,7 @@ echo "  重启服务: docker-compose -f docker-compose.prod.yml restart"
 echo ""
 
 if [[ -f "docker/nginx/ssl/fullchain.pem" ]]; then
-    echo "网站地址: https://www.godepth.top"
+    echo "网站地址: http://www.godepth.top"
 else
-    echo -e "${YELLOW}注意: 请先配置SSL证书，然后访问 https://www.godepth.top${NC}"
+    echo -e "${YELLOW}注意: 请先配置SSL证书，然后访问 http://www.godepth.top${NC}"
 fi
