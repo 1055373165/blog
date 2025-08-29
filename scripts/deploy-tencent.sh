@@ -128,7 +128,7 @@ prepare_env() {
   if [[ -n "${VITE_API_BASE_URL:-}" ]]; then
     computed_api_base="${VITE_API_BASE_URL}"
   elif [[ -n "${DOMAIN}" ]]; then
-    computed_api_base="https://${DOMAIN}"
+    computed_api_base="https://${DOMAIN}/api"
   else
     computed_api_base="http://localhost:3001"
   fi
@@ -198,7 +198,7 @@ bring_up_stack() {
   # Export env file variables for compose build context
   set -a; source .env.prod; set +a
 
-  docker compose --env-file .env.prod -f docker-compose.prod.yml build backend
+  docker compose --env-file .env.prod -f docker-compose.prod.yml build backend frontend
   docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
 
   success "Services started"

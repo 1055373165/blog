@@ -55,7 +55,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.prod
       args:
-        - VITE_API_BASE_URL=https://www.godepth.top/api
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
     container_name: blog_frontend_prod
     restart: unless-stopped
     depends_on:
