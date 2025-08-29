@@ -128,7 +128,7 @@ prepare_env() {
   if [[ -n "${VITE_API_BASE_URL:-}" ]]; then
     computed_api_base="${VITE_API_BASE_URL}"
   elif [[ -n "${DOMAIN}" ]]; then
-    computed_api_base="/api"
+    computed_api_base="https://${DOMAIN}/api"
   else
     computed_api_base="http://localhost:3001"
   fi
@@ -161,7 +161,7 @@ JWT_EXPIRES_IN=24h
 # DOMAIN is optional; if set, used to derive VITE_API_BASE_URL
 DOMAIN=${DOMAIN}
 ENVIRONMENT=production
-VITE_API_BASE_URL=http://127.0.0.1:3001
+VITE_API_BASE_URL=${computed_api_base}
 EOF
 
   success ".env.prod written"

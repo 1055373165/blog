@@ -58,13 +58,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.prod
       args:
-        - VITE_API_BASE_URL=http://127.0.0.1:3001
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
     container_name: blog_frontend_prod
     restart: unless-stopped
     depends_on:
       - backend
     ports:
-      - "8080:80"
+      - "8080"
     networks:
       - blog_network
     
