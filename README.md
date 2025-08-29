@@ -127,7 +127,7 @@ docker-compose up -d redis
 ```bash
 # Create environment files
 echo "DB_PASSWORD=your_mysql_password" > .env
-echo "VITE_API_BASE_URL=http://localhost:3001" > frontend/.env
+echo "VITE_API_BASE_URL=/api" > frontend/.env
 ```
 
 #### 3. Backend Setup

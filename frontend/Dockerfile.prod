@@ -18,7 +18,7 @@ COPY . .
 
 # 构建参数
 ARG VITE_API_BASE_URL
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=/api
 
 # 修改 package.json 跳过 TypeScript 检查（生产环境优化）
 RUN sed -i 's/"build": "tsc -b && vite build"/"build": "vite build"/' package.json

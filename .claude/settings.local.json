@@ -50,7 +50,9 @@
       "Bash(open http://localhost:5173/articles)",
       "Bash(git commit:*)",
       "Bash(jobs)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(openssl dhparam:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

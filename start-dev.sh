@@ -59,7 +59,7 @@ fi
 
 if [ ! -f "frontend/.env" ]; then
     echo "📝 复制前端环境配置文件..."
-    echo "VITE_API_BASE_URL=http://localhost:3001" > frontend/.env
+    echo "VITE_API_BASE_URL=/api" > frontend/.env
 fi
 
 # 启动Redis（可选）

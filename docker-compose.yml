@@ -51,7 +51,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - VITE_API_BASE_URL=http://localhost:3001
+      - API_BASE_URL=https://www.godepth.top
+      - VITE_API_BASE_URL=/api
     depends_on:
       - backend
     networks:

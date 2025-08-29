@@ -55,7 +55,7 @@ cd frontend
 
 # 创建前端生产环境变量
 cat > .env.production <<EOF
-VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://www.godepth.top}
+VITE_API_BASE_URL=https://www.godepth.top${VITE_API_BASE_URL:-https://www.godepth.top}
 EOF
 
 # 安装依赖并构建
