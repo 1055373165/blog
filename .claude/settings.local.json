@@ -52,7 +52,9 @@
       "Bash(jobs)",
       "Bash(git commit:*)",
       "Bash(openssl dhparam:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(nginx:*)",
+      "Bash(docker run:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
