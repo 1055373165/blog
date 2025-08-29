@@ -24,7 +24,7 @@ export default function ArticleEditor() {
     tagIds: [],
     seriesId: '',
     seriesOrder: undefined,
-    isPublished: false,
+    is_published: false,
     metaTitle: '',
     metaDescription: '',
     metaKeywords: '',
@@ -96,7 +96,7 @@ export default function ArticleEditor() {
           tagIds: (article.tags || []).map(tag => tag.id),
           seriesId: article.seriesId || '',
           seriesOrder: article.seriesOrder,
-          isPublished: article.isPublished,
+          is_published: article.is_published,
           metaTitle: article.metaTitle || '',
           metaDescription: article.metaDescription || '',
           metaKeywords: article.metaKeywords || '',
@@ -218,8 +218,8 @@ export default function ArticleEditor() {
   };
 
   const handlePublish = async () => {
-    const wasPublished = formData.isPublished;
-    handleInputChange('isPublished', !wasPublished);
+    const wasPublished = formData.is_published;
+    handleInputChange('is_published', !wasPublished);
     
     // Save with new publish status
     setTimeout(async () => {
@@ -277,7 +277,7 @@ export default function ArticleEditor() {
         title: article.title,
         content: article.content,
         excerpt: article.excerpt,
-        isPublished: false, // Import as draft initially
+        is_published: false, // Import as draft initially
       }));
       setHasUnsavedChanges(true);
       setShowImportModal(false);
@@ -424,12 +424,12 @@ export default function ArticleEditor() {
                 onClick={handlePublish}
                 disabled={saving}
                 className={`btn ${
-                  formData.isPublished
+                  formData.is_published
                     ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700 hover:bg-amber-200 dark:hover:bg-amber-900/50'
                     : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
                 }`}
               >
-                {formData.isPublished ? '取消发布' : '发布'}
+                {formData.is_published ? '取消发布' : '发布'}
               </button>
             </div>
           </div>
@@ -869,19 +869,19 @@ export default function ArticleEditor() {
                   <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <span className="font-medium text-gray-600 dark:text-gray-400">状态</span>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      formData.isPublished
+                      formData.is_published
                         ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300'
                         : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                     }`}>
-                      {formData.isPublished ? '已发布' : '草稿'}
+                      {formData.is_published ? '已发布' : '草稿'}
                     </span>
                   </div>
                   
                   <label className="flex items-center group cursor-pointer p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
                     <input
                       type="checkbox"
-                      checked={formData.isPublished}
-                      onChange={(e) => handleInputChange('isPublished', e.target.checked)}
+                      checked={formData.is_published}
+                      onChange={(e) => handleInputChange('is_published', e.target.checked)}
                       className="rounded border-gray-300 dark:border-gray-600 text-go-600 focus:ring-go-500 dark:bg-gray-700"
                     />
                     <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-go-600 dark:group-hover:text-go-400 transition-colors">
