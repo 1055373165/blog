@@ -199,7 +199,8 @@ func main() {
 
 	// 静态文件服务
 	router.Static("/uploads", cfg.Upload.Path)
-	router.Static("/static/books", "../frontend/public/books")
+	// 注意：/books 静态路由已移除，避免与API路由冲突
+	// 书籍静态文件通过nginx直接服务
 
 	// 启动服务器
 	serverAddr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
