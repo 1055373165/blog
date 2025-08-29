@@ -1,20 +1,21 @@
 package handlers
 
 import (
-	"net/http"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
-	"crypto/md5"
-	"encoding/hex"
-	
-	"github.com/gin-gonic/gin"
+
+	"blog-backend/internal/config"
 	"blog-backend/internal/database"
 	"blog-backend/internal/models"
-	"blog-backend/internal/config"
+
+	"github.com/gin-gonic/gin"
 )
 
 // 分类相关处理器已在 categories.go 中实现
@@ -149,7 +150,7 @@ func UploadImage(c *gin.Context) {
 	// 使用时间戳和文件内容hash生成文件名
 	now := time.Now()
 	dateDir := now.Format("2006/01/02")
-	
+
 	// 读取文件内容计算hash
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
@@ -160,13 +161,13 @@ func UploadImage(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// 计算MD5 hash
 	hash := md5.Sum(fileBytes)
 	hashStr := hex.EncodeToString(hash[:])[:8] // 取前8位
-	
+
 	filename := fmt.Sprintf("%s_%s%s", now.Format("150405"), hashStr, ext)
-	
+
 	// 确保上传目录存在
 	cfg := config.GlobalConfig
 	uploadDir := filepath.Join(cfg.Upload.Path, "images", dateDir)
@@ -205,13 +206,22 @@ func UploadImage(c *gin.Context) {
 	relativePath := filepath.Join("images", dateDir, filename)
 	// 确保路径使用正斜杠（适用于URL）
 	relativePath = strings.ReplaceAll(relativePath, "\\", "/")
-	
-	// 构建完整URL
-	baseURL := fmt.Sprintf("http://%s:%s", cfg.Server.Host, cfg.Server.Port)
-	if cfg.Server.Host == "0.0.0.0" {
-		baseURL = fmt.Sprintf("http://localhost:%s", cfg.Server.Port)
+
+	// 使用配置的域名或默认域名
+	domain := os.Getenv("DOMAIN")
+	if domain == "" {
+		domain = "www.godepth.top"
 	}
-	imageURL := fmt.Sprintf("%s/uploads/%s", baseURL, relativePath)
+	// 使用HTTPS协议
+	scheme := "https://"
+	// 如果是本地开发环境，使用HTTP
+	if os.Getenv("ENVIRONMENT") == "development" {
+		scheme = "http://"
+		if domain == "localhost" || domain == "" {
+			domain = fmt.Sprintf("localhost:%s", cfg.Server.Port)
+		}
+	}
+	imageURL := fmt.Sprintf("%s%s/uploads/%s", scheme, domain, relativePath)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

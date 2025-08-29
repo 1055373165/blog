@@ -160,6 +160,7 @@ JWT_EXPIRES_IN=24h
 # Frontend build API base
 # DOMAIN is optional; if set, used to derive VITE_API_BASE_URL
 DOMAIN=${DOMAIN}
+ENVIRONMENT=production
 VITE_API_BASE_URL=${computed_api_base}
 EOF
 

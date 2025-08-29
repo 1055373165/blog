@@ -23,6 +23,7 @@ services:
     restart: unless-stopped
     environment:
       - GIN_MODE=release
+      - DOMAIN=www.godepth.top
       - ENVIRONMENT=production
       - DB_HOST=host.docker.internal
       - DB_PORT=3306
@@ -34,7 +35,6 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
       - API_BASE_URL=https://www.godepth.top
     ports:
       - "3001:3001"
