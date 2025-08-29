@@ -54,7 +54,8 @@
       "Bash(openssl dhparam:*)",
       "Bash(git push:*)",
       "Bash(nginx:*)",
-      "Bash(docker run:*)"
+      "Bash(docker run:*)",
+      "Bash(docker logs:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
