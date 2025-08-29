@@ -80,7 +80,7 @@ func generateSimpleBookInfo(filename string) (title, description, detailedDescri
 // GetBooksSimple 获取书籍列表API（简化版）
 func GetBooksSimple(c *gin.Context) {
 	// 书籍目录路径
-	booksPath := "../frontend/public/books"
+	booksPath := "/app/books"
 	
 	// 检查目录是否存在
 	if _, err := os.Stat(booksPath); os.IsNotExist(err) {
@@ -178,7 +178,7 @@ func GetBookMetadata(c *gin.Context) {
 	}
 	
 	// 检查文件是否存在
-	booksPath := "../frontend/public/books"
+	booksPath := "/app/books"
 	filePath := filepath.Join(booksPath, filename)
 	
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {

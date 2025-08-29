@@ -51,6 +51,7 @@ services:
     volumes:
       - ./data/uploads:/app/uploads
       - ./data/search_index:/app/search_index
+      - ./frontend/public/books:/app/books
 
   # 前端服务
   frontend:
