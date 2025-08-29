@@ -63,7 +63,7 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
-    ports:
+    expose:
       - "8080"
     networks:
       - blog_network
