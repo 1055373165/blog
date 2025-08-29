@@ -161,7 +161,7 @@ JWT_EXPIRES_IN=24h
 # DOMAIN is optional; if set, used to derive VITE_API_BASE_URL
 DOMAIN=${DOMAIN}
 ENVIRONMENT=production
-VITE_API_BASE_URL=/api
+VITE_API_BASE_URL=http://127.0.0.1:3001
 EOF
 
   success ".env.prod written"

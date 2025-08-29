@@ -181,7 +181,7 @@ JWT_SECRET=jwt_secret_key_$(date +%s)_$(openssl rand -hex 16)
 # 域名配置
 DOMAIN=www.godepth.top
 API_BASE_URL=http://www.godepth.top
-VITE_API_BASE_URL=/api
+VITE_API_BASE_URL=http://127.0.0.1:3001
 
 # 邮件配置
 SMTP_HOST=smtp.example.com

@@ -97,7 +97,7 @@ services:
       dockerfile: Dockerfile.prod
       args:
         - API_BASE_URL=http://www.godepth.top
-        - VITE_API_BASE_URL=/api
+        - VITE_API_BASE_URL=http://127.0.0.1:3001
         - NODE_ENV=production
     container_name: blog_frontend_prod
     restart: unless-stopped

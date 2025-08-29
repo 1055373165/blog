@@ -165,7 +165,6 @@ func LoadConfig() error {
 				"http://localhost:5174",
 				"http://localhost:5175",
 				"http://www.godepth.top",
-				"https://godepth.top",
 			}),
 			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 			AllowedHeaders: []string{"Origin", "Content-Type", "Authorization"},
