@@ -219,12 +219,44 @@ export default function ArticleEditor() {
 
   const handlePublish = async () => {
     const wasPublished = formData.is_published;
-    handleInputChange('is_published', !wasPublished);
+    const newPublishedState = !wasPublished;
     
-    // Save with new publish status
-    setTimeout(async () => {
-      await handleSave();
-    }, 100);
+    // Update the state
+    handleInputChange('is_published', newPublishedState);
+    
+    // Save with explicit published state to avoid timing issues
+    const updatedFormData = {
+      ...formData,
+      is_published: newPublishedState,
+      tagIds: selectedTags || [],
+    };
+    
+    try {
+      setSaving(true);
+      setError(null);
+      
+      let response;
+      if (isEditing && id) {
+        response = await articlesApi.updateArticle(id, updatedFormData);
+      } else {
+        response = await articlesApi.createArticle(updatedFormData);
+      }
+      
+      if (response.success) {
+        setHasUnsavedChanges(false);
+        setLastSaved(new Date());
+        if (!isEditing) {
+          navigate(`/admin/articles/${response.data.id}`, { replace: true });
+        }
+      } else {
+        setError(response.error || '保存失败');
+      }
+    } catch (error: any) {
+      console.error('Save error:', error);
+      setError(error.message || '保存失败，请重试');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handlePreview = () => {
