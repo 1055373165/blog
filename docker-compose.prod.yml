@@ -36,6 +36,8 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - API_BASE_URL=https://www.godepth.top
+      - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_ORIGINS=https://www.godepth.top,https://godepth.top
     ports:
       - "3001:3001"
     depends_on:

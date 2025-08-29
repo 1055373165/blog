@@ -102,12 +102,20 @@ var GlobalConfig *Config
 
 // LoadConfig 加载配置
 func LoadConfig() error {
-	// 加载环境变量，优先加载本地 .env 文件
-	if err := godotenv.Load(".env"); err != nil {
-		// 如果本地 .env 不存在，尝试加载根目录的 .env.prod
-		if err := godotenv.Load("../.env.prod"); err != nil {
-			fmt.Println("警告: 未找到环境配置文件，使用系统环境变量")
+	// 尝试加载环境变量文件，优先级：.env > ../.env.prod > 系统环境变量
+	envFiles := []string{".env", "../.env.prod", "/app/.env.prod"}
+	loaded := false
+	
+	for _, file := range envFiles {
+		if err := godotenv.Load(file); err == nil {
+			fmt.Printf("已加载配置文件: %s\n", file)
+			loaded = true
+			break
 		}
+	}
+	
+	if !loaded {
+		fmt.Println("未找到配置文件，使用系统环境变量")
 	}
 
 	config := &Config{
@@ -152,10 +160,12 @@ func LoadConfig() error {
 		},
 		CORS: CORSConfig{
 			AllowedOrigins: getSliceEnv("ALLOWED_ORIGINS", []string{
-				"http://localhost:3000",
+				"http://localhost:3001",
 				"http://localhost:5173",
 				"http://localhost:5174",
 				"http://localhost:5175",
+				"https://www.godepth.top",
+				"https://godepth.top",
 			}),
 			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 			AllowedHeaders: []string{"Origin", "Content-Type", "Authorization"},
