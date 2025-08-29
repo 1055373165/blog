@@ -36,7 +36,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - API_BASE_URL=https://www.godepth.top
-      - VITE_API_BASE_URL=https://www.godepth.top/api
+      - VITE_API_BASE_URL=https://www.godepth.top
       - JWT_SECRET=${JWT_SECRET}
       - ALLOWED_ORIGINS=https://www.godepth.top,http://localhost:5173
     ports:
