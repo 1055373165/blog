@@ -199,7 +199,7 @@ func main() {
 
 	// 静态文件服务
 	router.Static("/uploads", cfg.Upload.Path)
-	router.Static("/books", "../frontend/public/books")
+	router.Static("/static/books", "../frontend/public/books")
 
 	// 启动服务器
 	serverAddr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
