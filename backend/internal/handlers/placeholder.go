@@ -177,6 +177,7 @@ func UploadImage(c *gin.Context) {
 
 	// 确保上传目录存在
 	cfg := config.GlobalConfig
+	fmt.Printf("🗂️ [DEBUG] 配置的上传路径: %s\n", cfg.Upload.Path)
 	uploadDir := filepath.Join(cfg.Upload.Path, "images", dateDir)
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
