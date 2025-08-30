@@ -207,8 +207,8 @@ func UploadImage(c *gin.Context) {
 	// 确保路径使用正斜杠（适用于URL）
 	apiPath = strings.ReplaceAll(apiPath, "\\", "/")
 
-	// 用于返回给前端的完整相对路径（包含images）
-	relativePath := filepath.Join("images", dateDir, filename)
+	// 用于返回给前端的完整相对路径（使用正确的upload路由）
+	relativePath := filepath.Join("/api/upload/image", dateDir, filename)
 	relativePath = strings.ReplaceAll(relativePath, "\\", "/")
 
 	// 使用配置的域名或默认域名
