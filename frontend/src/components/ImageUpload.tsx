@@ -36,13 +36,17 @@ export default function ImageUpload({
       setUploading(true);
       
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('file', file);
 
       // Try to upload to API, fallback to create object URL for demo
       try {
+        const token = localStorage.getItem('auth_token');
         const response = await fetch('/api/upload/image', {
           method: 'POST',
           body: formData,
+          headers: {
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+          },
         });
 
         const data = await response.json();

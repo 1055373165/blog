@@ -87,9 +87,14 @@ func GetViewsStats(c *gin.Context) {
 // 文件上传相关处理器
 
 func UploadImage(c *gin.Context) {
+	// 添加调试日志
+	fmt.Printf("📸 [DEBUG] 图片上传请求开始 - IP: %s, User-Agent: %s\n", c.ClientIP(), c.GetHeader("User-Agent"))
+	fmt.Printf("📸 [DEBUG] 请求头Authorization: %s\n", c.GetHeader("Authorization"))
+	
 	// 获取上传的文件
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
+		fmt.Printf("❌ [ERROR] 获取上传文件失败: %v\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"message": "获取上传文件失败",
@@ -98,6 +103,8 @@ func UploadImage(c *gin.Context) {
 		return
 	}
 	defer file.Close()
+	
+	fmt.Printf("📄 [DEBUG] 文件信息 - 名称: %s, 大小: %d bytes, 类型: %s\n", header.Filename, header.Size, header.Header.Get("Content-Type"))
 
 	// 验证文件类型
 	allowedTypes := map[string]bool{
@@ -211,21 +218,25 @@ func UploadImage(c *gin.Context) {
 	relativePath := filepath.Join("/api/upload/image", dateDir, filename)
 	relativePath = strings.ReplaceAll(relativePath, "\\", "/")
 
-	// 使用配置的域名或默认域名
-	domain := os.Getenv("DOMAIN")
-	if domain == "" {
-		domain = "www.godepth.top"
-	}
-	// 使用HTTPS协议
-	scheme := "https://"
-	// 如果是本地开发环境，使用HTTP
-	if os.Getenv("ENVIRONMENT") == "development" {
+	// 根据环境确定域名和协议
+	var domain, scheme string
+	
+	// 如果是本地开发环境，强制使用localhost
+	if cfg.App.Environment == "development" {
 		scheme = "http://"
-		if domain == "localhost" || domain == "" {
-			domain = fmt.Sprintf("localhost:%s", cfg.Server.Port)
+		domain = fmt.Sprintf("localhost:%s", cfg.Server.Port)
+	} else {
+		// 生产环境使用配置的域名
+		scheme = "https://"
+		domain = os.Getenv("DOMAIN")
+		if domain == "" {
+			domain = "www.godepth.top"
 		}
 	}
 	imageURL := fmt.Sprintf("%s%s/api/upload/image/%s", scheme, domain, apiPath)
+
+	fmt.Printf("✅ [SUCCESS] 图片上传成功 - 文件: %s, URL: %s\n", filename, imageURL)
+	fmt.Printf("🔗 [DEBUG] 环境: %s, 协议: %s, 域名: %s\n", cfg.App.Environment, scheme, domain)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
