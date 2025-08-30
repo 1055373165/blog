@@ -52,14 +52,6 @@ services:
       - ./data/uploads:/app/uploads
       - ./data/search_index:/app/search_index
       - ./frontend/public/books:/app/books
-    command: >
-      sh -c "
-        mkdir -p /app/uploads/images &&
-        mkdir -p /app/search_index &&
-        chmod -R 755 /app/uploads &&
-        chmod -R 755 /app/search_index &&
-        /app/blog-server
-      "
 
   # 前端服务
   frontend:
