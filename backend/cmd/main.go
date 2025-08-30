@@ -67,22 +67,22 @@ func main() {
 		dbErr := database.HealthCheck()
 		if dbErr != nil {
 			c.JSON(http.StatusServiceUnavailable, gin.H{
-				"status":   "error",
-				"message":  "Database connection failed",
-				"error":    dbErr.Error(),
-				"app":      cfg.App.Name,
-				"version":  cfg.App.Version,
+				"status":  "error",
+				"message": "Database connection failed",
+				"error":   dbErr.Error(),
+				"app":     cfg.App.Name,
+				"version": cfg.App.Version,
 			})
 			return
 		}
-		
+
 		c.JSON(http.StatusOK, gin.H{
-			"status":     "ok",
-			"message":    "Blog API Server is running",
-			"app":        cfg.App.Name,
-			"version":    cfg.App.Version,
+			"status":      "ok",
+			"message":     "Blog API Server is running",
+			"app":         cfg.App.Name,
+			"version":     cfg.App.Version,
 			"environment": cfg.App.Environment,
-			"database":   "connected",
+			"database":    "connected",
 		})
 	})
 
@@ -185,6 +185,7 @@ func main() {
 		{
 			upload.POST("/image", middleware.AuthRequired(), handlers.UploadImage)
 			upload.POST("/file", middleware.AuthRequired(), handlers.UploadFile)
+			upload.GET("/image/*filename", handlers.GetImage)
 		}
 
 		// 书籍相关路由
@@ -198,9 +199,6 @@ func main() {
 	}
 
 	// 静态文件服务
-	router.Static("/uploads", cfg.Upload.Path)
-	// 注意：/books 静态路由已移除，避免与API路由冲突
-	// 书籍静态文件通过nginx直接服务
 
 	// 启动服务器
 	serverAddr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)

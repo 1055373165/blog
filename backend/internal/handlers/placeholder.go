@@ -221,7 +221,7 @@ func UploadImage(c *gin.Context) {
 			domain = fmt.Sprintf("localhost:%s", cfg.Server.Port)
 		}
 	}
-	imageURL := fmt.Sprintf("%s%s/uploads/%s", scheme, domain, relativePath)
+	imageURL := fmt.Sprintf("%s%s/api/upload/image/%s", scheme, domain, relativePath)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -234,6 +234,70 @@ func UploadImage(c *gin.Context) {
 			"path":     relativePath,
 		},
 	})
+}
+
+func GetImage(c *gin.Context) {
+	// 获取路径参数，支持嵌套路径如：2025/08/30/110748_aa33284c.png
+	imagePath := c.Param("filename")
+	if imagePath == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "图片路径不能为空",
+		})
+		return
+	}
+	
+	// 移除前导斜杠（通配符参数会包含前导斜杠）
+	imagePath = strings.TrimPrefix(imagePath, "/")
+
+	cfg := config.GlobalConfig
+	// 构建完整的文件路径
+	fullPath := filepath.Join(cfg.Upload.Path, "images", imagePath)
+	
+	// 安全检查：确保路径在上传目录内
+	uploadDir, err := filepath.Abs(cfg.Upload.Path)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "服务器错误",
+		})
+		return
+	}
+
+	absPath, err := filepath.Abs(fullPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "服务器错误",
+		})
+		return
+	}
+
+	// 检查路径是否在允许的上传目录内
+	if !strings.HasPrefix(absPath, uploadDir) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"success": false,
+			"message": "访问被拒绝",
+		})
+		return
+	}
+
+	// 检查文件是否存在
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"message": "图片不存在",
+			"path": imagePath,
+		})
+		return
+	}
+
+	// 设置适当的缓存头
+	c.Header("Cache-Control", "public, max-age=31536000") // 1年缓存
+	c.Header("X-Content-Type-Options", "nosniff")
+	
+	// 返回文件
+	c.File(fullPath)
 }
 
 func UploadFile(c *gin.Context) {
