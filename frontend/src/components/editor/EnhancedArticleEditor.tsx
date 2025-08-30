@@ -14,6 +14,11 @@ import { EditorToolbar } from './EditorToolbar';
 import { MediaUploader } from './MediaUploader';
 import MarkdownRenderer from '../MarkdownRenderer';
 
+// Utility function to escape special regex characters
+function escapeRegExp(string: string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 interface EnhancedArticleEditorProps {
   value: string;
   onChange: (content: string) => void;
@@ -362,11 +367,32 @@ export default function EnhancedArticleEditor({
 
           // Upload to server in background and replace URL
           uploadImageToServer(file).then((serverUrl) => {
+            console.log('图片上传成功，开始替换URL:', tempUrl, '->', serverUrl);
+            
             if (mode === 'rich' && editor) {
               // Find and replace the temporary URL in rich text editor
               const html = editor.getHTML();
-              const updatedHtml = html.replace(tempUrl, serverUrl);
-              editor.commands.setContent(updatedHtml);
+              console.log('当前HTML:', html.substring(0, 200));
+              
+              // Use a more robust replacement method
+              if (html.includes(tempUrl)) {
+                const updatedHtml = html.replace(new RegExp(escapeRegExp(tempUrl), 'g'), serverUrl);
+                console.log('替换后的HTML:', updatedHtml.substring(0, 200));
+                editor.commands.setContent(updatedHtml);
+              } else {
+                console.warn('HTML中未找到临时URL，可能已被修改');
+                // Try to find the image by alt text and replace
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const images = doc.querySelectorAll('img');
+                for (const img of images) {
+                  if (img.alt === altText) {
+                    img.src = serverUrl;
+                    break;
+                  }
+                }
+                editor.commands.setContent(doc.body.innerHTML);
+              }
             } else if (mode === 'markdown') {
               // Replace temporary URL in markdown
               setMarkdownContent(prev => prev.replace(tempUrl, serverUrl));
@@ -376,7 +402,10 @@ export default function EnhancedArticleEditor({
             URL.revokeObjectURL(tempUrl);
           }).catch((error) => {
             console.error('Failed to upload image:', error);
-            // Could show error message to user here
+            console.error('上传失败，保留临时URL');
+            // Show error message to user
+            alert(`图片上传失败: ${error instanceof Error ? error.message : '未知错误'}`);
+            // Don't revoke the URL if upload failed, keep the temporary image
           });
 
           console.log('Image pasted:', file.name, file.size, file.type);
