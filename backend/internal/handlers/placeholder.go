@@ -250,14 +250,14 @@ func GetImage(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// 移除前导斜杠（通配符参数会包含前导斜杠）
 	imagePath = strings.TrimPrefix(imagePath, "/")
 
 	cfg := config.GlobalConfig
 	// 构建完整的文件路径
 	fullPath := filepath.Join(cfg.Upload.Path, "images", imagePath)
-	
+	fmt.Println("fullPath: ", fullPath)
 	// 安全检查：确保路径在上传目录内
 	uploadDir, err := filepath.Abs(cfg.Upload.Path)
 	if err != nil {
@@ -276,7 +276,8 @@ func GetImage(c *gin.Context) {
 		})
 		return
 	}
-
+	fmt.Println("uploadDir: ", uploadDir)
+	fmt.Println("absPath: ", absPath)
 	// 检查路径是否在允许的上传目录内
 	if !strings.HasPrefix(absPath, uploadDir) {
 		c.JSON(http.StatusForbidden, gin.H{
@@ -291,7 +292,7 @@ func GetImage(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
 			"message": "图片不存在",
-			"path": imagePath,
+			"path":    imagePath,
 		})
 		return
 	}
@@ -299,7 +300,7 @@ func GetImage(c *gin.Context) {
 	// 设置适当的缓存头
 	c.Header("Cache-Control", "public, max-age=31536000") // 1年缓存
 	c.Header("X-Content-Type-Options", "nosniff")
-	
+
 	// 返回文件
 	c.File(fullPath)
 }
