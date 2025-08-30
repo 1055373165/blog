@@ -257,7 +257,6 @@ func GetImage(c *gin.Context) {
 	cfg := config.GlobalConfig
 	// 构建完整的文件路径
 	fullPath := filepath.Join(cfg.Upload.Path, "images", imagePath)
-	fmt.Println("fullPath: ", fullPath)
 	// 安全检查：确保路径在上传目录内
 	uploadDir, err := filepath.Abs(cfg.Upload.Path)
 	if err != nil {
@@ -276,8 +275,7 @@ func GetImage(c *gin.Context) {
 		})
 		return
 	}
-	fmt.Println("uploadDir: ", uploadDir)
-	fmt.Println("absPath: ", absPath)
+
 	// 检查路径是否在允许的上传目录内
 	if !strings.HasPrefix(absPath, uploadDir) {
 		c.JSON(http.StatusForbidden, gin.H{
