@@ -202,9 +202,13 @@ func UploadImage(c *gin.Context) {
 		return
 	}
 
-	// 生成可访问的URL
-	relativePath := filepath.Join("images", dateDir, filename)
+	// 生成API访问路径（不包含images前缀，因为API路由会处理）
+	apiPath := filepath.Join(dateDir, filename)
 	// 确保路径使用正斜杠（适用于URL）
+	apiPath = strings.ReplaceAll(apiPath, "\\", "/")
+
+	// 用于返回给前端的完整相对路径（包含images）
+	relativePath := filepath.Join("images", dateDir, filename)
 	relativePath = strings.ReplaceAll(relativePath, "\\", "/")
 
 	// 使用配置的域名或默认域名
@@ -221,7 +225,7 @@ func UploadImage(c *gin.Context) {
 			domain = fmt.Sprintf("localhost:%s", cfg.Server.Port)
 		}
 	}
-	imageURL := fmt.Sprintf("%s%s/api/upload/image/%s", scheme, domain, relativePath)
+	imageURL := fmt.Sprintf("%s%s/api/upload/image/%s", scheme, domain, apiPath)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
