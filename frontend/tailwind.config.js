@@ -421,11 +421,11 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['var(--font-body)', 'Inter', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-code)', 'JetBrains Mono', 'Consolas', 'monospace'],
-        heading: ['var(--font-heading)', 'var(--font-body)', 'Inter', 'system-ui', 'sans-serif'],
-        body: ['var(--font-body)', 'Inter', 'system-ui', 'sans-serif'],
-        code: ['var(--font-code)', 'JetBrains Mono', 'Consolas', 'monospace'],
+        sans: ['var(--font-body)', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
+        mono: ['var(--font-code)', '"SF Mono"', 'Monaco', '"Cascadia Code"', 'Consolas', 'monospace'],
+        heading: ['var(--font-heading)', 'var(--font-body)', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
+        body: ['var(--font-body)', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
+        code: ['var(--font-code)', '"SF Mono"', 'Monaco', '"Cascadia Code"', 'Consolas', 'monospace'],
       },
       typography: {
         DEFAULT: {

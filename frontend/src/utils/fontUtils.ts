@@ -1,38 +1,38 @@
 import { FontFamily, FontWeight, LineHeight, FontSettings } from '../contexts/ThemeContext';
 
-// 字体映射到实际的CSS font-family
+// 字体映射到实际的CSS font-family - 使用系统本地字体
 export const fontFamilyMap: Record<FontFamily, string> = {
   // 系统字体
   'system': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   
-  // 西文字体
-  'inter': '"Inter", system-ui, sans-serif',
-  'roboto': '"Roboto", system-ui, sans-serif',
-  'open-sans': '"Open Sans", system-ui, sans-serif',
-  'lato': '"Lato", system-ui, sans-serif',
-  'source-sans-pro': '"Source Sans Pro", system-ui, sans-serif',
-  'poppins': '"Poppins", system-ui, sans-serif',
-  'nunito': '"Nunito", system-ui, sans-serif',
-  'work-sans': '"Work Sans", system-ui, sans-serif',
+  // 西文字体 - 使用系统字体作为首选
+  'inter': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+  'roboto': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+  'open-sans': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+  'lato': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+  'source-sans-pro': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+  'poppins': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+  'nunito': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+  'work-sans': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
   
-  // 中文字体
-  'noto-sans-sc': '"Noto Sans SC", "Noto Sans CJK SC", system-ui, sans-serif',
-  'source-han-sans': '"Source Han Sans SC", "Source Han Sans CN", system-ui, sans-serif',
+  // 中文字体 - 使用系统本地字体
+  'noto-sans-sc': '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", system-ui, sans-serif',
+  'source-han-sans': '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", system-ui, sans-serif',
   'pingfang-sc': '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif',
-  'microsoft-yahei': '"Microsoft YaHei", "Segoe UI", system-ui, sans-serif',
+  'microsoft-yahei': '"Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Segoe UI", system-ui, sans-serif',
   'hiragino-sans-gb': '"Hiragino Sans GB", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif',
-  'dengxian': '"DengXian", "Microsoft YaHei", system-ui, sans-serif',
-  'simhei': '"SimHei", "Microsoft YaHei", system-ui, sans-serif',
-  'simsun': '"SimSun", "Microsoft YaHei", system-ui, serif',
+  'dengxian': '"DengXian", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif',
+  'simhei': '"SimHei", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif',
+  'simsun': '"SimSun", "Microsoft YaHei", "Times New Roman", system-ui, serif',
   
-  // 等宽字体
-  'jetbrains-mono': '"JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code", "Consolas", monospace',
-  'fira-code': '"Fira Code", "JetBrains Mono", "SF Mono", "Cascadia Code", "Consolas", monospace',
-  'source-code-pro': '"Source Code Pro", "SF Mono", "Cascadia Code", "Consolas", monospace',
-  'cascadia-code': '"Cascadia Code", "Fira Code", "SF Mono", "Consolas", monospace',
-  'sf-mono': '"SF Mono", "Cascadia Code", "Consolas", "Menlo", monospace',
-  'consolas': '"Consolas", "SF Mono", "Cascadia Code", "Courier New", monospace',
-  'menlo': '"Menlo", "SF Mono", "Consolas", "Monaco", monospace',
+  // 等宽字体 - 使用系统本地字体
+  'jetbrains-mono': '"SF Mono", "Monaco", "Cascadia Code", "Consolas", "Courier New", monospace',
+  'fira-code': '"SF Mono", "Monaco", "Cascadia Code", "Consolas", "Courier New", monospace',
+  'source-code-pro': '"SF Mono", "Monaco", "Cascadia Code", "Consolas", "Courier New", monospace',
+  'cascadia-code': '"Cascadia Code", "SF Mono", "Monaco", "Consolas", "Courier New", monospace',
+  'sf-mono': '"SF Mono", "Monaco", "Cascadia Code", "Consolas", "Menlo", monospace',
+  'consolas': '"Consolas", "SF Mono", "Monaco", "Cascadia Code", "Courier New", monospace',
+  'menlo': '"Menlo", "SF Mono", "Monaco", "Consolas", "Courier New", monospace',
 };
 
 // 字体粗细映射到CSS font-weight
@@ -110,45 +110,11 @@ export function getFontLoadingStatus(fontFamily: FontFamily): Promise<boolean> {
   });
 }
 
-// 预加载Google Fonts
+// 预加载字体 - 现在只处理系统字体
 export function preloadGoogleFonts(fontFamilies: FontFamily[]): void {
-  const googleFonts = fontFamilies.filter(font => 
-    ['inter', 'roboto', 'open-sans', 'lato', 'source-sans-pro', 'poppins', 'nunito', 'work-sans', 'noto-sans-sc', 'source-han-sans'].includes(font)
-  );
-
-  if (googleFonts.length === 0) return;
-
-  const googleFontUrls: Record<string, string> = {
-    'inter': 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-    'roboto': 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap',
-    'open-sans': 'https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap',
-    'lato': 'https://fonts.googleapis.com/css2?family=Lato:wght@400;500;600;700&display=swap',
-    'source-sans-pro': 'https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;500;600;700&display=swap',
-    'poppins': 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap',
-    'nunito': 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap',
-    'work-sans': 'https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap',
-    'noto-sans-sc': 'https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap',
-    'source-han-sans': 'https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap', // 使用Noto作为替代
-  };
-
-  // 创建预加载链接
-  googleFonts.forEach(font => {
-    const url = googleFontUrls[font];
-    if (url) {
-      const link = document.createElement('link');
-      link.rel = 'preload';
-      link.as = 'style';
-      link.href = url;
-      link.onload = () => {
-        // 字体预加载完成后，创建实际的样式链接
-        const styleLink = document.createElement('link');
-        styleLink.rel = 'stylesheet';
-        styleLink.href = url;
-        document.head.appendChild(styleLink);
-      };
-      document.head.appendChild(link);
-    }
-  });
+  // Google Fonts 已移除，此函数现在仅用于兼容性
+  // 系统字体无需预加载
+  return;
 }
 
 // 获取字体建议（基于语言和用途）

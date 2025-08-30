@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { applyFontSettings, preloadGoogleFonts } from '../utils/fontUtils';
+import { applyFontSettings } from '../utils/fontUtils';
 
 export type ColorTheme = 'light' | 'dark' | 'system';
 
@@ -208,9 +208,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   useEffect(() => {
     applyFontSettings(settings.fonts);
     
-    // 预加载需要的Google Fonts
-    const fontsToPreload = [settings.fonts.body, settings.fonts.heading, settings.fonts.code];
-    preloadGoogleFonts(fontsToPreload);
+    // 字体设置已更新为使用系统字体，无需预加载外部字体
   }, [settings.fonts]);
 
   // 初始化时应用字体设置
