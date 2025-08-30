@@ -1,6 +1,25 @@
 version: '3.8'
 
 services:
+  # 数据目录初始化服务
+  init-data:
+    image: alpine:latest
+    container_name: blog_init_data
+    volumes:
+      - ./data/uploads:/data/uploads
+      - ./data/search_index:/data/search_index
+    command: >
+      sh -c "
+        mkdir -p /data/uploads/images &&
+        mkdir -p /data/search_index &&
+        chmod -R 755 /data/uploads &&
+        chmod -R 755 /data/search_index &&
+        chown -R 1000:1000 /data/uploads &&
+        chown -R 1000:1000 /data/search_index &&
+        echo 'Data directories initialized successfully'
+      "
+    restart: "no"
+
   # Redis缓存
   redis:
     image: redis:7-alpine
@@ -42,6 +61,8 @@ services:
     ports:
       - "3001:3001"
     depends_on:
+      init-data:
+        condition: service_completed_successfully
       redis:
         condition: service_started
     extra_hosts:
