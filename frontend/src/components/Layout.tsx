@@ -112,7 +112,7 @@ export default function Layout() {
 
           <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
             <p className="text-center text-gray-500 dark:text-gray-400 text-sm">
-              © 2024 我的博客. All rights reserved. Built with React + TypeScript + Go
+              © 2025 我的博客. All rights reserved. Built with React + TypeScript + Go
             </p>
           </div>
         </div>
