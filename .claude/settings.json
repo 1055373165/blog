@@ -10,6 +10,17 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "After receiving the user's prompt word, optimize the user's prompt word and submit the best version of the prompt word."
+          }
+        ]
+      }
     ]
   }
 }
