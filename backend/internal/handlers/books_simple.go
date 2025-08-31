@@ -79,8 +79,14 @@ func generateSimpleBookInfo(filename string) (title, description, detailedDescri
 
 // GetBooksSimple 获取书籍列表API（简化版）
 func GetBooksSimple(c *gin.Context) {
-	// 书籍目录路径
-	booksPath := "/app/books"
+	// 书籍目录路径 - 根据环境动态设置
+	var booksPath string
+	if os.Getenv("ENVIRONMENT") == "production" {
+		booksPath = "/app/books"
+	} else {
+		// 开发环境使用前端public目录
+		booksPath = "/Users/smy/project/newblog/blog/frontend/public/books"
+	}
 	
 	// 检查目录是否存在
 	if _, err := os.Stat(booksPath); os.IsNotExist(err) {
@@ -177,8 +183,14 @@ func GetBookMetadata(c *gin.Context) {
 		return
 	}
 	
-	// 检查文件是否存在
-	booksPath := "/app/books"
+	// 检查文件是否存在 - 根据环境动态设置
+	var booksPath string
+	if os.Getenv("ENVIRONMENT") == "production" {
+		booksPath = "/app/books"
+	} else {
+		// 开发环境使用前端public目录
+		booksPath = "/Users/smy/project/newblog/blog/frontend/public/books"
+	}
 	filePath := filepath.Join(booksPath, filename)
 	
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {

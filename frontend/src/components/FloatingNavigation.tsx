@@ -13,9 +13,12 @@ import {
   MoonIcon,
   Bars3Icon,
   XMarkIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  CogIcon
 } from '@heroicons/react/24/outline';
 import { useTheme } from '../contexts/ThemeContext';
+import type { ColorTheme } from '../contexts/ThemeContext';
+import ThemeSettings from './ThemeSettings';
 
 interface NavigationItem {
   name: string;
@@ -41,16 +44,32 @@ interface FloatingNavigationProps {
 export default function FloatingNavigation({ className }: FloatingNavigationProps) {
   const location = useLocation();
   const { settings, isDark, updateColorTheme } = useTheme();
+  const [themeSettingsOpen, setThemeSettingsOpen] = useState(false);
+  const [isTogglingTheme, setIsTogglingTheme] = useState(false);
   
-  // Theme toggle function
+  // Theme toggle function - simple light/dark toggle only
   const toggleTheme = () => {
-    if (settings.colorTheme === 'dark') {
-      updateColorTheme('light');
-    } else if (settings.colorTheme === 'light') {
-      updateColorTheme('system');
+    if (isTogglingTheme) return; // Prevent rapid clicking
+    
+    setIsTogglingTheme(true);
+    
+    // Simple light/dark toggle logic
+    let nextTheme: ColorTheme;
+    
+    if (settings.colorTheme === 'system') {
+      // If currently on system, toggle to opposite of what system currently is
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      nextTheme = mediaQuery.matches ? 'light' : 'dark';
+    } else if (settings.colorTheme === 'dark') {
+      nextTheme = 'light';
     } else {
-      updateColorTheme('dark');
+      nextTheme = 'dark';
     }
+    
+    updateColorTheme(nextTheme);
+    
+    // Reset toggle state after a short delay
+    setTimeout(() => setIsTogglingTheme(false), 150);
   };
   const [isScrolled, setIsScrolled] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -217,18 +236,39 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
             {/* 主题切换 */}
             <button
               onClick={toggleTheme}
+              disabled={isTogglingTheme}
+              className={clsx(
+                'p-2 rounded-xl transition-all duration-300 group',
+                'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
+                'hover:bg-gray-100 dark:hover:bg-gray-800',
+                isTogglingTheme && 'scale-95 opacity-75'
+              )}
+              title={`切换主题模式 (当前: ${isDark ? '暗黑' : '明亮'})`}
+            >
+              {isDark ? (
+                <SunIcon className={clsx(
+                  'w-5 h-5 transition-transform duration-300',
+                  isTogglingTheme ? 'rotate-180 scale-110' : 'group-hover:rotate-180'
+                )} />
+              ) : (
+                <MoonIcon className={clsx(
+                  'w-5 h-5 transition-transform duration-300',
+                  isTogglingTheme ? '-rotate-12 scale-110' : 'group-hover:-rotate-12'
+                )} />
+              )}
+            </button>
+            
+            {/* 主题设置 */}
+            <button
+              onClick={() => setThemeSettingsOpen(true)}
               className={clsx(
                 'p-2 rounded-xl transition-all duration-300 group',
                 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
                 'hover:bg-gray-100 dark:hover:bg-gray-800'
               )}
-              title={`切换主题模式 (当前: ${settings.colorTheme === 'dark' ? '暗黑' : settings.colorTheme === 'light' ? '明亮' : '跟随系统'})`}
+              title="主题设置"
             >
-              {isDark ? (
-                <SunIcon className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
-              ) : (
-                <MoonIcon className="w-5 h-5 group-hover:-rotate-12 transition-transform duration-500" />
-              )}
+              <CogIcon className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
             </button>
             
             {/* 移动端菜单按钮 */}
@@ -280,6 +320,21 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
                   </Link>
                 );
               })}
+              
+              {/* Mobile Theme Settings Button */}
+              <button
+                onClick={() => {
+                  setThemeSettingsOpen(true);
+                  setIsExpanded(false);
+                }}
+                className={clsx(
+                  'flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200',
+                  'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                )}
+              >
+                <CogIcon className="w-5 h-5" />
+                <span className="font-medium">主题设置</span>
+              </button>
             </div>
           </div>
         )}
@@ -304,6 +359,12 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
           <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-go-500/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
       )}
+      
+      {/* 主题设置面板 */}
+      <ThemeSettings 
+        isOpen={themeSettingsOpen} 
+        onClose={() => setThemeSettingsOpen(false)} 
+      />
     </>
   );
 }

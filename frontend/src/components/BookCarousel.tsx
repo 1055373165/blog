@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, RefreshCwIcon } from 'lucide-react';
 import OptimizedImage from './ui/OptimizedImage';
 import { useBooksForCarousel } from '../hooks/useBooks';
+import { useImagePreloader } from '../hooks/useImagePreloader';
+import { useImageCache } from '../hooks/useImageCache';
 import { Book } from '../api/books';
 import { clsx } from 'clsx';
 
@@ -65,6 +67,17 @@ export default function BookCarousel({
 
   // 使用实际的书籍数据，如果没有数据则使用fallback
   const activeBooks = hasBooks ? books : fallbackBooks;
+
+  // 智能图片预加载
+  const imageUrls = activeBooks.map(book => book.url);
+  const { isImageCached, getCacheStatus } = useImagePreloader(imageUrls, currentIndex, {
+    preloadRange: 2, // 预加载当前位置前后各2张图片
+    delay: 300, // 延迟300ms开始预加载，避免阻塞初始渲染
+    enabled: hasBooks && !loading
+  });
+
+  // 图片缓存管理
+  const imageCacheManager = useImageCache();
 
   // 获取当前显示的书籍（以currentIndex为中心对称显示）
   const getVisibleBooks = useCallback((): CarouselBook[] => {
@@ -281,6 +294,18 @@ export default function BookCarousel({
              hasBooks ? `从入门到精通，精心挑选的Go语言学习资源，当前共 ${totalBooks} 本书籍` :
              '暂无书籍数据，请检查books目录'}
           </p>
+          
+          {/* 缓存状态指示器（开发模式显示） */}
+          {process.env.NODE_ENV === 'development' && imageCacheManager.cacheStatus && (
+            <div className="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+              <span className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                📦 缓存: {imageCacheManager.cacheStatus.total} 张图片
+                {imageCacheManager.isRegistered && (
+                  <span className="text-green-600 dark:text-green-400">● SW已激活</span>
+                )}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* 书籍展示区域 */}
@@ -401,26 +426,26 @@ export default function BookCarousel({
                         {/* 书脊装饰 */}
                         <div className="absolute left-0 top-2 bottom-2 w-1 bg-gradient-to-b from-amber-400 via-amber-600 to-amber-800 rounded-r opacity-60" style={{ transform: 'translateZ(1px)' }} />
                         
-                        <OptimizedImage
-                          src={book.url}
-                          alt={book.title}
-                          aspectRatio="3/4"
-                          className={clsx(
-                            'w-32 md:w-40 lg:w-48 transition-all duration-700 relative z-10',
-                            isAdjacent && 'brightness-95',
-                            isEdge && 'brightness-75',
-                            'group-hover:brightness-110 group-hover:contrast-105'
-                          )}
-                          style={{
-                            transform: 'translateZ(5px)',
-                            filter: `saturate(${isCenter ? 1.0 : 0.9}) hue-rotate(0deg)`
-                          }}
-                          sizes="(max-width: 768px) 128px, (max-width: 1024px) 160px, 192px"
-                          placeholder="skeleton"
-                          priority={true}
-                          onLoad={() => console.log(`图片加载成功: ${book.filename}`)}
-                          onError={() => console.error(`图片加载失败: ${book.filename}`)}
-                        />
+                        <div className="relative w-32 md:w-40 lg:w-48 aspect-[3/4] bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
+                          <img
+                            src={book.url}
+                            alt={book.title}
+                            className={clsx(
+                              'absolute inset-0 w-full h-full object-cover transition-all duration-700 relative z-10',
+                              isAdjacent && 'brightness-95',
+                              isEdge && 'brightness-75',
+                              'group-hover:brightness-110 group-hover:contrast-105'
+                            )}
+                            style={{
+                              transform: 'translateZ(5px)',
+                              filter: `saturate(${isCenter ? 1.0 : 0.9}) hue-rotate(0deg)`
+                            }}
+                            loading="eager"
+                            decoding="async"
+                            onLoad={() => console.log(`图片加载成功: ${book.filename}`)}
+                            onError={() => console.error(`图片加载失败: ${book.filename}`)}
+                          />
+                        </div>
                         
                         {/* 书籍光泽效果 */}
                         <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/10 rounded-xl pointer-events-none" style={{ transform: 'translateZ(10px)' }} />

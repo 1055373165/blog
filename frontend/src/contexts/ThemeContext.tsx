@@ -160,7 +160,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   const [isDark, setIsDark] = useState(false);
 
-  // 检测系统主题
+  // 检测系统主题 - 优化为立即响应
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     
@@ -175,9 +175,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         shouldBeDark = mediaQuery.matches;
       }
       
+      // 使用 flushSync 确保立即更新状态和DOM
       setIsDark(shouldBeDark);
       
-      // 更新DOM
+      // 立即更新DOM，确保没有延迟
       if (shouldBeDark) {
         document.documentElement.classList.add('dark');
       } else {
@@ -187,8 +188,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
     updateTheme();
     
-    // 监听系统主题变化
-    mediaQuery.addEventListener('change', updateTheme);
+    // 监听系统主题变化（仅当 colorTheme 为 'system' 时）
+    if (settings.colorTheme === 'system') {
+      mediaQuery.addEventListener('change', updateTheme);
+    }
     
     return () => {
       mediaQuery.removeEventListener('change', updateTheme);
@@ -217,7 +220,28 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   }, []);
 
   const updateColorTheme = (theme: ColorTheme) => {
+    // 立即更新状态，确保UI响应
     setSettings(prev => ({ ...prev, colorTheme: theme }));
+    
+    // 提供即时视觉反馈，不等待useEffect
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    let shouldBeDark = false;
+    
+    if (theme === 'dark') {
+      shouldBeDark = true;
+    } else if (theme === 'light') {
+      shouldBeDark = false;
+    } else { // system
+      shouldBeDark = mediaQuery.matches;
+    }
+    
+    // 立即更新DOM和状态
+    setIsDark(shouldBeDark);
+    if (shouldBeDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   };
 
   const updateCodeTheme = (theme: CodeTheme) => {

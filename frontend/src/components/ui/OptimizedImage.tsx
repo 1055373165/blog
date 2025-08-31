@@ -27,34 +27,62 @@ const getOptimizedSrc = (src: string, format?: 'webp' | 'jpg' | 'png' | 'auto', 
   return src;
 };
 
-// 懒加载 Hook
+// 智能懒加载 Hook
 const useImageLazyLoading = (priority: boolean = false, threshold = 0.1) => {
   const [inView, setInView] = useState(priority); // 优先级图片立即加载
   const [hasLoaded, setHasLoaded] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
-    if (priority || hasLoaded) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          observer.disconnect();
-        }
-      },
-      { 
-        threshold, 
-        rootMargin: '200px' // 扩大预加载范围，确保轮播图中的图片能及时加载
+    // 优先级图片或已加载的图片不需要懒加载
+    if (priority || hasLoaded) {
+      if (priority && !inView) {
+        setInView(true);
       }
-    );
-
-    if (imgRef.current) {
-      observer.observe(imgRef.current);
+      return;
     }
 
-    return () => observer.disconnect();
-  }, [priority, threshold, hasLoaded]);
+    // 使用 requestIdleCallback 优化性能
+    const setupObserver = () => {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setInView(true);
+            observer.disconnect();
+          }
+        },
+        { 
+          threshold, 
+          rootMargin: priority ? '0px' : '50px' // 减小预加载边距，确保轮播图片能及时加载
+        }
+      );
+
+      if (imgRef.current) {
+        observer.observe(imgRef.current);
+      }
+
+      return observer;
+    };
+
+    let observer: IntersectionObserver;
+    
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => {
+        observer = setupObserver();
+      });
+    } else {
+      // fallback for browsers without requestIdleCallback
+      setTimeout(() => {
+        observer = setupObserver();
+      }, 0);
+    }
+
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, [priority, threshold, hasLoaded, inView]);
 
   const handleLoad = useCallback(() => {
     setHasLoaded(true);
