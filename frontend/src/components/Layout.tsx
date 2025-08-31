@@ -4,6 +4,7 @@ import FloatingNavigation from './FloatingNavigation';
 import AnimatedBackground from './AnimatedBackground';
 import { BlogStats } from '../types';
 import { statsApi } from '../api';
+import policeBadge from '../assets/公安备案编号图标.png';
 
 export default function Layout() {
   const [stats, setStats] = useState<BlogStats | null>(null);
@@ -64,56 +65,63 @@ export default function Layout() {
         aria-label="网站信息"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Quick Links */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                快速链接
-              </h3>
-              <ul className="space-y-2">
-                {navigation.slice(0, 4).map((item) => (
-                  <li key={item.name}>
-                    <Link
-                      to={item.href}
-                      className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 text-sm"
-                    >
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Recent Stats */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                站点统计
-              </h3>
-              <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <div className="flex justify-between">
-                  <span>文章总数</span>
-                  <span className="font-medium">{stats?.totalArticles || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>分类数量</span>
-                  <span className="font-medium">{stats?.totalCategories || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>标签数量</span>
-                  <span className="font-medium">{stats?.totalTags || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>总浏览量</span>
-                  <span className="font-medium">{stats?.totalViews?.toLocaleString() || 0}</span>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+              <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                {stats?.totalArticles || 0}
               </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">文章总数</div>
+            </div>
+            
+            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+              <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                {stats?.totalCategories || 0}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">分类数量</div>
+            </div>
+            
+            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+              <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                {stats?.totalTags || 0}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">标签数量</div>
+            </div>
+            
+            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+              <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                {stats?.totalViews?.toLocaleString() || 0}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">总浏览量</div>
             </div>
           </div>
 
           <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-            <p className="text-center text-gray-500 dark:text-gray-400 text-sm">
-              © 2025 我的博客. All rights reserved. Built with React + TypeScript + Go
-            </p>
+            <div className="flex flex-col items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <img 
+                  src={policeBadge} 
+                  alt="公安备案" 
+                  className="h-4 w-4"
+                />
+                <a 
+                  href="https://beian.mps.gov.cn/#/query/webSearch" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  京公网安备11010502057450号
+                </a>
+                <a 
+                  href="https://beian.miit.gov.cn" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  京ICP备2025141145号-1
+                </a>
+              </div>
+              <div>© 2025 我的博客. All rights reserved.</div>
+            </div>
           </div>
         </div>
       </footer>
