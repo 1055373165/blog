@@ -80,9 +80,8 @@ services:
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./config/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf
-      - ./config/nginx/conf.d:/etc/nginx/conf.d
       - ./docker/nginx/ssl:/etc/nginx/ssl:ro  # SSL certificates enabled
-      - ./config/ssl:/etc/nginx/ssl:ro
+      - ./config/ssl:/etc/nginx/conf.d:ro
       - ./data/uploads:/app/uploads:ro
     depends_on:
       - frontend
