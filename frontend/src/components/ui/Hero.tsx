@@ -274,8 +274,11 @@ export default function Hero({ className }: HeroProps) {
             </div>
             
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-gray-900 dark:text-white leading-tight">
-              <span className="block text-4xl md:text-5xl lg:text-6xl font-light text-gray-600 dark:text-gray-300 mt-4">
-                Deep Dive into <TypewriterText texts={typewriterTexts} />
+              <span className="block text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light text-gray-600 dark:text-gray-300 mt-4 leading-tight">
+                <span className="block sm:inline">Deep Dive into</span>{' '}
+                <span className="block sm:inline text-gradient-go whitespace-nowrap overflow-hidden">
+                  <TypewriterText texts={typewriterTexts} />
+                </span>
               </span>
             </h1>
             
@@ -355,26 +358,86 @@ export default function Hero({ className }: HeroProps) {
                     </div>
                     <div className="ml-4 text-gray-400 font-mono text-sm">about_me.go</div>
                   </div>
-                  <div className="font-mono text-sm text-left">
+                  <div className="font-mono text-xs sm:text-sm text-left overflow-x-auto scrollbar-thin">
                     <div className="text-purple-400">package <span className="text-white">main</span></div>
                     <div className="text-purple-400"><br></br>import <span className="text-green-400">"fmt"</span></div>
                     <div className="mt-4 text-purple-400">func <span className="text-blue-400">main</span><span className="text-white">() {"{"}</span></div>
-                    <div className="space-y-2">
-                      <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"Hi! I'm Sun Mengyu, a passionate Go developer with 3 years of experience."</span>)</div>
-                      <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"Core Focus: Go microservices, system architecture design, and design patterns."</span>)</div>
-                      <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"System Knowledge: Operating systems, computer networks, high concurrency & availability."</span>)</div>
-                      <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"Architecture Skills: UML modeling, OOP design, code standards, and observability."</span>)</div>
-                      <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"DevOps & Performance: Container tech, high-performance optimization, distributed systems."</span>)</div>
-                      <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"Tools & Learning: ClaudeCode, Windsurf, Go source code exploration, modern workflows."</span>)</div>
-                      <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"Goal: Building robust, scalable, maintainable systems with clean code principles."</span>)</div>
-                      <div className="ml-4 text-white mt-4">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"--- Professional Summary ---"</span>)</div>
-                      <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"Experienced Golang Backend Engineer with 3+ years building scalable microservices."</span>)</div>
-                      <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"Expertise: Go concurrency (goroutines/channels), Gin/Gorm/gRPC frameworks."</span>)</div>
-                      <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"Backend Skills: RESTful APIs, Mysql/Redis optimization."</span>)</div>
-                      <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"Event-driven: EDA, Apache Kafka message queue architectures."</span>)</div>
-                      <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"Cloud & DevOps: Docker, Kubernetes, CI/CD pipelines."</span>)</div>
-                      <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"Monitoring: Prometheus, Grafana, pprof performance profiling."</span>)</div>
-                      <div className="ml-4 text-white">fmt.<span className="text-blue-400">Println</span>(<span className="text-green-400">"Practices: TDD, clean architecture, SOLID principles, production optimization."</span>)</div>
+                    <div className="space-y-1 sm:space-y-2">
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"Hi! I'm Sun Mengyu, a passionate Go developer with 3 years of experience."</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"Core Focus: Go microservices, system architecture design, and design patterns."</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"System Knowledge: Operating systems, computer networks, high concurrency & availability."</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"Architecture Skills: UML modeling, OOP design, code standards, and observability."</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"DevOps & Performance: Container tech, high-performance optimization, distributed systems."</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"Tools & Learning: ClaudeCode, Windsurf, Go source code exploration, modern workflows."</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"Goal: Building robust, scalable, maintainable systems with clean code principles."</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white mt-2 sm:mt-4 break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"--- Professional Summary ---"</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"Experienced Golang Backend Engineer with 3+ years building scalable microservices."</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"Expertise: Go concurrency (goroutines/channels), Gin/Gorm/gRPC frameworks."</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"Backend Skills: RESTful APIs, Mysql/Redis optimization."</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"Event-driven: EDA, Apache Kafka message queue architectures."</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"Cloud & DevOps: Docker, Kubernetes, CI/CD pipelines."</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"Monitoring: Prometheus, Grafana, pprof performance profiling."</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"Practices: TDD, clean architecture, SOLID principles, production optimization."</span>
+                        <span>)</span>
+                      </div>
                     </div>
                     <div className="text-white">{"}"}</div>
                   </div>
