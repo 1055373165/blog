@@ -80,7 +80,6 @@ services:
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./config/nginx/conf.d/:/etc/nginx/conf.d/
-      - ./config/ssl:/etc/nginx/ssl:ro
       - ./data/uploads:/app/uploads:ro
     depends_on:
       - frontend
