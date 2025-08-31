@@ -1,0 +1,43 @@
+Blog 部署信息
+=============
+
+部署时间: 2025-08-14 12:27:03
+域名: www.godepth.top
+项目目录: /root/blog
+
+数据库信息:
+- MySQL Root 密码: 1234
+- 应用数据库密码: 1234
+- 数据库名: blog_db
+- 数据库用户: blog_user
+
+应用配置:
+- JWT 密钥: 1234
+- Redis 密码: 1234
+
+访问地址:
+- HTTP: http://www.godepth.top
+- HTTPS: https://www.godepth.top
+- 管理后台: https://www.godepth.top/admin
+
+常用命令:
+- 查看应用状态: cd /root/blog/source && docker compose -f docker-compose.prod.yml ps
+- 查看应用日志: cd /root/blog/source && docker compose -f docker-compose.prod.yml logs -f
+- 重启应用: cd /root/blog/source && docker compose -f docker-compose.prod.yml restart
+- 停止应用: cd /root/blog/source && docker compose -f docker-compose.prod.yml down
+
+系统服务:
+- Docker: systemctl status docker
+- MySQL: systemctl status mysql
+- Nginx: systemctl status nginx
+
+日志位置:
+- 部署日志: /var/log/blog-deploy.log
+- Nginx日志: /var/log/nginx/
+- MySQL日志: /var/log/mysql/
+
+注意事项:
+1. 请妥善保存这些密码信息
+2. 建议定期备份数据库和文件
+3. 定期更新系统和应用
+4. 监控服务器资源使用情况
