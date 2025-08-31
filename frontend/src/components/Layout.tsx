@@ -65,67 +65,36 @@ export default function Layout() {
         aria-label="网站信息"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-              <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                {stats?.totalArticles || 0}
-              </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">文章总数</div>
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <img 
+                src={policeBadge} 
+                alt="公安备案" 
+                className="h-4 w-4"
+              />
+              <a 
+                href="https://beian.mps.gov.cn/#/query/webSearch" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:underline"
+              >
+                京公网安备11010502057450号
+              </a>
+              <a 
+                href="https://beian.miit.gov.cn" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:underline"
+              >
+                京ICP备2025141145号-1
+              </a>
             </div>
-            
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-              <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                {stats?.totalCategories || 0}
-              </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">分类数量</div>
-            </div>
-            
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-              <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                {stats?.totalTags || 0}
-              </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">标签数量</div>
-            </div>
-            
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-              <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                {stats?.totalViews?.toLocaleString() || 0}
-              </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">总浏览量</div>
-            </div>
-          </div>
-
-          <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex flex-col items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <img 
-                  src={policeBadge} 
-                  alt="公安备案" 
-                  className="h-4 w-4"
-                />
-                <a 
-                  href="https://beian.mps.gov.cn/#/query/webSearch" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="hover:underline"
-                >
-                  京公网安备11010502057450号
-                </a>
-                <a 
-                  href="https://beian.miit.gov.cn" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="hover:underline"
-                >
-                  京ICP备2025141145号-1
-                </a>
-              </div>
-              <div>© 2025 我的博客. All rights reserved.</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              © 2025 我的博客. All rights reserved.
             </div>
           </div>
         </div>
       </footer>
-
     </div>
   );
 }
