@@ -90,7 +90,7 @@ func UploadImage(c *gin.Context) {
 	// 添加调试日志
 	fmt.Printf("📸 [DEBUG] 图片上传请求开始 - IP: %s, User-Agent: %s\n", c.ClientIP(), c.GetHeader("User-Agent"))
 	fmt.Printf("📸 [DEBUG] 请求头Authorization: %s\n", c.GetHeader("Authorization"))
-	
+
 	// 获取上传的文件
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
@@ -103,7 +103,7 @@ func UploadImage(c *gin.Context) {
 		return
 	}
 	defer file.Close()
-	
+
 	fmt.Printf("📄 [DEBUG] 文件信息 - 名称: %s, 大小: %d bytes, 类型: %s\n", header.Filename, header.Size, header.Header.Get("Content-Type"))
 
 	// 验证文件类型
@@ -221,14 +221,14 @@ func UploadImage(c *gin.Context) {
 
 	// 根据环境确定域名和协议
 	var domain, scheme string
-	
+
 	// 如果是本地开发环境，强制使用localhost
 	if cfg.App.Environment == "development" {
 		scheme = "http://"
 		domain = fmt.Sprintf("localhost:%s", cfg.Server.Port)
 	} else {
 		// 生产环境使用配置的域名
-		scheme = "https://"
+		scheme = "//"
 		domain = os.Getenv("DOMAIN")
 		if domain == "" {
 			domain = "www.godepth.top"

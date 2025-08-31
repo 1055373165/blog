@@ -618,7 +618,7 @@ export default function ArticleEditor() {
                     type="url"
                     value={formData.coverImage}
                     onChange={(e) => handleInputChange('coverImage', e.target.value)}
-                    placeholder="https://example.com/image.jpg"
+                    placeholder="//example.com/image.jpg"
                     className="input"
                   />
                   {formData.coverImage && (

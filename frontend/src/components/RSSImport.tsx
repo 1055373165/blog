@@ -151,7 +151,7 @@ export default function RSSImport({
 
   const fetchRSSFeed = async (url: string): Promise<RSSItem[]> => {
     try {
-      const corsProxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+      const corsProxy = `//api.allorigins.win/get?url=${encodeURIComponent(url)}`;
       
       const response = await fetch(corsProxy);
       
@@ -277,7 +277,7 @@ export default function RSSImport({
               type="url"
               value={rssUrl}
               onChange={(e) => setRssUrl(e.target.value)}
-              placeholder="https://example.com/feed.xml"
+              placeholder="//example.com/feed.xml"
               className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 
                          rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white
                          focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"

@@ -156,7 +156,7 @@ export default function CardShowcase() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <Card 
                 variant="elevated"
-                image="https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=400&h=300&fit=crop"
+                image="images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=400&h=300&fit=crop"
                 imageAlt="Beautiful landscape"
                 imagePosition="top"
               >
@@ -171,7 +171,7 @@ export default function CardShowcase() {
 
               <Card 
                 variant="elevated"
-                image="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=200&h=200&fit=crop"
+                image="//images.unsplash.com/photo-1506905925346-21bda4d32df4?w=200&h=200&fit=crop"
                 imageAlt="Profile"
                 imagePosition="left"
                 size="lg"
@@ -184,7 +184,7 @@ export default function CardShowcase() {
 
               <Card 
                 variant="gradient"
-                image="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600&h=400&fit=crop"
+                image="//images.unsplash.com/photo-1519389950473-47ba0277781c?w=600&h=400&fit=crop"
                 imageAlt="Background"
                 imagePosition="background"
                 size="lg"
@@ -304,7 +304,7 @@ export default function CardShowcase() {
               {/* 文章卡片 */}
               <Card 
                 variant="elevated"
-                image="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=200&fit=crop"
+                image="//images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=200&fit=crop"
                 imagePosition="top"
                 hoverable
                 animated

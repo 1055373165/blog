@@ -43,7 +43,7 @@ export default function InputShowcase() {
     search: '',
     message: '',
     username: 'johndoe',
-    website: 'https://',
+    website: '//',
     price: '99.99'
   });
 
@@ -375,7 +375,7 @@ export default function InputShowcase() {
                         search: '',
                         message: '',
                         username: 'johndoe',
-                        website: 'https://',
+                        website: '//',
                         price: '99.99'
                       });
                       setErrors({});
