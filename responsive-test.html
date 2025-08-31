@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Responsiveness Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .text-gradient-go {
+            background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .scrollbar-thin {
+            scrollbar-width: thin;
+            scrollbar-color: rgb(59 130 246) rgb(243 244 246);
+        }
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 4px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background-color: rgb(243 244 246);
+            border-radius: 2px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background-color: rgb(59 130 246);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold text-center mb-8">Mobile Responsiveness Test</h1>
+        
+        <!-- Screen Size Indicators -->
+        <div class="text-center mb-8">
+            <div class="bg-blue-500 text-white px-4 py-2 rounded mb-2 sm:hidden">Mobile (< 640px)</div>
+            <div class="bg-green-500 text-white px-4 py-2 rounded mb-2 hidden sm:block md:hidden">Small (640px - 768px)</div>
+            <div class="bg-yellow-500 text-white px-4 py-2 rounded mb-2 hidden md:block lg:hidden">Medium (768px - 1024px)</div>
+            <div class="bg-purple-500 text-white px-4 py-2 rounded mb-2 hidden lg:block xl:hidden">Large (1024px - 1280px)</div>
+            <div class="bg-pink-500 text-white px-4 py-2 rounded mb-2 hidden xl:block">Extra Large (> 1280px)</div>
+        </div>
+
+        <!-- Test 1: Title Display Fix -->
+        <div class="bg-white rounded-lg p-6 mb-8 shadow">
+            <h2 class="text-lg font-semibold mb-4">Test 1: Title Display Fix</h2>
+            <div class="bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 p-8 rounded-lg">
+                <h1 class="text-5xl md:text-7xl lg:text-8xl font-black text-gray-900 leading-tight">
+                    <span class="block text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light text-gray-600 mt-4 leading-tight">
+                        <span class="block sm:inline">Deep Dive into</span>{' '}
+                        <span class="block sm:inline text-gradient-go whitespace-nowrap overflow-hidden">
+                            云原生技术
+                        </span>
+                    </span>
+                </h1>
+            </div>
+            <div class="mt-4 text-sm text-gray-600">
+                <strong>Expected behavior:</strong> On mobile, "Deep Dive into" and "云原生技术" should stack vertically. On larger screens, they should be on the same line.
+            </div>
+        </div>
+
+        <!-- Test 2: Code Block Wrapping Fix -->
+        <div class="bg-white rounded-lg p-6 shadow">
+            <h2 class="text-lg font-semibold mb-4">Test 2: Code Block Wrapping Fix</h2>
+            <div class="bg-gray-900 rounded-xl p-6 border border-gray-700 relative overflow-hidden">
+                <div class="flex items-center mb-4">
+                    <div class="flex space-x-2">
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                    </div>
+                    <div class="ml-4 text-gray-400 font-mono text-sm">about_me.go</div>
+                </div>
+                <div class="font-mono text-xs sm:text-sm text-left overflow-x-auto scrollbar-thin">
+                    <div class="text-purple-400">package <span class="text-white">main</span></div>
+                    <div class="text-purple-400"><br>import <span class="text-green-400">"fmt"</span></div>
+                    <div class="mt-4 text-purple-400">func <span class="text-blue-400">main</span><span class="text-white">() {</span></div>
+                    <div class="space-y-1 sm:space-y-2">
+                        <div class="ml-4 text-white break-words">
+                            <span>fmt.<span class="text-blue-400">Println</span>(</span>
+                            <span class="text-green-400 break-all">"Hi! I'm Sun Mengyu, a passionate Go developer with 3 years of experience."</span>
+                            <span>)</span>
+                        </div>
+                        <div class="ml-4 text-white break-words">
+                            <span>fmt.<span class="text-blue-400">Println</span>(</span>
+                            <span class="text-green-400 break-all">"Core Focus: Go microservices, system architecture design, and design patterns."</span>
+                            <span>)</span>
+                        </div>
+                        <div class="ml-4 text-white break-words">
+                            <span>fmt.<span class="text-blue-400">Println</span>(</span>
+                            <span class="text-green-400 break-all">"System Knowledge: Operating systems, computer networks, high concurrency & availability."</span>
+                            <span>)</span>
+                        </div>
+                    </div>
+                    <div class="text-white">}</div>
+                </div>
+            </div>
+            <div class="mt-4 text-sm text-gray-600">
+                <strong>Expected behavior:</strong> Long text strings should wrap properly on mobile without causing horizontal scroll. Text should break at word boundaries where possible.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update screen size indicator dynamically
+        function updateScreenSize() {
+            const width = window.innerWidth;
+            console.log(`Current screen width: ${width}px`);
+        }
+        
+        window.addEventListener('resize', updateScreenSize);
+        updateScreenSize();
+    </script>
+</body>
+</html>
