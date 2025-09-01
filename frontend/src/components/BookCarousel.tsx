@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, RefreshCwIcon } from 'lucide-react';
 import OptimizedImage from './ui/OptimizedImage';
 import { useBooksForCarousel } from '../hooks/useBooks';
+import { useLocalBooksForCarousel } from '../hooks/useLocalBooks';
 import { useImagePreloader } from '../hooks/useImagePreloader';
 import { useImageCache } from '../hooks/useImageCache';
 import { Book } from '../api/books';
@@ -20,6 +21,7 @@ interface BookCarouselProps {
   autoPlayInterval?: number;
   showControls?: boolean;
   showDots?: boolean;
+  useLocalImages?: boolean; // 新增: 是否使用本地图片优化
 }
 
 // 空的fallback书籍数据，在API失败时使用
@@ -30,9 +32,13 @@ export default function BookCarousel({
   autoPlay = true,
   autoPlayInterval = 1500,
   showControls = true,
-  showDots = true
+  showDots = true,
+  useLocalImages = true // 默认使用本地优化
 }: BookCarouselProps) {
-  const { books, loading, error, refresh, hasBooks, totalBooks } = useBooksForCarousel();
+  // 根据配置选择数据源: 本地优化 vs API
+  const apiBooks = useBooksForCarousel();
+  const localBooks = useLocalBooksForCarousel();
+  const { books, loading, error, refresh, hasBooks, totalBooks } = useLocalImages ? localBooks : apiBooks;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isMobile, setIsMobile] = useState(false);
@@ -44,6 +50,8 @@ export default function BookCarousel({
   // 初始化调试信息
   useEffect(() => {
     console.log('BookCarousel初始化:', {
+      useLocalImages,
+      dataSource: useLocalImages ? 'local' : 'api',
       autoPlay,
       autoPlayInterval,
       isPlaying,
@@ -52,7 +60,7 @@ export default function BookCarousel({
       loading,
       error
     });
-  }, [autoPlay, autoPlayInterval, isPlaying, totalBooks, hasBooks, loading, error]);
+  }, [useLocalImages, autoPlay, autoPlayInterval, isPlaying, totalBooks, hasBooks, loading, error]);
 
   // 监听状态变化
   useEffect(() => {
@@ -68,11 +76,18 @@ export default function BookCarousel({
   // 使用实际的书籍数据，如果没有数据则使用fallback
   const activeBooks = hasBooks ? books : fallbackBooks;
 
-  // 智能图片预加载
-  const imageUrls = activeBooks.map(book => book.url);
-  const { isImageCached, getCacheStatus } = useImagePreloader(imageUrls, currentIndex, {
+  // 生成优化的图片URL - 直接访问本地文件而不是API
+  const getOptimizedImageUrl = useCallback((book: Book) => {
+    // 直接使用本地路径，避免网络请求
+    return `/books/${book.filename}`;
+  }, []);
+
+  // 智能图片预加载 - 使用优化后的URLs
+  const imageUrls = activeBooks.map(book => getOptimizedImageUrl(book));
+  // 预加载优化: 由于使用本地路径，可以简化预加载逻辑
+  useImagePreloader(imageUrls, currentIndex, {
     preloadRange: 2, // 预加载当前位置前后各2张图片
-    delay: 300, // 延迟300ms开始预加载，避免阻塞初始渲染
+    delay: 100, // 减少延迟，本地文件加载更快
     enabled: hasBooks && !loading
   });
 
@@ -289,9 +304,9 @@ export default function BookCarousel({
             </button>
           </div>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            {loading ? '正在加载书籍数据...' : 
-             error ? '书籍数据加载失败，请尝试刷新' :
-             hasBooks ? `从入门到精通，精心挑选的Go语言学习资源，当前共 ${totalBooks} 本书籍` :
+            {loading ? `正在加载书籍数据... (${useLocalImages ? '本地优化' : 'API模式'})` : 
+             error ? `书籍数据加载失败，请尝试刷新 (${useLocalImages ? '本地优化' : 'API模式'})` :
+             hasBooks ? `从入门到精通，精心挑选的Go语言学习资源，当前共 ${totalBooks} 本书籍${useLocalImages ? ' (本地优化)' : ' (API模式)'}` :
              '暂无书籍数据，请检查books目录'}
           </p>
           
@@ -339,7 +354,12 @@ export default function BookCarousel({
                 </svg>
               </div>
               <p className="text-gray-600 dark:text-gray-300 text-center mb-4">暂无书籍数据</p>
-              <p className="text-gray-500 dark:text-gray-400 text-sm text-center">请将图书图片放入 /frontend/public/books/ 目录</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
+                {useLocalImages 
+                  ? '请将图书图片放入 /frontend/public/books/ 目录（本地优化模式）'
+                  : 'API数据为空，请检查后端服务'
+                }
+              </p>
             </div>
           ) : (
             // 3D书架展示区域
@@ -390,7 +410,13 @@ export default function BookCarousel({
                         transformStyle: 'preserve-3d',
                         filter: `brightness(${isCenter ? 1.0 : isAdjacent ? 0.95 : 0.8}) contrast(1.0)`
                       }}
-                      onClick={() => goToSlide(book.realIndex)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        goToSlide(book.realIndex);
+                      }}
+                      data-book="true"
+                      data-book-title={book.title}
+                      className="book-card clickable carousel"
                     >
                       {/* 增强的3D阴影系统 */}
                       <div className={clsx(
@@ -428,7 +454,7 @@ export default function BookCarousel({
                         
                         <div className="relative w-32 md:w-40 lg:w-48 aspect-[3/4] bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
                           <img
-                            src={book.url}
+                            src={getOptimizedImageUrl(book)}
                             alt={book.title}
                             className={clsx(
                               'absolute inset-0 w-full h-full object-cover transition-all duration-700 relative z-10',
@@ -442,8 +468,16 @@ export default function BookCarousel({
                             }}
                             loading="eager"
                             decoding="async"
-                            onLoad={() => console.log(`图片加载成功: ${book.filename}`)}
-                            onError={() => console.error(`图片加载失败: ${book.filename}`)}
+                            onLoad={() => console.log(`本地图片加载成功: ${book.filename}`)}
+                            onError={(e) => {
+                              console.error(`本地图片加载失败: ${book.filename}`);
+                              // 如果本地图片加载失败，尝试使用API URL作为fallback
+                              const target = e.target as HTMLImageElement;
+                              if (target.src.startsWith('/books/')) {
+                                console.log(`尝试fallback URL: ${book.url}`);
+                                target.src = book.url;
+                              }
+                            }}
                           />
                         </div>
                         

@@ -57,6 +57,8 @@ services:
       - backend
     networks:
       - blog_network
+    volumes:
+      - ./frontend/public/books:/usr/share/nginx/html/books
 
   # Nginx反向代理（生产环境）
   nginx:

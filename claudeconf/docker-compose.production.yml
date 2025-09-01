@@ -106,6 +106,8 @@ services:
         condition: service_healthy
     networks:
       - blog_network
+    volumes:
+      - ./frontend/public/books:/usr/share/nginx/html/books:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]
       interval: 30s
