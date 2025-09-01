@@ -120,59 +120,60 @@ export default function ArticlePage() {
     return () => observer.disconnect();
   }, [handleReadingComplete, article?.content, hasCompletedReading]);
 
-  useEffect(() => {
+  // 定义 loadArticle 函数，使其在依赖数组中可访问
+  const loadArticle = useCallback(async () => {
     if (!slug) {
       navigate('/');
       return;
     }
 
-    const loadArticle = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 获取文章详情
+      const articleResponse = await articlesApi.getArticleBySlug(slug);
+      const articleData = articleResponse.data;
+      
+      // 使用单次批量状态更新减少重渲染
+      setArticle(articleData);
+      setLikes_count(articleData.likes_count);
+      setLiked(articleData.is_liked || false);
+      setViews_count(articleData.views_count || 0);
+
+      // 增加浏览量 - 异步进行，不影响页面渲染
+      articlesApi.incrementViews(articleData.id.toString())
+        .then(() => {
+          setViews_count(prev => prev + 1);
+        })
+        .catch(error => {
+          console.error('Failed to increment views:', error);
+        });
+
+      // 获取相关文章 - 使用 Set 优化去重逻辑
       try {
-        setLoading(true);
-        setError(null);
-
-        // 获取文章详情
-        const articleResponse = await articlesApi.getArticleBySlug(slug);
-        const articleData = articleResponse.data;
-        
-        // 使用单次批量状态更新减少重渲染
-        setArticle(articleData);
-        setLikes_count(articleData.likes_count);
-        setLiked(articleData.is_liked || false);
-        setViews_count(articleData.views_count || 0);
-
-        // 增加浏览量 - 异步进行，不影响页面渲染
-        articlesApi.incrementViews(articleData.id.toString())
-          .then(() => {
-            setViews_count(prev => prev + 1);
-          })
-          .catch(error => {
-            console.error('Failed to increment views:', error);
-          });
-
-        // 获取相关文章 - 使用 Set 优化去重逻辑
-        try {
-          const relatedResponse = await articlesApi.getRelatedArticles(articleData.id.toString(), 4);
-          const articles = relatedResponse.data || [];
-          const uniqueArticles = Array.from(
-            new Map(articles.map((article: Article) => [article.id, article])).values()
-          );
-          setRelatedArticles(uniqueArticles);
-        } catch (relatedError) {
-          console.error('Failed to load related articles:', relatedError);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '文章加载失败');
-      } finally {
-        setLoading(false);
+        const relatedResponse = await articlesApi.getRelatedArticles(articleData.id.toString(), 4);
+        const articles = relatedResponse.data || [];
+        const uniqueArticles = Array.from(
+          new Map(articles.map((article: Article) => [article.id, article])).values()
+        );
+        setRelatedArticles(uniqueArticles);
+      } catch (relatedError) {
+        console.error('Failed to load related articles:', relatedError);
       }
-    }, [slug]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '文章加载失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [slug, navigate]);
 
+  useEffect(() => {
     loadArticle();
     
     // 重置阅读状态
     setHasCompletedReading(false);
-  }, [slug, navigate, loadArticle]);
+  }, [loadArticle]);
 
   const handleLike = useCallback(async () => {
     if (!article || likeLoading) return;
