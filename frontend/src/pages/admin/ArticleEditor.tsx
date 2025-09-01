@@ -3,8 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import type { Article, CreateArticleInput, UpdateArticleInput, Category, Tag, Series } from '../../types';
 import { articlesApi, categoriesApi, tagsApi } from '../../api';
 import seriesApi from '../../services/seriesApi';
-import MarkdownEditor from '../../components/MarkdownEditor';
-import EnhancedArticleEditor from '../../components/editor/EnhancedArticleEditor';
+import ByteMDEditor from '../../components/ByteMDEditor';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import FileImport from '../../components/FileImport';
 import RSSImport from '../../components/RSSImport';
@@ -30,8 +29,7 @@ export default function ArticleEditor() {
     metaKeywords: '',
   });
 
-  // Editor preferences
-  const [editorType, setEditorType] = useState<'enhanced' | 'markdown'>('enhanced');
+  // Note: Using ByteMD as the single editor solution
 
   // UI state
   const [loading, setLoading] = useState(false);
@@ -324,17 +322,8 @@ export default function ArticleEditor() {
     setError(errorMessage);
   };
 
-  // Enhanced editor auto-save handler
-  const handleEnhancedAutoSave = async (content: string) => {
-    if (!isEditing || !formData.title.trim()) return;
-    
-    // Update form data with new content
-    const updatedFormData = { ...formData, content };
-    setFormData(updatedFormData);
-    
-    // Save silently
-    await handleSave(true);
-  };
+  // ByteMD editor handles content changes through the onChange callback
+  // Auto-save is managed by the useEffect above
 
   // Content validation
   const validateContent = () => {
@@ -529,55 +518,16 @@ export default function ArticleEditor() {
 
                 {/* Content Editor */}
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      文章内容 *
-                    </label>
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">编辑器类型:</span>
-                      <div className="flex rounded-lg shadow-sm overflow-hidden">
-                        <button
-                          type="button"
-                          onClick={() => setEditorType('enhanced')}
-                          className={`px-3 py-1.5 text-xs font-medium border transition-all duration-200 ${
-                            editorType === 'enhanced'
-                              ? 'bg-primary-600 text-white border-primary-600'
-                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
-                          }`}
-                        >
-                          增强编辑器
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditorType('markdown')}
-                          className={`px-3 py-1.5 text-xs font-medium border-t border-b border-r rounded-r-lg transition-all duration-200 ${
-                            editorType === 'markdown'
-                              ? 'bg-primary-600 text-white border-primary-600'
-                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
-                          }`}
-                        >
-                          Markdown
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                    文章内容 *
+                  </label>
                   
-                  {editorType === 'enhanced' ? (
-                    <EnhancedArticleEditor
-                      value={formData.content}
-                      onChange={(value) => handleInputChange('content', value)}
-                      onAutoSave={handleEnhancedAutoSave}
-                      height={500}
-                      autoSaveInterval={15000} // 15 seconds
-                      placeholder="开始编写你的精彩文章..."
-                    />
-                  ) : (
-                    <MarkdownEditor
-                      value={formData.content}
-                      onChange={(value) => handleInputChange('content', value)}
-                      height={500}
-                    />
-                  )}
+                  <ByteMDEditor
+                    value={formData.content}
+                    onChange={(value) => handleInputChange('content', value)}
+                    height={500}
+                    placeholder="开始编写你的精彩文章..."
+                  />
                 </div>
               </div>
             )}
