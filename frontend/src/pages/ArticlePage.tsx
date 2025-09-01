@@ -9,8 +9,7 @@ import CollapsibleTOC from '../components/reading/CollapsibleTOC';
 import StripTOC from '../components/reading/StripTOC';
 import SubstackLayout from '../components/SubstackLayout';
 import { useReadingTime } from '../hooks/useReadingTime';
-import { useReadingCompletion } from '../components/reading/ReadingProgress';
-import { formatDate, formatReadingTime } from '../utils';
+import { formatDate } from '../utils';
 
 // Memoized RelatedArticles component to prevent unnecessary re-renders
 const RelatedArticles = memo(({ articles }: { articles: Article[] }) => {
@@ -84,13 +83,42 @@ export default function ArticlePage() {
     });
   }, [article?.content]);
 
-  // 阅读完成监听 - 使用useCallback优化
-  const handleReadingComplete = useCallback(() => {
-    console.log('文章阅读完成！');
-    // 可以在这里添加阅读完成的统计或其他逻辑
-  }, []);
+  // 优化的阅读完成监听 - 使用 Intersection Observer 避免滚动事件性能问题
+  const [hasCompletedReading, setHasCompletedReading] = useState(false);
   
-  useReadingCompletion(handleReadingComplete, 85); // 阅读85%认为完成
+  const handleReadingComplete = useCallback(() => {
+    if (!hasCompletedReading) {
+      setHasCompletedReading(true);
+      console.log('文章阅读完成！');
+      // 可以在这里添加阅读完成的统计或其他逻辑
+    }
+  }, [hasCompletedReading]);
+  
+  // 使用 Intersection Observer 监听文章底部，避免滚动事件性能问题
+  useEffect(() => {
+    if (!contentRef.current || hasCompletedReading) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting) {
+          handleReadingComplete();
+        }
+      },
+      { 
+        threshold: 0.8, // 当80%的内容可见时触发
+        rootMargin: '0px 0px -20% 0px' // 优化触发区域
+      }
+    );
+    
+    // 监听内容区域的最后一个元素
+    const lastElement = contentRef.current.lastElementChild;
+    if (lastElement) {
+      observer.observe(lastElement);
+    }
+    
+    return () => observer.disconnect();
+  }, [handleReadingComplete, article?.content, hasCompletedReading]);
 
   useEffect(() => {
     if (!slug) {
@@ -107,7 +135,7 @@ export default function ArticlePage() {
         const articleResponse = await articlesApi.getArticleBySlug(slug);
         const articleData = articleResponse.data;
         
-        // 批量更新状态减少重渲染
+        // 使用单次批量状态更新减少重渲染
         setArticle(articleData);
         setLikes_count(articleData.likes_count);
         setLiked(articleData.is_liked || false);
@@ -116,23 +144,20 @@ export default function ArticlePage() {
         // 增加浏览量 - 异步进行，不影响页面渲染
         articlesApi.incrementViews(articleData.id.toString())
           .then(() => {
-            // 使用函数式更新避免依赖
             setViews_count(prev => prev + 1);
           })
           .catch(error => {
             console.error('Failed to increment views:', error);
-            // 静默失败，不影响用户体验
           });
 
-        // 获取相关文章 - 优化去重逻辑
+        // 获取相关文章 - 使用 Set 优化去重逻辑
         try {
           const relatedResponse = await articlesApi.getRelatedArticles(articleData.id.toString(), 4);
           const articles = relatedResponse.data || [];
-          const uniqueRelatedArticles = articles.filter(
-            (article: Article, index: number, self: Article[]) => 
-              index === self.findIndex(a => a.id === article.id)
+          const uniqueArticles = Array.from(
+            new Map(articles.map((article: Article) => [article.id, article])).values()
           );
-          setRelatedArticles(uniqueRelatedArticles);
+          setRelatedArticles(uniqueArticles);
         } catch (relatedError) {
           console.error('Failed to load related articles:', relatedError);
         }
@@ -144,7 +169,10 @@ export default function ArticlePage() {
     }, [slug]);
 
     loadArticle();
-  }, [slug, navigate]);
+    
+    // 重置阅读状态
+    setHasCompletedReading(false);
+  }, [slug, navigate, loadArticle]);
 
   const handleLike = useCallback(async () => {
     if (!article || likeLoading) return;
@@ -219,7 +247,7 @@ export default function ArticlePage() {
     );
   }
 
-  // 缓存文章内容和相关计算
+  // 缓存文章内容和相关计算 - 更细粒度的依赖
   const memoizedContent = useMemo(() => {
     if (!article) return null;
     
@@ -234,11 +262,13 @@ export default function ArticlePage() {
       publishedAt: article.published_at || article.created_at,
       excerpt: article.excerpt
     };
-  }, [article]);
+  }, [article?.id, article?.title, article?.content, article?.cover_image]);
 
-  // 缓存通知组件避免重复创建
+  // 优化的通知组件缓存
   const NotificationComponent = useMemo(() => {
     if (!notification) return null;
+    
+    const handleDismiss = () => setNotification(null);
     
     return (
       <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-medium transition-all duration-300 backdrop-blur-sm ${
@@ -249,8 +279,9 @@ export default function ArticlePage() {
         <div className="flex items-center">
           <span className="text-sm font-medium">{notification.message}</span>
           <button
-            onClick={() => setNotification(null)}
+            onClick={handleDismiss}
             className="ml-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200"
+            aria-label="关闭通知"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -259,7 +290,7 @@ export default function ArticlePage() {
         </div>
       </div>
     );
-  }, [notification]);
+  }, [notification?.message, notification?.type]);
 
   return (
     <>
