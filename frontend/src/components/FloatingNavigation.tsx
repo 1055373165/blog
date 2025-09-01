@@ -166,6 +166,7 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
       }
 
       const target = event.target as Node;
+      const clickedElement = event.target as HTMLElement;
       
       // 如果点击的是导航栏内部，显示导航
       if (navigationRef.current && navigationRef.current.contains(target)) {
@@ -173,29 +174,45 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
         return;
       }
 
-      // 简化逻辑：双击任何非导航区域切换导航显示状态
-      // 检查是否点击在主要内容区域
-      const clickedElement = event.target as HTMLElement;
-      const isClickOnInteractive = clickedElement.closest('button, a, input, select, textarea, [role="button"], [tabindex], .interactive');
+      // 检查是否点击在交互元素上 - 扩展选择器以包含更多交互元素
+      const isClickOnInteractive = clickedElement.closest([
+        'button', 'a', 'input', 'select', 'textarea', 
+        '[role="button"]', '[tabindex]', '.interactive',
+        // 文章卡片相关选择器
+        'article', '.group', '[data-article]',
+        // 轮播相关选择器  
+        '.carousel', '.book-card', '[data-book]',
+        // 其他交互组件
+        '.card', '.clickable', '[onclick]'
+      ].join(', '));
       
-      // 只有在点击非交互元素时才切换导航状态
-      // 移除过于复杂的content区域检测，改为简单的切换逻辑
-      if (!isClickOnInteractive) {
-        // 单击非交互区域时，如果导航当前可见且用户看起来想要隐藏它，则隐藏
-        // 但添加更宽松的条件：只有在点击页面主体内容时才隐藏
-        const isClickOnMainContent = clickedElement.closest('main, article, .prose, .content');
-        if (isClickOnMainContent && isNavigationVisible) {
-          setIsNavigationVisible(false);
-        } else if (!isNavigationVisible) {
-          // 如果导航隐藏了，点击任何地方都显示它
-          setIsNavigationVisible(true);
-        }
+      // 如果点击的是交互元素，不干预正常的点击行为
+      if (isClickOnInteractive) {
+        return;
+      }
+
+      // 只有在点击真正的空白区域时才切换导航状态
+      // 检查点击是否在页面边距、空白区域
+      const isClickOnBackground = (
+        clickedElement.tagName === 'HTML' ||
+        clickedElement.tagName === 'BODY' ||
+        clickedElement.classList.contains('bg-gray-50') ||
+        clickedElement.classList.contains('bg-gray-900') ||
+        clickedElement.classList.contains('min-h-screen') ||
+        // 检查是否点击在容器的padding区域
+        (clickedElement.classList.contains('max-w-7xl') && event.target === clickedElement)
+      );
+      
+      if (isClickOnBackground) {
+        // 在空白区域点击时切换导航显示状态
+        setIsNavigationVisible(!isNavigationVisible);
       }
     };
 
-    document.addEventListener('click', handleGlobalClick, true);
+    // 使用bubble阶段而不是capture阶段，让交互元素优先处理点击
+    document.addEventListener('click', handleGlobalClick, false);
     return () => {
-      document.removeEventListener('click', handleGlobalClick, true);
+      document.removeEventListener('click', handleGlobalClick, false);
     };
   }, [themeSettingsOpen, isExpanded, isNavigationVisible]);
 

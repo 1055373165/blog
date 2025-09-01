@@ -92,6 +92,7 @@ export default function HomePage() {
             <Link 
               to="/articles"
               className="group inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary-600 to-go-600 text-white rounded-xl hover:from-primary-700 hover:to-go-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+              onClick={(e) => e.stopPropagation()}
             >
               查看全部
               <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,7 +129,10 @@ export default function HomePage() {
             {/* 布局切换器 */}
             <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-xl p-1 border border-gray-200 dark:border-gray-700">
               <button 
-                onClick={() => setPopularLayoutVariant('masonry')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPopularLayoutVariant('masonry');
+                }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   popularLayoutVariant === 'masonry'
                     ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
@@ -138,7 +142,10 @@ export default function HomePage() {
                 瀑布流
               </button>
               <button 
-                onClick={() => setPopularLayoutVariant('grid')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPopularLayoutVariant('grid');
+                }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   popularLayoutVariant === 'grid'
                     ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
@@ -176,6 +183,7 @@ export default function HomePage() {
             <Link 
               to="/articles"
               className="group inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary-600 to-go-600 text-white rounded-xl hover:from-primary-700 hover:to-go-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+              onClick={(e) => e.stopPropagation()}
             >
               查看全部
               <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">

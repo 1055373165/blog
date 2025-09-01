@@ -82,6 +82,8 @@ const EnhancedArticleCard = ({
   };
 
   const handleClick = (e: React.MouseEvent) => {
+    // 防止事件冒泡影响其他组件
+    e.stopPropagation();
     // 直接导航到文章页面
     window.location.href = `/article/${article.slug}`;
   };
@@ -89,10 +91,13 @@ const EnhancedArticleCard = ({
   return (
       <article
         ref={cardRef}
+        data-article="true"
+        data-article-slug={article.slug}
         className={clsx(
           'group relative bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg transition-all duration-700 ease-out cursor-pointer',
           'border border-gray-200 dark:border-gray-700',
           'hover:shadow-2xl hover:border-primary-300 dark:hover:border-primary-600',
+          'clickable card', // Add explicit classes for click detection
           isVisible && 'animate-fade-in-up',
           className
         )}
