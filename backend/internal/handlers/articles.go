@@ -17,18 +17,18 @@ import (
 
 // CreateArticleRequest 创建文章请求结构
 type CreateArticleRequest struct {
-	Title           string  `json:"title" binding:"required"`
-	Content         string  `json:"content" binding:"required"`
-	Excerpt         string  `json:"excerpt"`
-	CoverImage      string  `json:"cover_image"`
-	CategoryID      *uint   `json:"category_id"`
-	TagIDs          []uint  `json:"tag_ids"`
-	SeriesID        *uint   `json:"series_id"`
-	SeriesOrder     *int    `json:"series_order"`
-	IsPublished     bool    `json:"is_published"`
-	MetaTitle       string  `json:"meta_title"`
-	MetaDescription string  `json:"meta_description"`
-	MetaKeywords    string  `json:"meta_keywords"`
+	Title           string `json:"title" binding:"required"`
+	Content         string `json:"content" binding:"required"`
+	Excerpt         string `json:"excerpt"`
+	CoverImage      string `json:"cover_image"`
+	CategoryID      *uint  `json:"category_id"`
+	TagIDs          []uint `json:"tag_ids"`
+	SeriesID        *uint  `json:"series_id"`
+	SeriesOrder     *int   `json:"series_order"`
+	IsPublished     bool   `json:"is_published"`
+	MetaTitle       string `json:"meta_title"`
+	MetaDescription string `json:"meta_description"`
+	MetaKeywords    string `json:"meta_keywords"`
 }
 
 // UpdateArticleRequest 更新文章请求结构
@@ -106,13 +106,13 @@ func GetArticles(c *gin.Context) {
 
 	// 排序
 	allowedSortFields := map[string]bool{
-		"created_at":    true,
-		"updated_at":    true,
-		"published_at":  true,
-		"title":         true,
-		"views_count":   true,
-		"likes_count":   true,
-		"reading_time":  true,
+		"created_at":   true,
+		"updated_at":   true,
+		"published_at": true,
+		"title":        true,
+		"views_count":  true,
+		"likes_count":  true,
+		"reading_time": true,
 	}
 	if !allowedSortFields[sortBy] {
 		sortBy = "created_at"
@@ -146,7 +146,7 @@ func GetArticles(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": gin.H{
-			"articles":    articles,
+			"articles": articles,
 			"pagination": gin.H{
 				"page":        page,
 				"limit":       limit,
@@ -238,32 +238,32 @@ func GetArticleBySlug(c *gin.Context) {
 
 	// 创建响应数据，包含点赞状态
 	responseData := gin.H{
-		"id":            article.ID,
-		"title":         article.Title,
-		"slug":          article.Slug,
-		"excerpt":       article.Excerpt,
-		"content":       article.Content,
-		"cover_image":    article.CoverImage,
-		"is_published":   article.IsPublished,
-		"is_draft":       article.IsDraft,
-		"published_at":   article.PublishedAt,
-		"reading_time":   article.ReadingTime,
-		"views_count":    article.ViewsCount,
-		"likes_count":    article.LikesCount,
-		"author_id":      article.AuthorID,
-		"category_id":    article.CategoryID,
-		"series_id":      article.SeriesID,
-		"series_order":   article.SeriesOrder,
-		"meta_title":     article.MetaTitle,
+		"id":               article.ID,
+		"title":            article.Title,
+		"slug":             article.Slug,
+		"excerpt":          article.Excerpt,
+		"content":          article.Content,
+		"cover_image":      article.CoverImage,
+		"is_published":     article.IsPublished,
+		"is_draft":         article.IsDraft,
+		"published_at":     article.PublishedAt,
+		"reading_time":     article.ReadingTime,
+		"views_count":      article.ViewsCount,
+		"likes_count":      article.LikesCount,
+		"author_id":        article.AuthorID,
+		"category_id":      article.CategoryID,
+		"series_id":        article.SeriesID,
+		"series_order":     article.SeriesOrder,
+		"meta_title":       article.MetaTitle,
 		"meta_description": article.MetaDescription,
-		"meta_keywords":  article.MetaKeywords,
-		"created_at":     article.CreatedAt,
-		"updated_at":     article.UpdatedAt,
-		"author":        article.Author,
-		"category":      article.Category,
-		"series":        article.Series,
-		"tags":          article.Tags,
-		"is_liked":       isLiked,
+		"meta_keywords":    article.MetaKeywords,
+		"created_at":       article.CreatedAt,
+		"updated_at":       article.UpdatedAt,
+		"author":           article.Author,
+		"category":         article.Category,
+		"series":           article.Series,
+		"tags":             article.Tags,
+		"is_liked":         isLiked,
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -274,15 +274,6 @@ func GetArticleBySlug(c *gin.Context) {
 
 // CreateArticle 创建文章
 func CreateArticle(c *gin.Context) {
-	userID, exists := middleware.GetCurrentUserID(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"success": false,
-			"error":   "用户未认证",
-		})
-		return
-	}
-
 	var req CreateArticleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -295,7 +286,7 @@ func CreateArticle(c *gin.Context) {
 
 	// 生成slug
 	slug := utils.GenerateSlug(req.Title)
-	
+
 	// 检查slug是否已存在
 	var existingArticle models.Article
 	err := database.DB.Where("slug = ?", slug).First(&existingArticle).Error
@@ -479,7 +470,7 @@ func UpdateArticle(c *gin.Context) {
 		updates["content"] = *req.Content
 		// 重新计算阅读时间
 		updates["reading_time"] = utils.CalculateReadingTime(*req.Content)
-		
+
 		// 如果没有提供新的摘要，从新内容生成
 		if req.Excerpt == nil {
 			updates["excerpt"] = utils.TruncateText(utils.StripHTML(*req.Content), 150)
@@ -509,7 +500,7 @@ func UpdateArticle(c *gin.Context) {
 	if req.IsPublished != nil {
 		updates["is_published"] = *req.IsPublished
 		updates["is_draft"] = !(*req.IsPublished)
-		
+
 		// 如果从草稿变为发布，设置发布时间
 		if *req.IsPublished && !article.IsPublished {
 			now := time.Now()

@@ -306,7 +306,7 @@ export default function BookCarousel({
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             {loading ? `正在加载书籍数据... (${useLocalImages ? '本地优化' : 'API模式'})` : 
              error ? `书籍数据加载失败，请尝试刷新 (${useLocalImages ? '本地优化' : 'API模式'})` :
-             hasBooks ? `从入门到精通，精心挑选的Go语言学习资源，当前共 ${totalBooks} 本书籍${useLocalImages ? ' (本地优化)' : ' (API模式)'}` :
+             hasBooks ? `从入门到精通，精心挑选的Go语言学习资源，当前共 ${totalBooks} 本书籍${useLocalImages}` :
              '暂无书籍数据，请检查books目录'}
           </p>
           
