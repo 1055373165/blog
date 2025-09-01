@@ -74,14 +74,11 @@ export default function ArticlePage() {
   const [likeLoading, setLikeLoading] = useState(false);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
 
-  // 阅读时间计算 - 缓存计算结果避免重复计算
-  const readingTime = useMemo(() => {
-    if (!article?.content) return { text: '0 分钟', words: 0, estimatedTime: '不到 1 分钟' };
-    return useReadingTime(article.content, {
-      includeImages: true,
-      includeTables: true
-    });
-  }, [article?.content]);
+  // 阅读时间计算 - 移动到顶级以符合 React Hooks 规则
+  const readingTime = useReadingTime(article?.content || '', {
+    includeImages: true,
+    includeTables: true
+  });
 
   // 优化的阅读完成监听 - 使用 Intersection Observer 避免滚动事件性能问题
   const [hasCompletedReading, setHasCompletedReading] = useState(false);
@@ -204,6 +201,51 @@ export default function ArticlePage() {
     }
   }, [article, likeLoading, liked, likes_count]);
 
+  // 缓存文章内容和相关计算 - 更细粒度的依赖（移到顶级以符合 Hooks 规则）
+  const memoizedContent = useMemo(() => {
+    if (!article) return null;
+    
+    return {
+      title: article.title,
+      content: article.content,
+      coverImage: article.cover_image,
+      category: article.category,
+      series: article.series,
+      tags: article.tags,
+      author: article.author,
+      publishedAt: article.published_at || article.created_at,
+      excerpt: article.excerpt
+    };
+  }, [article?.id, article?.title, article?.content, article?.cover_image]);
+
+  // 优化的通知组件缓存（移到顶级以符合 Hooks 规则）
+  const NotificationComponent = useMemo(() => {
+    if (!notification) return null;
+    
+    const handleDismiss = () => setNotification(null);
+    
+    return (
+      <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-medium transition-all duration-300 backdrop-blur-sm ${
+        notification.type === 'error' 
+          ? 'bg-red-50/90 border border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-700 dark:text-red-400' 
+          : 'bg-go-50/90 border border-go-200 text-go-700 dark:bg-go-900/20 dark:border-go-700 dark:text-go-400'
+      }`}>
+        <div className="flex items-center">
+          <span className="text-sm font-medium">{notification.message}</span>
+          <button
+            onClick={handleDismiss}
+            className="ml-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200"
+            aria-label="关闭通知"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    );
+  }, [notification?.message, notification?.type]);
+
   // 自动隐藏通知 - 优化定时器处理
   useEffect(() => {
     if (!notification) return;
@@ -247,51 +289,6 @@ export default function ArticlePage() {
       </div>
     );
   }
-
-  // 缓存文章内容和相关计算 - 更细粒度的依赖
-  const memoizedContent = useMemo(() => {
-    if (!article) return null;
-    
-    return {
-      title: article.title,
-      content: article.content,
-      coverImage: article.cover_image,
-      category: article.category,
-      series: article.series,
-      tags: article.tags,
-      author: article.author,
-      publishedAt: article.published_at || article.created_at,
-      excerpt: article.excerpt
-    };
-  }, [article?.id, article?.title, article?.content, article?.cover_image]);
-
-  // 优化的通知组件缓存
-  const NotificationComponent = useMemo(() => {
-    if (!notification) return null;
-    
-    const handleDismiss = () => setNotification(null);
-    
-    return (
-      <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-medium transition-all duration-300 backdrop-blur-sm ${
-        notification.type === 'error' 
-          ? 'bg-red-50/90 border border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-700 dark:text-red-400' 
-          : 'bg-go-50/90 border border-go-200 text-go-700 dark:bg-go-900/20 dark:border-go-700 dark:text-go-400'
-      }`}>
-        <div className="flex items-center">
-          <span className="text-sm font-medium">{notification.message}</span>
-          <button
-            onClick={handleDismiss}
-            className="ml-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200"
-            aria-label="关闭通知"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    );
-  }, [notification?.message, notification?.type]);
 
   return (
     <>
