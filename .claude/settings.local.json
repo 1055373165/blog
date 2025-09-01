@@ -56,7 +56,11 @@
       "Bash(nginx:*)",
       "Bash(docker run:*)",
       "Bash(docker logs:*)",
-      "Bash(docker-compose:*)"
+      "Bash(docker-compose:*)",
+      "Bash(npx:*)",
+      "Bash(npm start)",
+      "Bash(npm --prefix /Users/smy/projects/blog/frontend install @bytemd/react @bytemd/plugin-gfm @bytemd/plugin-highlight @bytemd/plugin-frontmatter)",
+      "Bash(npm ls:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
