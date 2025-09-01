@@ -173,18 +173,23 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
         return;
       }
 
-      // 如果点击的是页面其他区域（空白区域），切换导航显示状态
+      // 简化逻辑：双击任何非导航区域切换导航显示状态
       // 检查是否点击在主要内容区域
       const clickedElement = event.target as HTMLElement;
-      const isClickOnContent = clickedElement.closest('main, article, .content-area, [role="main"]');
       const isClickOnInteractive = clickedElement.closest('button, a, input, select, textarea, [role="button"], [tabindex], .interactive');
       
-      // 只有在点击内容区域且不是交互元素时才隐藏导航
-      if (isClickOnContent && !isClickOnInteractive && isNavigationVisible) {
-        setIsNavigationVisible(false);
-      } else if (!isClickOnContent && !isNavigationVisible) {
-        // 点击非内容区域时显示导航
-        setIsNavigationVisible(true);
+      // 只有在点击非交互元素时才切换导航状态
+      // 移除过于复杂的content区域检测，改为简单的切换逻辑
+      if (!isClickOnInteractive) {
+        // 单击非交互区域时，如果导航当前可见且用户看起来想要隐藏它，则隐藏
+        // 但添加更宽松的条件：只有在点击页面主体内容时才隐藏
+        const isClickOnMainContent = clickedElement.closest('main, article, .prose, .content');
+        if (isClickOnMainContent && isNavigationVisible) {
+          setIsNavigationVisible(false);
+        } else if (!isNavigationVisible) {
+          // 如果导航隐藏了，点击任何地方都显示它
+          setIsNavigationVisible(true);
+        }
       }
     };
 
