@@ -154,6 +154,16 @@ export interface CreateCategoryRequest {
 export interface UpdateCategoryRequest extends Partial<CreateCategoryRequest> {
 }
 
+// 系列创建/更新请求类型
+export interface CreateSeriesRequest {
+  name: string;
+  slug?: string;
+  description?: string;
+}
+
+export interface UpdateSeriesRequest extends Partial<CreateSeriesRequest> {
+}
+
 // 搜索相关类型
 export interface SearchFilters {
   query?: string;

@@ -27,6 +27,7 @@ import ArticleList from './pages/admin/ArticleList';
 import ArticleEditor from './pages/admin/ArticleEditor';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminTags from './pages/admin/AdminTags';
+import AdminSeries from './pages/admin/AdminSeries';
 
 // 布局组件
 import Layout from './components/Layout';
@@ -98,6 +99,7 @@ function RouterContent() {
               <Route path="articles/:id/edit" element={<ArticleEditor />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="tags" element={<AdminTags />} />
+              <Route path="series" element={<AdminSeries />} />
             </Route>
 
             {/* 404页面 */}

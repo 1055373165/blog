@@ -4,7 +4,7 @@ export { apiClient } from './client';
 export { articlesApi } from './articles';
 export { categoriesApi } from './categories';
 export { tagsApi } from './tags';
-export { default as seriesApi } from '../services/seriesApi';
+export { seriesApi } from './series';
 export * from './books';
 
 // 认证相关API
