@@ -50,6 +50,8 @@ const codeThemeOptions: Array<{ value: CodeTheme; label: string; preview: string
   { value: 'atelierLakesideDark', label: 'Lakeside Dark', preview: '#161B1D', category: 'Atelier' },
   { value: 'atelierSeasideLight', label: 'Seaside Light', preview: '#F4F9F4', category: 'Atelier' },
   { value: 'atelierSeasideDark', label: 'Seaside Dark', preview: '#131513', category: 'Atelier' },
+  { value: 'atelierSulphurpoolLight', label: 'Sulphurpool Light', preview: '#F5F7FF', category: 'Atelier' },
+  { value: 'atelierSulphurpoolDark', label: 'Sulphurpool Dark', preview: '#202746', category: 'Atelier' },
   
   // 极客主题
   { value: 'geek', label: 'Geek 黑客', preview: '#000000', category: '极客' },

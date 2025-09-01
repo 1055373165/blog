@@ -102,14 +102,47 @@ export default function ArticlePreview({ article, className = '' }: ArticlePrevi
             components={{
               code({ node, inline, className, children, ...props }: any) {
                 const match = /language-(\w+)/.exec(className || '');
+                
+                // Extract text content from children (handle both string and React element cases)
+                const getTextContent = (children: any): string => {
+                  if (typeof children === 'string') {
+                    return children;
+                  }
+                  if (Array.isArray(children)) {
+                    return children.map(child => getTextContent(child)).join('');
+                  }
+                  if (children && typeof children === 'object' && children.props && children.props.children) {
+                    return getTextContent(children.props.children);
+                  }
+                  return String(children || '');
+                };
+                
                 return !inline && match ? (
                   <SyntaxHighlighter
                     style={oneLight as any}
                     language={match[1]}
                     PreTag="div"
+                    customStyle={{
+                      margin: 0,
+                      padding: '1rem',
+                      fontSize: 'inherit',
+                      lineHeight: 'inherit',
+                      whiteSpace: 'pre',
+                      wordBreak: 'normal',
+                      wordWrap: 'normal',
+                      tabSize: 2,
+                    }}
+                    codeTagProps={{
+                      style: {
+                        padding: 0,
+                        margin: 0,
+                        fontSize: 'inherit',
+                        fontFamily: 'inherit',
+                      }
+                    }}
                     {...props}
                   >
-                    {String(children).replace(/\n$/, '')}
+                    {getTextContent(children).replace(/\n$/, '')}
                   </SyntaxHighlighter>
                 ) : (
                   <code className={className} {...props}>
