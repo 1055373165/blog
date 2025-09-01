@@ -1,17 +1,64 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { articlesApi } from '../api';
 import { Article } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import OptimizedImage from '../components/ui/OptimizedImage';
-import ReadingProgress from '../components/reading/ReadingProgress';
 import CollapsibleTOC from '../components/reading/CollapsibleTOC';
 import StripTOC from '../components/reading/StripTOC';
 import SubstackLayout from '../components/SubstackLayout';
 import { useReadingTime } from '../hooks/useReadingTime';
 import { useReadingCompletion } from '../components/reading/ReadingProgress';
 import { formatDate, formatReadingTime } from '../utils';
+
+// Memoized RelatedArticles component to prevent unnecessary re-renders
+const RelatedArticles = memo(({ articles }: { articles: Article[] }) => {
+  if (articles.length === 0) return null;
+
+  return (
+    <section className="mt-16">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 font-heading">
+        相关文章推荐
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {articles.map((relatedArticle) => (
+          <Link
+            key={relatedArticle.id}
+            to={`/article/${relatedArticle.slug}`}
+            className="card card-hover group block overflow-hidden"
+          >
+            {relatedArticle.cover_image && (
+              <div className="overflow-hidden">
+                <OptimizedImage
+                  src={relatedArticle.cover_image}
+                  alt={`${relatedArticle.title} 的封面图片`}
+                  aspectRatio="16/9"
+                  className="group-hover:scale-105 transition-transform duration-300"
+                  placeholder="skeleton"
+                />
+              </div>
+            )}
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-go-600 dark:group-hover:text-go-400 line-clamp-2 mb-3 transition-colors duration-200">
+                {relatedArticle.title}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 mb-4 leading-relaxed">
+                {relatedArticle.excerpt}
+              </p>
+              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span className="font-medium">{relatedArticle.author.name}</span>
+                <span>{formatDate(relatedArticle.published_at || relatedArticle.created_at)}</span>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+});
+
+RelatedArticles.displayName = 'RelatedArticles';
 
 export default function ArticlePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -28,17 +75,22 @@ export default function ArticlePage() {
   const [likeLoading, setLikeLoading] = useState(false);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
 
-  // 阅读时间计算
-  const readingTime = useReadingTime(article?.content || '', {
-    includeImages: true,
-    includeTables: true
-  });
+  // 阅读时间计算 - 缓存计算结果避免重复计算
+  const readingTime = useMemo(() => {
+    if (!article?.content) return { text: '0 分钟', words: 0, estimatedTime: '不到 1 分钟' };
+    return useReadingTime(article.content, {
+      includeImages: true,
+      includeTables: true
+    });
+  }, [article?.content]);
 
-  // 阅读完成监听
-  useReadingCompletion(() => {
+  // 阅读完成监听 - 使用useCallback优化
+  const handleReadingComplete = useCallback(() => {
     console.log('文章阅读完成！');
     // 可以在这里添加阅读完成的统计或其他逻辑
-  }, 85); // 阅读85%认为完成
+  }, []);
+  
+  useReadingCompletion(handleReadingComplete, 85); // 阅读85%认为完成
 
   useEffect(() => {
     if (!slug) {
@@ -46,7 +98,7 @@ export default function ArticlePage() {
       return;
     }
 
-    const loadArticle = async () => {
+    const loadArticle = useCallback(async () => {
       try {
         setLoading(true);
         setError(null);
@@ -54,6 +106,8 @@ export default function ArticlePage() {
         // 获取文章详情
         const articleResponse = await articlesApi.getArticleBySlug(slug);
         const articleData = articleResponse.data;
+        
+        // 批量更新状态减少重渲染
         setArticle(articleData);
         setLikes_count(articleData.likes_count);
         setLiked(articleData.is_liked || false);
@@ -62,7 +116,7 @@ export default function ArticlePage() {
         // 增加浏览量 - 异步进行，不影响页面渲染
         articlesApi.incrementViews(articleData.id.toString())
           .then(() => {
-            // 更新本地显示的浏览次数
+            // 使用函数式更新避免依赖
             setViews_count(prev => prev + 1);
           })
           .catch(error => {
@@ -70,10 +124,9 @@ export default function ArticlePage() {
             // 静默失败，不影响用户体验
           });
 
-        // 获取相关文章
+        // 获取相关文章 - 优化去重逻辑
         try {
           const relatedResponse = await articlesApi.getRelatedArticles(articleData.id.toString(), 4);
-          // 确保data存在且为数组，然后去重处理
           const articles = relatedResponse.data || [];
           const uniqueRelatedArticles = articles.filter(
             (article: Article, index: number, self: Article[]) => 
@@ -88,7 +141,7 @@ export default function ArticlePage() {
       } finally {
         setLoading(false);
       }
-    };
+    }, [slug]);
 
     loadArticle();
   }, [slug, navigate]);
@@ -122,14 +175,15 @@ export default function ArticlePage() {
     }
   }, [article, likeLoading, liked, likes_count]);
 
-  // 自动隐藏通知
+  // 自动隐藏通知 - 优化定时器处理
   useEffect(() => {
-    if (notification) {
-      const timer = setTimeout(() => {
-        setNotification(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
+    if (!notification) return;
+    
+    const timer = setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+    
+    return () => clearTimeout(timer);
   }, [notification]);
 
   if (loading) {
@@ -165,35 +219,53 @@ export default function ArticlePage() {
     );
   }
 
+  // 缓存文章内容和相关计算
+  const memoizedContent = useMemo(() => {
+    if (!article) return null;
+    
+    return {
+      title: article.title,
+      content: article.content,
+      coverImage: article.cover_image,
+      category: article.category,
+      series: article.series,
+      tags: article.tags,
+      author: article.author,
+      publishedAt: article.published_at || article.created_at,
+      excerpt: article.excerpt
+    };
+  }, [article]);
+
+  // 缓存通知组件避免重复创建
+  const NotificationComponent = useMemo(() => {
+    if (!notification) return null;
+    
+    return (
+      <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-medium transition-all duration-300 backdrop-blur-sm ${
+        notification.type === 'error' 
+          ? 'bg-red-50/90 border border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-700 dark:text-red-400' 
+          : 'bg-go-50/90 border border-go-200 text-go-700 dark:bg-go-900/20 dark:border-go-700 dark:text-go-400'
+      }`}>
+        <div className="flex items-center">
+          <span className="text-sm font-medium">{notification.message}</span>
+          <button
+            onClick={() => setNotification(null)}
+            className="ml-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    );
+  }, [notification]);
+
   return (
     <>
-      {/* 阅读进度条 */}
-      <ReadingProgress 
-        showPercentage={false}
-        threshold={0.1}
-        color="rgb(13, 148, 136)"
-      />
 
-      {/* Notification */}
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-medium transition-all duration-300 backdrop-blur-sm ${
-          notification.type === 'error' 
-            ? 'bg-red-50/90 border border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-700 dark:text-red-400' 
-            : 'bg-go-50/90 border border-go-200 text-go-700 dark:bg-go-900/20 dark:border-go-700 dark:text-go-400'
-        }`}>
-          <div className="flex items-center">
-            <span className="text-sm font-medium">{notification.message}</span>
-            <button
-              onClick={() => setNotification(null)}
-              className="ml-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Notification - 使用缓存的组件 */}
+      {NotificationComponent}
 
       {/* Substack-style Layout */}
       <SubstackLayout
@@ -211,12 +283,12 @@ export default function ArticlePage() {
             role="article"
             aria-labelledby="article-title"
           >
-            {/* Cover Image */}
-            {article.cover_image && (
+            {/* Cover Image - 使用缓存的数据 */}
+            {memoizedContent?.coverImage && (
               <div className="mb-8 card hover:shadow-strong transition-all duration-300">
                 <OptimizedImage
-                  src={article.cover_image}
-                  alt={`${article.title} 的封面图片`}
+                  src={memoizedContent.coverImage}
+                  alt={`${memoizedContent.title} 的封面图片`}
                   aspectRatio="16/9"
                   priority={true}
                   className="w-full h-full object-cover rounded-xl"
@@ -226,21 +298,21 @@ export default function ArticlePage() {
             )}
 
             <div className="">
-          {/* Category and Series */}
+          {/* Category and Series - 使用缓存的数据 */}
           <div className="flex flex-wrap items-center gap-3 mb-6">
-            {article.category && (
+            {memoizedContent?.category && (
               <Link
-                to={`/category/${article.category.slug}`}
+                to={`/category/${memoizedContent.category.slug}`}
                 className="inline-block px-4 py-2 text-sm font-medium text-go-700 dark:text-go-300 
                            bg-go-100 dark:bg-go-900/30 rounded-xl hover:bg-go-200 hover:shadow-soft
                            hover:-translate-y-0.5 dark:hover:bg-go-900/50 transition-all duration-200"
               >
-                {article.category.name}
+                {memoizedContent.category.name}
               </Link>
             )}
-            {article.series && (
+            {memoizedContent?.series && (
               <Link
-                to={`/series/${article.series.slug}`}
+                to={`/series/${memoizedContent.series.slug}`}
                 className="inline-flex items-center px-4 py-2 text-sm font-medium text-purple-700 dark:text-purple-300 
                            bg-purple-100 dark:bg-purple-900/30 rounded-xl hover:bg-purple-200 hover:shadow-soft
                            hover:-translate-y-0.5 dark:hover:bg-purple-900/50 transition-all duration-200"
@@ -248,30 +320,30 @@ export default function ArticlePage() {
                 <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
                 </svg>
-                {article.series.name}
+                {memoizedContent.series.name}
                 {article.series_order && ` #${article.series_order}`}
               </Link>
             )}
           </div>
 
-              {/* Title */}
+              {/* Title - 使用缓存的数据 */}
               <h1 
                 id="article-title"
                 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-8 leading-tight font-heading text-shadow-sm"
               >
-                {article.title}
+                {memoizedContent?.title}
               </h1>
 
               {/* Meta Info */}
               <div className="flex flex-wrap items-center gap-6 pb-8 mb-8 border-b border-go-200 dark:border-go-700">
-            {/* Author */}
+            {/* Author - 使用缓存的数据 */}
             <div className="flex items-center">
               <div className="w-12 h-12 bg-gradient-to-br from-go-500 to-go-600 text-white rounded-xl flex items-center justify-center font-semibold text-lg shadow-soft">
-                {article.author.name.charAt(0).toUpperCase()}
+                {memoizedContent?.author.name.charAt(0).toUpperCase()}
               </div>
               <div className="ml-4">
                 <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {article.author.name}
+                  {memoizedContent?.author.name}
                 </div>
                 <div className="text-xs text-go-600 dark:text-go-400 font-medium">
                   作者
@@ -284,7 +356,7 @@ export default function ArticlePage() {
               <svg className="w-4 h-4 mr-2 text-go-600 dark:text-go-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
               </svg>
-              发布于 {formatDate(article.published_at || article.created_at)}
+              发布于 {formatDate(memoizedContent?.publishedAt)}
             </div>
 
               {/* Reading Time - 使用新的阅读时间计算 */}
@@ -327,10 +399,10 @@ export default function ArticlePage() {
             </div>
           </div>
 
-          {/* Tags */}
-          {article.tags && article.tags.length > 0 && (
+          {/* Tags - 使用缓存的数据 */}
+          {memoizedContent?.tags && memoizedContent.tags.length > 0 && (
             <div className="flex flex-wrap gap-3 mb-10">
-              {article.tags.map((tag) => (
+              {memoizedContent.tags.map((tag) => (
                 <Link
                   key={tag.id}
                   to={`/tag/${tag.slug}`}
@@ -345,74 +417,37 @@ export default function ArticlePage() {
             </div>
           )}
 
-              {/* Article Content */}
+              {/* Article Content - 使用缓存的数据和优化的MarkdownRenderer */}
               <div 
                 ref={contentRef}
                 className="article-content"
                 role="main"
                 aria-label="文章内容"
               >
-                <MarkdownRenderer 
-                  content={article.content}
-                  className="prose prose-lg max-w-none
-                             prose-headings:text-gray-900 dark:prose-headings:text-white prose-headings:font-heading
-                             prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-p:leading-relaxed prose-p:text-base
-                             prose-a:text-go-600 dark:prose-a:text-go-400 prose-a:font-medium hover:prose-a:text-go-700
-                             prose-strong:text-gray-900 dark:prose-strong:text-white prose-strong:font-semibold
-                             prose-code:text-go-700 dark:prose-code:text-go-300 prose-code:bg-go-50 dark:prose-code:bg-go-900/30 prose-code:px-2 prose-code:py-1 prose-code:rounded
-                             prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800 prose-pre:rounded-xl prose-pre:shadow-soft
-                             prose-blockquote:border-go-500 prose-blockquote:bg-go-50/50 dark:prose-blockquote:bg-go-900/20 prose-blockquote:rounded-lg prose-blockquote:p-4
-                             prose-img:rounded-xl prose-img:shadow-medium prose-img:border prose-img:border-gray-200 dark:prose-img:border-gray-700
-                             prose-li:text-gray-700 dark:prose-li:text-gray-300
-                             prose-table:border prose-table:border-gray-200 dark:prose-table:border-gray-700 prose-table:rounded-lg prose-table:overflow-hidden
-                             prose-th:bg-go-50 dark:prose-th:bg-go-900/30 prose-th:text-go-900 dark:prose-th:text-go-100
-                             prose-td:border-gray-200 dark:prose-td:border-gray-700"
-                />
+                {memoizedContent?.content && (
+                  <MarkdownRenderer 
+                    content={memoizedContent.content}
+                    className="prose prose-lg max-w-none
+                               prose-headings:text-gray-900 dark:prose-headings:text-white prose-headings:font-heading
+                               prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-p:leading-relaxed prose-p:text-base
+                               prose-a:text-go-600 dark:prose-a:text-go-400 prose-a:font-medium hover:prose-a:text-go-700
+                               prose-strong:text-gray-900 dark:prose-strong:text-white prose-strong:font-semibold
+                               prose-code:text-go-700 dark:prose-code:text-go-300 prose-code:bg-go-50 dark:prose-code:bg-go-900/30 prose-code:px-2 prose-code:py-1 prose-code:rounded
+                               prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800 prose-pre:rounded-xl prose-pre:shadow-soft
+                               prose-blockquote:border-go-500 prose-blockquote:bg-go-50/50 dark:prose-blockquote:bg-go-900/20 prose-blockquote:rounded-lg prose-blockquote:p-4
+                               prose-img:rounded-xl prose-img:shadow-medium prose-img:border prose-img:border-gray-200 dark:prose-img:border-gray-700
+                               prose-li:text-gray-700 dark:prose-li:text-gray-300
+                               prose-table:border prose-table:border-gray-200 dark:prose-table:border-gray-700 prose-table:rounded-lg prose-table:overflow-hidden
+                               prose-th:bg-go-50 dark:prose-th:bg-go-900/30 prose-th:text-go-900 dark:prose-th:text-go-100
+                               prose-td:border-gray-200 dark:prose-td:border-gray-700"
+                  />
+                )}
               </div>
             </div>
             </article>
 
-            {/* Related Articles */}
-      {relatedArticles.length > 0 && (
-        <section className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 font-heading">
-            相关文章推荐
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {relatedArticles.map((relatedArticle) => (
-              <Link
-                key={relatedArticle.id}
-                to={`/article/${relatedArticle.slug}`}
-                className="card card-hover group block overflow-hidden"
-              >
-                {relatedArticle.cover_image && (
-                  <div className="overflow-hidden">
-                    <OptimizedImage
-                      src={relatedArticle.cover_image}
-                      alt={`${relatedArticle.title} 的封面图片`}
-                      aspectRatio="16/9"
-                      className="group-hover:scale-105 transition-transform duration-300"
-                      placeholder="skeleton"
-                    />
-                  </div>
-                )}
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-go-600 dark:group-hover:text-go-400 line-clamp-2 mb-3 transition-colors duration-200">
-                    {relatedArticle.title}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 mb-4 leading-relaxed">
-                    {relatedArticle.excerpt}
-                  </p>
-                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                    <span className="font-medium">{relatedArticle.author.name}</span>
-                    <span>{formatDate(relatedArticle.published_at || relatedArticle.created_at)}</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+            {/* Related Articles - 使用优化的组件 */}
+            <RelatedArticles articles={relatedArticles} />
 
           {/* Navigation */}
           <div className="mt-16 flex justify-center">
