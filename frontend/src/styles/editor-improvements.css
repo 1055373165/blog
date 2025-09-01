@@ -391,9 +391,36 @@
   background-color: #4b5563 !important;
 }
 
-/* Split View Separator */
+/* Split View and Full Height Management */
+.bytemd-editor-wrapper .bytemd-split {
+  display: flex;
+  height: 100%;
+  flex: 1;
+}
+
+.bytemd-editor-wrapper .bytemd-split .bytemd-editor,
+.bytemd-editor-wrapper .bytemd-split .bytemd-preview {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .bytemd-editor-wrapper .bytemd-split .bytemd-editor {
   border-right: 1px solid #e9ecef;
+}
+
+/* Ensure textarea takes full height */
+.bytemd-editor-wrapper .bytemd-editor {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.bytemd-editor-wrapper .bytemd-editor textarea {
+  flex: 1 !important;
+  height: 100% !important;
+  min-height: 500px !important;
 }
 
 .dark .bytemd-editor-wrapper .bytemd-split .bytemd-editor {

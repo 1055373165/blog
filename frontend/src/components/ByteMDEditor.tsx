@@ -1,3 +1,4 @@
+import React from 'react'
 import { Editor } from '@bytemd/react'
 import gfm from '@bytemd/plugin-gfm'
 import highlight from '@bytemd/plugin-highlight'
@@ -26,7 +27,13 @@ export default function ByteMDEditor({
   placeholder = "开始编写你的文章..." 
 }: ByteMDEditorProps) {
   return (
-    <div className="bytemd-editor-wrapper">
+    <div 
+      className="bytemd-editor-wrapper"
+      style={{
+        '--editor-height': `${height}px`,
+        height: `${height}px`
+      } as React.CSSProperties & Record<string, string>}
+    >
       <Editor
         value={value}
         plugins={plugins}
@@ -40,10 +47,6 @@ export default function ByteMDEditor({
           return []
         }}
         sanitize={(html) => html}
-        style={{ 
-          height: `${height}px`,
-          minHeight: '400px'
-        }}
       />
     </div>
   )

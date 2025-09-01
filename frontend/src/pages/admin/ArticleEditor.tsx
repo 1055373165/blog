@@ -83,11 +83,19 @@ export default function ArticleEditor() {
   useEffect(() => {
     const calculateEditorHeight = () => {
       // Account for header, padding, and other UI elements
-      const availableHeight = window.innerHeight - 350; // 350px for other UI elements
-      const minHeight = 600; // Minimum height for usability
-      setEditorHeight(Math.max(minHeight, availableHeight));
+      // Reduced from 350px to 200px to give more space to editor
+      const availableHeight = window.innerHeight - 200; // 200px for other UI elements
+      const minHeight = 500; // Reduced minimum height to allow more flexibility
+      const maxHeight = Math.max(minHeight, availableHeight);
+      console.log('Calculating editor height:', { 
+        windowHeight: window.innerHeight, 
+        availableHeight, 
+        finalHeight: maxHeight 
+      });
+      setEditorHeight(maxHeight);
     };
 
+    // Initial calculation
     calculateEditorHeight();
     
     // Recalculate on window resize
