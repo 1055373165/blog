@@ -311,7 +311,6 @@ func CreateArticle(c *gin.Context) {
 		Content:         req.Content,
 		Excerpt:         excerpt,
 		CoverImage:      req.CoverImage,
-		AuthorID:        userID,
 		CategoryID:      req.CategoryID,
 		SeriesID:        req.SeriesID,
 		SeriesOrder:     req.SeriesOrder,
