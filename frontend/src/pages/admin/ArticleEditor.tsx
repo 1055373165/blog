@@ -49,6 +49,9 @@ export default function ArticleEditor() {
   // Auto-save functionality
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  // Editor height calculation
+  const [editorHeight, setEditorHeight] = useState(600);
 
   // Load article data if editing
   useEffect(() => {
@@ -75,6 +78,22 @@ export default function ArticleEditor() {
   useEffect(() => {
     setHasUnsavedChanges(true);
   }, [formData]);
+
+  // Calculate editor height to fill the screen
+  useEffect(() => {
+    const calculateEditorHeight = () => {
+      // Account for header, padding, and other UI elements
+      const availableHeight = window.innerHeight - 350; // 350px for other UI elements
+      const minHeight = 600; // Minimum height for usability
+      setEditorHeight(Math.max(minHeight, availableHeight));
+    };
+
+    calculateEditorHeight();
+    
+    // Recalculate on window resize
+    window.addEventListener('resize', calculateEditorHeight);
+    return () => window.removeEventListener('resize', calculateEditorHeight);
+  }, []);
 
   const loadArticle = async (articleId: string) => {
     try {
@@ -525,7 +544,7 @@ export default function ArticleEditor() {
                   <ByteMDEditor
                     value={formData.content}
                     onChange={(value) => handleInputChange('content', value)}
-                    height={500}
+                    height={editorHeight}
                     placeholder="开始编写你的精彩文章..."
                   />
                 </div>

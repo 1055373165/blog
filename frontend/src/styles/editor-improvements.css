@@ -1,0 +1,454 @@
+/* Editor Typography Improvements */
+/* This file contains specific improvements for the blog editor */
+
+/* ByteMD Editor Container */
+.bytemd-editor-wrapper {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease;
+}
+
+.bytemd-editor-wrapper:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Main ByteMD Editor Styling */
+.bytemd-editor-wrapper .bytemd {
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  transition: border-color 0.2s ease;
+}
+
+.bytemd-editor-wrapper .bytemd:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Dark Mode Support */
+.dark .bytemd-editor-wrapper .bytemd {
+  background: #1f2937;
+  border-color: #4b5563;
+}
+
+.dark .bytemd-editor-wrapper .bytemd:focus-within {
+  border-color: #60a5fa;
+}
+
+/* Typography Fixes - Proportional Title Sizing */
+.bytemd-editor-wrapper .bytemd-preview h1 {
+  font-size: 1.875rem !important; /* 30px - proportional to 16px body text */
+  line-height: 1.2 !important;
+  margin-bottom: 0.75rem !important;
+  font-weight: 600 !important;
+  color: #1f2937;
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+.bytemd-editor-wrapper .bytemd-preview h2 {
+  font-size: 1.5rem !important; /* 24px */
+  line-height: 1.25 !important;
+  margin-bottom: 0.625rem !important;
+  font-weight: 600 !important;
+  color: #374151;
+}
+
+.bytemd-editor-wrapper .bytemd-preview h3 {
+  font-size: 1.25rem !important; /* 20px */
+  line-height: 1.3 !important;
+  margin-bottom: 0.5rem !important;
+  font-weight: 600 !important;
+  color: #374151;
+}
+
+.bytemd-editor-wrapper .bytemd-preview h4 {
+  font-size: 1.125rem !important; /* 18px */
+  line-height: 1.35 !important;
+  margin-bottom: 0.5rem !important;
+  font-weight: 600 !important;
+  color: #4b5563;
+}
+
+.bytemd-editor-wrapper .bytemd-preview h5 {
+  font-size: 1rem !important; /* 16px - same as body */
+  line-height: 1.4 !important;
+  margin-bottom: 0.5rem !important;
+  font-weight: 600 !important;
+  color: #4b5563;
+}
+
+.bytemd-editor-wrapper .bytemd-preview h6 {
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1.4 !important;
+  margin-bottom: 0.5rem !important;
+  font-weight: 600 !important;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Dark mode heading colors */
+.dark .bytemd-editor-wrapper .bytemd-preview h1 {
+  color: #f9fafb !important;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview h2,
+.dark .bytemd-editor-wrapper .bytemd-preview h3 {
+  color: #e5e7eb !important;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview h4,
+.dark .bytemd-editor-wrapper .bytemd-preview h5 {
+  color: #d1d5db !important;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview h6 {
+  color: #9ca3af !important;
+}
+
+/* Body Text - 1.5x Line Height */
+.bytemd-editor-wrapper .bytemd-preview p,
+.bytemd-editor-wrapper .bytemd-preview li,
+.bytemd-editor-wrapper .bytemd-preview td,
+.bytemd-editor-wrapper .bytemd-preview blockquote p,
+.bytemd-editor-wrapper .bytemd-preview div {
+  line-height: 1.5 !important;
+  margin-bottom: 0.75rem !important;
+  font-size: 16px !important;
+  color: #374151;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview p,
+.dark .bytemd-editor-wrapper .bytemd-preview li,
+.dark .bytemd-editor-wrapper .bytemd-preview td,
+.dark .bytemd-editor-wrapper .bytemd-preview blockquote p,
+.dark .bytemd-editor-wrapper .bytemd-preview div {
+  color: #d1d5db !important;
+}
+
+.bytemd-editor-wrapper .bytemd-preview p:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Editor Textarea - Better Typography */
+.bytemd-editor-wrapper .bytemd-editor textarea {
+  line-height: 1.5 !important;
+  font-size: 14px !important;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace !important;
+  padding: 16px !important;
+  background: #fafafa;
+  border: none !important;
+  resize: none;
+  color: #374151;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-editor textarea {
+  background: #1f2937 !important;
+  color: #e5e7eb !important;
+}
+
+/* Preview Pane Styling */
+.bytemd-editor-wrapper .bytemd-preview {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  padding: 20px !important;
+  background: #ffffff;
+  max-width: none !important;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview {
+  background: #1f2937 !important;
+  color: #e5e7eb !important;
+}
+
+/* Code Blocks */
+.bytemd-editor-wrapper .bytemd-preview pre {
+  line-height: 1.4 !important;
+  padding: 16px !important;
+  margin: 1.25rem 0 !important;
+  background: #f8f9fa !important;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  overflow-x: auto;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview pre {
+  background: #374151 !important;
+  border-color: #4b5563;
+}
+
+.bytemd-editor-wrapper .bytemd-preview code {
+  font-size: 0.875em !important;
+  padding: 3px 6px;
+  background: #f1f3f4;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview code {
+  background: #374151 !important;
+  border-color: #4b5563;
+  color: #e5e7eb !important;
+}
+
+.bytemd-editor-wrapper .bytemd-preview pre code {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* Lists - Better Spacing */
+.bytemd-editor-wrapper .bytemd-preview ul,
+.bytemd-editor-wrapper .bytemd-preview ol {
+  margin: 1rem 0 !important;
+  padding-left: 1.5rem !important;
+}
+
+.bytemd-editor-wrapper .bytemd-preview li {
+  margin-bottom: 0.5rem !important;
+  line-height: 1.5 !important;
+}
+
+.bytemd-editor-wrapper .bytemd-preview li:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Tables */
+.bytemd-editor-wrapper .bytemd-preview table {
+  margin: 1.5rem 0 !important;
+  border-collapse: collapse;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e1e5e9;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview table {
+  border-color: #4b5563;
+}
+
+.bytemd-editor-wrapper .bytemd-preview th,
+.bytemd-editor-wrapper .bytemd-preview td {
+  padding: 12px 16px !important;
+  border: 1px solid #e1e5e9;
+  line-height: 1.4 !important;
+  text-align: left;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview th,
+.dark .bytemd-editor-wrapper .bytemd-preview td {
+  border-color: #4b5563 !important;
+}
+
+.bytemd-editor-wrapper .bytemd-preview th {
+  background: #f8f9fa !important;
+  font-weight: 600;
+  color: #374151;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview th {
+  background: #374151 !important;
+  color: #e5e7eb !important;
+}
+
+/* Blockquotes */
+.bytemd-editor-wrapper .bytemd-preview blockquote {
+  margin: 1.5rem 0 !important;
+  padding: 1rem 1.5rem !important;
+  border-left: 4px solid #3b82f6;
+  background: #f8fafc;
+  border-radius: 0 8px 8px 0;
+  font-style: normal;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview blockquote {
+  background: #374151 !important;
+  border-left-color: #60a5fa;
+}
+
+.bytemd-editor-wrapper .bytemd-preview blockquote p {
+  margin: 0 !important;
+  font-style: italic;
+  color: #4b5563;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview blockquote p {
+  color: #d1d5db !important;
+}
+
+/* Images */
+.bytemd-editor-wrapper .bytemd-preview img {
+  max-width: 100% !important;
+  height: auto !important;
+  margin: 1.5rem 0 !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Links */
+.bytemd-editor-wrapper .bytemd-preview a {
+  color: #3b82f6 !important;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.bytemd-editor-wrapper .bytemd-preview a:hover {
+  border-bottom-color: #3b82f6;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview a {
+  color: #60a5fa !important;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview a:hover {
+  border-bottom-color: #60a5fa;
+}
+
+/* Horizontal Rules */
+.bytemd-editor-wrapper .bytemd-preview hr {
+  margin: 2rem 0 !important;
+  border: none;
+  height: 2px;
+  background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview hr {
+  background: linear-gradient(to right, transparent, #4b5563, transparent);
+}
+
+/* Task Lists (GitHub-style) */
+.bytemd-editor-wrapper .bytemd-preview input[type="checkbox"] {
+  margin-right: 0.5rem;
+  transform: scale(1.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .bytemd-editor-wrapper .bytemd-preview {
+    padding: 16px !important;
+  }
+  
+  .bytemd-editor-wrapper .bytemd-preview h1 {
+    font-size: 1.625rem !important; /* 26px on mobile */
+  }
+  
+  .bytemd-editor-wrapper .bytemd-preview h2 {
+    font-size: 1.375rem !important; /* 22px on mobile */
+  }
+  
+  .bytemd-editor-wrapper .bytemd-preview h3 {
+    font-size: 1.125rem !important; /* 18px on mobile */
+  }
+  
+  .bytemd-editor-wrapper .bytemd-editor textarea {
+    padding: 12px !important;
+  }
+  
+  .bytemd-editor-wrapper .bytemd-preview table {
+    font-size: 14px;
+  }
+  
+  .bytemd-editor-wrapper .bytemd-preview th,
+  .bytemd-editor-wrapper .bytemd-preview td {
+    padding: 8px 12px !important;
+  }
+}
+
+/* Toolbar Improvements */
+.bytemd-editor-wrapper .bytemd-toolbar {
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  padding: 8px 12px;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-toolbar {
+  background: #374151 !important;
+  border-bottom-color: #4b5563;
+}
+
+.bytemd-editor-wrapper .bytemd-toolbar-item button {
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.bytemd-editor-wrapper .bytemd-toolbar-item button:hover {
+  background-color: #e9ecef;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-toolbar-item button:hover {
+  background-color: #4b5563 !important;
+}
+
+/* Split View Separator */
+.bytemd-editor-wrapper .bytemd-split .bytemd-editor {
+  border-right: 1px solid #e9ecef;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-split .bytemd-editor {
+  border-right-color: #4b5563;
+}
+
+/* Focus States for Accessibility */
+.bytemd-editor-wrapper .bytemd-editor textarea:focus {
+  outline: none !important;
+  box-shadow: inset 0 0 0 2px #3b82f6;
+  border-radius: 8px;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-editor textarea:focus {
+  box-shadow: inset 0 0 0 2px #60a5fa;
+}
+
+/* Selection Styling */
+.bytemd-editor-wrapper .bytemd-preview ::selection {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-preview ::selection {
+  background: #1e40af;
+  color: #dbeafe;
+}
+
+/* Custom Scrollbar */
+.bytemd-editor-wrapper .bytemd-editor textarea::-webkit-scrollbar,
+.bytemd-editor-wrapper .bytemd-preview::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.bytemd-editor-wrapper .bytemd-editor textarea::-webkit-scrollbar-track,
+.bytemd-editor-wrapper .bytemd-preview::-webkit-scrollbar-track {
+  background: #f1f3f4;
+  border-radius: 4px;
+}
+
+.bytemd-editor-wrapper .bytemd-editor textarea::-webkit-scrollbar-thumb,
+.bytemd-editor-wrapper .bytemd-preview::-webkit-scrollbar-thumb {
+  background: #c1c7cd;
+  border-radius: 4px;
+}
+
+.bytemd-editor-wrapper .bytemd-editor textarea::-webkit-scrollbar-thumb:hover,
+.bytemd-editor-wrapper .bytemd-preview::-webkit-scrollbar-thumb:hover {
+  background: #a8aeb5;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-editor textarea::-webkit-scrollbar-track,
+.dark .bytemd-editor-wrapper .bytemd-preview::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-editor textarea::-webkit-scrollbar-thumb,
+.dark .bytemd-editor-wrapper .bytemd-preview::-webkit-scrollbar-thumb {
+  background: #6b7280;
+}
+
+.dark .bytemd-editor-wrapper .bytemd-editor textarea::-webkit-scrollbar-thumb:hover,
+.dark .bytemd-editor-wrapper .bytemd-preview::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
