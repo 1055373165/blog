@@ -287,7 +287,17 @@ func CreateArticle(c *gin.Context) {
 	// 生成slug
 	slug := utils.GenerateSlug(req.Title)
 
-	// 检查slug是否已存在
+	// 从 Gin 的上下文中获取当前登录的用户 ID
+	authorID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"error":   "无法获取用户信息，请重新登录",
+		})
+		return
+	}
+
+	// 验证Slug是否唯一
 	var existingArticle models.Article
 	err := database.DB.Where("slug = ?", slug).First(&existingArticle).Error
 	if err == nil {
@@ -306,6 +316,7 @@ func CreateArticle(c *gin.Context) {
 
 	// 创建文章
 	article := models.Article{
+		AuthorID:        authorID.(uint),
 		Title:           req.Title,
 		Slug:            slug,
 		Content:         req.Content,
