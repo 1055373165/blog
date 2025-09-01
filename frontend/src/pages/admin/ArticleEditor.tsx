@@ -18,15 +18,15 @@ export default function ArticleEditor() {
     title: '',
     content: '',
     excerpt: '',
-    coverImage: '',
-    categoryId: '',
-    tagIds: [],
-    seriesId: '',
-    seriesOrder: undefined,
+    cover_image: '',
+    category_id: undefined,
+    tag_ids: [],
+    series_id: undefined,
+    series_order: undefined,
     is_published: false,
-    metaTitle: '',
-    metaDescription: '',
-    metaKeywords: '',
+    meta_title: '',
+    meta_description: '',
+    meta_keywords: '',
   });
 
   // Note: Using ByteMD as the single editor solution
@@ -108,17 +108,17 @@ export default function ArticleEditor() {
           title: article.title,
           content: article.content,
           excerpt: article.excerpt,
-          coverImage: article.coverImage || '',
-          categoryId: article.categoryId || '',
-          tagIds: (article.tags || []).map(tag => tag.id),
-          seriesId: article.seriesId || '',
-          seriesOrder: article.seriesOrder,
+          cover_image: article.cover_image || '',
+          category_id: article.category_id,
+          tag_ids: (article.tags || []).map(tag => tag.id),
+          series_id: article.series_id,
+          series_order: article.series_order,
           is_published: article.is_published,
-          metaTitle: article.metaTitle || '',
-          metaDescription: article.metaDescription || '',
-          metaKeywords: article.metaKeywords || '',
+          meta_title: article.meta_title || '',
+          meta_description: article.meta_description || '',
+          meta_keywords: article.meta_keywords || '',
         });
-        setSelectedTags((article.tags || []).map(tag => tag.id));
+        setSelectedTags((article.tags || []).map(tag => tag.id.toString()));
         setHasUnsavedChanges(false);
       } else {
         throw new Error('加载文章失败');
@@ -165,7 +165,7 @@ export default function ArticleEditor() {
       : [...currentTags, tagId];
     
     setSelectedTags(newSelectedTags);
-    handleInputChange('tagIds', newSelectedTags);
+    handleInputChange('tag_ids', newSelectedTags);
   };
 
   const generateExcerpt = () => {
@@ -201,12 +201,13 @@ export default function ArticleEditor() {
       
       const payload = {
         ...formData,
-        tagIds: selectedTags || [],
+        tag_ids: (selectedTags || []).map(id => parseInt(id)),
       };
 
       let response;
       if (isEditing && id) {
-        response = await articlesApi.updateArticle(id, payload);
+        const updatePayload = { ...payload, id: parseInt(id) };
+        response = await articlesApi.updateArticle(id, updatePayload);
       } else {
         response = await articlesApi.createArticle(payload);
       }
@@ -245,7 +246,7 @@ export default function ArticleEditor() {
     const updatedFormData = {
       ...formData,
       is_published: newPublishedState,
-      tagIds: selectedTags || [],
+      tag_ids: (selectedTags || []).map(id => parseInt(id)),
     };
     
     try {
@@ -254,7 +255,8 @@ export default function ArticleEditor() {
       
       let response;
       if (isEditing && id) {
-        response = await articlesApi.updateArticle(id, updatedFormData);
+        const updatePayload = { ...updatedFormData, id: parseInt(id) };
+        response = await articlesApi.updateArticle(id, updatePayload);
       } else {
         response = await articlesApi.createArticle(updatedFormData);
       }
@@ -281,9 +283,170 @@ export default function ArticleEditor() {
     if (isEditing && id) {
       window.open(`/articles/${id}/preview`, '_blank');
     } else {
-      // For new articles, we could implement a temporary preview
-      alert('请先保存文章后再预览');
+      // For new articles, create a temporary preview with current content
+      openTempPreview();
     }
+  };
+
+  const openTempPreview = () => {
+    // Create a new window for temporary preview
+    const previewWindow = window.open('', '_blank', 'width=1200,height=800');
+    
+    if (!previewWindow) {
+      alert('请允许弹窗后再试');
+      return;
+    }
+
+    // Generate preview HTML with current form data
+    const previewHTML = generatePreviewHTML();
+    
+    // Write content to new window
+    previewWindow.document.write(previewHTML);
+    previewWindow.document.close();
+  };
+
+  const generatePreviewHTML = () => {
+    // Get content statistics for the preview
+    const stats = getContentStats();
+    
+    return `
+      <!DOCTYPE html>
+      <html lang="zh-CN">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${formData.title || '无标题文章'} - 预览</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+          body { font-family: 'Inter', sans-serif; }
+          .preview-header { 
+            background: linear-gradient(90deg, rgb(254 240 138) 0%, rgb(253 186 116) 100%); 
+            border-bottom: 1px solid rgb(251 191 36);
+          }
+          .markdown-content h1, .markdown-content h2, .markdown-content h3, 
+          .markdown-content h4, .markdown-content h5, .markdown-content h6 {
+            font-weight: 600;
+            margin-top: 2em;
+            margin-bottom: 1em;
+            line-height: 1.25;
+          }
+          .markdown-content h1 { font-size: 2em; }
+          .markdown-content h2 { font-size: 1.5em; }
+          .markdown-content h3 { font-size: 1.25em; }
+          .markdown-content p { margin-bottom: 1em; line-height: 1.7; }
+          .markdown-content code { 
+            background: rgb(243 244 246); 
+            padding: 0.125rem 0.25rem; 
+            border-radius: 0.25rem; 
+            font-size: 0.875em;
+          }
+          .markdown-content pre { 
+            background: rgb(243 244 246); 
+            padding: 1rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            margin: 1em 0;
+          }
+          .markdown-content blockquote {
+            border-left: 4px solid rgb(229 231 235);
+            padding-left: 1rem;
+            margin: 1em 0;
+            font-style: italic;
+            color: rgb(107 114 128);
+          }
+          .markdown-content ul, .markdown-content ol { margin: 1em 0; padding-left: 2em; }
+          .markdown-content li { margin: 0.5em 0; }
+          .markdown-content img { max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1em 0; }
+          .markdown-content a { color: rgb(59 130 246); text-decoration: underline; }
+          .markdown-content table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+          .markdown-content th, .markdown-content td { border: 1px solid rgb(229 231 235); padding: 0.5rem; }
+          .markdown-content th { background: rgb(249 250 251); font-weight: 600; }
+        </style>
+      </head>
+      <body class="bg-gray-50">
+        <!-- Preview Header -->
+        <div class="preview-header">
+          <div class="max-w-4xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+                <span class="text-sm font-semibold text-yellow-800">临时预览 - 未保存的草稿</span>
+              </div>
+              <button onclick="window.close()" class="px-3 py-1 text-sm bg-yellow-200 text-yellow-800 rounded hover:bg-yellow-300">
+                关闭预览
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="max-w-4xl mx-auto px-6 py-8">
+          <!-- Article Header -->
+          <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">${formData.title || '无标题文章'}</h1>
+            ${formData.excerpt ? `<p class="text-lg text-gray-600 leading-relaxed">${formData.excerpt}</p>` : ''}
+            
+            <!-- Article Meta -->
+            <div class="flex items-center text-sm text-gray-500 mt-4 space-x-4">
+              <span>预计阅读时间: ${stats.readingTime} 分钟</span>
+              <span>字数: ${stats.words.toLocaleString()}</span>
+              <span>段落: ${stats.paragraphs}</span>
+              ${stats.images > 0 ? `<span>图片: ${stats.images}</span>` : ''}
+            </div>
+          </header>
+
+          <!-- Cover Image -->
+          ${formData.cover_image ? `
+            <div class="mb-8">
+              <img src="${formData.cover_image}" alt="封面图片" class="w-full h-64 object-cover rounded-xl shadow-lg" />
+            </div>
+          ` : ''}
+
+          <!-- Article Content -->
+          <article class="markdown-content prose prose-lg max-w-none">
+            <div id="content"></div>
+          </article>
+        </div>
+
+        <script>
+          // Render markdown content
+          document.addEventListener('DOMContentLoaded', function() {
+            const content = ${JSON.stringify(formData.content || '暂无内容')};
+            const contentElement = document.getElementById('content');
+            
+            // Configure marked
+            marked.setOptions({
+              highlight: function(code, lang) {
+                if (lang && hljs.getLanguage(lang)) {
+                  try {
+                    return hljs.highlight(code, { language: lang }).value;
+                  } catch (err) {}
+                }
+                try {
+                  return hljs.highlightAuto(code).value;
+                } catch (err) {}
+                return code;
+              },
+              breaks: true,
+              gfm: true
+            });
+            
+            // Render content
+            if (content.trim()) {
+              contentElement.innerHTML = marked.parse(content);
+            } else {
+              contentElement.innerHTML = '<p class="text-gray-500 text-center py-12">暂无内容</p>';
+            }
+          });
+        </script>
+      </body>
+      </html>
+    `;
   };
 
   const handleFileImport = (content: string, metadata?: any) => {
@@ -292,19 +455,18 @@ export default function ArticleEditor() {
       content,
       title: metadata?.title || prev.title,
       excerpt: metadata?.excerpt || prev.excerpt,
-      metaTitle: metadata?.metaTitle || prev.metaTitle,
-      metaDescription: metadata?.metaDescription || prev.metaDescription,
-      metaKeywords: metadata?.metaKeywords || prev.metaKeywords,
+      meta_title: metadata?.meta_title || prev.meta_title,
+      meta_description: metadata?.meta_description || prev.meta_description,
+      meta_keywords: metadata?.meta_keywords || prev.meta_keywords,
     }));
     
     setHasUnsavedChanges(true);
     setShowImportModal(false);
     setError(null);
     
-    // Show success message briefly
-    const successMsg = `成功导入 ${metadata?.fileName || '文件'}`;
-    setError(null);
-    // Could add a toast notification here
+    // Could add a success toast notification here
+    // const successMsg = `成功导入 ${metadata?.fileName || '文件'}`;
+    // toast.success(successMsg);
   };
 
   const handleBulkImport = (articles: Array<{
@@ -360,15 +522,15 @@ export default function ArticleEditor() {
       issues.push('文章内容过短，建议至少100字符');
     }
     
-    if (!formData.excerpt.trim() && formData.content.length > 0) {
+    if (!formData.excerpt?.trim() && formData.content.length > 0) {
       issues.push('建议添加文章摘要');
     }
     
-    if (!formData.categoryId) {
+    if (!formData.category_id) {
       issues.push('建议选择文章分类');
     }
     
-    if (formData.tagIds.length === 0) {
+    if (!formData.tag_ids || formData.tag_ids.length === 0) {
       issues.push('建议为文章添加标签');
     }
     
@@ -445,7 +607,6 @@ export default function ArticleEditor() {
 
               <button
                 onClick={handlePreview}
-                disabled={!isEditing}
                 className="btn btn-outline"
               >
                 预览
@@ -585,15 +746,15 @@ export default function ArticleEditor() {
                   </label>
                   <input
                     type="url"
-                    value={formData.coverImage}
-                    onChange={(e) => handleInputChange('coverImage', e.target.value)}
+                    value={formData.cover_image}
+                    onChange={(e) => handleInputChange('cover_image', e.target.value)}
                     placeholder="//example.com/image.jpg"
                     className="input"
                   />
-                  {formData.coverImage && (
+                  {formData.cover_image && (
                     <div className="mt-2">
                       <img
-                        src={formData.coverImage}
+                        src={formData.cover_image}
                         alt="封面预览"
                         className="w-full max-w-md h-48 object-cover rounded-xl border border-gray-300 dark:border-gray-600 shadow-soft"
                         onError={(e) => {
@@ -610,8 +771,8 @@ export default function ArticleEditor() {
                     文章分类
                   </label>
                   <select
-                    value={formData.categoryId}
-                    onChange={(e) => handleInputChange('categoryId', e.target.value)}
+                    value={formData.category_id || ''}
+                    onChange={(e) => handleInputChange('category_id', e.target.value ? parseInt(e.target.value) : undefined)}
                     className="input"
                   >
                     <option value="">选择分类</option>
@@ -630,8 +791,8 @@ export default function ArticleEditor() {
                   </label>
                   <div className="flex space-x-3">
                     <select
-                      value={formData.seriesId}
-                      onChange={(e) => handleInputChange('seriesId', e.target.value)}
+                      value={formData.series_id || ''}
+                      onChange={(e) => handleInputChange('series_id', e.target.value ? parseInt(e.target.value) : undefined)}
                       className="input flex-1"
                     >
                       <option value="">选择系列</option>
@@ -641,11 +802,11 @@ export default function ArticleEditor() {
                         </option>
                       ))}
                     </select>
-                    {formData.seriesId && (
+                    {formData.series_id && (
                       <input
                         type="number"
-                        value={formData.seriesOrder || ''}
-                        onChange={(e) => handleInputChange('seriesOrder', parseInt(e.target.value) || undefined)}
+                        value={formData.series_order || ''}
+                        onChange={(e) => handleInputChange('series_order', parseInt(e.target.value) || undefined)}
                         placeholder="顺序"
                         min="1"
                         className="input w-20"
@@ -680,14 +841,14 @@ export default function ArticleEditor() {
                   </label>
                   <input
                     type="text"
-                    value={formData.metaTitle}
-                    onChange={(e) => handleInputChange('metaTitle', e.target.value)}
+                    value={formData.meta_title}
+                    onChange={(e) => handleInputChange('meta_title', e.target.value)}
                     placeholder="留空将使用文章标题"
                     maxLength={60}
                     className="input"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {(formData.metaTitle || '').length}/60 字符 (建议50-60字符)
+                    {(formData.meta_title || '').length}/60 字符 (建议50-60字符)
                   </p>
                 </div>
 
@@ -697,15 +858,15 @@ export default function ArticleEditor() {
                     SEO 描述
                   </label>
                   <textarea
-                    value={formData.metaDescription}
-                    onChange={(e) => handleInputChange('metaDescription', e.target.value)}
+                    value={formData.meta_description}
+                    onChange={(e) => handleInputChange('meta_description', e.target.value)}
                     placeholder="留空将使用文章摘要"
                     maxLength={160}
                     rows={3}
                     className="input resize-none"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {(formData.metaDescription || '').length}/160 字符 (建议150-160字符)
+                    {(formData.meta_description || '').length}/160 字符 (建议150-160字符)
                   </p>
                 </div>
 
@@ -716,8 +877,8 @@ export default function ArticleEditor() {
                   </label>
                   <input
                     type="text"
-                    value={formData.metaKeywords}
-                    onChange={(e) => handleInputChange('metaKeywords', e.target.value)}
+                    value={formData.meta_keywords}
+                    onChange={(e) => handleInputChange('meta_keywords', e.target.value)}
                     placeholder="关键词1, 关键词2, 关键词3"
                     className="input"
                   />
@@ -742,15 +903,15 @@ export default function ArticleEditor() {
                     <label key={tag.id} className="flex items-center group cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={(selectedTags || []).includes(tag.id)}
-                        onChange={() => handleTagToggle(tag.id)}
+                        checked={(selectedTags || []).includes(tag.id.toString())}
+                        onChange={() => handleTagToggle(tag.id.toString())}
                         className="rounded border-gray-300 dark:border-gray-600 text-go-600 focus:ring-go-500 dark:bg-gray-700"
                       />
                       <span className="ml-3 text-sm text-gray-700 dark:text-gray-300 group-hover:text-go-600 dark:group-hover:text-go-400 transition-colors">
                         {tag.name}
                       </span>
                       <span className="ml-auto text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
-                        {tag.articlesCount}
+                        {tag.articles_count}
                       </span>
                     </label>
                   ))}

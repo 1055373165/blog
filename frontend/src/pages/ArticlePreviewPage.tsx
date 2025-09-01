@@ -99,7 +99,7 @@ export default function ArticlePreviewPage() {
               </Link>
               {article?.is_published && (
                 <Link
-                  to={`/articles/${article?.slug || article?.id}`}
+                  to={`/article/${article?.slug || article?.id}`}
                   className="inline-flex items-center px-4 py-2 text-sm font-medium text-go-700 dark:text-go-300 bg-go-100 dark:bg-go-900/50 rounded-lg hover:bg-go-200 dark:hover:bg-go-800/50 hover:shadow-soft transition-all duration-200"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

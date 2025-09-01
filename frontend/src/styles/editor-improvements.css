@@ -7,6 +7,9 @@
   overflow: hidden;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transition: box-shadow 0.2s ease;
+  height: 100%; /* Allow full height */
+  display: flex;
+  flex-direction: column;
 }
 
 .bytemd-editor-wrapper:hover {
@@ -19,6 +22,10 @@
   border-radius: 12px;
   background: #ffffff;
   transition: border-color 0.2s ease;
+  flex: 1; /* Take full available height */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .bytemd-editor-wrapper .bytemd:focus-within {
@@ -132,16 +139,17 @@
   margin-bottom: 0 !important;
 }
 
-/* Editor Textarea - Better Typography */
+/* Editor Textarea - Better Typography and Line Height */
 .bytemd-editor-wrapper .bytemd-editor textarea {
   line-height: 1.5 !important;
-  font-size: 14px !important;
+  font-size: 16px !important; /* Increased from 14px to match body text */
   font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace !important;
-  padding: 16px !important;
+  padding: 20px !important; /* Increased padding for better spacing */
   background: #fafafa;
   border: none !important;
   resize: none;
   color: #374151;
+  letter-spacing: 0.02em; /* Slight letter spacing for better readability */
 }
 
 .dark .bytemd-editor-wrapper .bytemd-editor textarea {
