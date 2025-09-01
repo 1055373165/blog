@@ -50,28 +50,6 @@ export default function SeriesPage() {
               </svg>
               <span className="text-gray-900 dark:text-white font-medium">系列</span>
             </div>
-            
-            {/* Quick Actions */}
-            <div className="flex items-center space-x-3">
-              <Link
-                to="/articles"
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                </svg>
-                所有文章
-              </Link>
-              <Link
-                to="/about"
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-go-600 dark:bg-go-500 rounded-lg hover:bg-go-700 dark:hover:bg-go-600 transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-                关于
-              </Link>
-            </div>
           </nav>
 
           {/* Compact Header */}

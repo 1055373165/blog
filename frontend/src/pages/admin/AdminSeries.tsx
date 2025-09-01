@@ -33,10 +33,11 @@ export default function AdminSeries() {
       
       const response = await seriesApi.getSeries();
       
-      if (response.data.success) {
-        setSeries(response.data.data.series || []);
+      // Handle ApiResponse<SeriesListResponse> format
+      if (response.success && response.data) {
+        setSeries(response.data.series || []);
       } else {
-        throw new Error(response.data.error || '加载系列失败');
+        throw new Error(response.error || '加载系列失败');
       }
     } catch (err) {
       console.error('Failed to load series:', err);
@@ -75,11 +76,12 @@ export default function AdminSeries() {
     try {
       const response = await seriesApi.createSeries(data);
 
-      if (response.data.success) {
+      // Backend returns Series object directly, wrapped in ApiResponse by client
+      if (response.success && response.data) {
         await loadSeries(); // Refresh the list
         showToast('系列创建成功', 'success');
       } else {
-        throw new Error(response.data.error || '创建系列失败');
+        throw new Error(response.error || '创建系列失败');
       }
     } catch (err) {
       console.error('Failed to create series:', err);
@@ -94,11 +96,12 @@ export default function AdminSeries() {
     try {
       const response = await seriesApi.updateSeries(editingSeries.id.toString(), data);
 
-      if (response.data.success) {
+      // Backend returns Series object directly, wrapped in ApiResponse by client
+      if (response.success && response.data) {
         await loadSeries(); // Refresh the list
         showToast('系列更新成功', 'success');
       } else {
-        throw new Error(response.data.error || '更新系列失败');
+        throw new Error(response.error || '更新系列失败');
       }
     } catch (err) {
       console.error('Failed to update series:', err);
@@ -115,13 +118,14 @@ export default function AdminSeries() {
       
       const response = await seriesApi.deleteSeries(deletingSeries.id.toString());
 
-      if (response.data.success) {
+      // Backend returns { message: string }, wrapped in ApiResponse by client
+      if (response.success) {
         await loadSeries(); // Refresh the list
-        showToast('系列删除成功', 'success');
+        showToast(response.data?.message || '系列删除成功', 'success');
         setShowDeleteDialog(false);
         setDeletingSeries(null);
       } else {
-        throw new Error(response.data.error || '删除系列失败');
+        throw new Error(response.error || '删除系列失败');
       }
     } catch (err) {
       console.error('Failed to delete series:', err);

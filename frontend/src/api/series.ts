@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { Series, PaginatedResponse, CreateSeriesRequest, UpdateSeriesRequest } from '../types';
+import { Series, SeriesListResponse, CreateSeriesRequest, UpdateSeriesRequest, ApiResponse } from '../types';
 
 export const seriesApi = {
   // 获取系列列表
@@ -12,7 +12,7 @@ export const seriesApi = {
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     
     const queryString = queryParams.toString();
-    return apiClient.get<PaginatedResponse<Series>>(`/api/series${queryString ? '?' + queryString : ''}`);
+    return apiClient.get<SeriesListResponse>(`/api/series${queryString ? '?' + queryString : ''}`);
   },
 
   // 获取单个系列
@@ -37,7 +37,7 @@ export const seriesApi = {
 
   // 删除系列
   async deleteSeries(id: string) {
-    return apiClient.delete<void>(`/api/series/${id}`);
+    return apiClient.delete<{ message: string }>(`/api/series/${id}`);
   },
 
   // 批量删除系列

@@ -25,6 +25,17 @@ export interface PaginatedResponse<T> {
   };
 }
 
+// 系列分页响应类型 - 匹配后端实际格式
+export interface SeriesListResponse {
+  series: Series[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
 // 用户相关类型
 export interface User {
   id: number;
