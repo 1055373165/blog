@@ -395,6 +395,7 @@ export default function BookCarousel({
                       className={clsx(
                         'relative transition-all duration-700 ease-out cursor-pointer group',
                         'transform-gpu', // GPU加速
+                        'book-card clickable carousel',
                         isCenter && 'z-30',
                         isAdjacent && 'z-20',
                         isEdge && 'z-10 opacity-60'
@@ -416,7 +417,6 @@ export default function BookCarousel({
                       }}
                       data-book="true"
                       data-book-title={book.title}
-                      className="book-card clickable carousel"
                     >
                       {/* 增强的3D阴影系统 */}
                       <div className={clsx(
