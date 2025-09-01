@@ -46,6 +46,7 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
   const { settings, isDark, updateColorTheme } = useTheme();
   const [themeSettingsOpen, setThemeSettingsOpen] = useState(false);
   const [isTogglingTheme, setIsTogglingTheme] = useState(false);
+  const [isNavigationVisible, setIsNavigationVisible] = useState(true);
   
   // Theme toggle function - simple light/dark toggle only
   const toggleTheme = () => {
@@ -79,6 +80,7 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
   const navRef = useRef<HTMLElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
   const expandedMenuRef = useRef<HTMLDivElement>(null);
+  const navigationRef = useRef<HTMLDivElement>(null);
 
   // 滚动监听
   useEffect(() => {
@@ -155,6 +157,43 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
     };
   }, [isExpanded]);
 
+  // 全局点击监听，用于隐藏/显示导航
+  useEffect(() => {
+    const handleGlobalClick = (event: MouseEvent) => {
+      // 如果点击的是主题设置面板或展开的移动菜单，不处理
+      if (themeSettingsOpen || isExpanded) {
+        return;
+      }
+
+      const target = event.target as Node;
+      
+      // 如果点击的是导航栏内部，显示导航
+      if (navigationRef.current && navigationRef.current.contains(target)) {
+        setIsNavigationVisible(true);
+        return;
+      }
+
+      // 如果点击的是页面其他区域（空白区域），切换导航显示状态
+      // 检查是否点击在主要内容区域
+      const clickedElement = event.target as HTMLElement;
+      const isClickOnContent = clickedElement.closest('main, article, .content-area, [role="main"]');
+      const isClickOnInteractive = clickedElement.closest('button, a, input, select, textarea, [role="button"], [tabindex], .interactive');
+      
+      // 只有在点击内容区域且不是交互元素时才隐藏导航
+      if (isClickOnContent && !isClickOnInteractive && isNavigationVisible) {
+        setIsNavigationVisible(false);
+      } else if (!isClickOnContent && !isNavigationVisible) {
+        // 点击非内容区域时显示导航
+        setIsNavigationVisible(true);
+      }
+    };
+
+    document.addEventListener('click', handleGlobalClick, true);
+    return () => {
+      document.removeEventListener('click', handleGlobalClick, true);
+    };
+  }, [themeSettingsOpen, isExpanded, isNavigationVisible]);
+
   // 键盘导航
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -192,10 +231,14 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
     <>
       {/* 主导航栏 */}
       <nav
+        ref={navigationRef}
         className={clsx(
           'fixed top-6 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-500 ease-out',
           'w-full max-w-7xl mx-auto px-4 sm:px-6', // Add responsive width constraints
-          scrollDirection === 'down' && isScrolled ? '-translate-y-20 opacity-0' : 'translate-y-0 opacity-100',
+          // 组合滚动和可见性状态
+          (scrollDirection === 'down' && isScrolled) || !isNavigationVisible 
+            ? '-translate-y-20 opacity-0 pointer-events-none' 
+            : 'translate-y-0 opacity-100 pointer-events-auto',
           className
         )}
       >
