@@ -60,6 +60,8 @@ services:
       dockerfile: Dockerfile.prod
       args:
         - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+        - http_proxy=http://host.docker.internal:7890
+        - https_proxy=http://host.docker.internal:7890
     container_name: blog_frontend_prod
     restart: unless-stopped
     depends_on:

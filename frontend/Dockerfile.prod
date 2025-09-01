@@ -4,6 +4,10 @@ FROM node:20-alpine AS builder
 # 设置工作目录
 WORKDIR /app
 
+# 代理参数
+ARG http_proxy
+ARG https_proxy
+
 # 复制package文件（优化缓存层）
 COPY package*.json yarn.lock ./
 
