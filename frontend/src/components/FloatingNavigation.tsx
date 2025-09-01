@@ -174,38 +174,35 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
         return;
       }
 
-      // 检查是否点击在交互元素上 - 扩展选择器以包含更多交互元素
-      const isClickOnInteractive = clickedElement.closest([
-        'button', 'a', 'input', 'select', 'textarea', 
+      // 简化逻辑：只检查真正的交互内容元素
+      const isClickOnInteractiveContent = clickedElement.closest([
+        // 交互元素
+        'button', 'a', 'input', 'select', 'textarea', 'form',
         '[role="button"]', '[tabindex]', '.interactive',
-        // 文章卡片相关选择器
-        'article', '.group', '[data-article]',
-        // 轮播相关选择器  
-        '.carousel', '.book-card', '[data-book]',
-        // 其他交互组件
-        '.card', '.clickable', '[onclick]'
+        // 内容卡片和组件
+        'article', '.group', '[data-article]', '.card',
+        '.carousel', '.book-card', '[data-book]', '.clickable',
+        // 具体的文本内容（不包括布局容器）
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p',
+        'div[class*="prose"]', '.content', '.text-content',
+        // 媒体元素
+        'img', 'video', 'audio', 'canvas', 'svg',
+        // 列表内容
+        'ul li', 'ol li', 'dl dt', 'dl dd',
+        // 表格内容
+        'table td', 'table th',
+        // 有交互行为的元素
+        '[onclick]', '.hover\\:',
+        // 代码块和预格式化文本
+        'pre', 'code'
       ].join(', '));
       
-      // 如果点击的是交互元素，不干预正常的点击行为
-      if (isClickOnInteractive) {
-        return;
-      }
-
-      // 只有在点击真正的空白区域时才切换导航状态
-      // 检查点击是否在页面边距、空白区域
-      const isClickOnBackground = (
-        clickedElement.tagName === 'HTML' ||
-        clickedElement.tagName === 'BODY' ||
-        clickedElement.classList.contains('bg-gray-50') ||
-        clickedElement.classList.contains('bg-gray-900') ||
-        clickedElement.classList.contains('min-h-screen') ||
-        // 检查是否点击在容器的padding区域
-        (clickedElement.classList.contains('max-w-7xl') && event.target === clickedElement)
-      );
-      
-      if (isClickOnBackground) {
-        // 在空白区域点击时切换导航显示状态
-        setIsNavigationVisible(!isNavigationVisible);
+      if (isClickOnInteractiveContent) {
+        // 点击交互内容时隐藏导航
+        setIsNavigationVisible(false);
+      } else {
+        // 点击其他任何地方（空白区域、边距、背景等）都显示导航
+        setIsNavigationVisible(true);
       }
     };
 
@@ -254,6 +251,7 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
       {/* 主导航栏 */}
       <nav
         ref={navigationRef}
+        data-floating-nav
         className={clsx(
           'fixed top-6 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-500 ease-out',
           'w-full max-w-7xl mx-auto px-4 sm:px-6', // Add responsive width constraints
