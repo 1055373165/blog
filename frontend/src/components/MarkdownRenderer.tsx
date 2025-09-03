@@ -95,7 +95,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       wordWrap: 'normal',
       tabSize: '4',
       hyphens: 'none',
-      padding: '1rem',
+      padding: '0.5rem',
       margin: '0',
       overflow: 'auto',
     },
@@ -230,12 +230,12 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                     language={language || 'text'}
                     PreTag="div"
                     className={`!mt-0 !mb-0 ${settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-lg' : settings.fontSize === 'xl' ? 'text-xl' : 'text-base'}`}
-                    showLineNumbers={settings.lineNumbers}
+                    showLineNumbers={false}
                     wrapLines={settings.wordWrap}
                     wrapLongLines={settings.wordWrap}
                     customStyle={{
                       margin: 0,
-                      padding: '1rem',
+                      padding: '0.5rem',
                       backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
                       border: 'none',
                       borderRadius: 0,
