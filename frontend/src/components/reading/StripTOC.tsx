@@ -250,7 +250,7 @@ export default function StripTOC({
   onActiveChange
 }: StripTOCProps) {
   const { tocItems, activeId } = useStripTOC(contentSelector, headingSelector, maxLevel);
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Notify parent of active changes
   useEffect(() => {
