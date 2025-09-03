@@ -279,7 +279,7 @@
 
 .bytemd-editor-wrapper .bytemd-preview blockquote p {
   margin: 0 !important;
-  font-style: italic;
+  font-style: normal;
   color: #4b5563;
 }
 

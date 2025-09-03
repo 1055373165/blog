@@ -549,10 +549,23 @@ ul, ol {
 
 /* 引用样式 */
 blockquote {
-  @apply border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic;
+  @apply border-l-4 border-gray-300 dark:border-gray-600 pl-4;
   font-family: var(--font-display);
   font-weight: var(--font-weight-medium);
   line-height: var(--line-height-relaxed);
+  quotes: none;
+}
+
+/* 移除 prose 类中 blockquote 的引号 */
+.prose blockquote,
+.prose blockquote::before,
+.prose blockquote::after {
+  quotes: none !important;
+}
+
+.prose blockquote::before,
+.prose blockquote::after {
+  content: '' !important;
 }
 
 /* 链接样式 */

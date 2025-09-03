@@ -162,7 +162,7 @@ export default function ArticlePreview({ article, className = '' }: ArticlePrevi
               blockquote({ node, children, ...props }: any) {
                 return (
                   <blockquote
-                    className="border-l-4 border-primary-500 bg-gray-50 dark:bg-gray-800 p-4 my-4 italic"
+                    className="border-l-4 border-primary-500 bg-gray-50 dark:bg-gray-800 p-4 my-4"
                     {...props}
                   >
                     {children}

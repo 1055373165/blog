@@ -363,7 +363,7 @@ export default function ArticleEditor() {
             border-left: 4px solid rgb(229 231 235);
             padding-left: 1rem;
             margin: 1em 0;
-            font-style: italic;
+            font-style: normal;
             color: rgb(107 114 128);
           }
           .markdown-content ul, .markdown-content ol { margin: 1em 0; padding-left: 2em; }
