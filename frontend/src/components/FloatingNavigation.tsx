@@ -78,6 +78,7 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
   const [activeIndex, setActiveIndex] = useState(0);
   const navRef = useRef<HTMLElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   // 滚动监听
   useEffect(() => {
@@ -131,6 +132,50 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // 移动端菜单体验优化
+  useEffect(() => {
+    // 阻止背景滚动
+    if (isExpanded) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // 点击外部关闭菜单
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isExpanded &&
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node) &&
+        !navRef.current?.contains(event.target as Node)
+      ) {
+        setIsExpanded(false);
+      }
+    };
+
+    // ESC键关闭菜单
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isExpanded) {
+        setIsExpanded(false);
+      }
+    };
+
+    if (isExpanded) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscKey);
+      
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleEscKey);
+        document.body.style.overflow = 'unset';
+      };
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isExpanded]);
 
   // 键盘导航
   useEffect(() => {
@@ -209,10 +254,10 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
                   >
                     <div className="flex items-center space-x-2">
                       <Icon className={clsx(
-                        'w-4 h-4 transition-all duration-300',
+                        'w-4 h-4 transition-all duration-300 flex-shrink-0',
                         isActive ? 'scale-110' : 'group-hover:scale-105'
                       )} />
-                      <span className="hidden sm:inline">{item.name}</span>
+                      <span className="hidden md:inline text-sm whitespace-nowrap">{item.name}</span>
                     </div>
                     
                     {/* 悬浮提示 */}
@@ -239,11 +284,13 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
               disabled={isTogglingTheme}
               className={clsx(
                 'p-2 rounded-xl transition-all duration-300 group',
+                'min-h-[44px] min-w-[44px] touch-manipulation', // Proper touch target
                 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
-                'hover:bg-gray-100 dark:hover:bg-gray-800',
+                'hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700',
                 isTogglingTheme && 'scale-95 opacity-75'
               )}
               title={`切换主题模式 (当前: ${isDark ? '暗黑' : '明亮'})`}
+              aria-label={`切换到${isDark ? '明亮' : '暗黑'}主题`}
             >
               {isDark ? (
                 <SunIcon className={clsx(
@@ -262,11 +309,13 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
             <button
               onClick={() => setThemeSettingsOpen(true)}
               className={clsx(
-                'p-2 rounded-xl transition-all duration-300 group',
+                'hidden md:flex p-2 rounded-xl transition-all duration-300 group items-center justify-center',
+                'min-h-[44px] min-w-[44px] touch-manipulation', // Proper touch target
                 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
-                'hover:bg-gray-100 dark:hover:bg-gray-800'
+                'hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700'
               )}
               title="主题设置"
+              aria-label="打开主题设置"
             >
               <CogIcon className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
             </button>
@@ -275,10 +324,14 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               className={clsx(
-                'sm:hidden p-2 rounded-xl transition-all duration-300',
+                'md:hidden p-2 rounded-xl transition-all duration-300',
+                'min-h-[44px] min-w-[44px] touch-manipulation', // Proper touch target size
                 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
-                'hover:bg-gray-100 dark:hover:bg-gray-800'
+                'hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700',
+                isExpanded && 'bg-gray-100 dark:bg-gray-800'
               )}
+              aria-label={isExpanded ? '关闭菜单' : '打开菜单'}
+              aria-expanded={isExpanded}
             >
               {isExpanded ? (
                 <XMarkIcon className="w-5 h-5" />
@@ -291,12 +344,14 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
         
         {/* 移动端展开菜单 */}
         {isExpanded && (
-          <div className={clsx(
-            'absolute top-full left-0 right-0 mt-2 p-4 rounded-2xl backdrop-blur-xl transition-all duration-300',
-            'bg-white/90 dark:bg-gray-900/90',
-            'border border-white/20 dark:border-gray-800/20',
-            'shadow-2xl'
-          )}>
+          <div
+            ref={mobileMenuRef}
+            className={clsx(
+              'absolute top-full left-0 right-0 mt-2 p-4 rounded-2xl backdrop-blur-xl transition-all duration-300 z-50',
+              'bg-white/95 dark:bg-gray-900/95',
+              'border border-white/30 dark:border-gray-800/30',
+              'shadow-2xl shadow-black/20'
+            )}>
             <div className="space-y-2">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
@@ -309,13 +364,14 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
                     to={item.href}
                     onClick={() => setIsExpanded(false)}
                     className={clsx(
-                      'flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200',
+                      'flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200',
+                      'min-h-[44px] touch-manipulation', // 44px minimum for touch targets
                       isActive
                         ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700'
                     )}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-5 h-5 flex-shrink-0" />
                     <span className="font-medium">{item.name}</span>
                   </Link>
                 );
@@ -328,11 +384,12 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
                   setIsExpanded(false);
                 }}
                 className={clsx(
-                  'flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200',
-                  'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  'flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200',
+                  'min-h-[44px] touch-manipulation w-full text-left', // Full width and proper touch target
+                  'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700'
                 )}
               >
-                <CogIcon className="w-5 h-5" />
+                <CogIcon className="w-5 h-5 flex-shrink-0" />
                 <span className="font-medium">主题设置</span>
               </button>
             </div>

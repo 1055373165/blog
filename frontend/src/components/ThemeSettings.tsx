@@ -43,15 +43,23 @@ const codeThemeOptions: Array<{ value: CodeTheme; label: string; preview: string
   { value: 'duotoneDark', label: 'Duotone Dark', preview: '#2A2734', category: '双色' },
   { value: 'duotoneLight', label: 'Duotone Light', preview: '#FAF8F5', category: '双色' },
   
-  // Atelier 系列 - 精选几个最优雅的
-  { value: 'atelierForestLight', label: 'Forest Light', preview: '#F1F3F4', category: 'Atelier' },
-  { value: 'atelierForestDark', label: 'Forest Dark', preview: '#1B1918', category: 'Atelier' },
-  { value: 'atelierLakesideLight', label: 'Lakeside Light', preview: '#EBF8FF', category: 'Atelier' },
-  { value: 'atelierLakesideDark', label: 'Lakeside Dark', preview: '#161B1D', category: 'Atelier' },
-  { value: 'atelierSeasideLight', label: 'Seaside Light', preview: '#F4F9F4', category: 'Atelier' },
-  { value: 'atelierSeasideDark', label: 'Seaside Dark', preview: '#131513', category: 'Atelier' },
-  { value: 'atelierSulphurpoolLight', label: 'Sulphurpool Light', preview: '#F5F7FF', category: 'Atelier' },
-  { value: 'atelierSulphurpoolDark', label: 'Sulphurpool Dark', preview: '#202746', category: 'Atelier' },
+  // 新增热门主题
+  { value: 'tokyoNight', label: 'Tokyo Night', preview: '#1A1B26', category: '热门' },
+{ value: 'cobalt2', label: 'Cobalt2', preview: '#193549', category: '热门' },
+{ value: 'gruvbox', label: 'Gruvbox', preview: '#282828', category: '热门' },
+{ value: 'cyberpunk', label: 'Cyberpunk', preview: '#0C0C0C', category: '热门' },
+{ value: 'horizon', label: 'Horizon', preview: '#1C1E26', category: '热门' },
+{ value: 'palenight', label: 'Palenight', preview: '#292D3E', category: '热门' },
+{ value: 'abyss', label: 'Abyss', preview: '#000C18', category: '热门' },
+{ value: 'highContrast', label: 'High Contrast', preview: '#0C0C0C', category: '热门' },
+{ value: 'quietLight', label: 'Quiet Light', preview: '#F5F5F5', category: '热门' },
+{ value: 'solarizedDark', label: 'Solarized Dark', preview: '#002B36', category: '热门' },
+{ value: 'forestNight', label: 'Forest Night', preview: '#323D43', category: '热门' },
+{ value: 'oceanicNext', label: 'Oceanic Next', preview: '#1B2B34', category: '热门' },
+{ value: 'andromeda', label: 'Andromeda', preview: '#262A33', category: '热门' },
+{ value: 'catppuccin', label: 'Catppuccin', preview: '#1E1E2E', category: '热门' },
+{ value: 'rosePine', label: 'Rosé Pine', preview: '#191724', category: '热门' },
+{ value: 'monokaipro', label: 'Monokai Pro', preview: '#2D2A2E', category: '热门' },
   
   // 极客主题
   { value: 'geek', label: 'Geek 黑客', preview: '#000000', category: '极客' },
@@ -89,7 +97,7 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
       />
       
       {/* 设置面板 */}
-      <div className="absolute right-0 top-0 h-full w-96 bg-white dark:bg-gray-800 shadow-xl">
+      <div className="absolute right-0 top-0 h-full w-full sm:w-96 bg-white dark:bg-gray-800 shadow-xl">
         <div className="flex flex-col h-full">
           {/* 头部 */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
@@ -107,7 +115,7 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
           </div>
 
           {/* 标签页 */}
-          <div className="flex border-b border-gray-200 dark:border-gray-700">
+          <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
             {[
               { id: 'appearance' as const, label: '外观', icon: '🎨' },
               { id: 'code' as const, label: '代码', icon: '💻' },
@@ -117,7 +125,7 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                className={`flex-1 px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap min-w-0 ${
                   activeTab === tab.id
                     ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
@@ -130,7 +138,7 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
           </div>
 
           {/* 内容区 */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4">
             {activeTab === 'appearance' && (
               <div className="space-y-6">
                 <div>
@@ -172,15 +180,15 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
                   </h3>
                   
                   {/* 按分类显示主题 */}
-                  {['极客', '现代', '经典', '双色', 'Atelier'].map((category) => {
+                  {['极客', '热门', '现代', '经典', 'Atelier', '双色'].map((category) => {
                     const categoryThemes = codeThemeOptions.filter(option => option.category === category);
                     if (categoryThemes.length === 0) return null;
                     
                     return (
                       <div key={category} className="mb-6">
                         <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-                          {category === '极客' && '🖥️ '}{category === '现代' && '🎨 '}{category === '经典' && '📚 '}{category === '双色' && '🎭 '}{category === 'Atelier' && '🏛️ '}
-                          {category === '极客' ? '极客主题' : category === '现代' ? '现代主题' : category === '经典' ? '经典主题' : category === '双色' ? '双色主题' : 'Atelier 系列'}
+                          {category === '极客' && '🖥️ '}{category === '热门' && '🔥 '}{category === '现代' && '🎨 '}{category === '经典' && '📚 '}{category === '双色' && '🎭 '}{category === 'Atelier' && '🏛️ '}
+                          {category === '极客' ? '极客主题' : category === '热门' ? '热门主题' : category === '现代' ? '现代主题' : category === '经典' ? '经典主题' : category === '双色' ? '双色主题' : 'Atelier 系列'}
                         </h4>
                         <div className="grid grid-cols-1 gap-2">
                           {categoryThemes.map((option) => (
@@ -340,6 +348,8 @@ function FontFamilySelector() {
     { value: 'dengxian', label: 'DengXian', preview: '等线', category: '中文', description: 'Office 字体' },
     { value: 'simhei', label: 'SimHei', preview: '黑体', category: '中文', description: '经典黑体' },
     { value: 'simsun', label: 'SimSun', preview: '宋体', category: '中文', description: '经典宋体' },
+    { value: 'kaiti', label: 'KaiTi', preview: '楷体', category: '中文', description: '经典楷书' },
+    { value: 'fangsong', label: 'FangSong', preview: '仿宋', category: '中文', description: '传统仿宋体' },
     
     // 等宽字体
     { value: 'jetbrains-mono', label: 'JetBrains Mono', preview: 'JetBrains Mono', category: '等宽', description: '编程专用' },

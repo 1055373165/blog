@@ -24,6 +24,8 @@ export const fontFamilyMap: Record<FontFamily, string> = {
   'dengxian': '"DengXian", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif',
   'simhei': '"SimHei", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif',
   'simsun': '"SimSun", "Microsoft YaHei", "Times New Roman", system-ui, serif',
+  'kaiti': '"KaiTi", "STKaiti", "Microsoft YaHei", "PingFang SC", system-ui, serif',
+  'fangsong': '"FangSong", "STFangsong", "Microsoft YaHei", "Times New Roman", system-ui, serif',
   
   // 等宽字体 - 使用系统本地字体
   'jetbrains-mono': '"SF Mono", "Monaco", "Cascadia Code", "Consolas", "Courier New", monospace',
@@ -121,12 +123,12 @@ export function preloadGoogleFonts(fontFamilies: FontFamily[]): void {
 export function getFontRecommendations(purpose: 'body' | 'heading' | 'code', language: 'zh' | 'en' | 'mixed' = 'mixed'): FontFamily[] {
   const recommendations: Record<string, Record<string, FontFamily[]>> = {
     body: {
-      zh: ['noto-sans-sc', 'source-han-sans', 'pingfang-sc', 'microsoft-yahei'],
+      zh: ['noto-sans-sc', 'source-han-sans', 'pingfang-sc', 'microsoft-yahei', 'kaiti', 'fangsong'],
       en: ['inter', 'roboto', 'open-sans', 'lato'],
       mixed: ['inter', 'noto-sans-sc', 'source-han-sans', 'roboto'],
     },
     heading: {
-      zh: ['pingfang-sc', 'noto-sans-sc', 'source-han-sans', 'hiragino-sans-gb'],
+      zh: ['pingfang-sc', 'noto-sans-sc', 'source-han-sans', 'hiragino-sans-gb', 'kaiti'],
       en: ['inter', 'poppins', 'work-sans', 'nunito'],
       mixed: ['inter', 'pingfang-sc', 'poppins', 'noto-sans-sc'],
     },

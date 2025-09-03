@@ -32,29 +32,38 @@ export type CodeTheme =
   | 'solarizedlight'
   | 'darcula'
   | 'base16AteliersulphurpoolLight'
+  // 新增热门主题
+  | 'tokyoNight'
+  | 'cobalt2'
+  | 'gruvbox'
+  | 'cyberpunk'
+  | 'horizon'
+  | 'palenight'
+  | 'abyss'
+  | 'highContrast'
+  | 'quietLight'
+  | 'solarizedDark'
+  | 'forestNight'
+  | 'oceanicNext'
+  | 'andromeda'
+  | 'catppuccin'
+  | 'rosePine'
+  | 'monokaipro'
   // Atelier 系列
-  | 'atelierCaveLight'
-  | 'atelierCaveDark'
-  | 'atelierDuneLight'
-  | 'atelierDuneDark'
-  | 'atelierEstuaryLight'
-  | 'atelierEstuaryDark'
-  | 'atelierForestLight'
-  | 'atelierForestDark'
-  | 'atelierHeathLight'
-  | 'atelierHeathDark'
-  | 'atelierLakesideLight'
-  | 'atelierLakesideDark'
-  | 'atelierPlateauLight'
-  | 'atelierPlateauDark'
-  | 'atelierSavannaLight'
-  | 'atelierSavannaDark'
-  | 'atelierSeasideLight'
-  | 'atelierSeasideDark'
-  | 'atelierSulphurpoolLight'
-  | 'atelierSulphurpoolDark'
+  | 'atelierCave'
+  | 'atelierDune'
+  | 'atelierEstuary'
+  | 'atelierForest'
+  | 'atelierHeath'
+  | 'atelierLakeside'
+  | 'atelierPlateau'
+  | 'atelierSavanna'
+  | 'atelierSeaside'
+  | 'atelierSulphurpool'
   // 极客主题
-  | 'geek';
+  | 'geek'
+  | 'matrix'
+  | 'terminal';
 
 export type FontFamily = 
   // 系统字体
@@ -77,6 +86,8 @@ export type FontFamily =
   | 'dengxian'
   | 'simhei'
   | 'simsun'
+  | 'kaiti'
+  | 'fangsong'
   // 等宽字体
   | 'jetbrains-mono'
   | 'fira-code'
@@ -123,7 +134,7 @@ const defaultSettings: ThemeSettings = {
   colorTheme: 'system',
   codeTheme: 'vscDarkPlus',
   fontSize: 'base',
-  lineNumbers: true,
+  lineNumbers: false,
   wordWrap: true,
   fonts: {
     body: 'system',

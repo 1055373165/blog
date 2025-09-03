@@ -24,7 +24,7 @@ export default function SubstackLayout({ children, tocContent, className }: Subs
 
         {/* Center Content Column - 60% width */}
         <main 
-          className="w-[60%] flex-shrink-0 px-8 xl:px-12"
+          className="w-[60%] flex-shrink-0 px-6 xl:px-8"
           role="main"
         >
           <div className="max-w-none mx-auto">

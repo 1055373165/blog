@@ -481,6 +481,8 @@ export default {
             pre: {
               color: 'inherit',
               backgroundColor: 'transparent',
+              marginTop: '1rem',
+              marginBottom: '1rem',
             },
             thead: {
               color: 'inherit',

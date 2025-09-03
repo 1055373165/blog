@@ -60,7 +60,13 @@
       "Bash(npx:*)",
       "Bash(npm start)",
       "Bash(npm --prefix /Users/smy/projects/blog/frontend install @bytemd/react @bytemd/plugin-gfm @bytemd/plugin-highlight @bytemd/plugin-frontmatter)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "Bash(SHELL=/bin/bash bash -c 'cd /Users/smy/projects/blog/frontend && npm run build:check')",
+      "Bash(export PWD=/Users/smy/projects/blog/frontend)",
+      "Bash(/Users/smy/projects/blog/frontend/node_modules/.bin/vite build)",
+      "Bash(SHELL=/bin/bash PWD=/Users/smy/projects/blog/frontend bash -c \"cd /Users/smy/projects/blog/frontend && pwd && ls -la index.html && npm run build\")",
+      "Bash(SHELL=/bin/bash PWD=/Users/smy/projects/blog/frontend bash -c \"cd /Users/smy/projects/blog/frontend && npm run build\")",
+      "Bash(SHELL=/bin/bash PWD=/Users/smy/projects/blog/frontend bash -c \"cd /Users/smy/projects/blog/frontend && npm run build:check\")"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
