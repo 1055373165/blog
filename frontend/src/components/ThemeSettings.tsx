@@ -43,24 +43,6 @@ const codeThemeOptions: Array<{ value: CodeTheme; label: string; preview: string
   { value: 'duotoneDark', label: 'Duotone Dark', preview: '#2A2734', category: '双色' },
   { value: 'duotoneLight', label: 'Duotone Light', preview: '#FAF8F5', category: '双色' },
   
-  // 新增热门主题
-  { value: 'tokyoNight', label: 'Tokyo Night', preview: '#1A1B26', category: '热门' },
-{ value: 'cobalt2', label: 'Cobalt2', preview: '#193549', category: '热门' },
-{ value: 'gruvbox', label: 'Gruvbox', preview: '#282828', category: '热门' },
-{ value: 'cyberpunk', label: 'Cyberpunk', preview: '#0C0C0C', category: '热门' },
-{ value: 'horizon', label: 'Horizon', preview: '#1C1E26', category: '热门' },
-{ value: 'palenight', label: 'Palenight', preview: '#292D3E', category: '热门' },
-{ value: 'abyss', label: 'Abyss', preview: '#000C18', category: '热门' },
-{ value: 'highContrast', label: 'High Contrast', preview: '#0C0C0C', category: '热门' },
-{ value: 'quietLight', label: 'Quiet Light', preview: '#F5F5F5', category: '热门' },
-{ value: 'solarizedDark', label: 'Solarized Dark', preview: '#002B36', category: '热门' },
-{ value: 'forestNight', label: 'Forest Night', preview: '#323D43', category: '热门' },
-{ value: 'oceanicNext', label: 'Oceanic Next', preview: '#1B2B34', category: '热门' },
-{ value: 'andromeda', label: 'Andromeda', preview: '#262A33', category: '热门' },
-{ value: 'catppuccin', label: 'Catppuccin', preview: '#1E1E2E', category: '热门' },
-{ value: 'rosePine', label: 'Rosé Pine', preview: '#191724', category: '热门' },
-{ value: 'monokaipro', label: 'Monokai Pro', preview: '#2D2A2E', category: '热门' },
-  
   // 极客主题
   { value: 'geek', label: 'Geek 黑客', preview: '#000000', category: '极客' },
 ];
