@@ -242,7 +242,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                       fontFamily: 'JetBrains Mono, Monaco, Consolas, monospace',
                     }}
                   >
-                    {codeString.replace(/\n$/, '')}
+                    {codeString.trim()}
                   </SyntaxHighlighter>
                 </div>
               );
