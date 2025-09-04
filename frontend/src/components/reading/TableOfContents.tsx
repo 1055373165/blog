@@ -242,7 +242,10 @@ function TocItemComponent({
       <div 
         className={clsx(
           'flex items-center group transition-colors duration-200',
-          level > 1 && 'ml-4'
+          // Progressive indentation: H1=0, H2=1rem, H3=2rem, H4+=2.5rem
+          level === 2 && 'ml-4',
+          level === 3 && 'ml-8', 
+          level >= 4 && 'ml-10'
         )}
       >
         {/* 展开/折叠按钮 */}

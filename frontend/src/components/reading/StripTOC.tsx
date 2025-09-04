@@ -208,10 +208,11 @@ function StripTOCItem({
         className={clsx(
           'block py-3 px-4 text-sm transition-all duration-200',
           'hover:bg-gray-50/50 dark:hover:bg-gray-800/30',
-          // Indentation based on heading level
-          item.level === 2 && 'pl-6',
-          item.level === 3 && 'pl-8',
-          item.level >= 4 && 'pl-10',
+          // Progressive indentation: H1=1rem, H2=2rem, H3=3rem, H4+=4rem
+          item.level === 1 && 'pl-4',
+          item.level === 2 && 'pl-8',
+          item.level === 3 && 'pl-12',
+          item.level >= 4 && 'pl-16',
           // Hierarchical text colors
           getTextColor(),
           // Background for active state
