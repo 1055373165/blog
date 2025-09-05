@@ -32,21 +32,27 @@ export type CodeTheme =
   | 'solarizedlight'
   | 'darcula'
   | 'base16AteliersulphurpoolLight'
-  // Atelier 系列
-  | 'atelierCave'
-  | 'atelierDune'
-  | 'atelierEstuary'
-  | 'atelierForest'
-  | 'atelierHeath'
-  | 'atelierLakeside'
-  | 'atelierPlateau'
-  | 'atelierSavanna'
-  | 'atelierSeaside'
-  | 'atelierSulphurpool'
-  // 极客主题
-  | 'geek'
-  | 'matrix'
-  | 'terminal';
+  // HLJS Atelier 系列
+  | 'atelierCaveLight'
+  | 'atelierCaveDark'
+  | 'atelierDuneLight'
+  | 'atelierDuneDark'
+  | 'atelierEstuaryLight'
+  | 'atelierEstuaryDark'
+  | 'atelierForestLight'
+  | 'atelierForestDark'
+  | 'atelierHeathLight'
+  | 'atelierHeathDark'
+  | 'atelierLakesideLight'
+  | 'atelierLakesideDark'
+  | 'atelierPlateauLight'
+  | 'atelierPlateauDark'
+  | 'atelierSavannaLight'
+  | 'atelierSavannaDark'
+  | 'atelierSeasideLight'
+  | 'atelierSeasideDark'
+  | 'atelierSulphurpoolLight'
+  | 'atelierSulphurpoolDark';
 
 export type FontFamily = 
   // 系统字体
