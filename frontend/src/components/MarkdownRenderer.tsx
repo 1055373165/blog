@@ -206,7 +206,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             const language = match ? match[1] : '';
             
             // 确保children是字符串
-            const codeString = String(children).replace(/\n$/, '');
+            const codeString = String(children).trim();
             
             // 多行代码块
             if (!inline && codeString.includes('\n')) {
