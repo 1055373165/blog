@@ -222,13 +222,19 @@ func UploadImage(c *gin.Context) {
 	// 根据环境确定域名和协议
 	var domain, scheme string
 
+	// 检查是否为开发环境（优先检查环境变量）
+	env := os.Getenv("ENVIRONMENT")
+	if env == "" {
+		env = os.Getenv("APP_ENVIRONMENT")
+	}
+
 	// 如果是本地开发环境，强制使用localhost
-	if cfg.App.Environment == "development" {
+	if env == "development" || cfg.App.Environment == "development" {
 		scheme = "http://"
 		domain = fmt.Sprintf("localhost:%s", cfg.Server.Port)
 	} else {
 		// 生产环境使用配置的域名
-		scheme = "//"
+		scheme = "https://"
 		domain = os.Getenv("DOMAIN")
 		if domain == "" {
 			domain = "www.godepth.top"
