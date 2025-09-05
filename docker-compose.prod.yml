@@ -72,6 +72,7 @@ services:
       - ./frontend/public/books:/usr/share/nginx/html/books
       - ./data/uploads:/app/uploads
 
+volumes:
   redis_data:
     driver: local
 
