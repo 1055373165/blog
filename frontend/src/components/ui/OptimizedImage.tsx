@@ -216,18 +216,6 @@ export default function OptimizedImage({
         />
       )}
       
-      {/* Debug info for development */}
-      {process.env.NODE_ENV === 'development' && !inView && (
-        <div className="absolute inset-0 bg-yellow-200/50 flex items-center justify-center text-xs">
-          等待进入视口
-        </div>
-      )}
-      
-      {process.env.NODE_ENV === 'development' && inView && !loaded && !error && (
-        <div className="absolute inset-0 bg-blue-200/50 flex items-center justify-center text-xs">
-          正在加载: {optimizedSrc}
-        </div>
-      )}
       
       {/* 调试信息 */}
       {process.env.NODE_ENV === 'development' && (
