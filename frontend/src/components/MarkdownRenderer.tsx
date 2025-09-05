@@ -223,9 +223,10 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                     customStyle={{ 
                       backgroundColor: isDark ? '#111827' : '#f9fafb',
                       background: isDark ? '#111827' : '#f9fafb',
-                      border: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`,
-                      borderRadius: '12px',
-                      padding: '16px'
+                      border: 'none',
+                      borderRadius: '0px',
+                      padding: '16px',
+                      margin: '0'
                     }}
                   >
                     {codeString}
