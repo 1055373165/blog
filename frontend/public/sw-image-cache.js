@@ -61,7 +61,7 @@ async function handleImageRequest(request) {
   const cached = await cache.match(request);
 
   // 检查缓存是否存在且未过期
-  if (cached) {
+  if (cached && cached.headers) {
     const cacheTime = cached.headers.get('sw-cache-time');
     if (cacheTime) {
       const age = Date.now() - parseInt(cacheTime);
@@ -72,7 +72,13 @@ async function handleImageRequest(request) {
         console.log('缓存已过期，删除:', request.url);
         await cache.delete(request);
       }
+    } else {
+      console.log('缓存项无时间戳，删除:', request.url);
+      await cache.delete(request);
     }
+  } else if (cached) {
+    console.warn('发现损坏的缓存项，删除:', request.url);
+    await cache.delete(request);
   }
 
   try {
@@ -133,6 +139,18 @@ self.addEventListener('message', event => {
     event.waitUntil(
       getCacheStatus().then(status => {
         event.ports[0].postMessage(status);
+      }).catch(error => {
+        console.error('获取缓存状态失败:', error);
+        event.ports[0].postMessage({ total: 0, expired: 0, images: [], error: error.message });
+      })
+    );
+  }
+  
+  if (event.data && event.data.type === 'CLEANUP_BROKEN_CACHE') {
+    event.waitUntil(
+      cleanupBrokenCache().then(result => {
+        console.log('清理损坏缓存完成:', result);
+        event.ports[0].postMessage({ success: true, ...result });
       })
     );
   }
@@ -148,16 +166,29 @@ async function getCacheStatus() {
     
     for (const request of keys) {
       const cached = await cache.match(request);
-      const cacheTime = cached.headers.get('sw-cache-time');
       
-      if (cacheTime) {
-        const age = Date.now() - parseInt(cacheTime);
-        if (age < IMAGE_CACHE_DURATION) {
-          validImages.push(request.url);
+      // 检查 cached 是否存在且有 headers
+      if (cached && cached.headers) {
+        const cacheTime = cached.headers.get('sw-cache-time');
+        
+        if (cacheTime) {
+          const age = Date.now() - parseInt(cacheTime);
+          if (age < IMAGE_CACHE_DURATION) {
+            validImages.push(request.url);
+          } else {
+            expiredImages.push(request.url);
+            await cache.delete(request);
+          }
         } else {
+          // 没有时间戳的缓存项，视为过期
           expiredImages.push(request.url);
           await cache.delete(request);
         }
+      } else {
+        // cached 不存在或没有 headers，清理该缓存项
+        console.warn('发现损坏的缓存项:', request.url);
+        expiredImages.push(request.url);
+        await cache.delete(request);
       }
     }
     
@@ -169,5 +200,32 @@ async function getCacheStatus() {
   } catch (error) {
     console.error('获取缓存状态失败:', error);
     return { total: 0, expired: 0, images: [] };
+  }
+}
+
+// 清理损坏的缓存项
+async function cleanupBrokenCache() {
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const keys = await cache.keys();
+    const brokenItems = [];
+    
+    for (const request of keys) {
+      const cached = await cache.match(request);
+      
+      // 检查是否为损坏的缓存项
+      if (!cached || !cached.headers || !cached.headers.get('sw-cache-time')) {
+        brokenItems.push(request.url);
+        await cache.delete(request);
+      }
+    }
+    
+    return {
+      cleaned: brokenItems.length,
+      items: brokenItems
+    };
+  } catch (error) {
+    console.error('清理损坏缓存失败:', error);
+    return { cleaned: 0, items: [], error: error.message };
   }
 }

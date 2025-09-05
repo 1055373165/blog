@@ -66,7 +66,8 @@
       "Bash(/Users/smy/projects/blog/frontend/node_modules/.bin/vite build)",
       "Bash(SHELL=/bin/bash PWD=/Users/smy/projects/blog/frontend bash -c \"cd /Users/smy/projects/blog/frontend && pwd && ls -la index.html && npm run build\")",
       "Bash(SHELL=/bin/bash PWD=/Users/smy/projects/blog/frontend bash -c \"cd /Users/smy/projects/blog/frontend && npm run build\")",
-      "Bash(SHELL=/bin/bash PWD=/Users/smy/projects/blog/frontend bash -c \"cd /Users/smy/projects/blog/frontend && npm run build:check\")"
+      "Bash(SHELL=/bin/bash PWD=/Users/smy/projects/blog/frontend bash -c \"cd /Users/smy/projects/blog/frontend && npm run build:check\")",
+      "Bash(docker compose:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
