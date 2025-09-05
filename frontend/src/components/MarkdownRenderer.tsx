@@ -194,7 +194,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
   };
 
   return (
-    <div className={`prose dark:prose-invert max-w-none ${className}`}>
+    <div className={`prose dark:prose-invert max-w-none prose-pre:bg-transparent ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[
