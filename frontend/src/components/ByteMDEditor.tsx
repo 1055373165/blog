@@ -4,9 +4,11 @@ import gfm from '@bytemd/plugin-gfm'
 import highlight from '@bytemd/plugin-highlight'
 import frontmatter from '@bytemd/plugin-frontmatter'
 import { uploadApi } from '../api'
+import { foldablePlugin } from './editor-plugins/foldable-plugin'
 
 import 'bytemd/dist/index.css'
 import 'highlight.js/styles/vs.css'
+import './editor-plugins/foldable-styles.css'
 
 interface ByteMDEditorProps {
   value: string
@@ -19,6 +21,7 @@ const plugins = [
   gfm(),
   highlight(),
   frontmatter(),
+  foldablePlugin(),
 ]
 
 export default function ByteMDEditor({ 

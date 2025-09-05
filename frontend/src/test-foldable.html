@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>折叠功能测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        /* 折叠块样式 */
+        details {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin: 1.5em 0;
+            background: #fafafa;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        details:hover {
+            border-color: #d1d5db;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        details summary {
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            cursor: pointer;
+            font-weight: 500;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+            user-select: none;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        details summary:hover {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            color: #1f2937;
+        }
+
+        details summary::marker {
+            content: '';
+        }
+
+        details summary::before {
+            content: '▶';
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: transform 0.2s ease;
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        details[open] summary::before {
+            transform: translateY(-50%) rotate(90deg);
+        }
+
+        details div,
+        details p,
+        details > *:not(summary) {
+            padding: 16px;
+            background: #ffffff;
+            margin: 0;
+        }
+
+        details > *:not(summary):first-of-type {
+            padding-top: 16px;
+        }
+
+        details > *:not(summary):last-child {
+            padding-bottom: 16px;
+        }
+
+        details[open] {
+            animation: expand 0.2s ease-out;
+        }
+
+        @keyframes expand {
+            from {
+                opacity: 0.8;
+                transform: translateY(-2px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .test-section {
+            margin: 2em 0;
+            padding: 1em;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>折叠功能测试页面</h1>
+    
+    <div class="test-section">
+        <h2>基础折叠测试</h2>
+        
+        <details>
+            <summary>点击展开/折叠</summary>
+            <p>这是一个基础的折叠内容示例。</p>
+            <p>支持多段落内容，包括各种 HTML 元素。</p>
+        </details>
+
+        <details>
+            <summary>代码示例</summary>
+            <pre><code>function hello() {
+    console.log('Hello, World!');
+}</code></pre>
+            <p>这里展示了代码块在折叠内容中的效果。</p>
+        </details>
+
+        <details>
+            <summary>嵌套内容测试</summary>
+            <h3>这是一个标题</h3>
+            <p>支持在折叠内容中使用标题、列表等元素：</p>
+            <ul>
+                <li>列表项 1</li>
+                <li>列表项 2</li>
+                <li>列表项 3</li>
+            </ul>
+            <p>还可以嵌套其他折叠块：</p>
+            <details>
+                <summary>嵌套折叠</summary>
+                <p>这是嵌套在另一个折叠块内的内容。</p>
+            </details>
+        </details>
+
+        <details open>
+            <summary>默认展开的折叠块</summary>
+            <p>这个折叠块默认是展开状态的。</p>
+            <p>用户可以点击标题来折叠它。</p>
+        </details>
+    </div>
+
+    <div class="test-section">
+        <h2>Markdown 中的使用方式</h2>
+        <p>在 Markdown 编辑器中，可以这样使用：</p>
+        <pre><code>&lt;details&gt;
+&lt;summary&gt;点击展开/折叠&lt;/summary&gt;
+
+在这里输入折叠的内容...
+
+&lt;/details&gt;</code></pre>
+    </div>
+
+    <script>
+        // 添加一些交互测试
+        document.addEventListener('DOMContentLoaded', function() {
+            const details = document.querySelectorAll('details');
+            
+            details.forEach(detail => {
+                detail.addEventListener('toggle', function() {
+                    console.log('折叠状态改变:', this.open ? '展开' : '折叠');
+                });
+            });
+            
+            console.log('折叠功能测试页面已加载');
+            console.log('找到', details.length, '个折叠块');
+        });
+    </script>
+</body>
+</html>

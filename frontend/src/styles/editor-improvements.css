@@ -7,7 +7,8 @@
   overflow: hidden;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transition: box-shadow 0.2s ease;
-  height: 100%; /* Allow full height */
+  height: 600px; /* Set fixed height */
+  max-height: 600px; /* Ensure maximum height */
   display: flex;
   flex-direction: column;
 }
@@ -21,11 +22,14 @@
   border: 2px solid #e5e7eb;
   border-radius: 12px;
   background: #ffffff;
-  transition: border-color 0.2s ease;
-  flex: 1; /* Take full available height */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  font-size: 16px;
+  height: 100%;
+  max-height: 100%;
+  overflow: visible;
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .bytemd-editor-wrapper .bytemd:focus-within {
@@ -164,7 +168,7 @@
   padding: 20px !important;
   background: #ffffff !important;
   max-width: none !important;
-  overflow-y: auto !important;
+  overflow: auto !important;
   height: 100% !important;
   flex: 1 !important;
 }
@@ -211,11 +215,29 @@
   padding: 0 !important;
 }
 
-/* Lists - Better Spacing */
+/* Lists - Better Spacing and Markers */
 .bytemd-editor-wrapper .bytemd-preview ul,
 .bytemd-editor-wrapper .bytemd-preview ol {
   margin: 1rem 0 !important;
   padding-left: 1.5rem !important;
+}
+
+/* Ensure list markers are visible (override Tailwind reset) */
+.bytemd-editor-wrapper .bytemd-preview ul {
+  list-style-type: disc !important;
+}
+
+.bytemd-editor-wrapper .bytemd-preview ol {
+  list-style-type: decimal !important;
+}
+
+/* Nested list styles */
+.bytemd-editor-wrapper .bytemd-preview ul ul {
+  list-style-type: circle !important;
+}
+
+.bytemd-editor-wrapper .bytemd-preview ul ul ul {
+  list-style-type: square !important;
 }
 
 .bytemd-editor-wrapper .bytemd-preview li {
@@ -458,22 +480,30 @@
 
 .bytemd-editor-wrapper .bytemd-editor .CodeMirror-scroll {
   height: 100% !important;
-  min-height: 1400px !important;
+  max-height: 100% !important;
 }
 
-/* Fix potential overflow issues */
-.bytemd-editor-wrapper {
-  overflow: hidden !important;
+/* Enable scrolling within editor panels */
+.bytemd-editor-wrapper .bytemd-split {
+  height: 100%;
+  display: flex;
+  flex: 1;
+  min-height: 0;
 }
 
 .bytemd-editor-wrapper .bytemd-split .bytemd-editor,
 .bytemd-editor-wrapper .bytemd-split .bytemd-preview {
-  overflow: hidden !important;
+  overflow: auto !important;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .bytemd-editor-wrapper .bytemd-editor textarea {
   border: none !important;
   outline: none !important;
+  height: 100% !important;
+  resize: none !important;
 }
 
 /* Responsive adjustments */

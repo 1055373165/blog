@@ -1,0 +1,190 @@
+/* 折叠块样式 - 适用于 ByteMD 编辑器 */
+
+/* 基础折叠块样式 */
+.bytemd details {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin: 1.5em 0;
+  background: #fafafa;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.bytemd details:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* 折叠标题样式 */
+.bytemd details summary {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  cursor: pointer;
+  font-weight: 500;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  user-select: none;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.bytemd details summary:hover {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  color: #1f2937;
+}
+
+/* 展开/折叠指示器 */
+.bytemd details summary::marker {
+  content: '';
+}
+
+.bytemd details summary::before {
+  content: '▶';
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: transform 0.2s ease;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.bytemd details[open] summary::before {
+  transform: translateY(-50%) rotate(90deg);
+}
+
+/* 折叠内容样式 */
+.bytemd details div,
+.bytemd details p,
+.bytemd details > *:not(summary) {
+  padding: 16px;
+  background: #ffffff;
+  margin: 0;
+}
+
+.bytemd details > *:not(summary):first-of-type {
+  padding-top: 16px;
+}
+
+.bytemd details > *:not(summary):last-child {
+  padding-bottom: 16px;
+}
+
+/* 嵌套内容样式 */
+.bytemd details .bytemd-content {
+  line-height: 1.6;
+  color: #374151;
+}
+
+.bytemd details .bytemd-content h1,
+.bytemd details .bytemd-content h2,
+.bytemd details .bytemd-content h3,
+.bytemd details .bytemd-content h4,
+.bytemd details .bytemd-content h5,
+.bytemd details .bytemd-content h6 {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  color: #1f2937;
+}
+
+.bytemd details .bytemd-content p {
+  margin-bottom: 1em;
+  padding: 0;
+}
+
+.bytemd details .bytemd-content code {
+  background: #f3f4f6;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+.bytemd details .bytemd-content pre {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+/* 暗色主题支持 */
+.dark .bytemd details {
+  border-color: #374151;
+  background: #1f2937;
+}
+
+.dark .bytemd details summary {
+  background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+  color: #f9fafb;
+  border-bottom-color: #4b5563;
+}
+
+.dark .bytemd details summary:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #6b7280 100%);
+  color: #ffffff;
+}
+
+.dark .bytemd details summary::before {
+  color: #9ca3af;
+}
+
+.dark .bytemd details div,
+.dark .bytemd details p,
+.dark .bytemd details > *:not(summary) {
+  background: #111827;
+  color: #f9fafb;
+}
+
+.dark .bytemd details .bytemd-content h1,
+.dark .bytemd details .bytemd-content h2,
+.dark .bytemd details .bytemd-content h3,
+.dark .bytemd details .bytemd-content h4,
+.dark .bytemd details .bytemd-content h5,
+.dark .bytemd details .bytemd-content h6 {
+  color: #ffffff;
+}
+
+.dark .bytemd details .bytemd-content code {
+  background: #374151;
+  color: #f9fafb;
+}
+
+.dark .bytemd details .bytemd-content pre {
+  background: #1f2937;
+  border: 1px solid #374151;
+}
+
+/* 动画效果 */
+.bytemd details[open] {
+  animation: expand 0.2s ease-out;
+}
+
+@keyframes expand {
+  from {
+    opacity: 0.8;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 编辑器工具栏按钮样式 */
+.bytemd-toolbar-icon[title*="折叠"] {
+  color: #6b7280;
+}
+
+.bytemd-toolbar-icon[title*="折叠"]:hover {
+  color: #374151;
+  background: #f3f4f6;
+}
+
+.dark .bytemd-toolbar-icon[title*="折叠"] {
+  color: #9ca3af;
+}
+
+.dark .bytemd-toolbar-icon[title*="折叠"]:hover {
+  color: #f9fafb;
+  background: #374151;
+}

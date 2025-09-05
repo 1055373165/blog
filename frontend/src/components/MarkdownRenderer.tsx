@@ -1,6 +1,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
+import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { 
   vscDarkPlus, 
@@ -125,7 +126,8 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[
-          rehypeSlug
+          rehypeSlug,
+          rehypeRaw
         ]}
         components={{
                     code({ inline, className, children }: { inline?: boolean; className?: string; children?: React.ReactNode }) {
@@ -276,6 +278,20 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               className="max-w-full h-auto my-4"
               loading="lazy"
             />
+          ),
+          // 折叠块支持
+          details: ({ children, ...props }) => (
+            <details 
+              className="border border-gray-200 dark:border-gray-700 rounded-lg margin-4 bg-gray-50 dark:bg-gray-800/50 overflow-hidden transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm"
+              {...props}
+            >
+              {children}
+            </details>
+          ),
+          summary: ({ children }) => (
+            <summary className="px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-700 dark:to-gray-800 cursor-pointer font-medium text-gray-800 dark:text-gray-200 border-b border-gray-200 dark:border-gray-600 user-select-none transition-all duration-200 hover:from-gray-200 hover:to-gray-100 dark:hover:from-gray-600 dark:hover:to-gray-700 relative before:content-['▶'] before:absolute before:right-4 before:top-1/2 before:-translate-y-1/2 before:transition-transform before:duration-200 before:text-gray-500 dark:before:text-gray-400 before:text-xs [details[open]>&]:before:rotate-90">
+              {children}
+            </summary>
           ),
         }}
       >

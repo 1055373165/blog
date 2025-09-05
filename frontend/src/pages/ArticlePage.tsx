@@ -10,6 +10,7 @@ import StripTOC from '../components/reading/StripTOC';
 import SubstackLayout from '../components/SubstackLayout';
 import { useReadingTime } from '../hooks/useReadingTime';
 import { formatDate } from '../utils';
+import '../styles/foldable-article.css';
 
 // Memoized RelatedArticles component to prevent unnecessary re-renders
 const RelatedArticles = memo(({ articles }: { articles: Article[] }) => {
