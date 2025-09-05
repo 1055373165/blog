@@ -461,8 +461,8 @@ export default function ArticlePage() {
                                prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-p:leading-relaxed prose-p:text-base
                                prose-a:text-go-600 dark:prose-a:text-go-400 prose-a:font-medium hover:prose-a:text-go-700
                                prose-strong:text-gray-900 dark:prose-strong:text-white prose-strong:font-semibold
-                               prose-code:text-go-700 dark:prose-code:text-go-300 prose-code:bg-go-50 dark:prose-code:bg-go-900/30 prose-code:px-2 prose-code:py-1 prose-code:rounded
-                               prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800 prose-pre:rounded-xl prose-pre:shadow-soft
+                               prose-code:text-go-700 dark:prose-code:text-go-300
+                               prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 prose-pre:rounded-xl prose-pre:shadow-soft
                                prose-blockquote:border-go-500 prose-blockquote:bg-go-50/50 dark:prose-blockquote:bg-go-900/20 prose-blockquote:py-1.5 prose-blockquote:px-4
                                prose-img:rounded-xl prose-img:shadow-medium prose-img:border prose-img:border-gray-200 dark:prose-img:border-gray-700
                                prose-li:text-gray-700 dark:prose-li:text-gray-300

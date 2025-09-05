@@ -194,7 +194,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
   };
 
   return (
-    <div className={`prose dark:prose-invert max-w-none prose-pre:bg-transparent ${className}`}>
+    <div className={`prose dark:prose-invert max-w-none prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[
@@ -221,8 +221,11 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                     wrapLines={settings.wordWrap}
                     wrapLongLines={settings.wordWrap}
                     customStyle={{ 
-                      backgroundColor: 'transparent !important',
-                      background: 'transparent !important'
+                      backgroundColor: isDark ? '#111827' : '#f9fafb',
+                      background: isDark ? '#111827' : '#f9fafb',
+                      border: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`,
+                      borderRadius: '12px',
+                      padding: '16px'
                     }}
                   >
                     {codeString}
@@ -234,9 +237,8 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             // 行内代码
             return (
               <code
-                className={`px-2 py-1 font-mono bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 ${settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-base' : settings.fontSize === 'xl' ? 'text-lg' : 'text-sm'}`}
+                className={`font-mono text-gray-800 dark:text-gray-200 ${settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-base' : settings.fontSize === 'xl' ? 'text-lg' : 'text-sm'}`}
                 style={{
-                  backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
                   color: isDark ? '#e5e7eb' : '#374151',
                   fontFamily: 'JetBrains Mono, Monaco, Consolas, monospace',
                 }}

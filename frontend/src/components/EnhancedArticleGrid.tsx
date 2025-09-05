@@ -123,6 +123,7 @@ const EnhancedArticleCard = ({
               src={article.cover_image}
               alt={article.title}
               aspectRatio="16/9"
+              priority={index < 3} // 前3张图片优先加载
               className={clsx(
                 'transition-all duration-700 group-hover:scale-110',
                 imageLoaded ? 'opacity-100' : 'opacity-0'

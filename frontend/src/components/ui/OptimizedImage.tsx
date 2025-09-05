@@ -53,7 +53,7 @@ const useImageLazyLoading = (priority: boolean = false, threshold = 0.1) => {
         },
         { 
           threshold, 
-          rootMargin: priority ? '0px' : '50px' // 减小预加载边距，确保轮播图片能及时加载
+          rootMargin: priority ? '0px' : '100px' // 增大预加载边距，确保首页图片能及时加载
         }
       );
 
@@ -137,14 +137,14 @@ export default function OptimizedImage({
   const optimizedSrc = getOptimizedSrc(src, format, quality);
 
   const handleImageLoad = useCallback(() => {
-    console.log(`图片加载成功: ${src}`);
+    console.log(`✅ 图片加载成功: ${src}`);
     setLoaded(true);
     handleLoad();
     onLoad?.();
   }, [handleLoad, onLoad, src]);
 
   const handleImageError = useCallback(() => {
-    console.error(`图片加载失败: ${src}`);
+    console.error(`❌ 图片加载失败: ${src}`);
     setError(true);
     onError?.();
   }, [onError, src]);
@@ -214,6 +214,19 @@ export default function OptimizedImage({
             objectFit: 'cover'
           }}
         />
+      )}
+      
+      {/* Debug info for development */}
+      {process.env.NODE_ENV === 'development' && !inView && (
+        <div className="absolute inset-0 bg-yellow-200/50 flex items-center justify-center text-xs">
+          等待进入视口
+        </div>
+      )}
+      
+      {process.env.NODE_ENV === 'development' && inView && !loaded && !error && (
+        <div className="absolute inset-0 bg-blue-200/50 flex items-center justify-center text-xs">
+          正在加载: {optimizedSrc}
+        </div>
       )}
       
       {/* 调试信息 */}
