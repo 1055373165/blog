@@ -68,9 +68,6 @@ services:
       - "8080:8080"
     networks:
       - blog_network
-    volumes:
-      - ./frontend/public/books:/usr/share/nginx/html/books
-      - ./data/uploads:/app/uploads
 
 volumes:
   redis_data:

@@ -69,7 +69,8 @@
       "Bash(SHELL=/bin/bash PWD=/Users/smy/projects/blog/frontend bash -c \"cd /Users/smy/projects/blog/frontend && npm run build:check\")",
       "Bash(docker compose:*)",
       "Bash(echo $DOMAIN)",
-      "Bash(/tmp/blog-backend)"
+      "Bash(/tmp/blog-backend)",
+      "Bash(docker:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
