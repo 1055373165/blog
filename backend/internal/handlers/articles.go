@@ -288,7 +288,7 @@ func CreateArticle(c *gin.Context) {
 	slug := utils.GenerateSlug(req.Title)
 
 	// 从 Gin 的上下文中获取当前登录的用户 ID
-	authorID, exists := c.Get("userID")
+	authorID, exists := middleware.GetCurrentUserID(c)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"success": false,
@@ -316,7 +316,7 @@ func CreateArticle(c *gin.Context) {
 
 	// 创建文章
 	article := models.Article{
-		AuthorID:        authorID.(uint),
+		AuthorID:        authorID,
 		Title:           req.Title,
 		Slug:            slug,
 		Content:         req.Content,
