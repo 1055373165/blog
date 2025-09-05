@@ -62,81 +62,8 @@ interface MarkdownRendererProps {
 export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
   const { settings, isDark } = useTheme();
 
-  // 自定义极客主题 - 纯黑色
-  const geekTheme: { [key: string]: React.CSSProperties } = {
-    'code[class*="language-"]': {
-      color: '#00FF00',
-      background: '#000000',
-      textShadow: '0 0 2px #00FF00',
-      fontFamily: 'JetBrains Mono, Monaco, Consolas, monospace',
-      fontSize: '14px',
-      lineHeight: '1.5',
-      direction: 'ltr',
-      textAlign: 'left',
-      whiteSpace: 'pre',
-      wordSpacing: 'normal',
-      wordBreak: 'normal',
-      wordWrap: 'normal',
-      tabSize: 4,
-      hyphens: 'none',
-    },
-    'pre[class*="language-"]': {
-      color: '#00FF00',
-      background: '#000000',
-      textShadow: '0 0 2px #00FF00',
-      fontFamily: 'JetBrains Mono, Monaco, Consolas, monospace',
-      fontSize: '14px',
-      lineHeight: '1.5',
-      direction: 'ltr',
-      textAlign: 'left',
-      whiteSpace: 'pre',
-      wordSpacing: 'normal',
-      wordBreak: 'normal',
-      wordWrap: 'normal',
-      tabSize: 4,
-      hyphens: 'none',
-      padding: '0.5rem',
-      margin: '0',
-      overflow: 'auto',
-    },
-    'comment': { color: '#555555', fontStyle: 'italic' },
-    'prolog': { color: '#555555' },
-    'doctype': { color: '#555555' },
-    'cdata': { color: '#555555' },
-    'punctuation': { color: '#00FF00' },
-    'property': { color: '#00FFFF' },
-    'tag': { color: '#FF6600' },
-    'boolean': { color: '#FFFF00' },
-    'number': { color: '#FFFF00' },
-    'constant': { color: '#FFFF00' },
-    'symbol': { color: '#FFFF00' },
-    'deleted': { color: '#FF0000' },
-    'selector': { color: '#00FFFF' },
-    'attr-name': { color: '#00FFFF' },
-    'string': { color: '#FFFF00' },
-    'char': { color: '#FFFF00' },
-    'builtin': { color: '#00FFFF' },
-    'inserted': { color: '#00FF00' },
-    'operator': { color: '#FF6600' },
-    'entity': { color: '#FF6600' },
-    'url': { color: '#00FFFF' },
-    'variable': { color: '#00FFFF' },
-    'atrule': { color: '#FF6600' },
-    'attr-value': { color: '#FFFF00' },
-    'function': { color: '#FF6600' },
-    'class-name': { color: '#00FFFF' },
-    'keyword': { color: '#FF6600', fontWeight: 'bold' },
-    'regex': { color: '#FFFF00' },
-    'important': { color: '#FF0000', fontWeight: 'bold' },
-  };
-
   // 获取代码主题样式
-  const getCodeStyle = () => {
-    // 如果是geek主题，返回自定义主题
-    if (settings.codeTheme === 'geek') {
-      return geekTheme;
-    }
-    
+  const getCodeStyle = () => {    
     const themeMap = {
       // 经典主题
       vs,
