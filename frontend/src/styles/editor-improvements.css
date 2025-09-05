@@ -162,8 +162,11 @@
   font-size: 16px !important;
   line-height: 1.5 !important;
   padding: 20px !important;
-  background: #ffffff;
+  background: #ffffff !important;
   max-width: none !important;
+  overflow-y: auto !important;
+  height: 100% !important;
+  flex: 1 !important;
 }
 
 .dark .bytemd-editor-wrapper .bytemd-preview {
@@ -392,22 +395,37 @@
 }
 
 /* Split View and Full Height Management */
+.bytemd-editor-wrapper .bytemd {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.bytemd-editor-wrapper .bytemd-body {
+  flex: 1 !important;
+  display: flex !important;
+  height: 100% !important;
+  min-height: 1400px !important;
+}
+
 .bytemd-editor-wrapper .bytemd-split {
-  display: flex;
-  height: 100%;
-  flex: 1;
+  display: flex !important;
+  height: 100% !important;
+  flex: 1 !important;
 }
 
 .bytemd-editor-wrapper .bytemd-split .bytemd-editor,
 .bytemd-editor-wrapper .bytemd-split .bytemd-preview {
-  flex: 1;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  flex: 1 !important;
+  width: 50% !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 1400px !important;
 }
 
 .bytemd-editor-wrapper .bytemd-split .bytemd-editor {
-  border-right: 1px solid #e9ecef;
+  border-right: 1px solid #e9ecef !important;
 }
 
 /* Ensure textarea takes full height */
@@ -420,11 +438,60 @@
 .bytemd-editor-wrapper .bytemd-editor textarea {
   flex: 1 !important;
   height: 100% !important;
-  min-height: 500px !important;
+  min-height: 1400px !important;
 }
 
 .dark .bytemd-editor-wrapper .bytemd-split .bytemd-editor {
-  border-right-color: #4b5563;
+  border-right-color: #4b5563 !important;
+}
+
+/* Ensure proper visibility and functionality */
+.bytemd-editor-wrapper .bytemd-toolbar {
+  flex-shrink: 0 !important;
+  z-index: 10 !important;
+}
+
+.bytemd-editor-wrapper .bytemd-editor .CodeMirror {
+  height: 100% !important;
+  flex: 1 !important;
+}
+
+.bytemd-editor-wrapper .bytemd-editor .CodeMirror-scroll {
+  height: 100% !important;
+  min-height: 1400px !important;
+}
+
+/* Fix potential overflow issues */
+.bytemd-editor-wrapper {
+  overflow: hidden !important;
+}
+
+.bytemd-editor-wrapper .bytemd-split .bytemd-editor,
+.bytemd-editor-wrapper .bytemd-split .bytemd-preview {
+  overflow: hidden !important;
+}
+
+.bytemd-editor-wrapper .bytemd-editor textarea {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .bytemd-editor-wrapper .bytemd-split {
+    flex-direction: column !important;
+  }
+  
+  .bytemd-editor-wrapper .bytemd-split .bytemd-editor,
+  .bytemd-editor-wrapper .bytemd-split .bytemd-preview {
+    width: 100% !important;
+    min-height: 700px !important;
+  }
+  
+  .bytemd-editor-wrapper .bytemd-split .bytemd-editor {
+    border-right: none !important;
+    border-bottom: 1px solid #e9ecef !important;
+  }
 }
 
 /* Focus States for Accessibility */

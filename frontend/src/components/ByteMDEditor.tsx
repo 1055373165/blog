@@ -3,6 +3,7 @@ import { Editor } from '@bytemd/react'
 import gfm from '@bytemd/plugin-gfm'
 import highlight from '@bytemd/plugin-highlight'
 import frontmatter from '@bytemd/plugin-frontmatter'
+import { uploadApi } from '../api'
 
 import 'bytemd/dist/index.css'
 import 'highlight.js/styles/vs.css'
@@ -23,7 +24,7 @@ const plugins = [
 export default function ByteMDEditor({ 
   value, 
   onChange, 
-  height = 500, 
+  height = 1400, 
   placeholder = "开始编写你的文章..." 
 }: ByteMDEditorProps) {
   return (
@@ -31,7 +32,8 @@ export default function ByteMDEditor({
       className="bytemd-editor-wrapper"
       style={{
         '--editor-height': `${height}px`,
-        height: `${height}px`
+        height: `${height}px`,
+        minHeight: `${height}px`
       } as React.CSSProperties & Record<string, string>}
     >
       <Editor
@@ -41,10 +43,37 @@ export default function ByteMDEditor({
         placeholder={placeholder}
         mode="split"
         previewDebounce={500}
+        locale="zh-CN"
+        editorConfig={{
+          mode: 'gfm'
+        }}
         uploadImages={async (files) => {
-          // TODO: Implement image upload functionality
-          console.log('Image upload not implemented yet:', files)
-          return []
+          try {
+            const uploadPromises = files.map(async (file) => {
+              try {
+                const response = await uploadApi.uploadImage(file)
+                if (response.success && response.data) {
+                  return {
+                    url: response.data.url,
+                    alt: file.name,
+                    title: file.name
+                  }
+                } else {
+                  console.error('Image upload failed:', response.error)
+                  return null
+                }
+              } catch (error) {
+                console.error('Error uploading image:', file.name, error)
+                return null
+              }
+            })
+
+            const results = await Promise.all(uploadPromises)
+            return results.filter(Boolean) as Array<{ url: string; alt?: string; title?: string }>
+          } catch (error) {
+            console.error('Batch image upload error:', error)
+            return []
+          }
         }}
         sanitize={(html) => html}
       />
