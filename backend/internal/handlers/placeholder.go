@@ -178,7 +178,7 @@ func UploadImage(c *gin.Context) {
 	// 确保上传目录存在
 	cfg := config.GlobalConfig
 	fmt.Printf("🗂️ [DEBUG] 配置的上传路径: %s\n", cfg.Upload.Path)
-	uploadDir := filepath.Join(cfg.Upload.Path, "images", dateDir)
+	uploadDir := filepath.Join("./data", "uploads", "images", dateDir)
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -273,11 +273,10 @@ func GetImage(c *gin.Context) {
 	// 移除前导斜杠（通配符参数会包含前导斜杠）
 	imagePath = strings.TrimPrefix(imagePath, "/")
 
-	cfg := config.GlobalConfig
 	// 构建完整的文件路径
-	fullPath := filepath.Join(cfg.Upload.Path, "images", imagePath)
+	fullPath := filepath.Join("./data", "uploads", "images", imagePath)
 	// 安全检查：确保路径在上传目录内
-	uploadDir, err := filepath.Abs(cfg.Upload.Path)
+	uploadDir, err := filepath.Abs("./data/uploads/images")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
