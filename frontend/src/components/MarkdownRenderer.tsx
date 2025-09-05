@@ -63,7 +63,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
   const { settings, isDark } = useTheme();
 
   // 自定义极客主题 - 纯黑色
-  const geekTheme = {
+  const geekTheme: { [key: string]: React.CSSProperties } = {
     'code[class*="language-"]': {
       color: '#00FF00',
       background: '#000000',
@@ -77,7 +77,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       wordSpacing: 'normal',
       wordBreak: 'normal',
       wordWrap: 'normal',
-      tabSize: '4',
+      tabSize: 4,
       hyphens: 'none',
     },
     'pre[class*="language-"]': {
@@ -93,7 +93,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       wordSpacing: 'normal',
       wordBreak: 'normal',
       wordWrap: 'normal',
-      tabSize: '4',
+      tabSize: 4,
       hyphens: 'none',
       padding: '0.5rem',
       margin: '0',
@@ -190,36 +190,23 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       atelierSulphurpoolLight,
       atelierSulphurpoolDark,
     };
-    return themeMap[settings.codeTheme] || vscDarkPlus;
-  };
-
-  // 根据字号设置获取 prose 类
-  const getProseClass = () => {
-    const sizeMap = {
-      sm: 'prose-sm',
-      base: 'prose',
-      lg: 'prose-lg',
-      xl: 'prose-xl',
-    };
-    return sizeMap[settings.fontSize] || 'prose';
+    return themeMap[settings.codeTheme as keyof typeof themeMap] || vscDarkPlus;
   };
 
   return (
-    <div className={`${getProseClass()} dark:prose-invert max-w-none ${className}`}>
+    <div className={`prose dark:prose-invert max-w-none ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[
           rehypeSlug
         ]}
         components={{
-          code({ node, inline, className, children, ...props }) {
+                    code({ inline, className, children }: { inline?: boolean; className?: string; children?: React.ReactNode }) {
             const match = /language-(\w+)/.exec(className || '');
             const language = match ? match[1] : '';
             
             // 确保children是字符串
-            const codeString = Array.isArray(children) 
-              ? children.join('') 
-              : String(children || '');
+            const codeString = String(children).replace(/\n$/, '');
             
             // 多行代码块
             if (!inline && codeString.includes('\n')) {
@@ -233,16 +220,8 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                     showLineNumbers={false}
                     wrapLines={settings.wordWrap}
                     wrapLongLines={settings.wordWrap}
-                    customStyle={{
-                      margin: 0,
-                      padding: '0.5rem',
-                      backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
-                      border: 'none',
-                      borderRadius: 0,
-                      fontFamily: 'JetBrains Mono, Monaco, Consolas, monospace',
-                    }}
                   >
-                    {codeString.trim()}
+                    {codeString}
                   </SyntaxHighlighter>
                 </div>
               );
