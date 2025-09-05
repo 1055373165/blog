@@ -216,10 +216,11 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                     style={getCodeStyle()}
                     language={language || 'text'}
                     PreTag="div"
-                    className={`!mt-0 !mb-0 ${settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-lg' : settings.fontSize === 'xl' ? 'text-xl' : 'text-base'}`}
+                    className={`!mt-0 !mb-0 !bg-transparent ${settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-lg' : settings.fontSize === 'xl' ? 'text-xl' : 'text-base'}`}
                     showLineNumbers={false}
                     wrapLines={settings.wordWrap}
                     wrapLongLines={settings.wordWrap}
+                    customStyle={{ backgroundColor: 'transparent' }}
                   >
                     {codeString}
                   </SyntaxHighlighter>
