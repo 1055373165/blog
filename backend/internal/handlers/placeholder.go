@@ -217,7 +217,7 @@ func UploadImage(c *gin.Context) {
 
 	// 用于返回给前端的完整相对路径（使用Nginx代理路径）
 	// 前端通过 /uploads/images/ 访问，Nginx会代理到 /api/upload/image/
-	relativePath := filepath.Join("/uploads/images", dateDir, filename)
+	relativePath := filepath.Join("/api/upload/image", dateDir, filename)
 	relativePath = strings.ReplaceAll(relativePath, "\\", "/")
 
 	// 根据环境确定域名、协议和URL路径
