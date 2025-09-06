@@ -661,9 +661,9 @@ export default function ArticleEditor() {
 
       {/* Main Content */}
       <div className="px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="max-w-6xl mx-auto">
           {/* Editor Column */}
-          <div className="lg:col-span-3">
+          <div>
             {/* Tabs */}
             <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
               <nav className="flex space-x-8">
@@ -722,104 +722,270 @@ export default function ArticleEditor() {
 
             {/* Settings Tab */}
             {activeTab === 'settings' && (
-              <div className="space-y-6">
-                {/* Excerpt */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      文章摘要
-                    </label>
-                    <button
-                      onClick={generateExcerpt}
-                      disabled={!formData.content}
-                      className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 
-                                 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      自动生成
-                    </button>
-                  </div>
-                  <textarea
-                    value={formData.excerpt}
-                    onChange={(e) => handleInputChange('excerpt', e.target.value)}
-                    placeholder="文章摘要，用于列表页展示..."
-                    rows={3}
-                    className="input resize-none"
-                  />
-                </div>
-
-                {/* Cover Image */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    封面图片
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.cover_image}
-                    onChange={(e) => handleInputChange('cover_image', e.target.value)}
-                    placeholder="//example.com/image.jpg"
-                    className="input"
-                  />
-                  {formData.cover_image && (
-                    <div className="mt-2">
-                      <img
-                        src={formData.cover_image}
-                        alt="封面预览"
-                        className="w-full max-w-md h-48 object-cover rounded-xl border border-gray-300 dark:border-gray-600 shadow-soft"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Left Column - Basic Settings */}
+                <div className="space-y-6">
+                  {/* Excerpt */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        文章摘要
+                      </label>
+                      <button
+                        onClick={generateExcerpt}
+                        disabled={!formData.content}
+                        className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 
+                                   disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        自动生成
+                      </button>
                     </div>
-                  )}
-                </div>
+                    <textarea
+                      value={formData.excerpt}
+                      onChange={(e) => handleInputChange('excerpt', e.target.value)}
+                      placeholder="文章摘要，用于列表页展示..."
+                      rows={3}
+                      className="input resize-none"
+                    />
+                  </div>
 
-                {/* Category */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    文章分类
-                  </label>
-                  <select
-                    value={formData.category_id || ''}
-                    onChange={(e) => handleInputChange('category_id', e.target.value ? parseInt(e.target.value) : undefined)}
-                    className="input"
-                  >
-                    <option value="">选择分类</option>
-                    {(categories || []).map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  {/* Cover Image */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      封面图片
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.cover_image}
+                      onChange={(e) => handleInputChange('cover_image', e.target.value)}
+                      placeholder="//example.com/image.jpg"
+                      className="input"
+                    />
+                    {formData.cover_image && (
+                      <div className="mt-2">
+                        <img
+                          src={formData.cover_image}
+                          alt="封面预览"
+                          className="w-full max-w-md h-48 object-cover rounded-xl border border-gray-300 dark:border-gray-600 shadow-soft"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
 
-                {/* Series */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    文章系列
-                  </label>
-                  <div className="flex space-x-3">
+                  {/* Category */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      文章分类
+                    </label>
                     <select
-                      value={formData.series_id || ''}
-                      onChange={(e) => handleInputChange('series_id', e.target.value ? parseInt(e.target.value) : undefined)}
-                      className="input flex-1"
+                      value={formData.category_id || ''}
+                      onChange={(e) => handleInputChange('category_id', e.target.value ? parseInt(e.target.value) : undefined)}
+                      className="input"
                     >
-                      <option value="">选择系列</option>
-                      {(series || []).map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
+                      <option value="">选择分类</option>
+                      {(categories || []).map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
                         </option>
                       ))}
                     </select>
-                    {formData.series_id && (
-                      <input
-                        type="number"
-                        value={formData.series_order || ''}
-                        onChange={(e) => handleInputChange('series_order', parseInt(e.target.value) || undefined)}
-                        placeholder="顺序"
-                        min="1"
-                        className="input w-20"
-                      />
-                    )}
+                  </div>
+
+                  {/* Series */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      文章系列
+                    </label>
+                    <div className="flex space-x-3">
+                      <select
+                        value={formData.series_id || ''}
+                        onChange={(e) => handleInputChange('series_id', e.target.value ? parseInt(e.target.value) : undefined)}
+                        className="input flex-1"
+                      >
+                        <option value="">选择系列</option>
+                        {(series || []).map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                      {formData.series_id && (
+                        <input
+                          type="number"
+                          value={formData.series_order || ''}
+                          onChange={(e) => handleInputChange('series_order', parseInt(e.target.value) || undefined)}
+                          placeholder="顺序"
+                          min="1"
+                          className="input w-20"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  <div className="card p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      文章标签
+                    </h3>
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {(tags || []).map((tag) => (
+                        <label key={tag.id} className="flex items-center group cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={(selectedTags || []).includes(tag.id.toString())}
+                            onChange={() => handleTagToggle(tag.id.toString())}
+                            className="rounded border-gray-300 dark:border-gray-600 text-go-600 focus:ring-go-500 dark:bg-gray-700"
+                          />
+                          <span className="ml-3 text-sm text-gray-700 dark:text-gray-300 group-hover:text-go-600 dark:group-hover:text-go-400 transition-colors">
+                            {tag.name}
+                          </span>
+                          <span className="ml-auto text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
+                            {tag.articles_count}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column - Status & Analytics */}
+                <div className="space-y-6">
+                  {/* Publish Status */}
+                  <div className="card p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      发布状态
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <span className="font-medium text-gray-600 dark:text-gray-400">状态</span>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          formData.is_published
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}>
+                          {formData.is_published ? '已发布' : '草稿'}
+                        </span>
+                      </div>
+                      
+                      <label className="flex items-center group cursor-pointer p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={formData.is_published}
+                          onChange={(e) => handleInputChange('is_published', e.target.checked)}
+                          className="rounded border-gray-300 dark:border-gray-600 text-go-600 focus:ring-go-500 dark:bg-gray-700"
+                        />
+                        <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-go-600 dark:group-hover:text-go-400 transition-colors">
+                          立即发布
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Article Stats */}
+                  <div className="card p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      文章统计
+                    </h3>
+                    <div className="space-y-3">
+                      {(() => {
+                        const stats = getContentStats();
+                        return (
+                          <>
+                            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                              <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center">
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                字数
+                              </span>
+                              <span className="font-semibold text-primary-600 dark:text-primary-400">
+                                {stats.words.toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                              <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center">
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                                </svg>
+                                段落
+                              </span>
+                              <span className="font-semibold text-primary-600 dark:text-primary-400">
+                                {stats.paragraphs}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                              <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center">
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                预计阅读
+                              </span>
+                              <span className="font-semibold text-primary-600 dark:text-primary-400">
+                                {stats.readingTime} 分钟
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                              <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center">
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                图片
+                              </span>
+                              <span className="font-semibold text-primary-600 dark:text-primary-400">
+                                {stats.images}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                              <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center">
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                </svg>
+                                链接
+                              </span>
+                              <span className="font-semibold text-primary-600 dark:text-primary-400">
+                                {stats.links}
+                              </span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Content Validation */}
+                  <div className="card p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      内容检查
+                    </h3>
+                    {(() => {
+                      const issues = validateContent();
+                      return (
+                        <div className="space-y-3">
+                          {issues.length === 0 ? (
+                            <div className="flex items-center p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg">
+                              <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                              <span className="text-sm font-medium">内容检查通过</span>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {issues.map((issue, index) => (
+                                <div key={index} className="flex items-start p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded-lg">
+                                  <svg className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                  </svg>
+                                  <span className="text-sm">{issue}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -896,171 +1062,6 @@ export default function ArticleEditor() {
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="space-y-6">
-              {/* Tags */}
-              <div className="card p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  文章标签
-                </h3>
-                <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {(tags || []).map((tag) => (
-                    <label key={tag.id} className="flex items-center group cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={(selectedTags || []).includes(tag.id.toString())}
-                        onChange={() => handleTagToggle(tag.id.toString())}
-                        className="rounded border-gray-300 dark:border-gray-600 text-go-600 focus:ring-go-500 dark:bg-gray-700"
-                      />
-                      <span className="ml-3 text-sm text-gray-700 dark:text-gray-300 group-hover:text-go-600 dark:group-hover:text-go-400 transition-colors">
-                        {tag.name}
-                      </span>
-                      <span className="ml-auto text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
-                        {tag.articles_count}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Article Stats */}
-              <div className="card p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  文章统计
-                </h3>
-                <div className="space-y-3">
-                  {(() => {
-                    const stats = getContentStats();
-                    return (
-                      <>
-                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center">
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            字数
-                          </span>
-                          <span className="font-semibold text-primary-600 dark:text-primary-400">
-                            {stats.words.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center">
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                            </svg>
-                            段落
-                          </span>
-                          <span className="font-semibold text-primary-600 dark:text-primary-400">
-                            {stats.paragraphs}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center">
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            预计阅读
-                          </span>
-                          <span className="font-semibold text-primary-600 dark:text-primary-400">
-                            {stats.readingTime} 分钟
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center">
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            图片
-                          </span>
-                          <span className="font-semibold text-primary-600 dark:text-primary-400">
-                            {stats.images}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center">
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                            </svg>
-                            链接
-                          </span>
-                          <span className="font-semibold text-primary-600 dark:text-primary-400">
-                            {stats.links}
-                          </span>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-
-              {/* Content Validation */}
-              <div className="card p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  内容检查
-                </h3>
-                {(() => {
-                  const issues = validateContent();
-                  return (
-                    <div className="space-y-3">
-                      {issues.length === 0 ? (
-                        <div className="flex items-center p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg">
-                          <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          <span className="text-sm font-medium">内容检查通过</span>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {issues.map((issue, index) => (
-                            <div key={index} className="flex items-start p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded-lg">
-                              <svg className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                              </svg>
-                              <span className="text-sm">{issue}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* Publish Status */}
-              <div className="card p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  发布状态
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <span className="font-medium text-gray-600 dark:text-gray-400">状态</span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      formData.is_published
-                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    }`}>
-                      {formData.is_published ? '已发布' : '草稿'}
-                    </span>
-                  </div>
-                  
-                  <label className="flex items-center group cursor-pointer p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_published}
-                      onChange={(e) => handleInputChange('is_published', e.target.checked)}
-                      className="rounded border-gray-300 dark:border-gray-600 text-go-600 focus:ring-go-500 dark:bg-gray-700"
-                    />
-                    <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-go-600 dark:group-hover:text-go-400 transition-colors">
-                      立即发布
-                    </span>
-                  </label>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
