@@ -31,6 +31,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME:-blog_db}
       - DB_TIMEZONE=Asia/Shanghai
+      - UPLOAD_PATH=/app/uploads
       - DB_SSLMODE=disable
       - REDIS_HOST=redis
       - REDIS_PORT=6379

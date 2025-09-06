@@ -178,7 +178,8 @@ func UploadImage(c *gin.Context) {
 	// 确保上传目录存在
 	cfg := config.GlobalConfig
 	fmt.Printf("🗂️ [DEBUG] 配置的上传路径: %s\n", cfg.Upload.Path)
-	uploadDir := filepath.Join("./data", "uploads", "images", dateDir)
+	// 使用配置中的上传根目录（生产应为 /app/uploads）
+	uploadDir := filepath.Join(cfg.Upload.Path, "images", dateDir)
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -215,10 +216,6 @@ func UploadImage(c *gin.Context) {
 	// 确保路径使用正斜杠（适用于URL）
 	apiPath = strings.ReplaceAll(apiPath, "\\", "/")
 
-	// 用于返回给前端的完整相对路径（使用nginx静态文件服务路径）
-	relativePath := filepath.Join("/uploads/images", dateDir, filename)
-	relativePath = strings.ReplaceAll(relativePath, "\\", "/")
-
 	// 根据环境确定域名和协议
 	var domain, scheme, imageURL string
 
@@ -228,20 +225,18 @@ func UploadImage(c *gin.Context) {
 		env = os.Getenv("APP_ENVIRONMENT")
 	}
 
-	// 如果是本地开发环境，使用API路由（因为本地没有nginx）
+	// 在开发与生产环境均通过后端 API 暴露图片，确保请求打到 /api/upload/image 路由
 	if env == "development" || cfg.App.Environment == "development" {
 		scheme = "http://"
 		domain = fmt.Sprintf("localhost:%s", cfg.Server.Port)
-		imageURL = fmt.Sprintf("%s%s/api/upload/image/%s", scheme, domain, apiPath)
 	} else {
-		// 生产环境使用nginx静态文件服务路径
 		scheme = "https://"
 		domain = os.Getenv("DOMAIN")
 		if domain == "" {
 			domain = "www.godepth.top"
 		}
-		imageURL = fmt.Sprintf("%s%s%s", scheme, domain, relativePath)
 	}
+	imageURL = fmt.Sprintf("%s%s/api/upload/image/%s", scheme, domain, apiPath)
 
 	fmt.Printf("✅ [SUCCESS] 图片上传成功 - 文件: %s, URL: %s\n", filename, imageURL)
 	fmt.Printf("🔗 [DEBUG] 环境: %s, 协议: %s, 域名: %s\n", cfg.App.Environment, scheme, domain)
@@ -254,7 +249,7 @@ func UploadImage(c *gin.Context) {
 			"filename": filename,
 			"size":     header.Size,
 			"type":     contentType,
-			"path":     relativePath,
+			"path":     apiPath,
 		},
 	})
 }
@@ -273,10 +268,11 @@ func GetImage(c *gin.Context) {
 	// 移除前导斜杠（通配符参数会包含前导斜杠）
 	imagePath = strings.TrimPrefix(imagePath, "/")
 
-	// 构建完整的文件路径
-	fullPath := filepath.Join("./data", "uploads", "images", imagePath)
+	// 使用配置中的上传根目录构建完整的文件路径
+	cfg := config.GlobalConfig
+	fullPath := filepath.Join(cfg.Upload.Path, "images", imagePath)
 	// 安全检查：确保路径在上传目录内
-	uploadDir, err := filepath.Abs("./data/uploads/images")
+	uploadDir, err := filepath.Abs(filepath.Join(cfg.Upload.Path, "images"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
