@@ -231,11 +231,9 @@ func UploadImage(c *gin.Context) {
 		imageURL = fmt.Sprintf("%s%s/api/upload/image/%s", scheme, domain, apiPath)
 	} else {
 		// 生产环境使用配置的域名和Nginx代理路径
-		scheme = "//"
-		domain = os.Getenv("DOMAIN")
-		if domain == "" {
-			domain = "www.godepth.top"
-		}
+		scheme = "https://"
+		domain = "localhost:3001"
+
 		// 生产环境使用Nginx代理路径 /uploads/images/
 		imageURL = fmt.Sprintf("%s%s%s", scheme, domain, relativePath)
 	}
