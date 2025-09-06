@@ -119,14 +119,18 @@
   color: #9ca3af !important;
 }
 
-/* Body Text - 1.5x Line Height */
+/* Body Text - 1.6x Line Height for Better Readability */
 .bytemd-editor-wrapper .bytemd-preview p,
 .bytemd-editor-wrapper .bytemd-preview li,
 .bytemd-editor-wrapper .bytemd-preview td,
 .bytemd-editor-wrapper .bytemd-preview blockquote p,
-.bytemd-editor-wrapper .bytemd-preview div {
-  line-height: 1.5 !important;
-  margin-bottom: 0.75rem !important;
+.bytemd-editor-wrapper .bytemd-preview div,
+.bytemd-editor-wrapper .bytemd-preview span,
+.bytemd-editor-wrapper .bytemd-preview a,
+.bytemd-editor-wrapper .bytemd-preview strong,
+.bytemd-editor-wrapper .bytemd-preview em {
+  line-height: 1.6 !important; /* Increased from 1.5 to 1.6 for better readability */
+  margin-bottom: 0.875rem !important; /* Slightly increased margin for better spacing */
   font-size: 16px !important;
   color: #374151;
 }
@@ -135,7 +139,11 @@
 .dark .bytemd-editor-wrapper .bytemd-preview li,
 .dark .bytemd-editor-wrapper .bytemd-preview td,
 .dark .bytemd-editor-wrapper .bytemd-preview blockquote p,
-.dark .bytemd-editor-wrapper .bytemd-preview div {
+.dark .bytemd-editor-wrapper .bytemd-preview div,
+.dark .bytemd-editor-wrapper .bytemd-preview span,
+.dark .bytemd-editor-wrapper .bytemd-preview a,
+.dark .bytemd-editor-wrapper .bytemd-preview strong,
+.dark .bytemd-editor-wrapper .bytemd-preview em {
   color: #d1d5db !important;
 }
 
@@ -145,7 +153,7 @@
 
 /* Editor Textarea - Better Typography and Line Height */
 .bytemd-editor-wrapper .bytemd-editor textarea {
-  line-height: 1.5 !important;
+  line-height: 1.6 !important; /* Increased from 1.5 to 1.6 for better readability */
   font-size: 16px !important; /* Increased from 14px to match body text */
   font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace !important;
   padding: 20px !important; /* Increased padding for better spacing */
@@ -164,7 +172,7 @@
 /* Preview Pane Styling */
 .bytemd-editor-wrapper .bytemd-preview {
   font-size: 16px !important;
-  line-height: 1.5 !important;
+  line-height: 1.6 !important; /* Increased from 1.5 to 1.6 for better readability */
   padding: 20px !important;
   background: #ffffff !important;
   max-width: none !important;
@@ -220,6 +228,7 @@
 .bytemd-editor-wrapper .bytemd-preview ol {
   margin: 1rem 0 !important;
   padding-left: 1.5rem !important;
+  line-height: 1.6 !important; /* Ensure lists also have proper line height */
 }
 
 /* Ensure list markers are visible (override Tailwind reset) */
@@ -241,8 +250,8 @@
 }
 
 .bytemd-editor-wrapper .bytemd-preview li {
-  margin-bottom: 0.5rem !important;
-  line-height: 1.5 !important;
+  margin-bottom: 0.625rem !important; /* Slightly increased margin for better spacing */
+  line-height: 1.6 !important; /* Increased from 1.5 to 1.6 for consistency */
 }
 
 .bytemd-editor-wrapper .bytemd-preview li:last-child {
@@ -483,6 +492,22 @@
   max-height: 100% !important;
 }
 
+/* Ensure CodeMirror elements also have proper line height */
+.bytemd-editor-wrapper .bytemd-editor .CodeMirror,
+.bytemd-editor-wrapper .bytemd-editor .CodeMirror-lines,
+.bytemd-editor-wrapper .bytemd-editor .CodeMirror-line {
+  line-height: 1.6 !important; /* Match editor line height */
+  font-size: 16px !important;
+}
+
+/* Additional ByteMD editor text area coverage */
+.bytemd-editor-wrapper .bytemd-editor .bytemd-mde,
+.bytemd-editor-wrapper .bytemd-editor .bytemd-mde-text,
+.bytemd-editor-wrapper .bytemd-editor .bytemd-body {
+  line-height: 1.6 !important;
+  font-size: 16px !important;
+}
+
 /* Enable scrolling within editor panels */
 .bytemd-editor-wrapper .bytemd-split {
   height: 100%;
@@ -504,6 +529,21 @@
   outline: none !important;
   height: 100% !important;
   resize: none !important;
+}
+
+/* Global Line Height Enhancement for All Text Elements */
+.bytemd-editor-wrapper .bytemd-preview *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not(pre):not(code) {
+  line-height: 1.6 !important; /* Ensure all text elements have proper line spacing */
+}
+
+/* Enhanced spacing for better readability */
+.bytemd-editor-wrapper .bytemd-preview > *:not(:last-child) {
+  margin-bottom: 1rem !important; /* Consistent spacing between all elements */
+}
+
+/* Better paragraph spacing */
+.bytemd-editor-wrapper .bytemd-preview p + p {
+  margin-top: 1rem !important; /* Add space between consecutive paragraphs */
 }
 
 /* Responsive adjustments */
