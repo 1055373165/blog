@@ -70,7 +70,6 @@ services:
       - blog_network
     volumes:
       - ./frontend/public/books:/usr/share/nginx/html/books
-      - ./data/uploads:/app/uploads
 
 volumes:
   redis_data:
