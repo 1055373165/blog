@@ -661,31 +661,29 @@ export default function ArticleEditor() {
 
       {/* Main Content */}
       <div className="px-6 py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Editor Column */}
-          <div>
-            {/* Tabs */}
-            <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
-              <nav className="flex space-x-8">
-                {[
-                  { key: 'content', label: '内容', icon: 'document' },
-                  { key: 'settings', label: '设置', icon: 'cog' },
-                  { key: 'seo', label: 'SEO', icon: 'search' },
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key as any)}
-                    className={`py-3 px-1 border-b-2 font-medium text-sm transition-all duration-200 ${
-                      activeTab === tab.key
-                        ? 'border-go-500 text-go-600 dark:text-go-400'
-                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-go-600 dark:hover:text-go-400 hover:border-go-300 dark:hover:border-go-600'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </nav>
-            </div>
+        <div className="w-full">
+          {/* Tabs - Horizontal layout above content */}
+          <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+            <nav className="flex space-x-8">
+              {[
+                { key: 'content', label: '内容', icon: 'document' },
+                { key: 'settings', label: '设置', icon: 'cog' },
+                { key: 'seo', label: 'SEO', icon: 'search' },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key as any)}
+                  className={`py-3 px-1 border-b-2 font-medium text-sm transition-all duration-200 ${
+                    activeTab === tab.key
+                      ? 'border-go-500 text-go-600 dark:text-go-400'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-go-600 dark:hover:text-go-400 hover:border-go-300 dark:hover:border-go-600'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </div>
 
             {/* Content Tab */}
             {activeTab === 'content' && (
@@ -713,7 +711,7 @@ export default function ArticleEditor() {
                   <ByteMDEditor
                     value={formData.content}
                     onChange={(value) => handleInputChange('content', value)}
-                    height={editorHeight}
+                    height={Math.max(800, window.innerHeight - 300)}
                     placeholder="开始编写你的精彩文章..."
                   />
                 </div>
@@ -1062,7 +1060,6 @@ export default function ArticleEditor() {
                 </div>
               </div>
             )}
-          </div>
         </div>
       </div>
 
