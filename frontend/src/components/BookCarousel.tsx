@@ -117,9 +117,6 @@ export default function BookCarousel({
         isCenterPosition: i === centerOffset
       });
     }
-    
-    console.log(`显示书籍数量: ${visibleCount}, 当前中心索引: ${currentIndex}, 中心偏移: ${centerOffset}`);
-    console.log('可见书籍:', result.map(b => `${b.filename}(实际索引:${b.realIndex}, 显示位置:${b.displayIndex}, 是否居中:${b.isCenterPosition})`));
     return result;
   }, [currentIndex, isMobile, activeBooks]);
 

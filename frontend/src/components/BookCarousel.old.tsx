@@ -130,8 +130,6 @@ export default function BookCarousel({
       const index = (currentIndex + i) % books.length;
       result.push({ ...books[index], displayIndex: i });
     }
-    
-    console.log(`显示书籍数量: ${visibleCount}, 当前索引: ${currentIndex}, 可见书籍:`, result.map(b => b.filename));
     return result;
   }, [currentIndex, isMobile]);
 

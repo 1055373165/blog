@@ -160,8 +160,6 @@ export function useImagePreloader(
     preloadTimeoutRef.current = setTimeout(() => {
       const indicesToLoad = getPreloadIndices(currentIndex, imageUrls.length, preloadRange);
       const urlsToLoad = indicesToLoad.map(index => imageUrls[index]).filter(Boolean);
-      
-      console.log(`开始预加载: 当前索引 ${currentIndex}, 预加载范围 ${preloadRange}, 目标图片:`, urlsToLoad);
       preloadImages(urlsToLoad);
     }, delay);
 

@@ -66,18 +66,14 @@ async function handleImageRequest(request) {
     if (cacheTime) {
       const age = Date.now() - parseInt(cacheTime);
       if (age < IMAGE_CACHE_DURATION) {
-        console.log('从缓存返回图片:', request.url);
         return cached;
       } else {
-        console.log('缓存已过期，删除:', request.url);
         await cache.delete(request);
       }
     } else {
-      console.log('缓存项无时间戳，删除:', request.url);
       await cache.delete(request);
     }
   } else if (cached) {
-    console.warn('发现损坏的缓存项，删除:', request.url);
     await cache.delete(request);
   }
 
