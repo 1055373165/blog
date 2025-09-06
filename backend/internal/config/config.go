@@ -148,7 +148,7 @@ func LoadConfig() error {
 			DB:       getIntEnv("REDIS_DB", 0),
 		},
 		Upload: UploadConfig{
-			Path:        getEnv("UPLOAD_PATH", "./uploads"),
+			Path:        getEnv("UPLOAD_PATH", "/app/uploads"),
 			MaxFileSize: getInt64Env("MAX_FILE_SIZE", 10*1024*1024), // 10MB
 			AllowedExts: []string{".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"},
 		},
