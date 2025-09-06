@@ -215,26 +215,30 @@ func UploadImage(c *gin.Context) {
 	// 确保路径使用正斜杠（适用于URL）
 	apiPath = strings.ReplaceAll(apiPath, "\\", "/")
 
-	// 用于返回给前端的完整相对路径（使用正确的upload路由）
-	relativePath := filepath.Join("/api/upload/image", dateDir, filename)
+	// 用于返回给前端的完整相对路径（使用Nginx代理路径）
+	// 前端通过 /uploads/images/ 访问，Nginx会代理到 /api/upload/image/
+	relativePath := filepath.Join("/uploads/images", dateDir, filename)
 	relativePath = strings.ReplaceAll(relativePath, "\\", "/")
 
-	// 根据环境确定域名和协议
-	var domain, scheme string
+	// 根据环境确定域名、协议和URL路径
+	var domain, scheme, imageURL string
 
 	// 如果是本地开发环境，强制使用localhost
 	if cfg.App.Environment == "development" {
 		scheme = "http://"
 		domain = fmt.Sprintf("localhost:%s", cfg.Server.Port)
+		// 开发环境直接使用API路径
+		imageURL = fmt.Sprintf("%s%s/api/upload/image/%s", scheme, domain, apiPath)
 	} else {
-		// 生产环境使用配置的域名
+		// 生产环境使用配置的域名和Nginx代理路径
 		scheme = "//"
 		domain = os.Getenv("DOMAIN")
 		if domain == "" {
 			domain = "www.godepth.top"
 		}
+		// 生产环境使用Nginx代理路径 /uploads/images/
+		imageURL = fmt.Sprintf("%s%s%s", scheme, domain, relativePath)
 	}
-	imageURL := fmt.Sprintf("%s%s/api/upload/image/%s", scheme, domain, apiPath)
 
 	fmt.Printf("✅ [SUCCESS] 图片上传成功 - 文件: %s, URL: %s\n", filename, imageURL)
 	fmt.Printf("🔗 [DEBUG] 环境: %s, 协议: %s, 域名: %s\n", cfg.App.Environment, scheme, domain)
