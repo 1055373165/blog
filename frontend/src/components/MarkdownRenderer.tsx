@@ -54,11 +54,94 @@ import {
   atelierSulphurpoolDark
 } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { useTheme } from '../contexts/ThemeContext';
+import { useEffect, useRef, useState } from 'react';
+import mermaid from 'mermaid';
 
 interface MarkdownRendererProps {
   content: string;
   className?: string;
 }
+
+// Mermaid diagram component
+const MermaidDiagram = ({ code, isDark }: { code: string; isDark: boolean }) => {
+  const elementRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const renderDiagram = async () => {
+      if (!elementRef.current) return;
+
+      try {
+        // Initialize Mermaid with appropriate theme
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: isDark ? 'dark' : 'default',
+          themeVariables: {
+            primaryColor: '#3b82f6',
+            primaryTextColor: isDark ? '#f9fafb' : '#1f2937',
+            primaryBorderColor: '#d1d5db',
+            lineColor: isDark ? '#6b7280' : '#374151',
+            secondaryColor: '#f3f4f6',
+            tertiaryColor: '#fafafa'
+          },
+          flowchart: {
+            useMaxWidth: false,
+            htmlLabels: true
+          }
+        });
+
+        // Generate unique ID for the diagram
+        const id = `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Validate and render the diagram
+        const { svg } = await mermaid.render(id, code);
+        
+        if (elementRef.current) {
+          elementRef.current.innerHTML = svg;
+          setError(null);
+        }
+      } catch (err) {
+        console.error('Mermaid rendering error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to render Mermaid diagram');
+      }
+    };
+
+    renderDiagram();
+  }, [code, isDark]);
+
+  if (error) {
+    return (
+      <div className="my-4 p-4 border border-red-200 dark:border-red-800 rounded-lg bg-red-50 dark:bg-red-900/20">
+        <div className="flex items-start">
+          <svg className="w-5 h-5 text-red-400 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          </svg>
+          <div>
+            <h4 className="text-sm font-medium text-red-800 dark:text-red-200">Mermaid Diagram Error</h4>
+            <p className="text-sm text-red-700 dark:text-red-300 mt-1">{error}</p>
+            <details className="mt-2">
+              <summary className="text-xs text-red-600 dark:text-red-400 cursor-pointer hover:text-red-800 dark:hover:text-red-200">
+                Show diagram code
+              </summary>
+              <pre className="mt-2 text-xs text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-800/30 p-2 rounded border overflow-x-auto">
+                <code>{code}</code>
+              </pre>
+            </details>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="my-4 flex justify-center">
+      <div 
+        ref={elementRef}
+        className="mermaid-diagram max-w-full overflow-x-auto bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
+      />
+    </div>
+  );
+};
 
 export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
   const { settings, isDark } = useTheme();
@@ -136,6 +219,11 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             
             // 确保children是字符串
             const codeString = String(children).trim();
+            
+            // Mermaid diagram rendering
+            if (!inline && language === 'mermaid') {
+              return <MermaidDiagram code={codeString} isDark={isDark} />;
+            }
             
             // 多行代码块
             if (!inline && codeString.includes('\n')) {
