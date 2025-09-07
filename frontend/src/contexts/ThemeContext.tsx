@@ -95,7 +95,6 @@ export interface FontSettings {
   heading: FontFamily;
   code: FontFamily;
   weight: FontWeight;
-  lineHeight: LineHeight;
 }
 
 interface ThemeSettings {
@@ -130,7 +129,6 @@ const defaultSettings: ThemeSettings = {
     heading: 'system',
     code: 'jetbrains-mono',
     weight: 'normal',
-    lineHeight: 'normal',
   },
 };
 

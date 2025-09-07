@@ -227,13 +227,20 @@
 
 /* 字体变量定义 */
 :root {
-  /* 字体族 */
-  --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-display: 'Poppins', 'Inter', system-ui, sans-serif;
+  /* 字体族 - 统一变量名 */
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Source Code Pro', 'Fira Code', monospace;
+  --font-heading: 'Poppins', 'Inter', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', 'Source Code Pro', 'Fira Code', monospace;
   
-  /* 字体重量 */
+  /* 兼容旧变量 */
+  --font-primary: var(--font-body);
+  --font-display: var(--font-heading);
+  --font-mono: var(--font-code);
+  
+  /* 字体重量 - 添加统一变量 */
+  --font-weight: 400;
+  
+  /* 详细字体重量选项 */
   --font-weight-thin: 100;
   --font-weight-extralight: 200;
   --font-weight-light: 300;
@@ -244,7 +251,10 @@
   --font-weight-extrabold: 800;
   --font-weight-black: 900;
   
-  /* 行高 */
+  /* 行高 - 添加统一变量 */
+  --line-height: 1.5;
+  
+  /* 详细行高选项 */
   --line-height-none: 1;
   --line-height-tight: 1.25;
   --line-height-snug: 1.375;
@@ -295,8 +305,8 @@ html {
 body {
   @apply h-full antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300;
   font-family: var(--font-body);
-  font-weight: var(--font-weight-normal);
-  line-height: var(--line-height-normal);
+  font-weight: var(--font-weight);
+  line-height: var(--line-height);
   letter-spacing: var(--letter-spacing-normal);
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   font-variant-ligatures: contextual;
@@ -446,7 +456,7 @@ pre[class*="language-"] code {
 
 /* 标题层次系统 */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
   letter-spacing: var(--letter-spacing-tight);
@@ -550,7 +560,7 @@ ul, ol {
 /* 引用样式 */
 blockquote {
   @apply border-l-4 border-gray-300 dark:border-gray-600 pl-4;
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-weight: var(--font-weight-medium);
   line-height: var(--line-height-relaxed);
   quotes: none;

@@ -40,7 +40,7 @@ export const fontFamilyMap: Record<FontFamily, string> = {
 // 字体粗细映射到CSS font-weight
 export const fontWeightMap: Record<FontWeight, string> = {
   'thin': '100',
-  'light': '300',
+  'light': '300', 
   'normal': '400',
   'medium': '500',
   'semibold': '600',
@@ -62,7 +62,6 @@ export function generateFontCSS(fontSettings: FontSettings): Record<string, stri
     '--font-heading': fontFamilyMap[fontSettings.heading],
     '--font-code': fontFamilyMap[fontSettings.code],
     '--font-weight': fontWeightMap[fontSettings.weight],
-    '--line-height': lineHeightMap[fontSettings.lineHeight],
   };
 }
 

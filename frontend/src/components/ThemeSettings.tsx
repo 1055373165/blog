@@ -298,7 +298,6 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
               <div className="space-y-6">
                 <FontFamilySelector />
                 <FontWeightSelector />
-                <LineHeightSelector />
               </div>
             )}
           </div>
@@ -451,45 +450,6 @@ function FontWeightSelector() {
   );
 }
 
-// 行高选择器
-function LineHeightSelector() {
-  const { settings, updateFontSettings } = useTheme();
-
-  const lineHeightOptions: Array<{ value: LineHeight; label: string; example: string; description: string }> = [
-    { value: 'tight', label: '紧密', example: 'leading-tight', description: '适合标题' },
-    { value: 'normal', label: '正常', example: 'leading-normal', description: '平衡选择' },
-    { value: 'relaxed', label: '宽松', example: 'leading-relaxed', description: '易于阅读' },
-    { value: 'loose', label: '很宽松', example: 'leading-loose', description: '最大可读性' },
-  ];
-
-  return (
-    <div>
-      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-        行高
-      </h3>
-      <div className="grid grid-cols-2 gap-2">
-        {lineHeightOptions.map((option) => (
-          <button
-            key={option.value}
-            onClick={() => updateFontSettings({ lineHeight: option.value })}
-            className={`p-3 rounded-lg border-2 transition-all text-left ${
-              settings.fonts.lineHeight === option.value
-                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-            }`}
-          >
-            <div className={`${option.example} text-gray-900 dark:text-white font-medium`}>
-              {option.label}
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {option.description}
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // 字体分类网格组件
 function FontCategoryGrid({ 

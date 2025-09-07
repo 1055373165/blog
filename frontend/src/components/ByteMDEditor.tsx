@@ -48,7 +48,44 @@ export default function ByteMDEditor({
         previewDebounce={500}
         locale="zh-CN"
         editorConfig={{
-          mode: 'gfm'
+          mode: 'gfm',
+          lineNumbers: false,
+          foldGutter: false,
+          smartIndent: false,
+          electricChars: false,
+          indentWithTabs: false,
+          indentUnit: 0,
+          tabSize: 2,
+          extraKeys: {
+            'Enter': function(cm: any) {
+              // 检查光标是否在 <details> 标签内
+              const cursor = cm.getCursor();
+              const line = cm.getLine(cursor.line);
+              const beforeCursor = line.slice(0, cursor.ch);
+              const afterCursor = line.slice(cursor.ch);
+              
+              // 检查是否在折叠块内部
+              let isInDetails = false;
+              for (let i = cursor.line; i >= 0; i--) {
+                const currentLine = cm.getLine(i);
+                if (currentLine && currentLine.includes('<details>')) {
+                  isInDetails = true;
+                  break;
+                }
+                if (currentLine && currentLine.includes('</details>')) {
+                  break;
+                }
+              }
+              
+              if (isInDetails) {
+                // 在折叠块内部，插入简单换行，不添加任何缩进
+                cm.replaceSelection('\n', 'end');
+              } else {
+                // 正常换行处理
+                cm.execCommand('newlineAndIndent');
+              }
+            }
+          }
         }}
         uploadImages={async (files) => {
           try {
