@@ -72,7 +72,7 @@ type Article struct {
 	Title         string     `json:"title" gorm:"not null;size:255"`
 	Slug          string     `json:"slug" gorm:"uniqueIndex;not null;size:255"`
 	Excerpt       string     `json:"excerpt"`
-	Content       string     `json:"content" gorm:"type:text"`
+	Content       string     `json:"content" gorm:"type:longtext"`
 	CoverImage    string     `json:"cover_image"`
 	IsPublished   bool       `json:"is_published" gorm:"default:false"`
 	IsDraft       bool       `json:"is_draft" gorm:"default:true"`

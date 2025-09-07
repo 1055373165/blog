@@ -53,6 +53,7 @@ func main() {
 	// 添加中间件
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
+	router.Use(middleware.LargeRequestHandler()) // 处理大型请求
 
 	// CORS配置
 	corsConfig := cors.DefaultConfig()
