@@ -560,9 +560,10 @@ ul, ol {
 /* 引用样式 */
 blockquote {
   @apply border-l-4 border-gray-300 dark:border-gray-600 pl-4;
-  font-family: var(--font-heading);
+  font-family: var(--font-body);
   font-weight: var(--font-weight-medium);
   line-height: var(--line-height-relaxed);
+  font-style: normal;
   quotes: none;
 }
 

@@ -319,10 +319,12 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             <blockquote 
               className="border-l-4 border-primary-500 pl-4 py-1.5 text-gray-600 dark:text-gray-400 my-4"
               style={{
-                quotes: 'none'
+                quotes: 'none',
+                fontStyle: 'normal',
+                fontFamily: 'var(--font-body)'
               }}
             >
-              <div style={{ quotes: 'none' }}>
+              <div style={{ quotes: 'none', fontStyle: 'normal' }}>
                 {children}
               </div>
             </blockquote>

@@ -197,6 +197,7 @@ details .prose blockquote {
   padding-left: 1rem;
   margin: 1em 0;
   font-style: normal;
+  font-family: var(--font-body);
   color: #6b7280;
 }
 

@@ -100,7 +100,7 @@ export default function QuoteListView({ quotes, onQuoteClick, focusedQuoteId }: 
           </div>
 
           {/* 箴言内容 */}
-          <blockquote className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed mb-3 italic">
+          <blockquote className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed mb-3" style={{ fontFamily: 'var(--font-body)', fontStyle: 'normal' }}>
             "{quote.text}"
           </blockquote>
 
