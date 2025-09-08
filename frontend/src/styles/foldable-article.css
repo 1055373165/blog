@@ -84,23 +84,39 @@ details[open] summary::before {
   transform: translateY(-50%) rotate(90deg);
 }
 
-/* 折叠内容样式 */
+/* 折叠内容样式 - 修复空格和换行处理 */
 details > *:not(summary) {
   padding: 16px;
   background: #ffffff;
   margin: 0;
+  white-space: pre-wrap; /* Preserve newlines and wrap text */
+  word-wrap: break-word;
+  line-height: 1.6;
+  color: #374151;
 }
 
-.dark details > *:not(summary) {
+.dark details > .details-wrapper {
   background: #111827;
+}
+
+details > .details-wrapper > *:not(summary) {
+  padding: 16px;
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.dark details > .details-wrapper > *:not(summary) {
   color: #f9fafb;
 }
 
-details > *:not(summary):first-of-type {
+details > .details-wrapper > *:not(summary):first-of-type {
   padding-top: 16px;
 }
 
-details > *:not(summary):last-child {
+details > .details-wrapper > *:not(summary):last-child {
   padding-bottom: 16px;
 }
 
@@ -128,8 +144,11 @@ details .prose h6 {
 details .prose p {
   margin-bottom: 1em;
   padding: 0;
-  line-height: 1.6;
+  line-height: 1.7;
   color: #374151;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  text-align: left;
 }
 
 .dark details .prose p {
@@ -265,5 +284,31 @@ details details summary {
   
   details > *:not(summary) {
     padding: 12px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
   }
+}
+
+/* 修复折叠块内的列表和代码块空格问题 */
+details .prose ul,
+details .prose ol {
+  white-space: normal;
+}
+
+details .prose li {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+details .prose pre {
+  white-space: pre;
+  overflow-x: auto;
+}
+
+details .prose code {
+  white-space: nowrap;
+}
+
+details .prose pre code {
+  white-space: pre;
 }
