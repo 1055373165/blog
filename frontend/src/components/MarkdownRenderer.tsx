@@ -330,17 +330,17 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             </blockquote>
           ),
           ul: ({ children }) => (
-            <ul className="list-disc list-inside space-y-2 mb-4 text-gray-700 dark:text-gray-300">
+            <ul className="list-disc list-outside !ml-0 pl-5 space-y-2 mb-4 text-gray-700 dark:text-gray-300">
               {children}
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="list-decimal list-inside space-y-2 mb-4 text-gray-700 dark:text-gray-300">
+            <ol className="list-decimal list-outside !ml-0 pl-5 space-y-2 mb-4 text-gray-700 dark:text-gray-300">
               {children}
             </ol>
           ),
           li: ({ children }) => (
-            <li className="leading-relaxed">
+            <li className="leading-relaxed ml-0">
               {children}
             </li>
           ),

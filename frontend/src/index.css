@@ -557,6 +557,51 @@ ul, ol {
   line-height: var(--line-height-relaxed);
 }
 
+/* Article content: Markdown list alignment and nesting fixes */
+.article-content .prose ul,
+.article-content .prose ol {
+  /* Remove extra left indent from Tailwind Typography defaults */
+  margin-left: 0 !important;
+  /* Provide a consistent, modest padding so markers have room without pushing too far */
+  padding-left: 1.25rem; /* same as Tailwind pl-5 */
+  list-style-position: outside;
+}
+
+.article-content .prose li {
+  /* Avoid accumulated indents from resets */
+  margin-left: 0;
+}
+
+.article-content .prose li > p {
+  /* Prevent extra paragraph margins inside list items that visually shift items */
+  margin: 0;
+}
+
+/* Proper nesting for multi-level lists */
+.article-content .prose ul ul,
+.article-content .prose ol ul,
+.article-content .prose ul ol,
+.article-content .prose ol ol {
+  margin-left: 0 !important;
+  padding-left: 1.25rem; /* indent one level for each nesting */
+}
+
+/* Marker styles per depth for better readability */
+.article-content .prose ul { list-style-type: disc; }
+.article-content .prose ul ul { list-style-type: circle; }
+.article-content .prose ul ul ul { list-style-type: square; }
+
+.article-content .prose ol { list-style-type: decimal; }
+.article-content .prose ol ol { list-style-type: lower-alpha; }
+.article-content .prose ol ol ol { list-style-type: lower-roman; }
+
+.article-content .prose li > ul,
+.article-content .prose li > ol {
+  /* Tighten spacing between a list item and its nested list */
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
 /* 引用样式 */
 blockquote {
   @apply border-l-4 border-gray-300 dark:border-gray-600 pl-4;
