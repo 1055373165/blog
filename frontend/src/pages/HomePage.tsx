@@ -77,42 +77,6 @@ export default function HomePage() {
           />
         </section>
 
-      {/* Enhanced Featured Articles */}
-      {featuredArticles.length > 0 && (
-        <section className="mb-16">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                精选文章
-              </h2>
-              <p className="text-lg text-gray-600 dark:text-gray-300">
-                最新发布的高质量技术文章
-              </p>
-            </div>
-            <Link 
-              to="/articles"
-              className="group inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary-600 to-go-600 text-white rounded-xl hover:from-primary-700 hover:to-go-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              查看全部
-              <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-            </Link>
-          </div>
-          
-          <EnhancedArticleGrid
-            articles={featuredArticles}
-            loading={loading}
-            variant="mixed"
-            showStats={true}
-            showCategory={true}
-            showTags={true}
-            className="max-w-7xl"
-          />
-        </section>
-      )}
-
       {/* Enhanced Popular Articles */}
       {popularArticles.length > 0 && (
         <section className="mb-16">
