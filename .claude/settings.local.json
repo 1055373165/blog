@@ -70,7 +70,9 @@
       "Bash(docker compose:*)",
       "Bash(echo $DOMAIN)",
       "Bash(/tmp/blog-backend)",
-      "Bash(docker:*)"
+      "Bash(docker:*)",
+      "Bash(/Users/smy/projects/blog/frontend/node_modules/.bin/tsc --noEmit --project /Users/smy/projects/blog/frontend/tsconfig.app.json)",
+      "Bash(/Users/smy/projects/blog/frontend/node_modules/.bin/tsc --noEmit /Users/smy/projects/blog/frontend/src/components/ByteMDEditor.tsx)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
