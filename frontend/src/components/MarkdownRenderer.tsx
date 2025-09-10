@@ -146,6 +146,104 @@ const MermaidDiagram = ({ code, isDark }: { code: string; isDark: boolean }) => 
 export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
   const { settings, isDark } = useTheme();
 
+  // 内联样式用于折叠块动画
+  const foldableStyles = `
+    <style>
+      .foldable-block {
+        --fold-duration: 300ms;
+        --fold-ease: cubic-bezier(0.4, 0.0, 0.2, 1);
+      }
+      
+      .foldable-block[open] {
+        animation: foldable-expand var(--fold-duration) var(--fold-ease) forwards;
+      }
+      
+      .foldable-block:not([open]) {
+        animation: foldable-collapse var(--fold-duration) var(--fold-ease) forwards;
+      }
+      
+      .foldable-block summary {
+        list-style: none;
+        -webkit-appearance: none;
+      }
+      
+      .foldable-block summary::-webkit-details-marker {
+        display: none;
+      }
+      
+      .foldable-block summary::-moz-list-bullet {
+        list-style-type: none;
+      }
+      
+      .foldable-content {
+        animation: content-fade-in var(--fold-duration) var(--fold-ease) forwards;
+      }
+      
+      .foldable-block:not([open]) .foldable-content {
+        animation: content-fade-out calc(var(--fold-duration) * 0.5) var(--fold-ease) forwards;
+      }
+      
+      @keyframes foldable-expand {
+        from {
+          opacity: 0.8;
+          transform: translateY(-4px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      
+      @keyframes foldable-collapse {
+        from {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+        to {
+          opacity: 0.9;
+          transform: translateY(-2px) scale(0.99);
+        }
+      }
+      
+      @keyframes content-fade-in {
+        from {
+          opacity: 0;
+          transform: translateY(-8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      @keyframes content-fade-out {
+        from {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateY(-4px);
+        }
+      }
+      
+      /* 三角形指示器的平滑旋转 */
+      .foldable-block summary::after {
+        transition: all var(--fold-duration) var(--fold-ease);
+      }
+      
+      /* 增强的渐变悬停效果 */
+      .foldable-block summary:hover::before {
+        animation: shimmer 1s ease-in-out infinite;
+      }
+      
+      @keyframes shimmer {
+        0% { transform: translateX(-100%) skewX(-15deg); }
+        100% { transform: translateX(200%) skewX(-15deg); }
+      }
+    </style>
+  `;
+
   // 获取代码主题样式
   const getCodeStyle = () => {    
     const themeMap = {
@@ -205,8 +303,12 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
   };
 
   return (
-    <div className={`prose dark:prose-invert max-w-none prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 ${className}`}>
-      <ReactMarkdown
+    <>
+      {/* 注入折叠块的自定义样式 */}
+      <div dangerouslySetInnerHTML={{ __html: foldableStyles }} />
+      
+      <div className={`prose dark:prose-invert max-w-none prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 ${className}`}>
+        <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[
           rehypeSlug,
@@ -369,24 +471,126 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               loading="lazy"
             />
           ),
-          // 增强的折叠块支持 - 与新的 ByteMD 插件同步
+          // 增强的折叠块支持 - 优化版本，更好的视觉效果和交互
           details: ({ children, ...props }) => (
             <details 
-              className="foldable-block border border-gray-200 dark:border-gray-700 rounded-lg my-4 bg-gray-50 dark:bg-gray-800/50 overflow-hidden transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm"
+              className={`
+                foldable-block group relative my-6 
+                border border-gray-200/80 dark:border-gray-700/80 
+                rounded-xl shadow-sm hover:shadow-md
+                bg-gradient-to-br from-gray-50/50 to-white dark:from-gray-800/30 dark:to-gray-900/50
+                backdrop-blur-sm overflow-hidden
+                transition-all duration-300 ease-in-out
+                hover:border-blue-200 dark:hover:border-blue-700/50
+                hover:from-blue-50/30 hover:to-blue-50/10 
+                dark:hover:from-blue-900/20 dark:hover:to-blue-900/10
+                focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-300
+                dark:focus-within:ring-blue-400/20 dark:focus-within:border-blue-600
+                ${settings.fontSize === 'sm' ? 'text-sm' : 
+                  settings.fontSize === 'lg' ? 'text-base' : 
+                  settings.fontSize === 'xl' ? 'text-lg' : 'text-sm'}
+              `}
               {...props}
             >
               {children}
             </details>
           ),
           summary: ({ children }) => (
-            <summary className="px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-700 dark:to-gray-800 cursor-pointer font-medium text-gray-800 dark:text-gray-200 border-b border-gray-200 dark:border-gray-600 user-select-none transition-all duration-200 hover:from-gray-200 hover:to-gray-100 dark:hover:from-gray-600 dark:hover:to-gray-700 relative before:content-['▶'] before:absolute before:right-4 before:top-1/2 before:-translate-y-1/2 before:transition-transform before:duration-200 before:text-gray-500 dark:before:text-gray-400 before:text-xs [details[open]>&]:before:rotate-90">
-              {children}
+            <summary className={`
+              px-5 py-4 cursor-pointer font-medium select-none
+              bg-gradient-to-r from-gray-100/80 to-gray-50/60 
+              dark:from-gray-700/60 dark:to-gray-800/60
+              text-gray-800 dark:text-gray-100
+              border-b border-gray-200/70 dark:border-gray-600/50
+              transition-all duration-300 ease-in-out
+              hover:from-blue-100/80 hover:to-blue-50/60 
+              dark:hover:from-blue-800/40 dark:hover:to-blue-900/30
+              hover:text-blue-900 dark:hover:text-blue-100
+              active:bg-blue-200/50 dark:active:bg-blue-700/30
+              focus:outline-none focus:bg-blue-100/50 dark:focus:bg-blue-800/30
+              relative overflow-hidden
+              before:absolute before:inset-0 before:bg-gradient-to-r 
+              before:from-transparent before:via-white/20 before:to-transparent
+              before:translate-x-[-100%] before:transition-transform before:duration-700
+              hover:before:translate-x-[100%]
+              after:content-[''] after:absolute after:right-5 after:top-1/2 
+              after:w-0 after:h-0 after:border-l-[6px] after:border-r-[6px] 
+              after:border-t-[8px] after:border-l-transparent after:border-r-transparent
+              after:border-t-gray-500 dark:after:border-t-gray-400
+              after:transition-all after:duration-300 after:ease-in-out
+              after:transform after:-translate-y-1/2 after:rotate-[-90deg]
+              group-open:after:rotate-0 group-open:after:border-t-blue-600 
+              dark:group-open:after:border-t-blue-400
+              ${settings.fontSize === 'sm' ? 'text-sm font-medium' : 
+                settings.fontSize === 'lg' ? 'text-base font-semibold' : 
+                settings.fontSize === 'xl' ? 'text-lg font-semibold' : 'text-sm font-medium'}
+            `}>
+              <span className="relative z-10 flex items-center">
+                <span className="mr-3 text-blue-600 dark:text-blue-400 font-mono text-xs opacity-70">
+                  ▶
+                </span>
+                {children}
+              </span>
             </summary>
           ),
+          // 优化折叠块内容的容器渲染
+          div: ({ children, className, ...props }) => {
+            // 检查是否是折叠块内部的内容
+            const isInFoldableBlock = className?.includes('foldable-content') || 
+                                    (typeof props.parent === 'object' && 
+                                     props.parent?.type === 'element' && 
+                                     props.parent?.tagName === 'details');
+            
+            if (isInFoldableBlock || className?.includes('foldable-content')) {
+              return (
+                <div 
+                  className={`
+                    foldable-content px-5 py-4 space-y-4
+                    bg-white/70 dark:bg-gray-900/30
+                    text-gray-700 dark:text-gray-300
+                    leading-relaxed
+                    ${settings.fontSize === 'sm' ? 'text-sm' : 
+                      settings.fontSize === 'lg' ? 'text-base' : 
+                      settings.fontSize === 'xl' ? 'text-lg' : 'text-sm'}
+                    ${className || ''}
+                  `}
+                  {...props}
+                >
+                  <div className="prose prose-gray dark:prose-invert max-w-none
+                                 prose-headings:text-gray-900 dark:prose-headings:text-gray-100
+                                 prose-headings:font-semibold prose-headings:mb-3
+                                 prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-p:leading-relaxed
+                                 prose-strong:text-gray-900 dark:prose-strong:text-gray-100 prose-strong:font-semibold
+                                 prose-em:text-gray-800 dark:prose-em:text-gray-200
+                                 prose-code:bg-blue-50 dark:prose-code:bg-blue-900/30 
+                                 prose-code:text-blue-800 dark:prose-code:text-blue-200
+                                 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+                                 prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800
+                                 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700
+                                 prose-blockquote:border-l-blue-500 prose-blockquote:bg-blue-50/30 
+                                 dark:prose-blockquote:bg-blue-900/20 prose-blockquote:text-gray-700 
+                                 dark:prose-blockquote:text-gray-300
+                                 prose-ul:text-gray-700 dark:prose-ul:text-gray-300
+                                 prose-ol:text-gray-700 dark:prose-ol:text-gray-300
+                                 prose-li:marker:text-blue-500 dark:prose-li:marker:text-blue-400">
+                    {children}
+                  </div>
+                </div>
+              );
+            }
+            
+            // 普通 div 的处理
+            return (
+              <div className={className} {...props}>
+                {children}
+              </div>
+            );
+          },
         }}
       >
-        {content}
-      </ReactMarkdown>
-    </div>
+          {content}
+        </ReactMarkdown>
+      </div>
+    </>
   );
 }
