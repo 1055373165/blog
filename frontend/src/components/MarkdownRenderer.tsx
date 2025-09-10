@@ -369,10 +369,10 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               loading="lazy"
             />
           ),
-          // 折叠块支持
+          // 增强的折叠块支持 - 与新的 ByteMD 插件同步
           details: ({ children, ...props }) => (
             <details 
-              className="border border-gray-200 dark:border-gray-700 rounded-lg margin-4 bg-gray-50 dark:bg-gray-800/50 overflow-hidden transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm"
+              className="foldable-block border border-gray-200 dark:border-gray-700 rounded-lg my-4 bg-gray-50 dark:bg-gray-800/50 overflow-hidden transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm"
               {...props}
             >
               {children}
