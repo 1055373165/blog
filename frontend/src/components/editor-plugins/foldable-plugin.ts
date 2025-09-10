@@ -1,5 +1,4 @@
 import type { BytemdPlugin } from 'bytemd'
-import type { Processor } from 'unified'
 import type { Root, Element, Text } from 'hast'
 import type { Node } from 'unist'
 import { visit } from 'unist-util-visit'
@@ -16,7 +15,7 @@ function isText(node: Node): node is Text {
 
 // Remark plugin to handle details/summary markdown processing
 function remarkFoldablePlugin() {
-  return (tree: any, file: any) => {
+  return (tree: any) => {
     // This plugin doesn't need to modify the AST at the remark level
     // since we're handling HTML tags that remark already parses
     return tree
@@ -25,8 +24,8 @@ function remarkFoldablePlugin() {
 
 // Rehype plugin to process content inside details elements
 function rehypeFoldablePlugin() {
-  return (tree: Root, file: any) => {
-    visit(tree, 'element', (node: Element, index: number, parent: any) => {
+  return (tree: Root) => {
+    visit(tree, 'element', (node: Element) => {
       if (node.tagName === 'details') {
         // Find summary and content elements
         const summaryIndex = node.children.findIndex((child: any) => 
@@ -342,10 +341,10 @@ function processInlineMarkdown(text: string): (Element | Text)[] {
 export function foldablePlugin(): BytemdPlugin {
   return {
     // Remark plugin for processing markdown
-    remarkPlugins: [remarkFoldablePlugin],
+    remark: remarkFoldablePlugin,
     
     // Rehype plugin for processing HTML
-    rehypePlugins: [rehypeFoldablePlugin],
+    rehype: rehypeFoldablePlugin,
     
     // 工具栏配置
     actions: [
@@ -389,7 +388,6 @@ export function foldablePlugin(): BytemdPlugin {
               } else if (ctx.codemirror) {
                 // 尝试使用 CodeMirror API 插入
                 const doc = ctx.codemirror.getDoc()
-                const cursor = doc.getCursor()
                 doc.replaceSelection(foldableTemplate)
               } else {
                 // 最后的备用方案：使用 replaceSelection 或类似方法
@@ -446,7 +444,6 @@ function example() {
               } else if (ctx.codemirror) {
                 // 尝试使用 CodeMirror API 插入
                 const doc = ctx.codemirror.getDoc()
-                const cursor = doc.getCursor()
                 doc.replaceSelection(openFoldableTemplate)
               }
             } catch (error) {
