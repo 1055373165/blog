@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Article, CreateArticleInput, UpdateArticleInput, Category, Tag, Series } from '../../types';
 import { articlesApi, categoriesApi, tagsApi } from '../../api';
@@ -159,12 +159,12 @@ export default function ArticleEditor() {
     }
   };
 
-  const handleInputChange = (field: keyof CreateArticleInput, value: any) => {
+  const handleInputChange = useCallback((field: keyof CreateArticleInput, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
-  };
+  }, []);
 
   const handleTagToggle = (tagId: string) => {
     const currentTags = selectedTags || [];

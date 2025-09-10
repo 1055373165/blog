@@ -107,7 +107,7 @@ const zhCNLocale: Partial<BytemdLocale> = {
   hr: '分割线'
 }
 
-export default function ByteMDEditor({
+function ByteMDEditor({
   value,
   onChange,
   height = 1400,
@@ -353,3 +353,17 @@ export default function ByteMDEditor({
     </div>
   )
 }
+
+// Custom props comparison to prevent unnecessary re-renders
+const propsAreEqual = (prev: ByteMDEditorProps, next: ByteMDEditorProps) => {
+  return (
+    prev.value === next.value &&
+    prev.height === next.height &&
+    prev.placeholder === next.placeholder &&
+    prev.realTimeRendering === next.realTimeRendering &&
+    prev.maxLength === next.maxLength &&
+    prev.performanceMode === next.performanceMode
+  );
+};
+
+export default React.memo(ByteMDEditor, propsAreEqual);
