@@ -207,7 +207,7 @@ export default function ByteMDEditor({
       smartIndent: false,
       electricChars: false,
       indentWithTabs: false,
-      indentUnit: 0,
+      indentUnit: 2, // use 2 spaces for each indent level
       tabSize: 2,
       
       // 性能优化配置
@@ -220,6 +220,13 @@ export default function ByteMDEditor({
       }),
       
       extraKeys: {
+        // Indentation controls
+        'Tab': function (cm: CodeMirrorEditor) {
+          cm.execCommand('indentMore')
+        },
+        'Shift-Tab': function (cm: CodeMirrorEditor) {
+          cm.execCommand('indentLess')
+        },
         'Enter': function(cm: CodeMirrorEditor) {
           // 缓存编辑器引用以提高性能
           editorRef.current = cm
