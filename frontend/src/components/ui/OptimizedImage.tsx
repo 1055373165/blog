@@ -17,14 +17,26 @@ interface OptimizedImageProps {
   format?: 'webp' | 'jpg' | 'png' | 'auto';
 }
 
-// 图片格式优化：根据浏览器支持自动选择最佳格式
-const getOptimizedSrc = (src: string, format?: 'webp' | 'jpg' | 'png' | 'auto', quality = 85) => {
-  // 如果是外部链接，直接返回
-  if (src.startsWith('http')) return src;
-  
-  // 暂时禁用WebP转换，直接返回原始路径
-  // 简单的图片优化策略，实际项目中可以接入图片处理服务
-  return src;
+// 图片格式优化与URL规范化：
+// - 保留外部链接 (http/https、协议相对 //)、data:、blob:
+// - 对于相对路径，规范化为以根路径开头，避免在诸如 /article/slug 等嵌套路由下解析成 /article/uploads/... 导致404
+const getOptimizedSrc = (src: string) => {
+  if (!src) return src;
+
+  const trimmed = src.trim();
+
+  // 外部或内联资源，直接返回
+  if (/^(?:https?:)?\/\//i.test(trimmed)) return trimmed; // http(s) 或协议相对
+  if (/^(?:data:|blob:)/i.test(trimmed)) return trimmed;    // data: / blob:
+
+  // 统一路径分隔符，移除多余的前缀斜杠
+  const normalized = trimmed.replace(/\\/g, '/').replace(/^(\.\/)+/, '');
+
+  // 已是根路径
+  if (normalized.startsWith('/')) return normalized;
+
+  // 补充根路径前缀，保证 URL 在任意路由下行为一致
+  return `/${normalized.replace(/^\/+/, '')}`;
 };
 
 // 智能懒加载 Hook
@@ -88,7 +100,7 @@ const useImageLazyLoading = (priority: boolean = false, threshold = 0.1) => {
     setHasLoaded(true);
   }, []);
 
-  return { inView, imgRef, hasLoaded, handleLoad };
+  return { inView, imgRef, handleLoad };
 };
 
 // 布局稳定性 Hook - 防止 CLS
@@ -124,17 +136,15 @@ export default function OptimizedImage({
   placeholder = 'skeleton',
   onLoad,
   onError,
-  aspectRatio,
-  quality = 85,
-  format = 'auto'
+  aspectRatio
 }: OptimizedImageProps) {
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
   
-  const { inView, imgRef, hasLoaded, handleLoad } = useImageLazyLoading(priority);
+  const { inView, imgRef, handleLoad } = useImageLazyLoading(priority);
   const stableDimensions = useLayoutStability(aspectRatio, width, height);
   
-  const optimizedSrc = getOptimizedSrc(src, format, quality);
+  const optimizedSrc = getOptimizedSrc(src);
 
   const handleImageLoad = useCallback(() => {
     console.log(`✅ 图片加载成功: ${src}`);
