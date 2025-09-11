@@ -264,9 +264,9 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         background: transparent;
       }
       
-      /* 统一内容间距 - 让内容自然流动 */
+      /* 统一内容间距 - 紧凑自然流动 */
       .foldable-block > *:not(summary) {
-        margin-top: 1rem;
+        margin-top: 0.75rem;
         margin-bottom: 0;
       }
       
@@ -278,10 +278,6 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         margin-bottom: 0;
       }
       
-      /* 段落间距优化 */
-      .foldable-block > *:not(summary) > p + p {
-        margin-top: 0.75rem;
-      }
       
       /* 列表间距优化 - 直接选中列表元素 */
       .foldable-block ul,
@@ -317,15 +313,15 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         margin-top: 0.125rem !important;
       }
       
-      /* 标题间距优化 - 直接选中标题元素 */
+      /* 标题间距优化 - 紧凑布局 */
       .foldable-block h1,
       .foldable-block h2,
       .foldable-block h3,
       .foldable-block h4,
       .foldable-block h5,
       .foldable-block h6 {
-        margin-top: 1.5rem !important;
-        margin-bottom: 0.5rem !important;
+        margin-top: 1rem !important;
+        margin-bottom: 0.25rem !important;
       }
       
       .foldable-block h1:first-child,
@@ -337,22 +333,22 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         margin-top: 0 !important;
       }
       
-      /* 代码块间距优化 */
+      /* 代码块间距优化 - 紧凑布局 */
       .foldable-block pre {
-        margin-top: 1rem !important;
-        margin-bottom: 1rem !important;
-      }
-      
-      /* 引用块间距优化 */
-      .foldable-block blockquote {
-        margin-top: 1rem !important;
-        margin-bottom: 1rem !important;
-      }
-      
-      /* 段落间距优化 */
-      .foldable-block p {
         margin-top: 0.75rem !important;
         margin-bottom: 0.75rem !important;
+      }
+      
+      /* 引用块间距优化 - 紧凑布局 */
+      .foldable-block blockquote {
+        margin-top: 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+      }
+      
+      /* 段落间距优化 - 紧凑布局 */
+      .foldable-block p {
+        margin-top: 0.5rem !important;
+        margin-bottom: 0.25rem !important;
       }
       
       .foldable-block p:first-child {
