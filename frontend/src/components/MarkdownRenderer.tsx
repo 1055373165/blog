@@ -159,6 +159,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         --fold-list-mb: 0.25rem;
         --fold-li-gap: 0.1rem;
         --fold-li-line-height: 1.3;
+        --fold-heading-line-height: 1.8; /* 标题行高（增大一倍视觉空间） */
         --fold-nested-indent: 1.25rem;
       }
       
@@ -235,137 +236,66 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         }
       }
       
-      /* 折叠块内容区域 - 统一背景容器 */
-      .foldable-block[open]::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
+      /* 折叠块内容区域 - 统一背景和内边距 */
+      .foldable-block[open] {
+        padding: var(--fold-content-py) var(--fold-content-px);
         background: rgba(255, 255, 255, 0.5);
-        z-index: -1;
-        pointer-events: none;
       }
       
-      .dark .foldable-block[open]::after {
+      .dark .foldable-block[open] {
         background: rgba(17, 24, 39, 0.3);
       }
-      
-      /* 内容区域统一内边距 */
-      .foldable-block[open] {
-        padding: 0 var(--fold-content-px) var(--fold-content-py) var(--fold-content-px);
-        padding-top: 0;
-      }
-      
-      /* 移除单个元素的独立容器化，让内容自然流动 */
-      .foldable-block > *:not(summary) {
-        margin: 0;
-        background: transparent;
-      }
-      
-      /* 统一内容间距 - 超紧凑自然流动 */
-      .foldable-block > *:not(summary) {
-        margin-top: 0.25rem;
-        margin-bottom: 0;
-      }
-      
-      .foldable-block > *:not(summary):first-of-type {
-        margin-top: 0;
-      }
-      
-      .foldable-block > *:not(summary):last-of-type {
-        margin-bottom: 0;
-      }
-      
-      
-      /* 列表间距优化 - 直接选中列表元素 */
-      .foldable-block ul,
-      .foldable-block ol {
-        margin-top: var(--fold-list-mt) !important;
-        margin-bottom: var(--fold-list-mb) !important;
-        padding-left: var(--fold-nested-indent) !important;
-        list-style-position: outside;
-      }
-      
-      /* 列表项内部间距优化 - 简化选择器 */
-      .foldable-block li {
-        margin: 0 !important;
-        line-height: var(--fold-li-line-height) !important;
-      }
-      
-      .foldable-block li:last-child {
-        margin-bottom: 0 !important;
-      }
-      
-      /* 列表项间距控制 */
-      .foldable-block ul > li + li,
-      .foldable-block ol > li + li {
-        margin-top: var(--fold-li-gap) !important;
-      }
-      
-      /* 列表项内部元素间距 */
-      .foldable-block li > * {
-        margin: 0 !important;
-      }
-      
-      .foldable-block li > * + * {
-        margin-top: 0.125rem !important;
-      }
-      
-      /* 标题间距优化 - 最紧凑布局 */
-      .foldable-block h1,
-      .foldable-block h2,
-      .foldable-block h3,
-      .foldable-block h4,
-      .foldable-block h5,
-      .foldable-block h6 {
-        margin-top: 0.75rem !important;
-        margin-bottom: 0.25rem !important;
-      }
-      
-      .foldable-block h1:first-child,
-      .foldable-block h2:first-child,
-      .foldable-block h3:first-child,
-      .foldable-block h4:first-child,
-      .foldable-block h5:first-child,
-      .foldable-block h6:first-child {
-        margin-top: 0 !important;
-      }
-      
-      /* 代码块间距优化 - 最紧凑布局 */
-      .foldable-block pre {
-        margin-top: 0.5rem !important;
-        margin-bottom: 0.5rem !important;
-      }
-      
-      /* 引用块间距优化 - 最紧凑布局 */
-      .foldable-block blockquote {
-        margin-top: 0.5rem !important;
-        margin-bottom: 0.5rem !important;
-      }
-      
-      /* 段落间距优化 - 最紧凑布局 */
-      .foldable-block p {
-        margin-top: 0.25rem !important;
-        margin-bottom: 0.25rem !important;
-      }
-      
-      .foldable-block p:first-child {
-        margin-top: 0 !important;
-      }
-      
-      .foldable-block p:last-child {
-        margin-bottom: 0 !important;
-      }
-      
-      /* 强调元素优化 */
-      .foldable-block strong,
-      .foldable-block em {
-        line-height: inherit;
+
+      /* 核心修复：移除 prose 对子元素的间距影响，并建立新的垂直节奏 */
+      .prose .foldable-block > *:not(summary) {
         margin: 0;
         padding: 0;
-        vertical-align: baseline;
+        background: transparent;
+      }
+
+      .prose .foldable-block > *:not(summary) + *:not(summary) {
+        margin-top: var(--fold-block-gap, 0.5rem) !important;
+      }
+
+      /* 展开后，summary 与第一行正文之间的间距 */
+      .prose .foldable-block summary + * {
+        margin-top: var(--fold-after-summary-gap, 0.75rem) !important;
+      }
+
+      /* 列表的特殊处理，使其与周围块有合适的间距，同时内部保持紧凑 */
+      .prose .foldable-block ul,
+      .prose .foldable-block ol {
+        padding-left: var(--fold-nested-indent, 1.25rem) !important;
+        margin-top: var(--fold-list-mt, 0.25rem) !important;
+        margin-bottom: var(--fold-list-mb, 0.25rem) !important;
+        list-style-position: outside;
+      }
+
+      .prose .foldable-block li {
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: var(--fold-li-line-height, 1.3) !important;
+      }
+
+      .prose .foldable-block li + li {
+        margin-top: var(--fold-li-gap, 0.1rem) !important;
+      }
+
+      /* 段落紧凑化 */
+      .prose .foldable-block p {
+        margin: 0 !important;
+        line-height: var(--fold-li-line-height, 1.3);
+      }
+
+      /* 标题的顶部间距，底部保持紧凑 */
+      .prose .foldable-block h1,
+      .prose .foldable-block h2,
+      .prose .foldable-block h3,
+      .prose .foldable-block h4,
+      .prose .foldable-block h5,
+      .prose .foldable-block h6 {
+        margin-bottom: 0.125rem !important;
+        line-height: var(--fold-heading-line-height, 1.6) !important;
       }
       
       /* 三角形指示器的平滑旋转 */
@@ -431,6 +361,23 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       .prose .foldable-block li blockquote {
         margin-top: 0.25rem !important;
         margin-bottom: 0.25rem !important;
+      }
+
+      /* Summary 与第一内容元素的间距 - 放在末尾覆盖上面的重置规则 */
+      .prose .foldable-block summary + p,
+      .prose .foldable-block summary + h1,
+      .prose .foldable-block summary + h2,
+      .prose .foldable-block summary + h3,
+      .prose .foldable-block summary + h4,
+      .prose .foldable-block summary + h5,
+      .prose .foldable-block summary + h6,
+      .prose .foldable-block summary + ul,
+      .prose .foldable-block summary + ol,
+      .prose .foldable-block summary + pre,
+      .prose .foldable-block summary + blockquote,
+      .prose .foldable-block summary + table,
+      .prose .foldable-block summary + div {
+        margin-top: var(--fold-after-summary-gap, 1rem) !important;
       }
     </style>
   `;
