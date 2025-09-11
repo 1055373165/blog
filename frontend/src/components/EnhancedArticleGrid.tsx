@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Article } from '../types';
 import OptimizedImage from './ui/OptimizedImage';
 import { formatDate } from '../utils';
@@ -9,10 +9,10 @@ interface EnhancedArticleGridProps {
   loading?: boolean;
   className?: string;
   variant?: 'masonry' | 'grid' | 'mixed';
-  enableAnimations?: boolean;
   showStats?: boolean;
   showCategory?: boolean;
   showTags?: boolean;
+  showExcerpt?: boolean;
 }
 
 // 文章卡片组件 - 增强微交互
@@ -22,6 +22,7 @@ const EnhancedArticleCard = ({
   showStats, 
   showCategory, 
   showTags,
+  showExcerpt = true,
   className 
 }: { 
   article: Article; 
@@ -29,6 +30,7 @@ const EnhancedArticleCard = ({
   showStats?: boolean;
   showCategory?: boolean;
   showTags?: boolean;
+  showExcerpt?: boolean;
   className?: string;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -162,9 +164,11 @@ const EnhancedArticleCard = ({
           </h3>
 
           {/* 摘要 */}
-          <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-3 mb-4 leading-relaxed">
-            {article.excerpt || article.content?.substring(0, 150) + '...'}
-          </p>
+          {showExcerpt && (
+            <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-3 mb-4 leading-relaxed">
+              {article.excerpt || article.content?.substring(0, 150) + '...'}
+            </p>
+          )}
 
           {/* 标签 */}
           {showTags && article.tags && article.tags.length > 0 && (
@@ -268,10 +272,10 @@ export default function EnhancedArticleGrid({
   loading = false,
   className,
   variant = 'masonry',
-  enableAnimations = true,
   showStats = true,
   showCategory = true,
-  showTags = true
+  showTags = true,
+  showExcerpt = true
 }: EnhancedArticleGridProps) {
   const [columnCount, setColumnCount] = useState(3);
   const masonryColumns = useMasonryLayout(articles, columnCount);
@@ -332,6 +336,7 @@ export default function EnhancedArticleGrid({
                 showStats={showStats}
                 showCategory={showCategory}
                 showTags={showTags}
+                showExcerpt={showExcerpt}
               />
             ))}
           </div>
@@ -351,6 +356,7 @@ export default function EnhancedArticleGrid({
             showStats={showStats}
             showCategory={showCategory}
             showTags={showTags}
+            showExcerpt={showExcerpt}
             className="md:col-span-2 lg:col-span-3"
           />
         )}
@@ -365,6 +371,7 @@ export default function EnhancedArticleGrid({
               showStats={showStats}
               showCategory={showCategory}
               showTags={showTags}
+              showExcerpt={showExcerpt}
             />
           ))}
         </div>
@@ -383,6 +390,7 @@ export default function EnhancedArticleGrid({
           showStats={showStats}
           showCategory={showCategory}
           showTags={showTags}
+          showExcerpt={showExcerpt}
         />
       ))}
     </div>
