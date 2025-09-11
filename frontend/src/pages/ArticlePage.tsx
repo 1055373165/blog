@@ -11,6 +11,7 @@ import SubstackLayout from '../components/SubstackLayout';
 import { useReadingTime } from '../hooks/useReadingTime';
 import { formatDate } from '../utils';
 import '../styles/foldable-article.css';
+import EnhancedArticleGrid from '../components/EnhancedArticleGrid';
 
 // Memoized RelatedArticles component to prevent unnecessary re-renders
 const RelatedArticles = memo(({ articles }: { articles: Article[] }) => {
@@ -21,39 +22,7 @@ const RelatedArticles = memo(({ articles }: { articles: Article[] }) => {
       <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 font-heading">
         相关文章推荐
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {articles.map((relatedArticle) => (
-          <Link
-            key={relatedArticle.id}
-            to={`/article/${relatedArticle.slug}`}
-            className="card card-hover group block overflow-hidden"
-          >
-            {relatedArticle.cover_image && (
-              <div className="overflow-hidden">
-                <OptimizedImage
-                  src={relatedArticle.cover_image}
-                  alt={`${relatedArticle.title} 的封面图片`}
-                  aspectRatio="16/9"
-                  className="group-hover:scale-105 transition-transform duration-300"
-                  placeholder="skeleton"
-                />
-              </div>
-            )}
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-go-600 dark:group-hover:text-go-400 line-clamp-2 mb-3 transition-colors duration-200">
-                {relatedArticle.title}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 mb-4 leading-relaxed">
-                {relatedArticle.excerpt}
-              </p>
-              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                <span className="font-medium">{relatedArticle.author.name}</span>
-                <span>{formatDate(relatedArticle.published_at || relatedArticle.created_at)}</span>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
+      <EnhancedArticleGrid articles={articles} variant="grid" />
     </section>
   );
 });
@@ -217,7 +186,7 @@ export default function ArticlePage() {
       publishedAt: article.published_at || article.created_at,
       excerpt: article.excerpt
     };
-  }, [article?.id, article?.title, article?.content, article?.cover_image]);
+  }, [article]);
 
   // 优化的通知组件缓存（移到顶级以符合 Hooks 规则）
   const NotificationComponent = useMemo(() => {
@@ -245,7 +214,7 @@ export default function ArticlePage() {
         </div>
       </div>
     );
-  }, [notification?.message, notification?.type]);
+  }, [notification]);
 
   // 自动隐藏通知 - 优化定时器处理
   useEffect(() => {
