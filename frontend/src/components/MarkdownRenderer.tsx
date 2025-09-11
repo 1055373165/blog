@@ -150,6 +150,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
   const foldableStyles = `
     <style>
       .foldable-block {
+        font-family: inherit;
         --fold-duration: 300ms;
         --fold-ease: cubic-bezier(0.4, 0.0, 0.2, 1);
         /* 新增：折叠块内部统一的间距变量，可按需在 data-density 上覆盖 */
@@ -297,6 +298,13 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
 
       .prose .foldable-block li + li {
         margin-top: var(--fold-li-gap, 0.1rem) !important;
+      }
+
+      /* 段落、列表、引用继承字体大小 */
+      .prose .foldable-block p,
+      .prose .foldable-block li,
+      .prose .foldable-block blockquote {
+        font-size: inherit !important;
       }
 
       /* 段落紧凑化 */
