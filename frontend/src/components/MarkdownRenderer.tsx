@@ -236,14 +236,20 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         }
       }
       
-      /* 折叠块内容区域 - 统一背景和内边距 */
+      /* 折叠块内容区域 - 仅修改背景，不在 open 状态添加外层 padding，避免 Summary 位移 */
       .foldable-block[open] {
-        padding: var(--fold-content-py) var(--fold-content-px);
         background: rgba(255, 255, 255, 0.5);
       }
       
       .dark .foldable-block[open] {
         background: rgba(17, 24, 39, 0.3);
+      }
+
+      /* 确保 Summary 在折叠/展开前后宽度与圆角保持一致 */
+      .prose .foldable-block > summary {
+        display: block;
+        border-top-left-radius: inherit;
+        border-top-right-radius: inherit;
       }
 
       /* 核心修复：移除 prose 对子元素的间距影响，并建立新的垂直节奏 */
@@ -262,10 +268,22 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         margin-top: var(--fold-after-summary-gap, 0.75rem) !important;
       }
 
+      /* 正文的左右内边距（不影响 summary）*/
+      .prose .foldable-block > :where(p,h1,h2,h3,h4,h5,h6,ul,ol,pre,blockquote,table,div) {
+        padding-left: var(--fold-content-px) !important;
+        padding-right: var(--fold-content-px) !important;
+      }
+
+      /* 正文底部留白，避免紧贴边框 */
+      .prose .foldable-block > :not(summary):last-child {
+        margin-bottom: var(--fold-content-py, 1rem) !important;
+      }
+
       /* 列表的特殊处理，使其与周围块有合适的间距，同时内部保持紧凑 */
-      .prose .foldable-block ul,
-      .prose .foldable-block ol {
-        padding-left: var(--fold-nested-indent, 1.25rem) !important;
+      .prose .foldable-block > ul,
+      .prose .foldable-block > ol {
+        padding-left: calc(var(--fold-content-px, 1.25rem) + var(--fold-nested-indent, 1.25rem)) !important;
+        padding-right: var(--fold-content-px, 1.25rem) !important;
         margin-top: var(--fold-list-mt, 0.25rem) !important;
         margin-bottom: var(--fold-list-mb, 0.25rem) !important;
         list-style-position: outside;
@@ -314,11 +332,12 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       }
 
       /* Prose 插件覆盖：更高优先级选择器，保证折叠块内列表紧凑但清晰 */
-      .prose .foldable-block ul,
-      .prose .foldable-block ol {
+      .prose .foldable-block > ul,
+      .prose .foldable-block > ol {
         margin-top: var(--fold-list-mt) !important;
         margin-bottom: var(--fold-list-mb) !important;
-        padding-left: var(--fold-nested-indent) !important;
+        padding-left: calc(var(--fold-content-px) + var(--fold-nested-indent)) !important;
+        padding-right: var(--fold-content-px) !important;
         list-style-position: outside;
       }
       .prose .foldable-block li {
