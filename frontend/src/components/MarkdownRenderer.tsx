@@ -582,35 +582,56 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               {children}
             </a>
           ),
-          blockquote: ({ children }) => (
-            <blockquote 
-              className="border-l-4 border-primary-500 pl-4 py-1.5 text-gray-600 dark:text-gray-400 my-4"
-              style={{
-                quotes: 'none',
-                fontStyle: 'normal',
-                fontFamily: 'var(--font-body)'
-              }}
-            >
-              <div style={{ quotes: 'none', fontStyle: 'normal' }}>
+          blockquote: ({ children }) => {
+            const sizeClass = settings.fontSize === 'sm' ? 'text-sm' : 
+                             settings.fontSize === 'lg' ? 'text-lg' : 
+                             settings.fontSize === 'xl' ? 'text-xl' : 'text-base';
+            return (
+              <blockquote 
+                className={`border-l-4 border-primary-500 pl-4 py-1.5 my-4 ${sizeClass}`}
+                style={{
+                  quotes: 'none',
+                  fontStyle: 'normal',
+                  fontFamily: 'var(--font-body)',
+                  color: isDark ? 'rgb(156 163 175)' : 'rgb(75 85 99)',
+                }}
+              >
+                <div style={{ quotes: 'none', fontStyle: 'normal' }}>
+                  {children}
+                </div>
+              </blockquote>
+            );
+          },
+          ul: ({ children }) => {
+            const sizeClass = settings.fontSize === 'sm' ? 'text-sm' : 
+                             settings.fontSize === 'lg' ? 'text-lg' : 
+                             settings.fontSize === 'xl' ? 'text-xl' : 'text-base';
+            return (
+              <ul className={`list-disc list-outside !ml-0 pl-5 mb-4 text-gray-700 dark:text-gray-300 ${sizeClass}`} style={{ lineHeight: '1.3' }}>
                 {children}
-              </div>
-            </blockquote>
-          ),
-          ul: ({ children }) => (
-            <ul className="list-disc list-outside !ml-0 pl-5 mb-4 text-gray-700 dark:text-gray-300" style={{ lineHeight: '1.3' }}>
-              {children}
-            </ul>
-          ),
-          ol: ({ children }) => (
-            <ol className="list-decimal list-outside !ml-0 pl-5 mb-4 text-gray-700 dark:text-gray-300" style={{ lineHeight: '1.3' }}>
-              {children}
-            </ol>
-          ),
-          li: ({ children }) => (
-            <li className="leading-tight ml-0" style={{ lineHeight: '1.3' }}>
-              {children}
-            </li>
-          ),
+              </ul>
+            );
+          },
+          ol: ({ children }) => {
+            const sizeClass = settings.fontSize === 'sm' ? 'text-sm' : 
+                             settings.fontSize === 'lg' ? 'text-lg' : 
+                             settings.fontSize === 'xl' ? 'text-xl' : 'text-base';
+            return (
+              <ol className={`list-decimal list-outside !ml-0 pl-5 mb-4 text-gray-700 dark:text-gray-300 ${sizeClass}`} style={{ lineHeight: '1.3' }}>
+                {children}
+              </ol>
+            );
+          },
+          li: ({ children }) => {
+            const sizeClass = settings.fontSize === 'sm' ? 'text-sm' : 
+                             settings.fontSize === 'lg' ? 'text-lg' : 
+                             settings.fontSize === 'xl' ? 'text-xl' : 'text-base';
+            return (
+              <li className={`leading-tight ml-0 ${sizeClass}`} style={{ lineHeight: '1.3' }}>
+                {children}
+              </li>
+            );
+          },
           table: ({ children }) => (
             <div className="overflow-x-auto my-4">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
