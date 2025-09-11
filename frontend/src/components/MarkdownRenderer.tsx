@@ -152,6 +152,14 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       .foldable-block {
         --fold-duration: 300ms;
         --fold-ease: cubic-bezier(0.4, 0.0, 0.2, 1);
+        /* 新增：折叠块内部统一的间距变量，可按需在 data-density 上覆盖 */
+        --fold-content-py: 1rem;
+        --fold-content-px: 1.25rem;
+        --fold-list-mt: 0.25rem;
+        --fold-list-mb: 0.375rem;
+        --fold-li-gap: 0.125rem;
+        --fold-li-line-height: 1.35;
+        --fold-nested-indent: 1.25rem;
       }
       
       .foldable-block[open] {
@@ -227,6 +235,131 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         }
       }
       
+      /* 折叠块内容区域 - 纯CSS统一容器 */
+      .foldable-block > *:not(summary) {
+        background: rgba(255, 255, 255, 0.5);
+        margin: 0;
+        padding: var(--fold-content-py) var(--fold-content-px);
+      }
+      
+      .dark .foldable-block > *:not(summary) {
+        background: rgba(17, 24, 39, 0.3);
+      }
+      
+      /* 优化内容间距 - 大幅减少间距实现紧凑布局 */
+      .foldable-block > *:not(summary) > * {
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      .foldable-block > *:not(summary) > *:first-child {
+        margin-top: 0;
+      }
+      
+      .foldable-block > *:not(summary) > *:last-child {
+        margin-bottom: 0;
+      }
+      
+      /* 段落间距优化 */
+      .foldable-block > *:not(summary) > p + p {
+        margin-top: 0.75rem;
+      }
+      
+      /* 列表间距优化（使用变量并强制覆盖） */
+      .foldable-block > *:not(summary) > ul,
+      .foldable-block > *:not(summary) > ol {
+        margin-top: var(--fold-list-mt) !important;
+        margin-bottom: var(--fold-list-mb) !important;
+        padding-left: var(--fold-nested-indent) !important;
+        list-style-position: outside;
+      }
+      
+      /* 列表项内部间距优化 - 精准控制所有margin属性 */
+      .foldable-block > *:not(summary) > ul > li,
+      .foldable-block > *:not(summary) > ol > li {
+        margin: 0 !important;  /* 重置所有margin，包括Tailwind的space-y */
+        line-height: var(--fold-li-line-height) !important;  /* 统一行高 */
+      }
+      
+      .foldable-block > *:not(summary) > ul > li:last-child,
+      .foldable-block > *:not(summary) > ol > li:last-child {
+        margin-bottom: 0 !important;
+      }
+      
+      /* 强制覆盖Tailwind的space-y utilities - 全面覆盖所有可能的间距 */
+      .foldable-block > *:not(summary) > ul > * + *,
+      .foldable-block > *:not(summary) > ol > * + * {
+        margin-top: var(--fold-li-gap) !important;  /* 统一列表项间距 */
+      }
+      
+      /* 针对性覆盖各种space-y类 */
+      .foldable-block > *:not(summary) > ul[class*="space-y"] > li:not(:first-child),
+      .foldable-block > *:not(summary) > ol[class*="space-y"] > li:not(:first-child) {
+        margin-top: var(--fold-li-gap) !important;
+      }
+      
+      /* 确保段落在列表项中的间距也被控制 */
+      .foldable-block > *:not(summary) > ul > li > *,
+      .foldable-block > *:not(summary) > ol > li > * {
+        margin: 0 !important;
+      }
+      
+      .foldable-block > *:not(summary) > ul > li > * + *,
+      .foldable-block > *:not(summary) > ol > li > * + * {
+        margin-top: 0.125rem !important;  /* 列表项内部元素间的小间距 */
+      }
+      
+      /* 标题间距精细优化 */
+      .foldable-block > *:not(summary) > h1,
+      .foldable-block > *:not(summary) > h2,
+      .foldable-block > *:not(summary) > h3,
+      .foldable-block > *:not(summary) > h4,
+      .foldable-block > *:not(summary) > h5,
+      .foldable-block > *:not(summary) > h6 {
+        margin-top: 0.75rem;
+        margin-bottom: 0.25rem;
+      }
+      
+      /* 代码块间距优化 */
+      .foldable-block > *:not(summary) > pre {
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      /* 引用块间距优化 */
+      .foldable-block > *:not(summary) > blockquote {
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      /* 强调元素优化，避免与周围内容过度分离 */
+      .foldable-block > *:not(summary) > p > strong,
+      .foldable-block > *:not(summary) > p > em,
+      .foldable-block > *:not(summary) > ul > li > strong,
+      .foldable-block > *:not(summary) > ul > li > em,
+      .foldable-block > *:not(summary) > ol > li > strong,
+      .foldable-block > *:not(summary) > ol > li > em {
+        line-height: inherit;
+        margin: 0;
+        padding: 0;
+        vertical-align: baseline;
+      }
+      
+      /* 列表项内的文本元素统一行高 */
+      .foldable-block > *:not(summary) > ul > li,
+      .foldable-block > *:not(summary) > ol > li,
+      .foldable-block > *:not(summary) > ul > li *,
+      .foldable-block > *:not(summary) > ol > li * {
+        line-height: var(--fold-li-line-height) !important;
+      }
+      
+      /* 最终列表间距统一控制 - 确保稳定的最小间距 */
+      .foldable-block > *:not(summary) ul li + li,
+      .foldable-block > *:not(summary) ol li + li {
+        margin-top: var(--fold-li-gap) !important;
+        padding-top: 0;
+      }
+      
       /* 三角形指示器的平滑旋转 */
       .foldable-block summary::after {
         transition: all var(--fold-duration) var(--fold-ease);
@@ -240,6 +373,56 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       @keyframes shimmer {
         0% { transform: translateX(-100%) skewX(-15deg); }
         100% { transform: translateX(200%) skewX(-15deg); }
+      }
+
+      /* Prose 插件覆盖：更高优先级选择器，保证折叠块内列表紧凑但清晰 */
+      .prose .foldable-block ul,
+      .prose .foldable-block ol {
+        margin-top: var(--fold-list-mt) !important;
+        margin-bottom: var(--fold-list-mb) !important;
+        padding-left: var(--fold-nested-indent) !important;
+        list-style-position: outside;
+      }
+      .prose .foldable-block li {
+        margin: 0 !important;
+        line-height: var(--fold-li-line-height) !important;
+      }
+      .prose .foldable-block li > p {
+        margin: 0 !important;
+      }
+      .prose .foldable-block ul li + li,
+      .prose .foldable-block ol li + li {
+        margin-top: var(--fold-li-gap) !important;
+      }
+      .prose .foldable-block ul ul,
+      .prose .foldable-block ol ul,
+      .prose .foldable-block ul ol,
+      .prose .foldable-block ol ol {
+        margin-top: var(--fold-li-gap) !important;
+        margin-bottom: var(--fold-li-gap) !important;
+        padding-left: var(--fold-nested-indent) !important;
+      }
+      .prose .foldable-block ul { list-style-type: disc; }
+      .prose .foldable-block ul ul { list-style-type: circle; }
+      .prose .foldable-block ul ul ul { list-style-type: square; }
+
+      /* 密度预设：通过 <details data-density="..."> 控制 */
+      .foldable-block[data-density="compact"] {
+        --fold-li-line-height: 1.3;
+        --fold-li-gap: 0.075rem;
+        --fold-list-mb: 0.25rem;
+      }
+      .foldable-block[data-density="comfortable"] {
+        --fold-li-line-height: 1.45;
+        --fold-li-gap: 0.2rem;
+        --fold-list-mb: 0.5rem;
+      }
+
+      /* 列表项中代码块与引用的间距微调 */
+      .prose .foldable-block li pre,
+      .prose .foldable-block li blockquote {
+        margin-top: 0.25rem !important;
+        margin-bottom: 0.25rem !important;
       }
     </style>
   `;
@@ -432,17 +615,17 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             </blockquote>
           ),
           ul: ({ children }) => (
-            <ul className="list-disc list-outside !ml-0 pl-5 space-y-2 mb-4 text-gray-700 dark:text-gray-300">
+            <ul className="list-disc list-outside !ml-0 pl-5 mb-4 text-gray-700 dark:text-gray-300" style={{ lineHeight: '1.3' }}>
               {children}
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="list-decimal list-outside !ml-0 pl-5 space-y-2 mb-4 text-gray-700 dark:text-gray-300">
+            <ol className="list-decimal list-outside !ml-0 pl-5 mb-4 text-gray-700 dark:text-gray-300" style={{ lineHeight: '1.3' }}>
               {children}
             </ol>
           ),
           li: ({ children }) => (
-            <li className="leading-relaxed ml-0">
+            <li className="leading-tight ml-0" style={{ lineHeight: '1.3' }}>
               {children}
             </li>
           ),
@@ -471,7 +654,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               loading="lazy"
             />
           ),
-          // 增强的折叠块支持 - 优化版本，更好的视觉效果和交互
+          // 增强的折叠块支持 - 简化版本，通过 CSS 处理
           details: ({ children, ...props }) => (
             <details 
               className={`
@@ -533,53 +716,8 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               </span>
             </summary>
           ),
-          // 优化折叠块内容的容器渲染
+          // 自定义 div 处理 - 保持简洁，避免过度检测
           div: ({ children, className, ...props }) => {
-            // 检查是否是折叠块内部的内容
-            const isInFoldableBlock = className?.includes('foldable-content') || 
-                                    (typeof props.parent === 'object' && 
-                                     props.parent?.type === 'element' && 
-                                     props.parent?.tagName === 'details');
-            
-            if (isInFoldableBlock || className?.includes('foldable-content')) {
-              return (
-                <div 
-                  className={`
-                    foldable-content px-5 py-4 space-y-4
-                    bg-white/70 dark:bg-gray-900/30
-                    text-gray-700 dark:text-gray-300
-                    leading-relaxed
-                    ${settings.fontSize === 'sm' ? 'text-sm' : 
-                      settings.fontSize === 'lg' ? 'text-base' : 
-                      settings.fontSize === 'xl' ? 'text-lg' : 'text-sm'}
-                    ${className || ''}
-                  `}
-                  {...props}
-                >
-                  <div className="prose prose-gray dark:prose-invert max-w-none
-                                 prose-headings:text-gray-900 dark:prose-headings:text-gray-100
-                                 prose-headings:font-semibold prose-headings:mb-3
-                                 prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-p:leading-relaxed
-                                 prose-strong:text-gray-900 dark:prose-strong:text-gray-100 prose-strong:font-semibold
-                                 prose-em:text-gray-800 dark:prose-em:text-gray-200
-                                 prose-code:bg-blue-50 dark:prose-code:bg-blue-900/30 
-                                 prose-code:text-blue-800 dark:prose-code:text-blue-200
-                                 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
-                                 prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800
-                                 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700
-                                 prose-blockquote:border-l-blue-500 prose-blockquote:bg-blue-50/30 
-                                 dark:prose-blockquote:bg-blue-900/20 prose-blockquote:text-gray-700 
-                                 dark:prose-blockquote:text-gray-300
-                                 prose-ul:text-gray-700 dark:prose-ul:text-gray-300
-                                 prose-ol:text-gray-700 dark:prose-ol:text-gray-300
-                                 prose-li:marker:text-blue-500 dark:prose-li:marker:text-blue-400">
-                    {children}
-                  </div>
-                </div>
-              );
-            }
-            
-            // 普通 div 的处理
             return (
               <div className={className} {...props}>
                 {children}
