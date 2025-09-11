@@ -480,15 +480,10 @@ func UpdateArticle(c *gin.Context) {
 		updates["content"] = *req.Content
 		// 重新计算阅读时间
 		updates["reading_time"] = utils.CalculateReadingTime(*req.Content)
-
-		// 如果没有提供新的摘要，从新内容生成
-		if req.Excerpt == nil {
-			updates["excerpt"] = utils.TruncateText(utils.StripHTML(*req.Content), 150)
-		}
 	}
 
 	if req.Excerpt != nil {
-		updates["excerpt"] = *req.Excerpt
+		updates["excerpt"] = strings.TrimSpace(*req.Excerpt)
 	}
 
 	if req.CoverImage != nil {
