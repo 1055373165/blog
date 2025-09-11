@@ -235,28 +235,46 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         }
       }
       
-      /* 折叠块内容区域 - 纯CSS统一容器 */
-      .foldable-block > *:not(summary) {
+      /* 折叠块内容区域 - 统一背景容器 */
+      .foldable-block[open]::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         background: rgba(255, 255, 255, 0.5);
-        margin: 0;
-        padding: var(--fold-content-py) var(--fold-content-px);
+        z-index: -1;
+        pointer-events: none;
       }
       
-      .dark .foldable-block > *:not(summary) {
+      .dark .foldable-block[open]::after {
         background: rgba(17, 24, 39, 0.3);
       }
       
-      /* 优化内容间距 - 大幅减少间距实现紧凑布局 */
-      .foldable-block > *:not(summary) > * {
-        margin-top: 0.5rem;
-        margin-bottom: 0.5rem;
+      /* 内容区域统一内边距 */
+      .foldable-block[open] {
+        padding: 0 var(--fold-content-px) var(--fold-content-py) var(--fold-content-px);
+        padding-top: 0;
       }
       
-      .foldable-block > *:not(summary) > *:first-child {
+      /* 移除单个元素的独立容器化，让内容自然流动 */
+      .foldable-block > *:not(summary) {
+        margin: 0;
+        background: transparent;
+      }
+      
+      /* 统一内容间距 - 让内容自然流动 */
+      .foldable-block > *:not(summary) {
+        margin-top: 1rem;
+        margin-bottom: 0;
+      }
+      
+      .foldable-block > *:not(summary):first-of-type {
         margin-top: 0;
       }
       
-      .foldable-block > *:not(summary) > *:last-child {
+      .foldable-block > *:not(summary):last-of-type {
         margin-bottom: 0;
       }
       
@@ -265,99 +283,93 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         margin-top: 0.75rem;
       }
       
-      /* 列表间距优化（使用变量并强制覆盖） */
-      .foldable-block > *:not(summary) > ul,
-      .foldable-block > *:not(summary) > ol {
+      /* 列表间距优化 - 直接选中列表元素 */
+      .foldable-block ul,
+      .foldable-block ol {
         margin-top: var(--fold-list-mt) !important;
         margin-bottom: var(--fold-list-mb) !important;
         padding-left: var(--fold-nested-indent) !important;
         list-style-position: outside;
       }
       
-      /* 列表项内部间距优化 - 精准控制所有margin属性 */
-      .foldable-block > *:not(summary) > ul > li,
-      .foldable-block > *:not(summary) > ol > li {
-        margin: 0 !important;  /* 重置所有margin，包括Tailwind的space-y */
-        line-height: var(--fold-li-line-height) !important;  /* 统一行高 */
+      /* 列表项内部间距优化 - 简化选择器 */
+      .foldable-block li {
+        margin: 0 !important;
+        line-height: var(--fold-li-line-height) !important;
       }
       
-      .foldable-block > *:not(summary) > ul > li:last-child,
-      .foldable-block > *:not(summary) > ol > li:last-child {
+      .foldable-block li:last-child {
         margin-bottom: 0 !important;
       }
       
-      /* 强制覆盖Tailwind的space-y utilities - 全面覆盖所有可能的间距 */
-      .foldable-block > *:not(summary) > ul > * + *,
-      .foldable-block > *:not(summary) > ol > * + * {
-        margin-top: var(--fold-li-gap) !important;  /* 统一列表项间距 */
-      }
-      
-      /* 针对性覆盖各种space-y类 */
-      .foldable-block > *:not(summary) > ul[class*="space-y"] > li:not(:first-child),
-      .foldable-block > *:not(summary) > ol[class*="space-y"] > li:not(:first-child) {
+      /* 列表项间距控制 */
+      .foldable-block ul > li + li,
+      .foldable-block ol > li + li {
         margin-top: var(--fold-li-gap) !important;
       }
       
-      /* 确保段落在列表项中的间距也被控制 */
-      .foldable-block > *:not(summary) > ul > li > *,
-      .foldable-block > *:not(summary) > ol > li > * {
+      /* 列表项内部元素间距 */
+      .foldable-block li > * {
         margin: 0 !important;
       }
       
-      .foldable-block > *:not(summary) > ul > li > * + *,
-      .foldable-block > *:not(summary) > ol > li > * + * {
-        margin-top: 0.125rem !important;  /* 列表项内部元素间的小间距 */
+      .foldable-block li > * + * {
+        margin-top: 0.125rem !important;
       }
       
-      /* 标题间距精细优化 */
-      .foldable-block > *:not(summary) > h1,
-      .foldable-block > *:not(summary) > h2,
-      .foldable-block > *:not(summary) > h3,
-      .foldable-block > *:not(summary) > h4,
-      .foldable-block > *:not(summary) > h5,
-      .foldable-block > *:not(summary) > h6 {
-        margin-top: 0.75rem;
-        margin-bottom: 0.25rem;
+      /* 标题间距优化 - 直接选中标题元素 */
+      .foldable-block h1,
+      .foldable-block h2,
+      .foldable-block h3,
+      .foldable-block h4,
+      .foldable-block h5,
+      .foldable-block h6 {
+        margin-top: 1.5rem !important;
+        margin-bottom: 0.5rem !important;
+      }
+      
+      .foldable-block h1:first-child,
+      .foldable-block h2:first-child,
+      .foldable-block h3:first-child,
+      .foldable-block h4:first-child,
+      .foldable-block h5:first-child,
+      .foldable-block h6:first-child {
+        margin-top: 0 !important;
       }
       
       /* 代码块间距优化 */
-      .foldable-block > *:not(summary) > pre {
-        margin-top: 0.5rem;
-        margin-bottom: 0.5rem;
+      .foldable-block pre {
+        margin-top: 1rem !important;
+        margin-bottom: 1rem !important;
       }
       
       /* 引用块间距优化 */
-      .foldable-block > *:not(summary) > blockquote {
-        margin-top: 0.5rem;
-        margin-bottom: 0.5rem;
+      .foldable-block blockquote {
+        margin-top: 1rem !important;
+        margin-bottom: 1rem !important;
       }
       
-      /* 强调元素优化，避免与周围内容过度分离 */
-      .foldable-block > *:not(summary) > p > strong,
-      .foldable-block > *:not(summary) > p > em,
-      .foldable-block > *:not(summary) > ul > li > strong,
-      .foldable-block > *:not(summary) > ul > li > em,
-      .foldable-block > *:not(summary) > ol > li > strong,
-      .foldable-block > *:not(summary) > ol > li > em {
+      /* 段落间距优化 */
+      .foldable-block p {
+        margin-top: 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+      }
+      
+      .foldable-block p:first-child {
+        margin-top: 0 !important;
+      }
+      
+      .foldable-block p:last-child {
+        margin-bottom: 0 !important;
+      }
+      
+      /* 强调元素优化 */
+      .foldable-block strong,
+      .foldable-block em {
         line-height: inherit;
         margin: 0;
         padding: 0;
         vertical-align: baseline;
-      }
-      
-      /* 列表项内的文本元素统一行高 */
-      .foldable-block > *:not(summary) > ul > li,
-      .foldable-block > *:not(summary) > ol > li,
-      .foldable-block > *:not(summary) > ul > li *,
-      .foldable-block > *:not(summary) > ol > li * {
-        line-height: var(--fold-li-line-height) !important;
-      }
-      
-      /* 最终列表间距统一控制 - 确保稳定的最小间距 */
-      .foldable-block > *:not(summary) ul li + li,
-      .foldable-block > *:not(summary) ol li + li {
-        margin-top: var(--fold-li-gap) !important;
-        padding-top: 0;
       }
       
       /* 三角形指示器的平滑旋转 */
