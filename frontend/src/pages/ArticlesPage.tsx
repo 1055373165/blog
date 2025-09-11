@@ -36,9 +36,6 @@ export default function ArticlesPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Page Header */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6 font-heading text-shadow-sm">
-          技术文章
-        </h1>
         <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed mb-8">
           探索我的技术文章和思考，涵盖前端开发、后端架构、数据库设计等多个领域
         </p>

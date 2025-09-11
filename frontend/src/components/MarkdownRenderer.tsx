@@ -155,10 +155,10 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         /* 新增：折叠块内部统一的间距变量，可按需在 data-density 上覆盖 */
         --fold-content-py: 1rem;
         --fold-content-px: 1.25rem;
-        --fold-list-mt: 0.25rem;
-        --fold-list-mb: 0.375rem;
-        --fold-li-gap: 0.125rem;
-        --fold-li-line-height: 1.35;
+        --fold-list-mt: 0.125rem;
+        --fold-list-mb: 0.25rem;
+        --fold-li-gap: 0.1rem;
+        --fold-li-line-height: 1.3;
         --fold-nested-indent: 1.25rem;
       }
       
@@ -264,9 +264,9 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         background: transparent;
       }
       
-      /* 统一内容间距 - 紧凑自然流动 */
+      /* 统一内容间距 - 超紧凑自然流动 */
       .foldable-block > *:not(summary) {
-        margin-top: 0.75rem;
+        margin-top: 0.25rem;
         margin-bottom: 0;
       }
       
@@ -313,14 +313,14 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         margin-top: 0.125rem !important;
       }
       
-      /* 标题间距优化 - 紧凑布局 */
+      /* 标题间距优化 - 最紧凑布局 */
       .foldable-block h1,
       .foldable-block h2,
       .foldable-block h3,
       .foldable-block h4,
       .foldable-block h5,
       .foldable-block h6 {
-        margin-top: 1rem !important;
+        margin-top: 0.75rem !important;
         margin-bottom: 0.25rem !important;
       }
       
@@ -333,21 +333,21 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         margin-top: 0 !important;
       }
       
-      /* 代码块间距优化 - 紧凑布局 */
+      /* 代码块间距优化 - 最紧凑布局 */
       .foldable-block pre {
-        margin-top: 0.75rem !important;
-        margin-bottom: 0.75rem !important;
-      }
-      
-      /* 引用块间距优化 - 紧凑布局 */
-      .foldable-block blockquote {
-        margin-top: 0.75rem !important;
-        margin-bottom: 0.75rem !important;
-      }
-      
-      /* 段落间距优化 - 紧凑布局 */
-      .foldable-block p {
         margin-top: 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+      }
+      
+      /* 引用块间距优化 - 最紧凑布局 */
+      .foldable-block blockquote {
+        margin-top: 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+      }
+      
+      /* 段落间距优化 - 最紧凑布局 */
+      .foldable-block p {
+        margin-top: 0.25rem !important;
         margin-bottom: 0.25rem !important;
       }
       

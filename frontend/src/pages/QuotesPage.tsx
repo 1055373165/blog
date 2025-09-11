@@ -228,9 +228,6 @@ export default function QuotesPage() {
         {/* 页面头部 */}
         <header className="mb-8" role="banner">
           <div className="text-center mb-6">
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-              技术箴言
-            </h1>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               汇聚技术大师的智慧，用简练的话语点亮编程之路
             </p>

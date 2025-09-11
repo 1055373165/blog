@@ -61,9 +61,6 @@ export default function CategoriesPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* 页面标题 */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6 font-heading text-shadow-sm">
-          文章分类
-        </h1>
         <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed mb-8">
           按主题分类浏览所有文章内容，探索不同技术领域的知识分享
         </p>

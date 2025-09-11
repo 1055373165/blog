@@ -127,8 +127,8 @@ details .prose h3,
 details .prose h4,
 details .prose h5,
 details .prose h6 {
-  margin-top: 1em;
-  margin-bottom: 0.5em;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
   color: #1f2937;
 }
 
@@ -142,7 +142,7 @@ details .prose h6 {
 }
 
 details .prose p {
-  margin-bottom: 1em;
+  margin-bottom: 0.5rem;
   padding: 0;
   line-height: 1.7;
   color: #374151;
@@ -173,7 +173,7 @@ details .prose pre {
   padding: 12px;
   border-radius: 6px;
   overflow-x: auto;
-  margin: 1em 0;
+  margin: 0.75rem 0;
 }
 
 .dark details .prose pre {
@@ -184,18 +184,18 @@ details .prose pre {
 details .prose ul,
 details .prose ol {
   padding-left: 1.5em;
-  margin: 1em 0;
+  margin: 0.5rem 0;
 }
 
 details .prose li {
-  margin: 0.5em 0;
+  margin: 0.25rem 0;
   line-height: 1.6;
 }
 
 details .prose blockquote {
   border-left: 4px solid #e5e7eb;
   padding-left: 1rem;
-  margin: 1em 0;
+  margin: 0.75rem 0;
   font-style: normal;
   font-family: var(--font-body);
   color: #6b7280;
@@ -209,7 +209,7 @@ details .prose blockquote {
 details .prose table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1em 0;
+  margin: 0.75rem 0;
 }
 
 details .prose th,
