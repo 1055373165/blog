@@ -146,13 +146,46 @@ const MermaidDiagram = ({ code, isDark }: { code: string; isDark: boolean }) => 
 export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
   const { settings, isDark } = useTheme();
 
-  // 内联样式用于折叠块动画
+  // 统一字体大小映射 - 确保正文和折叠块使用相同的字体大小
+  const getFontSizeValues = (fontSize: string) => {
+    const fontSizeMap = {
+      'sm': { 
+        base: '0.875rem',     // text-sm
+        lg: '1rem',           // text-base for larger elements
+        code: '0.8125rem'     // slightly smaller for code
+      },
+      'base': { 
+        base: '1rem',         // text-base
+        lg: '1.125rem',       // text-lg for larger elements  
+        code: '0.875rem'      // text-sm for code
+      },
+      'lg': { 
+        base: '1.125rem',     // text-lg
+        lg: '1.25rem',        // text-xl for larger elements
+        code: '1rem'          // text-base for code
+      },
+      'xl': { 
+        base: '1.25rem',      // text-xl
+        lg: '1.5rem',         // text-2xl for larger elements
+        code: '1.125rem'      // text-lg for code
+      }
+    };
+    return fontSizeMap[fontSize as keyof typeof fontSizeMap] || fontSizeMap.base;
+  };
+
+  const fontSizes = getFontSizeValues(settings.fontSize);
+
+  // 内联样式用于折叠块动画 - 现在包含动态字体大小
   const foldableStyles = `
     <style>
       .foldable-block {
         font-family: inherit;
         --fold-duration: 300ms;
         --fold-ease: cubic-bezier(0.4, 0.0, 0.2, 1);
+        /* 动态字体大小变量 - 与正文保持一致 */
+        --fold-font-size-base: ${fontSizes.base};
+        --fold-font-size-lg: ${fontSizes.lg};
+        --fold-font-size-code: ${fontSizes.code};
         /* 新增：折叠块内部统一的间距变量，可按需在 data-density 上覆盖 */
         --fold-content-py: 1rem;
         --fold-content-px: 1.25rem;
@@ -300,26 +333,41 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         margin-top: var(--fold-li-gap, 0.1rem) !important;
       }
 
-      /* 段落、列表、引用继承字体大小 */
+      /* 段落、列表、引用使用统一的动态字体大小 */
       .prose .foldable-block p,
       .prose .foldable-block li,
       .prose .foldable-block blockquote {
-        font-size: inherit !important;
+        font-size: var(--fold-font-size-base) !important;
+        line-height: 1.6 !important;
       }
 
       /* 段落紧凑化 */
       .prose .foldable-block p {
         margin: 0 !important;
-        line-height: var(--fold-li-line-height, 1.3);
+        font-size: var(--fold-font-size-base) !important;
+        line-height: 1.6 !important;
       }
 
-      /* 标题的顶部间距，底部保持紧凑 */
-      .prose .foldable-block h1,
-      .prose .foldable-block h2,
-      .prose .foldable-block h3,
+      /* 标题的顶部间距，底部保持紧凑 - 使用动态字体大小 */
+      .prose .foldable-block h1 {
+        font-size: calc(var(--fold-font-size-base) * 1.875) !important; /* 相当于text-3xl */
+        margin-bottom: 0.125rem !important;
+        line-height: var(--fold-heading-line-height, 1.6) !important;
+      }
+      .prose .foldable-block h2 {
+        font-size: calc(var(--fold-font-size-base) * 1.5) !important; /* 相当于text-2xl */
+        margin-bottom: 0.125rem !important;
+        line-height: var(--fold-heading-line-height, 1.6) !important;
+      }
+      .prose .foldable-block h3 {
+        font-size: calc(var(--fold-font-size-base) * 1.25) !important; /* 相当于text-xl */
+        margin-bottom: 0.125rem !important;
+        line-height: var(--fold-heading-line-height, 1.6) !important;
+      }
       .prose .foldable-block h4,
       .prose .foldable-block h5,
       .prose .foldable-block h6 {
+        font-size: var(--fold-font-size-lg) !important;
         margin-bottom: 0.125rem !important;
         line-height: var(--fold-heading-line-height, 1.6) !important;
       }
@@ -350,10 +398,12 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       }
       .prose .foldable-block li {
         margin: 0 !important;
-        line-height: var(--fold-li-line-height) !important;
+        font-size: var(--fold-font-size-base) !important;
+        line-height: 1.5 !important;
       }
       .prose .foldable-block li > p {
         margin: 0 !important;
+        font-size: var(--fold-font-size-base) !important;
       }
       .prose .foldable-block ul li + li,
       .prose .foldable-block ol li + li {
@@ -388,6 +438,15 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       .prose .foldable-block li blockquote {
         margin-top: 0.25rem !important;
         margin-bottom: 0.25rem !important;
+      }
+      
+      /* 折叠块内代码的字体大小统一 */
+      .prose .foldable-block code {
+        font-size: var(--fold-font-size-code) !important;
+      }
+      
+      .prose .foldable-block pre code {
+        font-size: var(--fold-font-size-code) !important;
       }
 
       /* Summary 与第一内容元素的间距 - 放在末尾覆盖上面的重置规则 */
@@ -480,7 +539,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
           rehypeRaw
         ]}
         components={{
-                    code({ inline, className, children }: { inline?: boolean; className?: string; children?: React.ReactNode }) {
+          code: ({ inline, className, children }: { inline?: boolean; className?: string; children?: React.ReactNode }) => {
             const match = /language-(\w+)/.exec(className || '');
             const language = match ? match[1] : '';
             
@@ -657,7 +716,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               loading="lazy"
             />
           ),
-          // 增强的折叠块支持 - 简化版本，通过 CSS 处理
+          // 增强的折叠块支持 - 使用动态字体大小系统
           details: ({ children, ...props }) => (
             <details 
               className={`
@@ -672,10 +731,8 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                 dark:hover:from-blue-900/20 dark:hover:to-blue-900/10
                 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-300
                 dark:focus-within:ring-blue-400/20 dark:focus-within:border-blue-600
-                ${settings.fontSize === 'sm' ? 'text-sm' : 
-                  settings.fontSize === 'lg' ? 'text-base' : 
-                  settings.fontSize === 'xl' ? 'text-lg' : 'text-sm'}
               `}
+              style={{ fontSize: fontSizes.base }}
               {...props}
             >
               {children}
@@ -707,10 +764,13 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               after:transform after:-translate-y-1/2 after:rotate-[-90deg]
               group-open:after:rotate-0 group-open:after:border-t-blue-600 
               dark:group-open:after:border-t-blue-400
-              ${settings.fontSize === 'sm' ? 'text-sm font-medium' : 
-                settings.fontSize === 'lg' ? 'text-base font-semibold' : 
-                settings.fontSize === 'xl' ? 'text-lg font-semibold' : 'text-sm font-medium'}
-            `}>
+            `}
+            style={{ 
+              fontSize: fontSizes.base,
+              fontWeight: settings.fontSize === 'sm' ? '500' : 
+                         settings.fontSize === 'lg' ? '600' : 
+                         settings.fontSize === 'xl' ? '600' : '500'
+            }}>
               <span className="relative z-10 flex items-center">
                 <span className="mr-3 text-blue-600 dark:text-blue-400 font-mono text-xs opacity-70">
                   ▶
