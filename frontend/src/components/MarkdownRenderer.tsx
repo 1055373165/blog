@@ -312,6 +312,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       .prose ol li {
         display: list-item !important;
         list-style-position: outside !important;
+        list-style-type: decimal !important;
       }
       
       .prose ol li > p:only-child,
@@ -320,6 +321,32 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         margin: 0 !important;
         padding: 0 !important;
         line-height: inherit !important;
+      }
+
+      /* 强化修复：针对中文内容和复杂markdown的列表项渲染 */
+      .prose ol li::marker {
+        content: counter(list-item) ". " !important;
+        font-weight: 600 !important;
+        color: inherit !important;
+      }
+
+      /* 确保列表项内的所有块级元素都内联化 */
+      .prose li > *:first-child:last-child {
+        display: contents !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      /* 特别处理：当li内有多个元素时，确保第一个元素不产生额外间距 */
+      .prose li > *:first-child {
+        margin-top: 0 !important;
+      }
+
+      /* 修复：确保列表项的display属性不被其他样式覆盖 */
+      .prose ul li,
+      .prose ol li {
+        display: list-item !important;
+        list-style-position: outside !important;
       }
       
       /* 折叠块内容区域 - 仅修改背景，不在 open 状态添加外层 padding，避免 Summary 位移 */
@@ -798,7 +825,8 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                 className={`ml-0 ${textStyles.className}`} 
                 style={{
                   ...textStyles.style,
-                  display: 'list-item'
+                  display: 'list-item',
+                  listStylePosition: 'outside'
                 }}
               >
                 {children}
