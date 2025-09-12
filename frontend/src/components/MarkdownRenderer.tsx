@@ -318,7 +318,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         display: list-item;
       }
       .prose .foldable-block li > p {
-        display: inline; /* 使段落内容与列表标记在同一行 */
+        display: contents; /* 使 p 标签在布局上消失，其内容直接成为 li 的子元素 */
       }
 
       /* 展开后，summary 与第一行正文之间的间距 */
