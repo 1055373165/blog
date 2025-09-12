@@ -300,6 +300,14 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         padding: 0 !important;
       }
 
+      /* 兼容：有些解析链可能在 li 内包一层 div（如编辑器或 rehype），
+         导致序号与正文分行。将仅子元素的 div 视为“内容容器”并扁平化处理 */
+      .prose li > div:only-child {
+        display: contents !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
       /* 特别针对有序列表的修复 - 确保数字标记与内容在同一行 */
       .prose ol li {
         display: list-item !important;
@@ -364,6 +372,24 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         margin: 0 !important;
         padding: 0 !important;
         line-height: inherit !important;
+      }
+
+      /* 当 li 仅包含一段纯文本（或仅被 div 包裹）时，避免块级元素导致的换行 */
+      .prose .foldable-block ol li > p:first-child:last-child,
+      .prose .foldable-block ol li > div:first-child:last-child {
+        display: contents !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      /* 有序列表：强制十进制序号并提升可读性（仅作用于折叠块内部）*/
+      .prose .foldable-block ol {
+        list-style-type: decimal !important;
+      }
+
+      .prose .foldable-block ol li::marker {
+        font-weight: 600;
+        color: inherit;
       }
 
       /* 展开后，summary 与第一行正文之间的间距 */
