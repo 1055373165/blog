@@ -89,7 +89,7 @@ details > *:not(summary) {
   padding: 16px;
   background: #ffffff;
   margin: 0;
-  white-space: pre-wrap; /* Preserve newlines and wrap text */
+  white-space: normal; /* 改为normal，避免保留换行符导致格式问题 */
   word-wrap: break-word;
   line-height: 1.6;
   color: #374151;
@@ -102,7 +102,7 @@ details > *:not(summary) {
 details > .details-wrapper > *:not(summary) {
   padding: 16px;
   margin: 0;
-  white-space: pre-wrap;
+  white-space: normal;
   word-wrap: break-word;
   line-height: 1.6;
   color: #374151;
@@ -146,7 +146,7 @@ details .prose p {
   padding: 0;
   line-height: 1.7;
   color: #374151;
-  white-space: pre-wrap;
+  white-space: normal;
   word-wrap: break-word;
   text-align: left;
 }
@@ -285,7 +285,7 @@ details details summary {
   
   details > *:not(summary) {
     padding: 12px;
-    white-space: pre-wrap;
+    white-space: normal;
     word-wrap: break-word;
   }
 }
@@ -294,11 +294,40 @@ details details summary {
 details .prose ul,
 details .prose ol {
   white-space: normal;
+  list-style-position: outside !important;
 }
 
 details .prose li {
-  white-space: pre-wrap;
+  white-space: normal !important;
   word-wrap: break-word;
+  display: list-item !important;
+  list-style-position: outside !important;
+}
+
+/* 强制列表项内的段落内联显示，避免换行 */
+details .prose li p {
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  white-space: normal !important;
+}
+
+/* 确保有序列表显示数字标记 */
+details .prose ol {
+  list-style-type: decimal !important;
+}
+
+details .prose ol li {
+  list-style-type: decimal !important;
+}
+
+/* 确保无序列表显示圆点标记 */
+details .prose ul {
+  list-style-type: disc !important;
+}
+
+details .prose ul li {
+  list-style-type: disc !important;
 }
 
 details .prose pre {
