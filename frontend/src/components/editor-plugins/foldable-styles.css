@@ -56,11 +56,7 @@
 }
 
 /* 折叠内容样式 */
-.bytemd details div,
-.bytemd details p,
 .bytemd details > *:not(summary),
-.bytemd .foldable-block div,
-.bytemd .foldable-block p,
 .bytemd .foldable-block > *:not(summary) {
   padding: 16px;
   background: #ffffff;
@@ -114,6 +110,41 @@
 .bytemd .foldable-block li {
   margin: 0.5em 0;
   line-height: 1.6;
+}
+
+/* 扁平化列表项内部的段落或 div 包装，避免序号与正文分行 */
+.bytemd details li > p:only-child,
+.bytemd details li p,
+.bytemd .foldable-block li > p:only-child,
+.bytemd .foldable-block li p {
+  display: contents !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.bytemd details li > div:only-child,
+.bytemd .foldable-block li > div:only-child {
+  display: contents !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 折叠块内的有序列表：保持 marker 与正文同一行，十进制序号，更清晰的标号样式 */
+.bytemd details ol,
+.bytemd .foldable-block ol {
+  list-style-type: decimal !important;
+}
+
+.bytemd details ol li,
+.bytemd .foldable-block ol li {
+  display: list-item !important;
+  list-style-position: outside !important;
+}
+
+.bytemd details ol li::marker,
+.bytemd .foldable-block ol li::marker {
+  font-weight: 600;
+  color: inherit;
 }
 
 .bytemd details strong,

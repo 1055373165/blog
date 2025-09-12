@@ -642,8 +642,8 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[
-          rehypeSlug,
-          rehypeRaw
+          rehypeRaw,
+          rehypeSlug
         ]}
         components={{
           code: ({ inline, className, children }: { inline?: boolean; className?: string; children?: React.ReactNode }) => {
