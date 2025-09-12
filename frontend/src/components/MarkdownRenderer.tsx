@@ -287,8 +287,17 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       }
 
       /* 核心修复：解决 react-markdown 中列表项内容被 p 标签包裹导致的换行问题 */
-      .prose li > p {
-        display: contents;
+      .prose li > p:only-child {
+        display: contents !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      
+      /* 更通用的修复，针对所有li中的p标签 */
+      .prose li p {
+        display: contents !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
       
       /* 折叠块内容区域 - 仅修改背景，不在 open 状态添加外层 padding，避免 Summary 位移 */
@@ -322,8 +331,11 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       .prose .foldable-block li {
         display: list-item;
       }
-      .prose .foldable-block li > p {
-        display: contents; /* 使 p 标签在布局上消失，其内容直接成为 li 的子元素 */
+      .prose .foldable-block li > p:only-child,
+      .prose .foldable-block li p {
+        display: contents !important; /* 使 p 标签在布局上消失，其内容直接成为 li 的子元素 */
+        margin: 0 !important;
+        padding: 0 !important;
       }
 
       /* 展开后，summary 与第一行正文之间的间距 */
@@ -437,7 +449,9 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         line-height: 1.6 !important; /* 统一行高 */
         font-family: inherit !important; /* 统一字体族 */
       }
-      .prose .foldable-block li > p {
+      .prose .foldable-block li > p:only-child,
+      .prose .foldable-block li p {
+        display: contents !important;
         margin: 0 !important;
         font-size: var(--fold-font-size-base) !important;
         font-weight: 400 !important;
