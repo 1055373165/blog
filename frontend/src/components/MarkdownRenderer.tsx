@@ -299,6 +299,20 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         margin: 0 !important;
         padding: 0 !important;
       }
+
+      /* 特别针对有序列表的修复 - 确保数字标记与内容在同一行 */
+      .prose ol li {
+        display: list-item !important;
+        list-style-position: outside !important;
+      }
+      
+      .prose ol li > p:only-child,
+      .prose ol li p {
+        display: contents !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: inherit !important;
+      }
       
       /* 折叠块内容区域 - 仅修改背景，不在 open 状态添加外层 padding，避免 Summary 位移 */
       .foldable-block[open] {
@@ -336,6 +350,20 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         display: contents !important; /* 使 p 标签在布局上消失，其内容直接成为 li 的子元素 */
         margin: 0 !important;
         padding: 0 !important;
+      }
+
+      /* 特别针对折叠块内有序列表的修复 */
+      .prose .foldable-block ol li {
+        display: list-item !important;
+        list-style-position: outside !important;
+      }
+      
+      .prose .foldable-block ol li > p:only-child,
+      .prose .foldable-block ol li p {
+        display: contents !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: inherit !important;
       }
 
       /* 展开后，summary 与第一行正文之间的间距 */
@@ -728,7 +756,10 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             return (
               <ol 
                 className={`list-decimal list-outside !ml-0 pl-5 mb-4 ${textStyles.className}`} 
-                style={textStyles.style}
+                style={{
+                  ...textStyles.style,
+                  listStylePosition: 'outside'
+                }}
               >
                 {children}
               </ol>
@@ -739,7 +770,10 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             return (
               <li 
                 className={`ml-0 ${textStyles.className}`} 
-                style={textStyles.style}
+                style={{
+                  ...textStyles.style,
+                  display: 'list-item'
+                }}
               >
                 {children}
               </li>
