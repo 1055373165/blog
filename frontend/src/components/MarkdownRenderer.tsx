@@ -285,6 +285,11 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
           transform: translateY(-4px);
         }
       }
+
+      /* 核心修复：解决 react-markdown 中列表项内容被 p 标签包裹导致的换行问题 */
+      .prose li > p:first-child {
+        display: inline;
+      }
       
       /* 折叠块内容区域 - 仅修改背景，不在 open 状态添加外层 padding，避免 Summary 位移 */
       .foldable-block[open] {
