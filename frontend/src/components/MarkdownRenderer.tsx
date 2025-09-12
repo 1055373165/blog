@@ -893,14 +893,6 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               </span>
             </summary>
           ),
-          // 自定义 div 处理 - 保持简洁，避免过度检测
-          div: ({ children, className, ...props }) => {
-            return (
-              <div className={className} {...props}>
-                {children}
-              </div>
-            );
-          },
         }}
       >
           {content}
