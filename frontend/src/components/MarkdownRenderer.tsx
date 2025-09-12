@@ -310,7 +310,15 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       }
 
       .prose .foldable-block > *:not(summary) + *:not(summary) {
-        margin-top: var(--fold-block-gap, 0.5rem) !important;
+        margin-top: var(--fold-block-gap, 0.75rem) !important; /* 增大块间距 */
+      }
+
+      /* 列表项修复：确保 li 表现为列表项，并处理内部 p 标签的边距 */
+      .prose .foldable-block li {
+        display: list-item;
+      }
+      .prose .foldable-block li > p {
+        display: inline; /* 使段落内容与列表标记在同一行 */
       }
 
       /* 展开后，summary 与第一行正文之间的间距 */
