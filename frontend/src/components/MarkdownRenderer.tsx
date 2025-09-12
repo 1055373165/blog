@@ -288,16 +288,25 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
 
       /* 核心修复：解决 react-markdown 中列表项内容被 p 标签包裹导致的换行问题 */
       .prose li > p:only-child {
-        display: contents !important;
+        display: inline !important;
         margin: 0 !important;
         padding: 0 !important;
       }
       
       /* 更通用的修复，针对所有li中的p标签 */
       .prose li p {
-        display: contents !important;
+        display: inline !important;
         margin: 0 !important;
         padding: 0 !important;
+      }
+
+      /* 强制所有列表项内的段落都内联显示 */
+      .prose ol li p,
+      .prose ul li p {
+        display: inline !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: inherit !important;
       }
 
       /* 兼容：有些解析链可能在 li 内包一层 div（如编辑器或 rehype），
@@ -317,7 +326,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       
       .prose ol li > p:only-child,
       .prose ol li p {
-        display: contents !important;
+        display: inline !important;
         margin: 0 !important;
         padding: 0 !important;
         line-height: inherit !important;
@@ -332,7 +341,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
 
       /* 确保列表项内的所有块级元素都内联化 */
       .prose li > *:first-child:last-child {
-        display: contents !important;
+        display: inline !important;
         margin: 0 !important;
         padding: 0 !important;
       }
@@ -395,7 +404,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       
       .prose .foldable-block ol li > p:only-child,
       .prose .foldable-block ol li p {
-        display: contents !important;
+        display: inline !important;
         margin: 0 !important;
         padding: 0 !important;
         line-height: inherit !important;
@@ -404,7 +413,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       /* 当 li 仅包含一段纯文本（或仅被 div 包裹）时，避免块级元素导致的换行 */
       .prose .foldable-block ol li > p:first-child:last-child,
       .prose .foldable-block ol li > div:first-child:last-child {
-        display: contents !important;
+        display: inline !important;
         margin: 0 !important;
         padding: 0 !important;
       }
@@ -532,7 +541,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       }
       .prose .foldable-block li > p:only-child,
       .prose .foldable-block li p {
-        display: contents !important;
+        display: inline !important;
         margin: 0 !important;
         font-size: var(--fold-font-size-base) !important;
         font-weight: 400 !important;
