@@ -173,6 +173,22 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
     return fontSizeMap[fontSize as keyof typeof fontSizeMap] || fontSizeMap.base;
   };
 
+  // 统一文字样式定义 - 确保所有正文元素完全一致
+  const getUnifiedTextStyles = () => {
+    const sizeClass = settings.fontSize === 'sm' ? 'text-sm' : 
+                     settings.fontSize === 'lg' ? 'text-lg' : 
+                     settings.fontSize === 'xl' ? 'text-xl' : 'text-base';
+    
+    return {
+      className: `${sizeClass} text-gray-700 dark:text-gray-300`,
+      style: {
+        fontWeight: '400', // normal font weight for all text elements
+        lineHeight: '1.6', // unified line height for better readability
+        fontFamily: 'inherit', // ensure consistent font family
+      }
+    };
+  };
+
   const fontSizes = getFontSizeValues(settings.fontSize);
 
   // 内联样式用于折叠块动画 - 现在包含动态字体大小
@@ -333,19 +349,24 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         margin-top: var(--fold-li-gap, 0.1rem) !important;
       }
 
-      /* 段落、列表、引用使用统一的动态字体大小 */
+      /* 段落、列表、引用使用统一的文字样式 - 与外部元素完全一致 */
       .prose .foldable-block p,
       .prose .foldable-block li,
       .prose .foldable-block blockquote {
         font-size: var(--fold-font-size-base) !important;
-        line-height: 1.6 !important;
+        font-weight: 400 !important; /* 统一字体粗细 */
+        line-height: 1.6 !important; /* 统一行高 */
+        font-family: inherit !important; /* 统一字体族 */
+        color: inherit !important; /* 统一颜色，继承父元素 */
       }
 
       /* 段落紧凑化 */
       .prose .foldable-block p {
         margin: 0 !important;
         font-size: var(--fold-font-size-base) !important;
+        font-weight: 400 !important;
         line-height: 1.6 !important;
+        font-family: inherit !important;
       }
 
       /* 标题的顶部间距，底部保持紧凑 - 使用动态字体大小 */
@@ -399,11 +420,16 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       .prose .foldable-block li {
         margin: 0 !important;
         font-size: var(--fold-font-size-base) !important;
-        line-height: 1.5 !important;
+        font-weight: 400 !important; /* 统一字体粗细 */
+        line-height: 1.6 !important; /* 统一行高 */
+        font-family: inherit !important; /* 统一字体族 */
       }
       .prose .foldable-block li > p {
         margin: 0 !important;
         font-size: var(--fold-font-size-base) !important;
+        font-weight: 400 !important;
+        line-height: 1.6 !important;
+        font-family: inherit !important;
       }
       .prose .foldable-block ul li + li,
       .prose .foldable-block ol li + li {
@@ -622,11 +648,12 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             );
           },
           p: ({ children }) => {
-            const sizeClass = settings.fontSize === 'sm' ? 'text-sm' : 
-                             settings.fontSize === 'lg' ? 'text-lg' : 
-                             settings.fontSize === 'xl' ? 'text-xl' : 'text-base';
+            const textStyles = getUnifiedTextStyles();
             return (
-              <p className={`${sizeClass} text-gray-700 dark:text-gray-300 leading-relaxed mb-4`}>
+              <p 
+                className={`${textStyles.className} mb-4`}
+                style={textStyles.style}
+              >
                 {children}
               </p>
             );
@@ -642,17 +669,14 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             </a>
           ),
           blockquote: ({ children }) => {
-            const sizeClass = settings.fontSize === 'sm' ? 'text-sm' : 
-                             settings.fontSize === 'lg' ? 'text-lg' : 
-                             settings.fontSize === 'xl' ? 'text-xl' : 'text-base';
+            const textStyles = getUnifiedTextStyles();
             return (
               <blockquote 
-                className={`border-l-4 border-primary-500 pl-4 py-1.5 my-4 ${sizeClass}`}
+                className={`border-l-4 border-primary-500 pl-4 py-1.5 my-4 ${textStyles.className}`}
                 style={{
+                  ...textStyles.style,
                   quotes: 'none',
                   fontStyle: 'normal',
-                  fontFamily: 'var(--font-body)',
-                  color: isDark ? 'rgb(156 163 175)' : 'rgb(75 85 99)',
                 }}
               >
                 <div style={{ quotes: 'none', fontStyle: 'normal' }}>
@@ -662,31 +686,34 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             );
           },
           ul: ({ children }) => {
-            const sizeClass = settings.fontSize === 'sm' ? 'text-sm' : 
-                             settings.fontSize === 'lg' ? 'text-lg' : 
-                             settings.fontSize === 'xl' ? 'text-xl' : 'text-base';
+            const textStyles = getUnifiedTextStyles();
             return (
-              <ul className={`list-disc list-outside !ml-0 pl-5 mb-4 text-gray-700 dark:text-gray-300 ${sizeClass}`} style={{ lineHeight: '1.3' }}>
+              <ul 
+                className={`list-disc list-outside !ml-0 pl-5 mb-4 ${textStyles.className}`} 
+                style={textStyles.style}
+              >
                 {children}
               </ul>
             );
           },
           ol: ({ children }) => {
-            const sizeClass = settings.fontSize === 'sm' ? 'text-sm' : 
-                             settings.fontSize === 'lg' ? 'text-lg' : 
-                             settings.fontSize === 'xl' ? 'text-xl' : 'text-base';
+            const textStyles = getUnifiedTextStyles();
             return (
-              <ol className={`list-decimal list-outside !ml-0 pl-5 mb-4 text-gray-700 dark:text-gray-300 ${sizeClass}`} style={{ lineHeight: '1.3' }}>
+              <ol 
+                className={`list-decimal list-outside !ml-0 pl-5 mb-4 ${textStyles.className}`} 
+                style={textStyles.style}
+              >
                 {children}
               </ol>
             );
           },
           li: ({ children }) => {
-            const sizeClass = settings.fontSize === 'sm' ? 'text-sm' : 
-                             settings.fontSize === 'lg' ? 'text-lg' : 
-                             settings.fontSize === 'xl' ? 'text-xl' : 'text-base';
+            const textStyles = getUnifiedTextStyles();
             return (
-              <li className={`leading-tight ml-0 ${sizeClass}`} style={{ lineHeight: '1.3' }}>
+              <li 
+                className={`ml-0 ${textStyles.className}`} 
+                style={textStyles.style}
+              >
                 {children}
               </li>
             );
