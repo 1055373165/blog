@@ -287,7 +287,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       }
 
       /* 核心修复：解决 react-markdown 中列表项内容被 p 标签包裹导致的换行问题 */
-      .prose li > p:only-child {
+      .prose li > p {
         display: contents;
       }
       
