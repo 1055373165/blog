@@ -387,11 +387,11 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
 
       /* 列表项修复：确保 li 表现为列表项，并处理内部 p 标签的边距 */
       .prose .foldable-block li {
-        display: list-item;
+        display: list-item !important;
       }
       .prose .foldable-block li > p:only-child,
       .prose .foldable-block li p {
-        display: contents !important; /* 使 p 标签在布局上消失，其内容直接成为 li 的子元素 */
+        display: inline !important; /* 强制内联显示，确保与列表标记在同一行 */
         margin: 0 !important;
         padding: 0 !important;
       }
@@ -421,11 +421,28 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       /* 有序列表：强制十进制序号并提升可读性（仅作用于折叠块内部）*/
       .prose .foldable-block ol {
         list-style-type: decimal !important;
+        list-style-position: outside !important;
+      }
+
+      .prose .foldable-block ol li {
+        display: list-item !important;
+        list-style-type: decimal !important;
+        list-style-position: outside !important;
       }
 
       .prose .foldable-block ol li::marker {
-        font-weight: 600;
-        color: inherit;
+        font-weight: 600 !important;
+        color: inherit !important;
+      }
+
+      /* 最高优先级修复：确保所有折叠块内的列表项段落都内联显示 */
+      details.foldable-block ol li p,
+      details.foldable-block ul li p,
+      .foldable-block ol li p,
+      .foldable-block ul li p {
+        display: inline !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
 
       /* 展开后，summary 与第一行正文之间的间距 */
@@ -530,7 +547,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         margin-bottom: var(--fold-list-mb) !important;
         padding-left: calc(var(--fold-content-px) + var(--fold-nested-indent)) !important;
         padding-right: var(--fold-content-px) !important;
-        list-style-position: outside;
+        list-style-position: outside !important;
       }
       .prose .foldable-block li {
         margin: 0 !important;
@@ -538,11 +555,13 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         font-weight: 400 !important; /* 统一字体粗细 */
         line-height: 1.6 !important; /* 统一行高 */
         font-family: inherit !important; /* 统一字体族 */
+        display: list-item !important; /* 强制列表项显示 */
       }
       .prose .foldable-block li > p:only-child,
       .prose .foldable-block li p {
         display: inline !important;
         margin: 0 !important;
+        padding: 0 !important;
         font-size: var(--fold-font-size-base) !important;
         font-weight: 400 !important;
         line-height: 1.6 !important;
