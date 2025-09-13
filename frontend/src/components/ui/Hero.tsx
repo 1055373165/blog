@@ -438,6 +438,21 @@ export default function Hero({ className }: HeroProps) {
                         <span className="text-green-400 break-all">"Practices: TDD, clean architecture, SOLID principles, production optimization."</span>
                         <span>)</span>
                       </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"Blog Goal: Share knowledge, inspire others, build a better future."</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"真正有价值的知识往往被少数人垄断，而做技术的人应该突破人性的狭隘，帮助和影响更多人。"</span>
+                        <span>)</span>
+                      </div>
+                      <div className="ml-4 text-white break-words">
+                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
+                        <span className="text-green-400 break-all">"真理就在那里，缺少的是新的表达方式。"</span>
+                        <span>)</span>
+                      </div>                      
                     </div>
                     <div className="text-white">{"}"}</div>
                   </div>
