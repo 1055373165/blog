@@ -189,6 +189,13 @@ func main() {
 			upload.GET("/image/*filename", handlers.GetImage)
 		}
 
+		// 封面图片相关路由
+		cover := api.Group("/cover")
+		{
+			cover.GET("", handlers.GetCoverImages)
+			cover.POST("/upload", middleware.AuthRequired(), handlers.UploadCoverImage)
+		}
+
 		// 书籍相关路由
 		books := api.Group("/books")
 		{

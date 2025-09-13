@@ -157,10 +157,10 @@ const EnhancedArticleCard = ({
         )}
 
         {/* 内容区域 */}
-        <div className="p-6 relative">
-          {/* 标题 */}
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 line-clamp-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-300">
-            {article.title}
+        <div className="p-6 relative flex flex-col h-full">
+          {/* 标题 - 自适应高度，不截断 */}
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-300 min-h-[3rem] flex items-start">
+            <span className="block">{article.title}</span>
           </h3>
 
           {/* 摘要 */}
@@ -172,7 +172,7 @@ const EnhancedArticleCard = ({
 
           {/* 标签 */}
           {showTags && article.tags && article.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
+            <div className="flex flex-wrap gap-2 mb-4 flex-grow">
               {article.tags.slice(0, 3).map((tag) => (
                 <span
                   key={tag.id}
@@ -184,8 +184,8 @@ const EnhancedArticleCard = ({
             </div>
           )}
 
-          {/* 底部信息 */}
-          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+          {/* 底部信息 - 固定在底部 */}
+          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mt-auto">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-go-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                 {article.author.name.charAt(0)}

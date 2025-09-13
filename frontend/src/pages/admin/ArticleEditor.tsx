@@ -7,6 +7,7 @@ import ByteMDEditor from '../../components/ByteMDEditor';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import FileImport from '../../components/FileImport';
 import RSSImport from '../../components/RSSImport';
+import CoverImageSelector from '../../components/CoverImageSelector';
 
 export default function ArticleEditor() {
   const { id } = useParams<{ id?: string }>();
@@ -748,30 +749,10 @@ export default function ArticleEditor() {
                   </div>
 
                   {/* Cover Image */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      封面图片
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.cover_image}
-                      onChange={(e) => handleInputChange('cover_image', e.target.value)}
-                      placeholder="//example.com/image.jpg"
-                      className="input"
-                    />
-                    {formData.cover_image && (
-                      <div className="mt-2">
-                        <img
-                          src={formData.cover_image}
-                          alt="封面预览"
-                          className="w-full max-w-md h-48 object-cover rounded-xl border border-gray-300 dark:border-gray-600 shadow-soft"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <CoverImageSelector
+                    value={formData.cover_image || ''}
+                    onChange={(url) => handleInputChange('cover_image', url)}
+                  />
 
                   {/* Category */}
                   <div>

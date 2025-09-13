@@ -61,3 +61,30 @@ export const uploadApi = {
     return apiClient.upload<{ url: string; filename: string }>('/api/upload/file', file, onProgress);
   },
 };
+
+// 封面图片相关API
+export const coverApi = {
+  async getCoverImages() {
+    return apiClient.get<{
+      images: Array<{
+        name: string;
+        url: string;
+        relative_path: string;
+        size: number;
+        mod_time: string;
+        is_default: boolean;
+      }>;
+      total: number;
+    }>('/api/cover');
+  },
+
+  async uploadCoverImage(file: File, onProgress?: (progress: number) => void) {
+    return apiClient.upload<{
+      url: string;
+      filename: string;
+      relative_path: string;
+      size: number;
+      type: string;
+    }>('/api/cover/upload', file, onProgress);
+  },
+};
