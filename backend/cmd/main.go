@@ -196,6 +196,9 @@ func main() {
 			cover.POST("/upload", middleware.AuthRequired(), handlers.UploadCoverImage)
 		}
 
+		// 封面图片文件服务路由（类似现有的图片上传）
+		upload.GET("/cover/*filename", handlers.GetCoverImage)
+
 		// 书籍相关路由
 		books := api.Group("/books")
 		{
