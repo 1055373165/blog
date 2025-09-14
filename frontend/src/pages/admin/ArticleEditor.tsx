@@ -47,9 +47,6 @@ export default function ArticleEditor() {
   const [series, setSeries] = useState<Series[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  // Auto-save functionality
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   // Editor height calculation
   const [editorHeight, setEditorHeight] = useState(1400);
@@ -62,23 +59,6 @@ export default function ArticleEditor() {
     loadFormData();
   }, [id, isEditing]);
 
-  // Auto-save every 30 seconds if there are unsaved changes
-  useEffect(() => {
-    if (!hasUnsavedChanges || !isEditing) return;
-
-    const autoSaveInterval = setInterval(async () => {
-      if (hasUnsavedChanges && formData.title.trim()) {
-        await handleSave(true); // Silent save
-      }
-    }, 30000);
-
-    return () => clearInterval(autoSaveInterval);
-  }, [hasUnsavedChanges, formData.title, isEditing]);
-
-  // Track form changes
-  useEffect(() => {
-    setHasUnsavedChanges(true);
-  }, [formData]);
 
   // Add keyboard shortcut for Command+S / Ctrl+S
   useEffect(() => {
@@ -101,7 +81,7 @@ export default function ArticleEditor() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [formData.title]); // Re-bind when title changes
+  }, [formData]); // Include formData to get latest data
 
   // Calculate editor height to fill the screen
   useEffect(() => {
@@ -151,7 +131,6 @@ export default function ArticleEditor() {
           meta_keywords: article.meta_keywords || '',
         });
         setSelectedTags((article.tags || []).map(tag => tag.id.toString()));
-        setHasUnsavedChanges(false);
       } else {
         throw new Error('加载文章失败');
       }
@@ -245,9 +224,6 @@ export default function ArticleEditor() {
       }
       
       if (response.success) {
-        setHasUnsavedChanges(false);
-        setLastSaved(new Date());
-        
         if (!silent) {
           // Show success message
           if (!isEditing) {
@@ -294,8 +270,6 @@ export default function ArticleEditor() {
       }
       
       if (response.success) {
-        setHasUnsavedChanges(false);
-        setLastSaved(new Date());
         if (!isEditing) {
           navigate(`/admin/articles/${response.data.id}`, { replace: true });
         }
@@ -492,7 +466,6 @@ export default function ArticleEditor() {
       meta_keywords: metadata?.meta_keywords || prev.meta_keywords,
     }));
     
-    setHasUnsavedChanges(true);
     setShowImportModal(false);
     setError(null);
     
@@ -522,7 +495,6 @@ export default function ArticleEditor() {
         excerpt: article.excerpt,
         is_published: false, // Import as draft initially
       }));
-      setHasUnsavedChanges(true);
       setShowImportModal(false);
     } else {
       // Multiple articles - show selection dialog or process in batch
@@ -609,19 +581,6 @@ export default function ArticleEditor() {
                   {isEditing ? '编辑文章' : '新建文章'}
                 </h1>
                 <div className="flex items-center space-x-4 mt-1">
-                  {hasUnsavedChanges && (
-                    <span className="text-sm text-amber-600 dark:text-amber-400 flex items-center">
-                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 8 8">
-                        <circle cx="4" cy="4" r="3" />
-                      </svg>
-                      有未保存的更改
-                    </span>
-                  )}
-                  {lastSaved && (
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      上次保存: {lastSaved.toLocaleTimeString()}
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
