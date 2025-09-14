@@ -80,6 +80,29 @@ export default function ArticleEditor() {
     setHasUnsavedChanges(true);
   }, [formData]);
 
+  // Add keyboard shortcut for Command+S / Ctrl+S
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check for Cmd+S (Mac) or Ctrl+S (Windows/Linux)
+      if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+        event.preventDefault(); // Prevent browser's default save dialog
+        
+        // Only save if there's a title (basic validation)
+        if (formData.title.trim()) {
+          handleSave(false); // Non-silent save to show user feedback
+        }
+      }
+    };
+
+    // Add event listener to document
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Cleanup event listener on component unmount
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [formData.title]); // Re-bind when title changes
+
   // Calculate editor height to fill the screen
   useEffect(() => {
     const calculateEditorHeight = () => {
