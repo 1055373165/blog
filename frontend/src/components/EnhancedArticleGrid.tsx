@@ -145,7 +145,7 @@ const EnhancedArticleCard = ({
               src={article.cover_image}
               alt={article.title}
               aspectRatio="16/9"
-              priority={index < 3} // 前3张图片优先加载
+              priority={index < 6} // 前两行图片优先加载，避免首屏下方一行不显示
               className={clsx(
                 'transition-all duration-700 group-hover:scale-110',
                 imageLoaded ? 'opacity-100' : 'opacity-0'
@@ -185,7 +185,7 @@ const EnhancedArticleCard = ({
 
           {/* 摘要 */}
           {showExcerpt && (
-            <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-3 mb-4 leading-relaxed">
+            <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 mb-4 leading-relaxed min-h-[2.8rem]">
               {article.excerpt || article.content?.substring(0, 150) + '...'}
             </p>
           )}

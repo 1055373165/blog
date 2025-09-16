@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Article } from '../../types';
+import { Article, PaginatedResponse } from '../../types';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import Pagination from '../../components/Pagination';
 import { apiClient } from '../../api/client';
@@ -11,6 +11,7 @@ export default function ArticleList() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all');
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function ArticleList() {
       
       setArticles(response.data.articles || []);
       setTotalPages(response.data.pagination?.total_pages || 1);
+      setTotal(Number(response.data.pagination?.total) || 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载文章时出错');
     } finally {
@@ -46,7 +48,7 @@ export default function ArticleList() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     if (!confirm('确定要删除这篇文章吗？此操作不可恢复。')) {
       return;
     }
@@ -156,7 +158,7 @@ export default function ArticleList() {
               </div>
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              共 {articles.length} 篇文章
+              共 {total} 篇文章
             </div>
           </div>
         </div>
@@ -192,10 +194,10 @@ export default function ArticleList() {
                   <tr key={article.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        {article.coverImage && (
+                        {article.cover_image && (
                           <div className="flex-shrink-0 w-12 h-12 mr-4">
                             <img
-                              src={article.coverImage}
+                              src={article.cover_image}
                               alt=""
                               className="w-12 h-12 rounded-xl object-cover shadow-soft"
                             />
@@ -285,7 +287,7 @@ export default function ArticleList() {
                           </svg>
                         </button>
                         <Link
-                          to={`/articles/${article.slug || article.id}`}
+                          to={`/article/${article.slug || article.id}`}
                           target="_blank"
                           className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
                           title="查看文章"
@@ -341,8 +343,8 @@ export default function ArticleList() {
         {totalPages > 1 && (
           <div className="mt-6 flex justify-center">
             <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
+              current_page={currentPage}
+              total_pages={totalPages}
               onPageChange={setCurrentPage}
             />
           </div>

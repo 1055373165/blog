@@ -199,6 +199,10 @@ export default function OptimizedImage({
     >
       {/* 占位符 */}
       {!loaded && renderPlaceholder()}
+      {/* 懒加载哨兵：在图片未进入视口前提供观察目标，避免因 <img> 未渲染而无法触发 IntersectionObserver */}
+      {!inView && (
+        <div ref={imgRef} className="absolute inset-0" aria-hidden="true" />
+      )}
       
       {/* 实际图片 */}
       {inView && !error && (

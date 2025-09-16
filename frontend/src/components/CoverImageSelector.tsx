@@ -34,9 +34,8 @@ export const CoverImageSelector: React.FC<CoverImageSelectorProps> = ({
     try {
       setLoading(true)
       const response = await coverApi.getCoverImages()
-      if (response.data) {
-        setCoverImages(response.data.images)
-      }
+      const images = Array.isArray(response?.data?.images) ? response.data.images : []
+      setCoverImages(images)
     } catch (error) {
       console.error('加载封面图片失败:', error)
     } finally {
@@ -239,14 +238,14 @@ export const CoverImageSelector: React.FC<CoverImageSelectorProps> = ({
                   <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   <p className="mt-2 text-gray-500">加载中...</p>
                 </div>
-              ) : coverImages.length === 0 ? (
+              ) : (coverImages?.length ?? 0) === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <p>暂无本地封面图片</p>
                   <p className="text-sm mt-1">请先上传一些图片到封面库</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
-                  {coverImages.map((image) => (
+                  {(coverImages ?? []).map((image) => (
                     <div
                       key={image.name}
                       className={`relative group cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${

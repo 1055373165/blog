@@ -10,23 +10,24 @@ interface WebVitalsMetrics {
   ttfb: number | null; // Time to First Byte
 }
 
-// 性能评级
-type PerformanceRating = 'good' | 'needs-improvement' | 'poor';
+// 性能评级标签
+type PerformanceRatingLabel = 'good' | 'needs-improvement' | 'poor';
 
-interface PerformanceRating {
-  lcp: PerformanceRating;
-  fid: PerformanceRating;
-  cls: PerformanceRating;
-  inp: PerformanceRating;
-  overall: PerformanceRating;
+// 各项指标的评级集合
+interface PerformanceRatings {
+  lcp: PerformanceRatingLabel;
+  fid: PerformanceRatingLabel;
+  cls: PerformanceRatingLabel;
+  inp: PerformanceRatingLabel;
+  overall: PerformanceRatingLabel;
 }
 
 // 性能监控配置
 interface PerformanceMonitorOptions {
   reportInterval?: number; // 上报间隔（毫秒）
   enableConsoleLog?: boolean; // 是否在控制台输出
-  onMetric?: (metric: string, value: number, rating: PerformanceRating) => void;
-  onReport?: (metrics: WebVitalsMetrics, ratings: PerformanceRating) => void;
+  onMetric?: (metric: string, value: number, rating: PerformanceRatingLabel) => void;
+  onReport?: (metrics: WebVitalsMetrics, ratings: PerformanceRatings) => void;
 }
 
 // Web Vitals 阈值配置 (Google 标准)
@@ -40,7 +41,7 @@ const THRESHOLDS = {
 } as const;
 
 // 计算性能评级
-function getRating(metric: keyof typeof THRESHOLDS, value: number): PerformanceRating {
+function getRating(metric: keyof typeof THRESHOLDS, value: number): PerformanceRatingLabel {
   const threshold = THRESHOLDS[metric];
   if (value <= threshold.good) return 'good';
   if (value <= threshold.poor) return 'needs-improvement';
@@ -48,7 +49,7 @@ function getRating(metric: keyof typeof THRESHOLDS, value: number): PerformanceR
 }
 
 // 计算整体评级
-function getOverallRating(ratings: Omit<PerformanceRating, 'overall'>): PerformanceRating {
+function getOverallRating(ratings: Omit<PerformanceRatings, 'overall'>): PerformanceRatingLabel {
   const values = Object.values(ratings);
   const poorCount = values.filter(r => r === 'poor').length;
   const needsImprovementCount = values.filter(r => r === 'needs-improvement').length;
@@ -75,7 +76,7 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
     ttfb: null
   });
 
-  const [ratings, setRatings] = useState<PerformanceRating>({
+  const [ratings, setRatings] = useState<PerformanceRatings>({
     lcp: 'good',
     fid: 'good',
     cls: 'good',
@@ -96,7 +97,7 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
         const rating = getRating(metricName as keyof typeof THRESHOLDS, value);
         
         setRatings(prevRatings => {
-          const newRatings = { ...prevRatings, [metricName]: rating };
+          const newRatings: PerformanceRatings = { ...prevRatings, [metricName]: rating } as PerformanceRatings;
           newRatings.overall = getOverallRating(newRatings);
           return newRatings;
         });
@@ -262,8 +263,9 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
 // 导出类型
 export type { 
   WebVitalsMetrics, 
-  PerformanceRating as PerformanceRatings,
-  PerformanceMonitorOptions 
+  PerformanceRatings,
+  PerformanceMonitorOptions,
+  PerformanceRatingLabel
 };
 
 // 简化版 Hook，仅用于开发环境调试 (已禁用)
@@ -273,6 +275,9 @@ export function useDevPerformanceMonitor() {
     startTracking: () => {},
     stopTracking: () => {},
     getMetrics: () => ({}),
-    resetMetrics: () => {}
+    resetMetrics: () => {},
+    // Provide stub values so consumers can safely destructure
+    performanceScore: 100,
+    isGoodPerformance: true
   };
 }

@@ -122,6 +122,7 @@ export default function HomePage() {
           </div>
           
           <EnhancedArticleGrid
+            key={popularLayoutVariant}
             articles={popularArticles}
             loading={loading}
             variant={popularLayoutVariant}
@@ -160,7 +161,7 @@ export default function HomePage() {
             articles={recentArticles}
             loading={loading}
             variant="grid"
-            showStats={true}
+            showStats={false}
             showCategory={true}
             showTags={true}
           />
