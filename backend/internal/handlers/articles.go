@@ -17,18 +17,18 @@ import (
 
 // CreateArticleRequest 创建文章请求结构
 type CreateArticleRequest struct {
-	Title           string `json:"title" binding:"required"`
-	Content         string `json:"content" binding:"required"`
-	Excerpt         string `json:"excerpt"`
-	CoverImage      string `json:"cover_image"`
-	CategoryID      *uint  `json:"category_id"`
-	TagIDs          []uint `json:"tag_ids"`
-	SeriesID        *uint  `json:"series_id"`
-	SeriesOrder     *int   `json:"series_order"`
-	IsPublished     bool   `json:"is_published"`
-	MetaTitle       string `json:"meta_title"`
-	MetaDescription string `json:"meta_description"`
-	MetaKeywords    string `json:"meta_keywords"`
+	Title           string  `json:"title" binding:"required"`
+	Content         string  `json:"content" binding:"required"`
+	Excerpt         *string `json:"excerpt"`
+	CoverImage      string  `json:"cover_image"`
+	CategoryID      *uint   `json:"category_id"`
+	TagIDs          []uint  `json:"tag_ids"`
+	SeriesID        *uint   `json:"series_id"`
+	SeriesOrder     *int    `json:"series_order"`
+	IsPublished     bool    `json:"is_published"`
+	MetaTitle       string  `json:"meta_title"`
+	MetaDescription string  `json:"meta_description"`
+	MetaKeywords    string  `json:"meta_keywords"`
 }
 
 // UpdateArticleRequest 更新文章请求结构
@@ -308,10 +308,12 @@ func CreateArticle(c *gin.Context) {
 	// 计算阅读时间
 	readingTime := utils.CalculateReadingTime(req.Content)
 
-	// 生成摘要（如果没有提供）
-	excerpt := req.Excerpt
-	if excerpt == "" {
-		excerpt = utils.TruncateText(utils.StripHTML(req.Content), 150)
+	// 生成摘要（如果没有提供）。当客户端显式传入空字符串时，允许为空，不自动生成。
+	var excerpt string
+	if req.Excerpt != nil {
+		excerpt = strings.TrimSpace(*req.Excerpt)
+	} else {
+		excerpt = ""
 	}
 
 	// 创建文章

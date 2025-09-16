@@ -1,14 +1,22 @@
 import { PaginationProps } from '../types';
 import { cn } from '../utils';
 
-export default function Pagination({
-  current_page,
-  total_pages,
-  onPageChange,
-  show_size_changer = false,
-  page_size = 10,
-  onPageSizeChange,
-}: PaginationProps) {
+// Extend props to accept both snake_case (preferred) and camelCase (backward compatibility)
+type PaginationPropsCompat = PaginationProps & {
+  currentPage?: number;
+  totalPages?: number;
+  showSizeChanger?: boolean;
+  pageSize?: number;
+};
+
+export default function Pagination(props: PaginationPropsCompat) {
+  // Normalize props to internal snake_case variables
+  const current_page = props.current_page ?? props.currentPage ?? 1;
+  const total_pages = props.total_pages ?? props.totalPages ?? 1;
+  const onPageChange = props.onPageChange;
+  const show_size_changer = props.show_size_changer ?? props.showSizeChanger ?? false;
+  const page_size = props.page_size ?? props.pageSize ?? 10;
+  const onPageSizeChange = props.onPageSizeChange;
   if (total_pages <= 1) return null;
 
   const getVisiblePages = () => {
