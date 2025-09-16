@@ -832,15 +832,17 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               </ul>
             );
           },
-          ol: ({ children }) => {
+          ol: ({ children, start, ...props }) => {
             const textStyles = getUnifiedTextStyles();
             return (
-              <ol 
-                className={`list-decimal list-outside !ml-0 pl-5 mb-4 ${textStyles.className}`} 
+              <ol
+                start={start}
+                className={`list-decimal list-outside !ml-0 pl-5 mb-4 ${textStyles.className}`}
                 style={{
                   ...textStyles.style,
                   listStylePosition: 'outside'
                 }}
+                {...props}
               >
                 {children}
               </ol>

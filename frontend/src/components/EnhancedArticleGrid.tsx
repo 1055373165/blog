@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Article } from '../types';
 import OptimizedImage from './ui/OptimizedImage';
 import { formatDate } from '../utils';
@@ -13,7 +14,26 @@ interface EnhancedArticleGridProps {
   showCategory?: boolean;
   showTags?: boolean;
   showExcerpt?: boolean;
+  // Optional: override grid column classes for 'grid' and 'mixed' variants
+  gridColumns?: string;
 }
+
+// Generate a deterministic, low-saturation background color for a tag
+// Prefer provided tag.color if it's a hex value; otherwise derive from tag name
+const getTagBgColor = (name: string, baseColor?: string) => {
+  // If a valid hex color is provided, append ~15% alpha (0x26)
+  if (baseColor && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(baseColor)) {
+    return `${baseColor}26`;
+  }
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash << 5) - hash + name.charCodeAt(i);
+    hash |= 0; // convert to 32-bit int
+  }
+  const hue = Math.abs(hash) % 360;
+  // Low saturation, medium lightness, subtle alpha to look good in light/dark
+  return `hsla(${hue}, 60%, 50%, 0.15)`;
+};
 
 // 文章卡片组件 - 增强微交互
 const EnhancedArticleCard = ({ 
@@ -172,14 +192,17 @@ const EnhancedArticleCard = ({
 
           {/* 标签 */}
           {showTags && article.tags && article.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4 flex-grow">
+            <div className="flex flex-wrap items-center gap-1.5 mb-4">
               {article.tags.slice(0, 3).map((tag) => (
-                <span
+                <Link
                   key={tag.id}
-                  className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-md hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors"
+                  to={`/tag/${tag.slug}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded-md border border-gray-200/60 dark:border-gray-700/60 text-gray-700 dark:text-gray-300 transition-all duration-200 hover:scale-105"
+                  style={{ backgroundColor: getTagBgColor(tag.name, tag.color) }}
                 >
                   #{tag.name}
-                </span>
+                </Link>
               ))}
             </div>
           )}
@@ -275,7 +298,8 @@ export default function EnhancedArticleGrid({
   showStats = true,
   showCategory = true,
   showTags = true,
-  showExcerpt = true
+  showExcerpt = true,
+  gridColumns
 }: EnhancedArticleGridProps) {
   const [columnCount, setColumnCount] = useState(3);
   const masonryColumns = useMasonryLayout(articles, columnCount);
@@ -362,7 +386,7 @@ export default function EnhancedArticleGrid({
         )}
         
         {/* 其余文章 - 标准网格 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:col-span-2 lg:col-span-3">
+        <div className={`grid ${gridColumns || 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'} gap-6 md:col-span-2 lg:col-span-3`}>
           {articles.slice(1).map((article, index) => (
             <EnhancedArticleCard
               key={article.id}
@@ -381,7 +405,7 @@ export default function EnhancedArticleGrid({
 
   // 默认网格布局
   return (
-    <div className={clsx('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6', className)}>
+    <div className={clsx(`grid ${gridColumns || 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'} gap-6`, className)}>
       {articles.map((article, index) => (
         <EnhancedArticleCard
           key={article.id}

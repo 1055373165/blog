@@ -22,7 +22,12 @@ const RelatedArticles = memo(({ articles }: { articles: Article[] }) => {
       <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 font-heading">
         相关文章推荐
       </h2>
-      <EnhancedArticleGrid articles={articles} variant="grid" />
+      {/* Use fewer columns within the 60% center column to keep card width comparable to homepage */}
+      <EnhancedArticleGrid 
+        articles={articles} 
+        variant="grid" 
+        gridColumns="grid-cols-1 md:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3" 
+      />
     </section>
   );
 });
