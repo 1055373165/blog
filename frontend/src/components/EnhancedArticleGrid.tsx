@@ -208,17 +208,19 @@ const EnhancedArticleCard = ({
           )}
 
           {/* 底部信息 - 固定在底部 */}
-          {showStats && article.author && (
-            <div className="mt-auto pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
-              <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+          <div className="mt-auto pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
+            <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+              {article.author && (
                 <div className="flex items-center space-x-2">
                   <img src={article.author.avatar || `https://ui-avatars.com/api/?name=${article.author.name}&background=random`} alt={article.author.name} className="w-6 h-6 rounded-full" />
                   <span className="font-medium text-gray-700 dark:text-gray-300">{article.author.name}</span>
                 </div>
-                <time dateTime={article.published_at || article.created_at}>
-                  {formatDate(article.published_at || article.created_at)}
-                </time>
-              </div>
+              )}
+              <time dateTime={article.published_at || article.created_at}>
+                {formatDate(article.published_at || article.created_at)}
+              </time>
+            </div>
+            {showStats && (
               <div className="flex items-center justify-end mt-2 text-xs text-gray-500 dark:text-gray-400">
                 <div className="flex items-center space-x-3">
                   <span className="flex items-center space-x-1">
@@ -231,8 +233,8 @@ const EnhancedArticleCard = ({
                   </span>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* 悬浮时的增强效果 */}
@@ -350,6 +352,31 @@ export default function EnhancedArticleGrid({
               />
             ))}
           </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Strict grid layout (row by row). This ensures the 4th item starts at the left of the new row.
+  if (variant === 'grid') {
+    return (
+      <div
+        className={clsx(
+          `grid ${gridColumns || 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'} gap-6 items-start content-start`,
+          'grid-flow-row',
+          className
+        )}
+      >
+        {articles.map((article, index) => (
+          <EnhancedArticleCard
+            key={article.id}
+            article={article}
+            index={index}
+            showStats={showStats}
+            showCategory={showCategory}
+            showTags={showTags}
+            showExcerpt={showExcerpt}
+          />
         ))}
       </div>
     );
