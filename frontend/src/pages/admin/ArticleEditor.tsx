@@ -28,6 +28,7 @@ export default function ArticleEditor() {
     meta_title: '',
     meta_description: '',
     meta_keywords: '',
+    author_name: '',
   });
 
   // Note: Using ByteMD as the single editor solution
@@ -129,6 +130,7 @@ export default function ArticleEditor() {
           meta_title: article.meta_title || '',
           meta_description: article.meta_description || '',
           meta_keywords: article.meta_keywords || '',
+          author_name: article.author?.name || '',
         });
         setSelectedTags((article.tags || []).map(tag => tag.id.toString()));
       } else {
@@ -784,6 +786,23 @@ export default function ArticleEditor() {
                         />
                       )}
                     </div>
+                  </div>
+
+                  {/* Author Display Name (Admin setting) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      作者显示名（管理员可设置）
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.author_name || ''}
+                      onChange={(e) => handleInputChange('author_name', e.target.value)}
+                      placeholder="例如：管理员、张三..."
+                      className="input"
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      修改此项将更新该文章作者用户的名称，并用于前台展示。
+                    </p>
                   </div>
 
                   {/* Tags */}

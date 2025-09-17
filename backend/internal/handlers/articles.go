@@ -45,6 +45,7 @@ type UpdateArticleRequest struct {
 	MetaTitle       *string `json:"meta_title"`
 	MetaDescription *string `json:"meta_description"`
 	MetaKeywords    *string `json:"meta_keywords"`
+	AuthorName     *string `json:"author_name"`
 }
 
 // GetArticles 获取文章列表
@@ -540,6 +541,21 @@ func UpdateArticle(c *gin.Context) {
 				"error":   "更新文章失败",
 			})
 			return
+		}
+	}
+
+	// 如果管理员传入了作者显示名，则更新对应用户的名称
+	if req.AuthorName != nil {
+		trimmed := strings.TrimSpace(*req.AuthorName)
+		if trimmed != "" && isAdmin {
+			if err := tx.Model(&models.User{}).Where("id = ?", article.AuthorID).Update("name", trimmed).Error; err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"success": false,
+					"error":   "更新作者信息失败",
+				})
+				return
+			}
 		}
 	}
 
