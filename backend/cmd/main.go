@@ -53,7 +53,7 @@ func main() {
 	// 添加中间件
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
-	router.Use(middleware.LargeRequestHandler()) // 处理大型请求
+	// 大文件上传在具体路由组中单独设置请求体大小限制
 
 	// CORS配置
 	corsConfig := cors.DefaultConfig()
@@ -112,6 +112,7 @@ func main() {
 
 		// 文章相关路由
 		articles := api.Group("/articles")
+		articles.Use(middleware.LargeRequestHandler()) // 为文章上传接口设置10MB限制
 		{
 			articles.GET("", handlers.GetArticles)
 			articles.GET("/:id", handlers.GetArticle)
@@ -197,9 +198,12 @@ func main() {
 		// 文件上传路由
 		upload := api.Group("/upload")
 		{
+			upload.Use(middleware.RequestSizeLimit(200 * 1024 * 1024)) // 为上传接口设置200MB限制
 			upload.POST("/image", middleware.AuthRequired(), handlers.UploadImage)
 			upload.POST("/file", middleware.AuthRequired(), handlers.UploadFile)
+			upload.POST("/media", middleware.AuthRequired(), handlers.UploadMedia)
 			upload.GET("/image/*filename", handlers.GetImage)
+			upload.GET("/media/*filename", handlers.GetMedia)
 		}
 
 		// 封面图片相关路由
