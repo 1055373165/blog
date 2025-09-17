@@ -208,12 +208,10 @@ const EnhancedArticleCard = ({
           )}
 
           {/* 底部信息 - 固定在底部 */}
-          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mt-auto">
+          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mt-auto pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-go-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                {article.author.name.charAt(0)}
-              </div>
-              <span className="font-medium">{article.author.name}</span>
+              <img src={article.author.avatar || `https://ui-avatars.com/api/?name=${article.author.name}&background=random`} alt={article.author.name} className="w-6 h-6 rounded-full" />
+              <span className="font-medium text-gray-700 dark:text-gray-300">{article.author.name}</span>
             </div>
             
             <time dateTime={article.published_at || article.created_at}>
@@ -223,28 +221,17 @@ const EnhancedArticleCard = ({
 
           {/* 统计信息 */}
           {showStats && (
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex items-center justify-end mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center space-x-3">
                 <span className="flex items-center space-x-1">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                  </svg>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.522 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.478 0-8.268-2.943-9.542-7z"></path></svg>
                   <span>{article.views_count || 0}</span>
                 </span>
                 <span className="flex items-center space-x-1">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                  </svg>
+                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                   <span>{article.likes_count || 0}</span>
                 </span>
               </div>
-              
-              {/* 互动指示器 */}
-              <div className={clsx(
-                'w-2 h-2 rounded-full transition-all duration-500',
-                isHovered ? 'bg-primary-500 animate-pulse' : 'bg-gray-300 dark:bg-gray-600'
-              )} />
             </div>
           )}
         </div>
