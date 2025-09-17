@@ -81,6 +81,9 @@ func AutoMigrate() error {
 		&models.Article{},
 		&models.ArticleView{},
 		&models.ArticleLike{},
+		&models.Blog{},
+		&models.BlogView{},
+		&models.BlogLike{},
 		&models.SearchIndex{},
 		&models.SearchStatistics{},
 		&models.Config{},
@@ -118,6 +121,17 @@ func createIndexes() error {
 	
 	// 检查并创建文章浏览表索引
 	createIndexIfNotExists("idx_article_views_article_date", "article_views", "article_id, viewed_at")
+	
+	// 检查并创建博客表复合索引
+	createIndexIfNotExists("idx_blogs_published", "blogs", "is_published, published_at DESC")
+	createIndexIfNotExists("idx_blogs_category", "blogs", "category_id, is_published, published_at DESC")
+	createIndexIfNotExists("idx_blogs_type", "blogs", "type, is_published, published_at DESC")
+	
+	// 检查并创建博客点赞表唯一复合索引
+	createUniqueIndexIfNotExists("idx_blog_likes_unique", "blog_likes", "blog_id, ip")
+	
+	// 检查并创建博客浏览表索引
+	createIndexIfNotExists("idx_blog_views_blog_date", "blog_views", "blog_id, viewed_at")
 	
 	// 检查并创建全文搜索索引
 	createFulltextIndexIfNotExists("idx_articles_search", "articles", "title, content")

@@ -8,6 +8,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import HomePage from './pages/HomePage';
 import ArticlesPage from './pages/ArticlesPage';
 import ArticlePage from './pages/ArticlePage';
+import BlogsPage from './pages/BlogsPage';
+import BlogPage from './pages/BlogPage';
 import CategoriesPage from './pages/CategoriesPage';
 import CategoryPage from './pages/CategoryPage';
 import TagsPage from './pages/TagsPage';
@@ -77,6 +79,8 @@ function RouterContent() {
               <Route index element={<HomePage />} />
               <Route path="articles" element={<ArticlesPage />} />
               <Route path="article/:slug" element={<ArticlePage />} />
+              <Route path="blogs" element={<BlogsPage />} />
+              <Route path="blog/:slug" element={<BlogPage />} />
               <Route path="categories" element={<CategoriesPage />} />
               <Route path="category/:slug" element={<CategoryPage />} />
               <Route path="tags" element={<TagsPage />} />

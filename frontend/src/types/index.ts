@@ -148,6 +148,8 @@ export interface CreateArticleInput {
   meta_title?: string;
   meta_description?: string;
   meta_keywords?: string;
+  // 新增：可选作者显示名，供后台编辑时更新作者信息
+  author_name?: string;
 }
 
 export interface UpdateArticleInput extends Partial<CreateArticleInput> {
@@ -316,4 +318,91 @@ export interface ViewModeConfig {
   label: string;
   description: string;
   icon: string;
+}
+
+// 博客相关类型
+export interface Blog {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  content: string;
+  type: 'audio' | 'video';
+  
+  // 媒体文件信息
+  media_url: string;
+  thumbnail?: string;
+  duration: number; // 时长（秒）
+  file_size: number; // 文件大小（字节）
+  mime_type?: string;
+  
+  // 状态字段
+  is_published: boolean;
+  is_draft: boolean;
+  published_at?: string;
+  
+  // 统计字段
+  views_count: number;
+  likes_count: number;
+  is_liked?: boolean;
+  
+  // 关联数据
+  author: User;
+  author_id: number;
+  category_id?: number;
+  category?: Category;
+  tags: Tag[];
+  
+  // SEO相关
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
+  
+  created_at: string;
+  updated_at: string;
+}
+
+// 博客创建/更新输入类型
+export interface CreateBlogInput {
+  title: string;
+  description?: string;
+  content?: string;
+  type: 'audio' | 'video';
+  media_url: string;
+  thumbnail?: string;
+  duration?: number;
+  file_size?: number;
+  mime_type?: string;
+  category_id?: number;
+  tag_ids?: number[];
+  is_published: boolean;
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
+}
+
+export interface UpdateBlogInput extends Partial<CreateBlogInput> {
+  id: number;
+}
+
+// 博客分页响应类型
+export interface BlogListResponse {
+  blogs: Blog[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+// 博客筛选类型
+export interface BlogFilters {
+  search?: string;
+  type?: 'audio' | 'video';
+  category_id?: number;
+  tag_ids?: number[];
+  is_published?: boolean;
+  sort_by?: 'created_at' | 'updated_at' | 'published_at' | 'views_count' | 'likes_count' | 'title' | 'duration';
+  sort_order?: 'asc' | 'desc';
 }

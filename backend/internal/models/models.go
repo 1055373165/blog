@@ -25,6 +25,7 @@ type User struct {
 	
 	// 关联关系
 	Articles []Article `json:"articles,omitempty" gorm:"foreignKey:AuthorID"`
+	Blogs    []Blog    `json:"blogs,omitempty" gorm:"foreignKey:AuthorID"`
 }
 
 // Category 分类模型
@@ -35,11 +36,13 @@ type Category struct {
 	Description  string `json:"description"`
 	ParentID     *uint  `json:"parent_id"`
 	ArticlesCount int   `json:"articles_count" gorm:"-"` // 不存储到数据库，仅用于API响应
+	BlogsCount   int   `json:"blogs_count" gorm:"-"`    // 博客数量统计
 	
 	// 关联关系
 	Parent   *Category  `json:"parent,omitempty" gorm:"foreignKey:ParentID"`
 	Children []Category `json:"children,omitempty" gorm:"foreignKey:ParentID"`
 	Articles []Article  `json:"articles,omitempty" gorm:"foreignKey:CategoryID"`
+	Blogs    []Blog     `json:"blogs,omitempty" gorm:"foreignKey:CategoryID"`
 }
 
 // Tag 标签模型
@@ -49,9 +52,11 @@ type Tag struct {
 	Slug          string `json:"slug" gorm:"uniqueIndex;not null;size:255"`
 	Color         string `json:"color"`
 	ArticlesCount int    `json:"articles_count" gorm:"-"` // 不存储到数据库
+	BlogsCount    int    `json:"blogs_count" gorm:"-"`    // 博客数量统计
 	
 	// 关联关系
 	Articles []Article `json:"articles,omitempty" gorm:"many2many:article_tags;"`
+	Blogs    []Blog    `json:"blogs,omitempty" gorm:"many2many:blog_tags;"`
 }
 
 // Series 系列模型
@@ -64,6 +69,72 @@ type Series struct {
 	
 	// 关联关系
 	Articles []Article `json:"articles,omitempty" gorm:"foreignKey:SeriesID"`
+}
+
+// Blog 博客模型（音频/视频内容）
+type Blog struct {
+	BaseModel
+	Title         string     `json:"title" gorm:"not null;size:255"`
+	Slug          string     `json:"slug" gorm:"uniqueIndex;not null;size:255"`
+	Description   string     `json:"description" gorm:"type:text"`
+	Content       string     `json:"content" gorm:"type:longtext"`
+	Type          string     `json:"type" gorm:"not null;size:20;check:type IN ('audio','video')"` // audio 或 video
+	
+	// 媒体文件信息
+	MediaURL      string `json:"media_url" gorm:"not null;size:500"`
+	Thumbnail     string `json:"thumbnail" gorm:"size:500"`
+	Duration      int    `json:"duration" gorm:"default:0"` // 时长（秒）
+	FileSize      int64  `json:"file_size" gorm:"default:0"` // 文件大小（字节）
+	MimeType      string `json:"mime_type" gorm:"size:100"`
+	
+	// 状态字段
+	IsPublished   bool       `json:"is_published" gorm:"default:false"`
+	IsDraft       bool       `json:"is_draft" gorm:"default:true"`
+	PublishedAt   *time.Time `json:"published_at"`
+	
+	// 统计字段
+	ViewsCount    int        `json:"views_count" gorm:"default:0"`
+	LikesCount    int        `json:"likes_count" gorm:"default:0"`
+	
+	// 外键
+	AuthorID      uint       `json:"author_id" gorm:"not null"`
+	CategoryID    *uint      `json:"category_id"`
+	
+	// SEO字段
+	MetaTitle       string `json:"meta_title" gorm:"size:255"`
+	MetaDescription string `json:"meta_description" gorm:"size:500"`
+	MetaKeywords    string `json:"meta_keywords" gorm:"size:500"`
+	
+	// 关联关系
+	Author        User       `json:"author" gorm:"foreignKey:AuthorID"`
+	Category      *Category  `json:"category,omitempty" gorm:"foreignKey:CategoryID"`
+	Tags          []Tag      `json:"tags,omitempty" gorm:"many2many:blog_tags;"`
+}
+
+// BlogView 博客浏览记录
+type BlogView struct {
+	ID        uint      `json:"id" gorm:"primaryKey"`
+	BlogID    uint      `json:"blog_id" gorm:"not null;index"`
+	IP        string    `json:"ip" gorm:"not null;size:45"`
+	UserAgent string    `json:"user_agent"`
+	ViewedAt  time.Time `json:"viewed_at" gorm:"autoCreateTime"`
+	
+	// 关联关系
+	Blog Blog `json:"blog" gorm:"foreignKey:BlogID"`
+}
+
+// BlogLike 博客点赞记录
+type BlogLike struct {
+	ID        uint      `json:"id" gorm:"primaryKey"`
+	BlogID    uint      `json:"blog_id" gorm:"not null;index"`
+	IP        string    `json:"ip" gorm:"not null;size:45"`
+	LikedAt   time.Time `json:"liked_at" gorm:"autoCreateTime"`
+	
+	// 关联关系
+	Blog Blog `json:"blog" gorm:"foreignKey:BlogID"`
+	
+	// 复合唯一索引，防止重复点赞
+	// gorm:"uniqueIndex:idx_blog_ip" 
 }
 
 // Article 文章模型
@@ -164,6 +235,9 @@ func (User) TableName() string              { return "users" }
 func (Category) TableName() string          { return "categories" }
 func (Tag) TableName() string               { return "tags" }
 func (Series) TableName() string            { return "series" }
+func (Blog) TableName() string              { return "blogs" }
+func (BlogView) TableName() string          { return "blog_views" }
+func (BlogLike) TableName() string          { return "blog_likes" }
 func (Article) TableName() string           { return "articles" }
 func (ArticleView) TableName() string       { return "article_views" }
 func (ArticleLike) TableName() string       { return "article_likes" }

@@ -37,6 +37,51 @@ export default {
           950: '#042f2e',
         },
         
+        // Blog-specific low saturation colors
+        blog: {
+          50: '#fafaf9',   // 极浅暖灰
+          100: '#f5f5f4',  // 浅暖灰
+          200: '#e7e5e4',  // 中浅暖灰
+          300: '#d6d3d1',  // 中暖灰
+          400: '#a8a29e',  // 暖灰
+          500: '#78716c',  // 深暖灰
+          600: '#57534e',  // 较深暖灰
+          700: '#44403c',  // 深暖灰
+          800: '#292524',  // 很深暖灰
+          900: '#1c1917',  // 极深暖灰
+          950: '#0c0a09',  // 黑暖灰
+        },
+        
+        // Media-specific muted colors
+        media: {
+          audio: {
+            50: '#fdf8f3',   // 极浅橙米色
+            100: '#fdefd6',  // 浅橙米色
+            200: '#fbdcad',  // 中浅橙米色
+            300: '#f7c179',  // 中橙米色
+            400: '#f2a444',  // 橙米色
+            500: '#ed8936',  // 深橙米色
+            600: '#de7318',  // 较深橙米色
+            700: '#b85c14',  // 深橙米色
+            800: '#924816',  // 很深橙米色
+            900: '#783e15',  // 极深橙米色
+            950: '#3f1e08',  // 黑橙米色
+          },
+          video: {
+            50: '#f8fafc',   // 极浅蓝灰
+            100: '#f1f5f9',  // 浅蓝灰
+            200: '#e2e8f0',  // 中浅蓝灰
+            300: '#cbd5e1',  // 中蓝灰
+            400: '#94a3b8',  // 蓝灰
+            500: '#64748b',  // 深蓝灰
+            600: '#475569',  // 较深蓝灰
+            700: '#334155',  // 深蓝灰
+            800: '#1e293b',  // 很深蓝灰
+            900: '#0f172a',  // 极深蓝灰
+            950: '#020617',  // 黑蓝灰
+          },
+        },
+        
         // Modern accent colors
         accent: {
           purple: {
@@ -683,6 +728,57 @@ export default {
         },
         '.scrollbar-thin::-webkit-scrollbar-thumb:hover': {
           backgroundColor: 'rgb(37 99 235)',
+        },
+        
+        // Blog-specific card styles
+        '.blog-card': {
+          '@apply bg-blog-50 dark:bg-blog-800 rounded-xl border border-blog-200 dark:border-blog-700 transition-all duration-300': {},
+          'box-shadow': '0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1)',
+        },
+        '.blog-card:hover': {
+          '@apply border-blog-300 dark:border-blog-600 -translate-y-1': {},
+          'box-shadow': '0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)',
+        },
+        
+        // Audio-specific card styles
+        '.audio-card': {
+          '@apply bg-media-audio-50 dark:bg-media-audio-900/20 rounded-xl border border-media-audio-200 dark:border-media-audio-800/50 transition-all duration-300': {},
+          'box-shadow': '0 1px 3px rgba(237, 137, 54, 0.1), 0 1px 2px rgba(237, 137, 54, 0.06)',
+        },
+        '.audio-card:hover': {
+          '@apply border-media-audio-300 dark:border-media-audio-700 -translate-y-1': {},
+          'box-shadow': '0 4px 6px rgba(237, 137, 54, 0.15), 0 2px 4px rgba(237, 137, 54, 0.1)',
+        },
+        
+        // Video-specific card styles
+        '.video-card': {
+          '@apply bg-media-video-50 dark:bg-media-video-900/20 rounded-xl border border-media-video-200 dark:border-media-video-800/50 transition-all duration-300': {},
+          'box-shadow': '0 1px 3px rgba(100, 116, 139, 0.1), 0 1px 2px rgba(100, 116, 139, 0.06)',
+        },
+        '.video-card:hover': {
+          '@apply border-media-video-300 dark:border-media-video-700 -translate-y-1': {},
+          'box-shadow': '0 4px 6px rgba(100, 116, 139, 0.15), 0 2px 4px rgba(100, 116, 139, 0.1)',
+        },
+        
+        // Media player controls
+        '.media-controls': {
+          '@apply bg-blog-100/80 dark:bg-blog-800/80 backdrop-blur-sm rounded-lg border border-blog-200/50 dark:border-blog-700/50': {},
+          'backdrop-filter': 'blur(8px)',
+          '-webkit-backdrop-filter': 'blur(8px)',
+        },
+        
+        // Progress bars
+        '.progress-audio': {
+          '@apply bg-media-audio-200 dark:bg-media-audio-800': {},
+        },
+        '.progress-audio-fill': {
+          '@apply bg-media-audio-500 dark:bg-media-audio-400': {},
+        },
+        '.progress-video': {
+          '@apply bg-media-video-200 dark:bg-media-video-800': {},
+        },
+        '.progress-video-fill': {
+          '@apply bg-media-video-500 dark:bg-media-video-400': {},
         },
         // 无障碍性样式
         '.sr-only': {

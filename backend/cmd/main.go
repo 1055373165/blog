@@ -164,6 +164,19 @@ func main() {
 			series.GET("/slug/:slug/articles", handlers.GetArticlesBySeriesSlug)
 		}
 
+		// 博客相关路由
+		blogs := api.Group("/blogs")
+		{
+			blogs.GET("", handlers.GetBlogs)
+			blogs.GET("/:id", handlers.GetBlog)
+			blogs.GET("/slug/:slug", handlers.GetBlogBySlug)
+			blogs.POST("", middleware.AuthRequired(), handlers.CreateBlog)
+			blogs.PUT("/:id", middleware.AuthRequired(), handlers.UpdateBlog)
+			blogs.DELETE("/:id", middleware.AuthRequired(), handlers.DeleteBlog)
+			blogs.POST("/:id/views", handlers.IncrementBlogViews)
+			blogs.POST("/:id/like", handlers.ToggleBlogLike)
+		}
+
 		// 搜索相关路由
 		searchGroup := api.Group("/search")
 		{
