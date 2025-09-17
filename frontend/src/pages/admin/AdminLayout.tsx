@@ -25,6 +25,7 @@ export default function AdminLayout() {
   const navigation = [
     { name: '仪表板', href: '/admin', icon: 'dashboard' },
     { name: '文章管理', href: '/admin/articles', icon: 'document' },
+    { name: '博客管理', href: '/admin/blogs', icon: 'video' },
     { name: '系列管理', href: '/admin/series', icon: 'series' },
     { name: '分类管理', href: '/admin/categories', icon: 'folder' },
     { name: '标签管理', href: '/admin/tags', icon: 'tag' },
@@ -62,6 +63,11 @@ export default function AdminLayout() {
       series: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+        </svg>
+      ),
+      video: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
         </svg>
       ),
     };
