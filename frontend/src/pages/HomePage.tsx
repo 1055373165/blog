@@ -4,33 +4,21 @@ import { articlesApi } from '../api';
 import { Article } from '../types';
 import EnhancedArticleGrid from '../components/EnhancedArticleGrid';
 import LoadingSpinner from '../components/LoadingSpinner';
-import OptimizedImage from '../components/ui/OptimizedImage';
-import LayoutStabilizer, { CardSkeleton } from '../components/ui/LayoutStabilizer';
 import BookCarousel from '../components/BookCarousel';
 import Hero from '../components/ui/Hero';
-import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
-import { useDevPerformanceMonitor } from '../hooks/usePerformanceMonitor';
-import { formatDate } from '../utils';
 
 export default function HomePage() {
-  const [featuredArticles, setFeaturedArticles] = useState<Article[]>([]);
   const [popularArticles, setPopularArticles] = useState<Article[]>([]);
   const [recentArticles, setRecentArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [popularLayoutVariant, setPopularLayoutVariant] = useState<'masonry' | 'grid'>('masonry');
 
-  // 性能监控 (仅开发环境)
-  const { performanceScore, isGoodPerformance } = useDevPerformanceMonitor();
 
   useEffect(() => {
     const loadFeaturedContent = async () => {
       try {
         setLoading(true);
         
-        // 获取最新文章作为特色文章
-        const latestResponse = await articlesApi.getLatestArticles(3);
-        setFeaturedArticles(latestResponse.data);
         
         // 获取热门文章
         const popularResponse = await articlesApi.getPopularArticles(6, 7);
@@ -161,7 +149,7 @@ export default function HomePage() {
             articles={recentArticles}
             loading={loading}
             variant="grid"
-            showStats={false}
+            showStats={true}
             showCategory={true}
             showTags={true}
           />
