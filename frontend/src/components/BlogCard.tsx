@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Blog } from '../types';
-import { formatDate, formatDuration, formatFileSize } from '../utils';
+import { formatDate, formatFileSize } from '../utils';
 import { useEffect, useRef, useState } from 'react';
 import Card from './ui/Card';
 import { 
@@ -14,6 +14,21 @@ import {
   DocumentIcon
 } from '@heroicons/react/24/outline';
 import { clsx } from 'clsx';
+
+// 格式化时长（秒转为 mm:ss 或 hh:mm:ss）
+function formatDuration(seconds: number): string {
+  if (seconds < 0) return '0:00';
+  
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  } else {
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+}
 
 interface BlogCardProps {
   blog: Blog;
