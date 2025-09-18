@@ -80,13 +80,15 @@ export default function BlogPage() {
       try {
         const response = await blogApi.getBlogBySlug(slug);
         console.log('Fetched blog data:', response); // DEBUG: Log fetched data
+        console.log('Response type:', typeof response); // DEBUG: Check type
+        console.log('Response keys:', response ? Object.keys(response) : 'null'); // DEBUG: Check keys
         setBlog(response);
-        setLikesCount(response.likes_count || 0);
-        setViewsCount(response.views_count || 0);
-        setIsLiked(response.is_liked || false);
+        setLikesCount(response?.likes_count || 0);
+        setViewsCount(response?.views_count || 0);
+        setIsLiked(response?.is_liked || false);
 
         // 记录浏览量
-        if (response.id) {
+        if (response?.id) {
           await blogApi.viewBlog(response.id);
         }
       } catch (error) {
@@ -345,6 +347,11 @@ export default function BlogPage() {
         </div>
       </div>
     );
+  }
+
+  // 确保blog存在后再计算相关值
+  if (!blog) {
+    return null;
   }
   
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
