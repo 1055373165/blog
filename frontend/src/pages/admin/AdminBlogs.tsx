@@ -115,10 +115,10 @@ export default function AdminBlogs() {
       }
 
       // Safely access response properties with fallbacks
-      setBlogs(response.data?.blogs || []);
-      setTotalPages(response.data?.pagination?.total_pages || 1);
-      setTotalBlogs(response.data?.pagination?.total || 0);
-      setCurrentPage(response.data?.pagination?.page || 1);
+      setBlogs(response.blogs || []);
+      setTotalPages(response.pagination?.total_pages || 1);
+      setTotalBlogs(response.pagination?.total || 0);
+      setCurrentPage(response.pagination?.page || 1);
 
     } catch (error) {
       if (isMounted) {

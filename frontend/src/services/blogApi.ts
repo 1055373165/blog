@@ -60,7 +60,7 @@ class BlogApiService {
       params.append('category_id', filters.category_id.toString());
     }
     if (filters.tag_ids && filters.tag_ids.length > 0) {
-      filters.tag_ids.forEach(id => params.append('tag_ids', id.toString()));
+      params.append('tag_ids', filters.tag_ids.join(','));
     }
     if (filters.is_published !== undefined) {
       params.append('is_published', filters.is_published.toString());

@@ -43,9 +43,9 @@ export default function BlogsPage() {
     setLoading(true);
     try {
       const response = await blogApi.getBlogs(filters, currentPage, pageSize);
-      setBlogs(response.data?.blogs || []);
-      setTotalPages(response.data?.pagination?.total_pages || 1);
-      setTotal(response.data?.pagination?.total || 0);
+      setBlogs(response.blogs || []);
+      setTotalPages(response.pagination?.total_pages || 1);
+      setTotal(response.pagination?.total || 0);
     } catch (error) {
       console.error('加载博客失败:', error);
       setBlogs([]);
