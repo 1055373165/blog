@@ -1,6 +1,6 @@
 import { BlogListResponse, Blog, CreateBlogInput, UpdateBlogInput, BlogFilters } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
 class BlogApiService {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -24,9 +24,8 @@ class BlogApiService {
 
     // Normalize API base to ensure it contains "/api"
     const trimmedBase = API_BASE_URL.replace(/\/$/, '');
-    const apiBase = trimmedBase.endsWith('/api') ? trimmedBase : `${trimmedBase}/api`;
 
-    const response = await fetch(`${apiBase}${endpoint}`, config);
+    const response = await fetch(`${trimmedBase}${endpoint}`, config);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Request failed' }));
