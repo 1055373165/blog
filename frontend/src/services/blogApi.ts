@@ -171,7 +171,8 @@ class BlogApiService {
         reject(new Error('Upload failed'));
       });
 
-      xhr.open('POST', `${API_BASE_URL}/upload/media`);
+      const apiPrefix = API_BASE_URL.endsWith('/api') ? API_BASE_URL : `${API_BASE_URL}/api`;
+      xhr.open('POST', `${apiPrefix}/upload/media`);
 
       if (token) {
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
@@ -217,7 +218,8 @@ class BlogApiService {
         reject(new Error('Upload failed'));
       });
 
-      xhr.open('POST', `${API_BASE_URL}/upload/thumbnail`);
+      const apiPrefix = API_BASE_URL.endsWith('/api') ? API_BASE_URL : `${API_BASE_URL}/api`;
+      xhr.open('POST', `${apiPrefix}/upload/thumbnail`);
 
       if (token) {
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
