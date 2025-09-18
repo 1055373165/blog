@@ -4,7 +4,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001
 
 class BlogApiService {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth_token');
     
     const defaultHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ class BlogApiService {
     const formData = new FormData();
     formData.append('file', file);
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth_token');
     
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -186,7 +186,7 @@ class BlogApiService {
     const formData = new FormData();
     formData.append('file', file);
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth_token');
     
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
