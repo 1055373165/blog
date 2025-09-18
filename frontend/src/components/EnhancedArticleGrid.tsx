@@ -36,22 +36,24 @@ const getTagBgColor = (name: string, baseColor?: string) => {
 };
 
 // 文章卡片组件 - 增强微交互
-const EnhancedArticleCard = ({ 
-  article, 
-  index, 
-  showStats, 
-  showCategory, 
+const EnhancedArticleCard = ({
+  article,
+  index,
+  showStats,
+  showCategory,
   showTags,
   showExcerpt = true,
-  className 
-}: { 
-  article: Article; 
+  className,
+  variant = 'card'
+}: {
+  article: Article;
   index: number;
   showStats?: boolean;
   showCategory?: boolean;
   showTags?: boolean;
   showExcerpt?: boolean;
   className?: string;
+  variant?: 'card' | 'list';
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -110,13 +112,150 @@ const EnhancedArticleCard = ({
     window.location.href = `/article/${article.slug}`;
   };
 
+  // 列表样式渲染
+  if (variant === 'list') {
+    return (
+      <article
+        ref={cardRef}
+        data-article="true"
+        data-article-slug={article.slug}
+        className={clsx(
+          'group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md transition-all duration-500 ease-out cursor-pointer',
+          'border border-gray-200 dark:border-gray-700',
+          'hover:shadow-lg hover:border-primary-300 dark:hover:border-primary-600',
+          'flex flex-row items-start p-6 space-x-6',
+          'clickable card',
+          isVisible && 'animate-fade-in-up',
+          className
+        )}
+        style={{
+          animationDelay: `${index * 100}ms`
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={handleClick}
+      >
+        {/* 左侧图片 */}
+        {article.cover_image && (
+          <div className="relative overflow-hidden w-48 h-32 bg-gray-100 dark:bg-gray-700 rounded-lg flex-shrink-0">
+            <OptimizedImage
+              src={article.cover_image}
+              alt={article.title}
+              aspectRatio="3/2"
+              priority={index < 3}
+              className={clsx(
+                'transition-all duration-500 group-hover:scale-105',
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              )}
+              onLoad={() => setImageLoaded(true)}
+              placeholder="skeleton"
+            />
+
+            {/* 阅读时间 */}
+            <div className="absolute top-2 right-2 px-2 py-1 bg-black/50 backdrop-blur-sm rounded text-white text-xs font-medium">
+              {Math.ceil((article.content?.length || 1000) / 200)}分钟
+            </div>
+
+            {/* 分类标签 */}
+            {showCategory && article.category && (
+              <div className="absolute top-2 left-2">
+                <span className="px-2 py-1 bg-primary-600/90 backdrop-blur-sm text-white text-xs font-medium rounded-full">
+                  {article.category.name}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 右侧内容 */}
+        <div className="flex-1 min-w-0">
+          {/* 标题 */}
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-300 line-clamp-2">
+            {article.title}
+          </h3>
+
+          {/* 摘要 */}
+          {showExcerpt && (
+            <p className="text-gray-600 dark:text-gray-300 text-base line-clamp-3 mb-4 leading-relaxed">
+              {article.excerpt || article.content?.substring(0, 200) + '...'}
+            </p>
+          )}
+
+          {/* 标签 */}
+          {showTags && article.tags && article.tags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {article.tags.slice(0, 4).map((tag) => (
+                <Link
+                  key={tag.id}
+                  to={`/tag/${tag.slug}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center px-2 py-1 text-sm font-medium rounded-md border border-gray-200/60 dark:border-gray-700/60 text-gray-700 dark:text-gray-300 transition-all duration-200 hover:scale-105"
+                  style={{ backgroundColor: getTagBgColor(tag.name, tag.color) }}
+                >
+                  #{tag.name}
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* 底部信息 */}
+          <div className="flex items-center justify-between pt-3 border-t border-gray-200/50 dark:border-gray-700/50">
+            <div className="flex items-center space-x-3">
+              {article.author && (
+                <div className="flex items-center space-x-2">
+                  <img
+                    src={article.author.avatar || `https://ui-avatars.com/api/?name=${article.author.name}&background=random`}
+                    alt={article.author.name}
+                    className="w-8 h-8 rounded-full"
+                  />
+                  <span className="font-medium text-gray-700 dark:text-gray-300">{article.author.name}</span>
+                </div>
+              )}
+              <time
+                dateTime={article.published_at || article.created_at}
+                className="text-sm text-gray-500 dark:text-gray-400"
+              >
+                {formatDate(article.published_at || article.created_at)}
+              </time>
+            </div>
+
+            {showStats && (
+              <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                <span className="flex items-center space-x-1">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.522 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.478 0-8.268-2.943-9.542-7z"></path>
+                  </svg>
+                  <span>{article.views_count || 0}</span>
+                </span>
+                <span className="flex items-center space-x-1">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                  </svg>
+                  <span>{article.likes_count || 0}</span>
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 悬浮效果 */}
+        <div className={clsx(
+          'absolute inset-0 rounded-xl transition-all duration-500 pointer-events-none',
+          isHovered && 'shadow-[0_0_30px_rgba(59,130,246,0.1)] ring-1 ring-primary-500/10'
+        )} />
+      </article>
+    );
+  }
+
+  // 默认卡片样式渲染
   return (
       <article
         ref={cardRef}
         data-article="true"
         data-article-slug={article.slug}
         className={clsx(
-          'group relative bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg transition-all duration-700 ease-out cursor-pointer',
+          'group relative bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg transition-all duration-700 ease-out cursor-pointer flex flex-col',
           'border border-gray-200 dark:border-gray-700',
           'hover:shadow-2xl hover:border-primary-300 dark:hover:border-primary-600',
           'clickable card', // Add explicit classes for click detection
@@ -177,7 +316,7 @@ const EnhancedArticleCard = ({
         )}
 
         {/* 内容区域 */}
-        <div className="p-6 relative flex flex-col h-full">
+        <div className="p-6 relative flex flex-col flex-grow">
           {/* 标题 - 自适应高度，不截断 */}
           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-300 min-h-[3rem] flex items-start">
             <span className="block">{article.title}</span>
@@ -337,7 +476,11 @@ export default function EnhancedArticleGrid({
   // 渲染不同布局变体
   if (variant === 'masonry') {
     return (
-      <div className={clsx('grid gap-6', className)} style={{ gridTemplateColumns: `repeat(${columnCount}, 1fr)` }}>
+      <div
+        className={clsx('grid gap-6', className)}
+        style={{ gridTemplateColumns: `repeat(${columnCount}, 1fr)` }}
+        data-layout="masonry"
+      >
         {masonryColumns.map((column, columnIndex) => (
           <div key={columnIndex} className="space-y-6">
             {column.map((article, index) => (
@@ -349,6 +492,7 @@ export default function EnhancedArticleGrid({
                 showCategory={showCategory}
                 showTags={showTags}
                 showExcerpt={showExcerpt}
+                variant="card"
               />
             ))}
           </div>
@@ -357,16 +501,10 @@ export default function EnhancedArticleGrid({
     );
   }
 
-  // Strict grid layout (row by row). This ensures the 4th item starts at the left of the new row.
+  // 列表布局 - 专为博客阅读优化的布局
   if (variant === 'grid') {
     return (
-      <div
-        className={clsx(
-          `grid ${gridColumns || 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'} gap-6 items-start content-start`,
-          'grid-flow-row',
-          className
-        )}
-      >
+      <div className={clsx('space-y-6', className)} data-layout="list">
         {articles.map((article, index) => (
           <EnhancedArticleCard
             key={article.id}
@@ -376,6 +514,7 @@ export default function EnhancedArticleGrid({
             showCategory={showCategory}
             showTags={showTags}
             showExcerpt={showExcerpt}
+            variant="list"
           />
         ))}
       </div>
@@ -395,9 +534,10 @@ export default function EnhancedArticleGrid({
             showTags={showTags}
             showExcerpt={showExcerpt}
             className="md:col-span-2 lg:col-span-3"
+            variant="card"
           />
         )}
-        
+
         {/* 其余文章 - 标准网格 */}
         <div className={`grid ${gridColumns || 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'} gap-6 md:col-span-2 lg:col-span-3`}>
           {articles.slice(1).map((article, index) => (
@@ -409,6 +549,7 @@ export default function EnhancedArticleGrid({
               showCategory={showCategory}
               showTags={showTags}
               showExcerpt={showExcerpt}
+              variant="card"
             />
           ))}
         </div>
@@ -428,6 +569,7 @@ export default function EnhancedArticleGrid({
           showCategory={showCategory}
           showTags={showTags}
           showExcerpt={showExcerpt}
+          variant="card"
         />
       ))}
     </div>

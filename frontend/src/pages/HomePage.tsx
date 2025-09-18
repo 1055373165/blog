@@ -11,7 +11,7 @@ export default function HomePage() {
   const [popularArticles, setPopularArticles] = useState<Article[]>([]);
   const [recentArticles, setRecentArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
-  const [popularLayoutVariant, setPopularLayoutVariant] = useState<'masonry' | 'grid'>('masonry');
+  const [layoutVariant, setLayoutVariant] = useState<'masonry' | 'grid'>('masonry');
 
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <Hero />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-16">
+      <div className="max-w-7xl mx-auto px-8 sm:px-12 lg:px-16 pt-16 pb-16">
         {/* Book Carousel Section - 调整间距和背景避免冲突 */}
         <section className="mb-16">
         <BookCarousel 
@@ -80,26 +80,26 @@ export default function HomePage() {
             
             {/* 布局切换器 */}
             <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-xl p-1 border border-gray-200 dark:border-gray-700">
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setPopularLayoutVariant('masonry');
+                  setLayoutVariant('masonry');
                 }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  popularLayoutVariant === 'masonry'
+                  layoutVariant === 'masonry'
                     ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 瀑布流
               </button>
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setPopularLayoutVariant('grid');
+                  setLayoutVariant('grid');
                 }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  popularLayoutVariant === 'grid'
+                  layoutVariant === 'grid'
                     ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
@@ -110,10 +110,10 @@ export default function HomePage() {
           </div>
           
           <EnhancedArticleGrid
-            key={popularLayoutVariant}
+            key={layoutVariant}
             articles={popularArticles}
             loading={loading}
-            variant={popularLayoutVariant}
+            variant={layoutVariant}
             showStats={true}
             showCategory={true}
             showTags={true}
@@ -146,9 +146,10 @@ export default function HomePage() {
           </div>
           
           <EnhancedArticleGrid
+            key={`recent-${layoutVariant}`}
             articles={recentArticles}
             loading={loading}
-            variant="grid"
+            variant={layoutVariant}
             showStats={true}
             showCategory={true}
             showTags={true}

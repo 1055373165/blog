@@ -4,6 +4,7 @@ import { Blog, BlogFilters } from '../types';
 import BlogCard from '../components/BlogCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
+import { blogApi } from '../services/blogApi';
 import { 
   SpeakerWaveIcon,
   VideoCameraIcon,
@@ -13,135 +14,6 @@ import {
 } from '@heroicons/react/24/outline';
 import { clsx } from 'clsx';
 
-// 模拟API调用 - 实际项目中应该从真实API获取数据
-const mockBlogs: Blog[] = [
-  {
-    id: 1,
-    title: "前端开发技巧分享",
-    slug: "frontend-tips-audio",
-    description: "分享一些实用的前端开发技巧和最佳实践",
-    content: "详细内容...",
-    type: "audio",
-    media_url: "/audio/frontend-tips.mp3",
-    thumbnail: "/images/audio-thumbnail-1.jpg",
-    duration: 1800, // 30分钟
-    file_size: 25600000, // 25.6MB
-    mime_type: "audio/mpeg",
-    is_published: true,
-    is_draft: false,
-    published_at: "2024-01-15T10:00:00Z",
-    views_count: 156,
-    likes_count: 23,
-    author: {
-      id: 1,
-      name: "张开发",
-      email: "zhangkf@example.com",
-      avatar: "",
-      is_admin: false,
-      created_at: "2024-01-01T00:00:00Z",
-      updated_at: "2024-01-01T00:00:00Z"
-    },
-    author_id: 1,
-    category_id: 1,
-    category: {
-      id: 1,
-      name: "技术分享",
-      slug: "tech",
-      description: "技术相关内容",
-      articles_count: 10,
-      blogs_count: 5,
-      created_at: "2024-01-01T00:00:00Z",
-      updated_at: "2024-01-01T00:00:00Z"
-    },
-    tags: [
-      {
-        id: 1,
-        name: "前端",
-        slug: "frontend",
-        color: "#3B82F6",
-        articles_count: 8,
-        blogs_count: 3,
-        created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
-      },
-      {
-        id: 2,
-        name: "JavaScript",
-        slug: "javascript",
-        color: "#F59E0B",
-        articles_count: 15,
-        blogs_count: 4,
-        created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
-      }
-    ],
-    created_at: "2024-01-15T09:00:00Z",
-    updated_at: "2024-01-15T10:00:00Z"
-  },
-  {
-    id: 2,
-    title: "React Hooks 深入解析",
-    slug: "react-hooks-video",
-    description: "详细讲解React Hooks的原理和最佳实践",
-    content: "详细内容...",
-    type: "video",
-    media_url: "/video/react-hooks.mp4",
-    thumbnail: "/images/video-thumbnail-1.jpg",
-    duration: 2700, // 45分钟
-    file_size: 125600000, // 125.6MB
-    mime_type: "video/mp4",
-    is_published: true,
-    is_draft: false,
-    published_at: "2024-01-12T14:00:00Z",
-    views_count: 289,
-    likes_count: 45,
-    author: {
-      id: 1,
-      name: "张开发",
-      email: "zhangkf@example.com",
-      avatar: "",
-      is_admin: false,
-      created_at: "2024-01-01T00:00:00Z",
-      updated_at: "2024-01-01T00:00:00Z"
-    },
-    author_id: 1,
-    category_id: 1,
-    category: {
-      id: 1,
-      name: "技术分享",
-      slug: "tech",
-      description: "技术相关内容",
-      articles_count: 10,
-      blogs_count: 5,
-      created_at: "2024-01-01T00:00:00Z",
-      updated_at: "2024-01-01T00:00:00Z"
-    },
-    tags: [
-      {
-        id: 2,
-        name: "React",
-        slug: "react",
-        color: "#06B6D4",
-        articles_count: 12,
-        blogs_count: 6,
-        created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
-      },
-      {
-        id: 3,
-        name: "Hooks",
-        slug: "hooks",
-        color: "#8B5CF6",
-        articles_count: 5,
-        blogs_count: 2,
-        created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
-      }
-    ],
-    created_at: "2024-01-12T13:00:00Z",
-    updated_at: "2024-01-12T14:00:00Z"
-  }
-];
 
 export default function BlogsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -169,51 +41,19 @@ export default function BlogsPage() {
 
   const loadBlogs = async () => {
     setLoading(true);
-    
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // 模拟筛选和分页
-    let filteredBlogs = [...mockBlogs];
-    
-    // 搜索筛选
-    if (filters.search) {
-      filteredBlogs = filteredBlogs.filter(blog => 
-        blog.title.toLowerCase().includes(filters.search!.toLowerCase()) ||
-        blog.description.toLowerCase().includes(filters.search!.toLowerCase())
-      );
+    try {
+      const response = await blogApi.getBlogs(filters, currentPage, pageSize);
+      setBlogs(response.data?.blogs || []);
+      setTotalPages(response.data?.pagination?.total_pages || 1);
+      setTotal(response.data?.pagination?.total || 0);
+    } catch (error) {
+      console.error('加载博客失败:', error);
+      setBlogs([]);
+      setTotal(0);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
     }
-    
-    // 类型筛选
-    if (filters.type) {
-      filteredBlogs = filteredBlogs.filter(blog => blog.type === filters.type);
-    }
-    
-    // 排序
-    filteredBlogs.sort((a, b) => {
-      const field = filters.sort_by || 'published_at';
-      const order = filters.sort_order === 'asc' ? 1 : -1;
-      
-      let aValue: any = a[field as keyof Blog];
-      let bValue: any = b[field as keyof Blog];
-      
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return aValue.localeCompare(bValue) * order;
-      }
-      
-      return (aValue - bValue) * order;
-    });
-    
-    const totalCount = filteredBlogs.length;
-    const totalPagesCount = Math.ceil(totalCount / pageSize);
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const paginatedBlogs = filteredBlogs.slice(startIndex, endIndex);
-    
-    setBlogs(paginatedBlogs);
-    setTotal(totalCount);
-    setTotalPages(totalPagesCount);
-    setLoading(false);
   };
 
   // 处理搜索
@@ -267,7 +107,7 @@ export default function BlogsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-5xl mx-auto px-8 sm:px-12 lg:px-16 py-12">
       {/* 页面头部 */}
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-blog-800 dark:text-blog-100 mb-4">

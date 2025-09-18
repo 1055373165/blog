@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Blog } from '../types';
+import { blogApi } from '../services/blogApi';
 import { formatDate, formatFileSize } from '../utils';
 import {
   PlayIcon,
@@ -17,7 +18,9 @@ import {
   DocumentIcon,
   ArrowLeftIcon,
   ChevronUpIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  ArrowsPointingOutIcon,
+  ArrowsPointingInIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import { clsx } from 'clsx';
@@ -25,7 +28,7 @@ import { clsx } from 'clsx';
 // 格式化时长（秒转为 mm:ss 或 hh:mm:ss）
 function formatDuration(seconds: number): string {
   if (seconds < 0) return '0:00';
-  
+
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const remainingSeconds = Math.floor(seconds % 60);
@@ -59,93 +62,43 @@ export default function BlogPage() {
   // Refs
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   
-  // Mock 博客数据 - 实际应用中从API获取
+  // 博客数据
   const [blog, setBlog] = useState<Blog | null>(null);
-  
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   useEffect(() => {
-    // Mock API 调用
-    const mockBlog: Blog = {
-      id: 1,
-      title: "深度学习在前端开发中的应用实践",
-      slug: slug || "deep-learning-frontend",
-      description: "探讨如何将深度学习技术融入现代前端开发流程，包括智能代码补全、自动化测试生成、性能优化建议等实际应用场景。我们将深入分析具体的实现方案和最佳实践。",
-      content: "# 深度学习在前端开发中的应用实践\n\n随着AI技术的快速发展，深度学习正在革命性地改变前端开发的方式...",
-      type: "video",
-      media_url: "https://example.com/video.mp4",
-      thumbnail: "https://picsum.photos/800/450?random=1",
-      duration: 1845, // 30:45
-      file_size: 157286400, // 150MB
-      mime_type: "video/mp4",
-      is_published: true,
-      is_draft: false,
-      published_at: "2024-01-15T10:30:00Z",
-      views_count: 2341,
-      likes_count: 89,
-      is_liked: false,
-      author: {
-        id: 1,
-        email: "author@example.com",
-        name: "张三",
-        avatar: "https://picsum.photos/40/40?random=1",
-        is_admin: true,
-        created_at: "2023-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
-      },
-      author_id: 1,
-      category_id: 1,
-      category: {
-        id: 1,
-        name: "前端技术",
-        slug: "frontend",
-        description: "前端开发相关技术",
-        articles_count: 25,
-        created_at: "2023-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
-      },
-      tags: [
-        {
-          id: 1,
-          name: "深度学习",
-          slug: "deep-learning",
-          color: "#3B82F6",
-          articles_count: 12,
-          created_at: "2023-01-01T00:00:00Z",
-          updated_at: "2024-01-01T00:00:00Z"
-        },
-        {
-          id: 2,
-          name: "前端开发",
-          slug: "frontend-dev",
-          color: "#10B981",
-          articles_count: 35,
-          created_at: "2023-01-01T00:00:00Z",
-          updated_at: "2024-01-01T00:00:00Z"
-        },
-        {
-          id: 3,
-          name: "AI应用",
-          slug: "ai-application",
-          color: "#8B5CF6",
-          articles_count: 8,
-          created_at: "2023-01-01T00:00:00Z",
-          updated_at: "2024-01-01T00:00:00Z"
+    const loadBlog = async () => {
+      if (!slug) {
+        navigate('/blogs');
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const response = await blogApi.getBlogBySlug(slug);
+        console.log('Fetched blog data:', response); // DEBUG: Log fetched data
+        setBlog(response);
+        setLikesCount(response.likes_count || 0);
+        setViewsCount(response.views_count || 0);
+        setIsLiked(response.is_liked || false);
+
+        // 记录浏览量
+        if (response.id) {
+          await blogApi.viewBlog(response.id);
         }
-      ],
-      meta_title: "深度学习在前端开发中的应用实践 - 技术博客",
-      meta_description: "探讨深度学习技术在现代前端开发中的实际应用场景和实现方案",
-      meta_keywords: "深度学习,前端开发,AI应用,智能代码,自动化测试",
-      created_at: "2024-01-15T08:00:00Z",
-      updated_at: "2024-01-15T10:30:00Z"
+      } catch (error) {
+        console.error('加载博客失败:', error);
+        navigate('/blogs');
+      } finally {
+        setIsLoading(false);
+      }
     };
-    
-    setBlog(mockBlog);
-    setLikesCount(mockBlog.likes_count);
-    setViewsCount(mockBlog.views_count);
-    setIsLiked(mockBlog.is_liked || false);
-    setIsLoading(false);
-  }, [slug]);
+
+    loadBlog();
+  }, [slug, navigate]);
   
   // 媒体事件处理
   useEffect(() => {
@@ -172,18 +125,79 @@ export default function BlogPage() {
       media.removeEventListener('loadeddata', handleLoadedData);
     };
   }, [blog]);
+
+  // 键盘快捷键：左右方向键快退/快进 10 秒
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      const isTyping = tag === 'input' || tag === 'textarea' || target?.isContentEditable;
+      if (isTyping) return; // 避免影响输入框
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        skipTime(-10);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        skipTime(10);
+      } else if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        togglePlayPause();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [currentTime, duration, blog, isPlaying]);
+
+  // 监听全屏状态变化
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  const requestFullscreen = async () => {
+    const el: any = (blog?.type === 'video' ? videoRef.current : containerRef.current) as any;
+    if (!el) return;
+    if (el.requestFullscreen) return el.requestFullscreen();
+    if (el.webkitRequestFullscreen) return el.webkitRequestFullscreen();
+    if (el.msRequestFullscreen) return el.msRequestFullscreen();
+  };
+
+  const exitFullscreen = async () => {
+    const doc: any = document as any;
+    if (document.exitFullscreen) return document.exitFullscreen();
+    if (doc.webkitExitFullscreen) return doc.webkitExitFullscreen();
+    if (doc.msExitFullscreen) return doc.msExitFullscreen();
+  };
+
+  const toggleFullscreen = async () => {
+    if (document.fullscreenElement) {
+      await exitFullscreen();
+    } else {
+      await requestFullscreen();
+    }
+  };
   
   // 播放控制
-  const togglePlayPause = () => {
+  const togglePlayPause = async () => {
     const media = blog?.type === 'audio' ? audioRef.current : videoRef.current;
     if (!media) return;
-    
+
     if (isPlaying) {
       media.pause();
+      setIsPlaying(false);
     } else {
-      media.play();
+      try {
+        await media.play();
+        setIsPlaying(true);
+      } catch (error) {
+        console.error('Playback failed:', error);
+        // If playback fails, ensure the state is correct
+        setIsPlaying(false);
+      }
     }
-    setIsPlaying(!isPlaying);
   };
   
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -237,10 +251,16 @@ export default function BlogPage() {
   };
   
   // 交互功能
-  const toggleLike = () => {
-    setIsLiked(!isLiked);
-    setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
-    // 实际应用中调用API
+  const toggleLike = async () => {
+    if (!blog?.id) return;
+
+    try {
+      const response = await blogApi.likeBlog(blog.id);
+      setIsLiked(response.is_liked);
+      setLikesCount(response.likes_count);
+    } catch (error) {
+      console.error('点赞失败:', error);
+    }
   };
   
   const handleShare = () => {
@@ -322,12 +342,19 @@ export default function BlogPage() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-6 text-sm text-blog-600 dark:text-blog-400">
               <div className="flex items-center space-x-2">
-                <img
-                  src={blog.author.avatar}
-                  alt={blog.author.name}
-                  className="w-6 h-6 rounded-full"
-                />
-                <span className="font-medium">{blog.author.name}</span>
+                {blog.author?.avatar ? (
+                  <img
+                    src={blog.author.avatar}
+                    alt={blog.author?.name || '匿名用户'}
+                    className="w-6 h-6 rounded-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-blog-300 dark:bg-blog-700 text-white dark:text-blog-200 flex items-center justify-center text-xs">
+                    {(blog.author?.name?.[0] || '匿')}
+                  </div>
+                )}
+                <span className="font-medium">{blog.author?.name || '匿名用户'}</span>
               </div>
               
               <div className="flex items-center space-x-1">
@@ -396,7 +423,7 @@ export default function BlogPage() {
           )}>
             
             {/* 媒体元素 */}
-            <div className="relative">
+            <div className="relative" ref={containerRef}>
               {blog.type === 'audio' ? (
                 <div className="relative aspect-video bg-gradient-to-br from-media-audio-100 to-media-audio-200 dark:from-media-audio-800 dark:to-media-audio-700 flex items-center justify-center">
                   <audio
@@ -404,6 +431,11 @@ export default function BlogPage() {
                     src={blog.media_url}
                     preload="metadata"
                     className="hidden"
+                    onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
+                    onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    onError={(e) => console.error('Audio Error:', e, 'URL:', blog.media_url)}
                   />
                   {blog.thumbnail && (
                     <img
@@ -425,11 +457,16 @@ export default function BlogPage() {
                 <video
                   ref={videoRef}
                   src={blog.media_url}
-                  poster={blog.thumbnail}
-                  preload="metadata"
                   className="w-full aspect-video bg-black"
-                  onClick={togglePlayPause}
-                />
+                  playsInline
+                  onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
+                  onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  onError={(e) => console.error('Video Error:', e, 'URL:', blog.media_url)}
+                >
+                  Your browser does not support the video tag.
+                </video>
               )}
               
               {/* 播放按钮覆盖 */}
@@ -528,6 +565,19 @@ export default function BlogPage() {
                     </select>
                   </div>
                   
+                  {/* 全屏切换 */}
+                  <button
+                    onClick={toggleFullscreen}
+                    className="p-2 rounded-full hover:bg-blog-100 dark:hover:bg-blog-800 transition-colors duration-200"
+                    title={isFullscreen ? '退出全屏' : '全屏'}
+                  >
+                    {isFullscreen ? (
+                      <ArrowsPointingInIcon className="w-5 h-5 text-blog-600 dark:text-blog-400" />
+                    ) : (
+                      <ArrowsPointingOutIcon className="w-5 h-5 text-blog-600 dark:text-blog-400" />
+                    )}
+                  </button>
+                  
                   {/* 音量控制 */}
                   <div className="flex items-center space-x-2">
                     <button
@@ -586,7 +636,7 @@ export default function BlogPage() {
           <div className="p-6 border-b border-blog-200/50 dark:border-blog-700/50">
             <h3 className="text-sm font-medium text-blog-500 dark:text-blog-400 mb-3">标签</h3>
             <div className="flex flex-wrap gap-2">
-              {blog.tags.map((tag) => (
+              {blog.tags?.map((tag) => (
                 <Link
                   key={tag.id}
                   to={`/tag/${tag.slug}`}

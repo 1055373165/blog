@@ -129,7 +129,7 @@ function ByteMDEditor({
   
   // 动态性能检测
   useEffect(() => {
-    const documentSize = value.length
+    const documentSize = (value || '').length
     const newIsLargeDocument = documentSize > PERFORMANCE_CONFIG.LARGE_DOCUMENT_THRESHOLD
     const newIsHugeDocument = documentSize > PERFORMANCE_CONFIG.HUGE_DOCUMENT_THRESHOLD
     
@@ -142,7 +142,7 @@ function ByteMDEditor({
     } else {
       setActualPerformanceMode(performanceMode === 'high' ? 'high' : 'standard')
     }
-  }, [value.length, performanceMode])
+  }, [(value || '').length, performanceMode])
   
   // 智能防抖处理
   const debouncedOnChange = useCallback((newValue: string) => {
@@ -335,7 +335,7 @@ function ByteMDEditor({
       )}
       
       <Editor
-        value={value}
+        value={value || ''}
         plugins={plugins}
         onChange={debouncedOnChange}
         placeholder={placeholder}

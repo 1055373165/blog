@@ -226,6 +226,15 @@ func main() {
 		}
 	}
 
+	// 开发环境兼容路由：支持无 /api 前缀的上传路径
+	// 使得 VITE_API_BASE_URL 指向 http://127.0.0.1:3001 时，/upload/media 也能工作
+	{
+		uploadCompat := router.Group("/upload")
+		uploadCompat.Use(middleware.RequestSizeLimit(200 * 1024 * 1024))
+		uploadCompat.POST("/media", handlers.UploadMedia)
+		uploadCompat.GET("/media/*filename", handlers.GetMedia)
+	}
+
 	// 静态文件服务
 
 	// 启动服务器

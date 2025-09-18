@@ -76,27 +76,28 @@ export default function BlogEditor() {
       const loadBlog = async () => {
         try {
           setLoading(true);
-          const blog = await blogApi.getBlog(Number(id));
-          
+          const response = await blogApi.getBlog(Number(id));
+          const blog = response.data;
+
           setFormData({
-            title: blog.title,
-            description: blog.description,
-            content: blog.content,
+            title: blog.title || '',
+            description: blog.description || '',
+            content: blog.content || '',
             type: blog.type,
-            media_url: blog.media_url,
-            thumbnail: blog.thumbnail,
-            duration: blog.duration,
-            file_size: blog.file_size,
-            mime_type: blog.mime_type,
+            media_url: blog.media_url || '',
+            thumbnail: blog.thumbnail || '',
+            duration: blog.duration || 0,
+            file_size: blog.file_size || 0,
+            mime_type: blog.mime_type || '',
             category_id: blog.category_id,
-            tag_ids: blog.tags.map(tag => tag.id),
-            is_published: blog.is_published,
-            meta_title: blog.meta_title,
-            meta_description: blog.meta_description,
-            meta_keywords: blog.meta_keywords,
+            tag_ids: blog.tags ? blog.tags.map(tag => tag.id) : [],
+            is_published: blog.is_published || false,
+            meta_title: blog.meta_title || '',
+            meta_description: blog.meta_description || '',
+            meta_keywords: blog.meta_keywords || '',
           });
 
-          setSelectedTags(blog.tags.map(tag => tag.id.toString()));
+          setSelectedTags(blog.tags ? blog.tags.map(tag => tag.id.toString()) : []);
 
         } catch (error) {
           setError(error instanceof Error ? error.message : '加载博客失败');
@@ -470,7 +471,7 @@ export default function BlogEditor() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-go-500 focus:border-transparent"
                 >
                   <option value="">选择分类</option>
-                  {categories.map(category => (
+                  {categories && categories.map(category => (
                     <option key={category.id} value={category.id}>
                       {category.name}
                     </option>
@@ -485,7 +486,7 @@ export default function BlogEditor() {
                 </label>
                 <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 max-h-48 overflow-y-auto">
                   <div className="space-y-2">
-                    {tags.map(tag => (
+                    {tags && tags.map(tag => (
                       <label key={tag.id} className="flex items-center">
                         <input
                           type="checkbox"

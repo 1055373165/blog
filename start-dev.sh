@@ -62,6 +62,12 @@ if [ ! -f "frontend/.env" ]; then
     echo "VITE_API_BASE_URL=http://127.0.0.1:3001" > frontend/.env
 fi
 
+# 配置开发环境上传目录（避免写入 /app/uploads）
+echo "📂 配置开发上传目录..."
+mkdir -p data/uploads
+export UPLOAD_PATH="$(pwd)/data/uploads"
+echo "   UPLOAD_PATH=$UPLOAD_PATH"
+
 # 启动Redis（可选）
 echo "🗄️  启动Redis服务..."
 docker-compose up -d redis

@@ -23,7 +23,7 @@ type CreateBlogRequest struct {
 	Type            string  `json:"type" binding:"required,oneof=audio video"`
 	MediaURL        string  `json:"media_url" binding:"required"`
 	Thumbnail       string  `json:"thumbnail"`
-	Duration        int     `json:"duration"`
+	Duration        float64 `json:"duration"`
 	FileSize        int64   `json:"file_size"`
 	MimeType        string  `json:"mime_type"`
 	CategoryID      *uint   `json:"category_id"`
@@ -36,21 +36,21 @@ type CreateBlogRequest struct {
 
 // UpdateBlogRequest 更新博客请求结构
 type UpdateBlogRequest struct {
-	Title           *string `json:"title"`
-	Description     *string `json:"description"`
-	Content         *string `json:"content"`
-	Type            *string `json:"type" binding:"omitempty,oneof=audio video"`
-	MediaURL        *string `json:"media_url"`
-	Thumbnail       *string `json:"thumbnail"`
-	Duration        *int    `json:"duration"`
-	FileSize        *int64  `json:"file_size"`
-	MimeType        *string `json:"mime_type"`
-	CategoryID      *uint   `json:"category_id"`
-	TagIDs          []uint  `json:"tag_ids"`
-	IsPublished     *bool   `json:"is_published"`
-	MetaTitle       *string `json:"meta_title"`
-	MetaDescription *string `json:"meta_description"`
-	MetaKeywords    *string `json:"meta_keywords"`
+	Title           *string  `json:"title"`
+	Description     *string  `json:"description"`
+	Content         *string  `json:"content"`
+	Type            *string  `json:"type" binding:"omitempty,oneof=audio video"`
+	MediaURL        *string  `json:"media_url"`
+	Thumbnail       *string  `json:"thumbnail"`
+	Duration        *float64 `json:"duration"`
+	FileSize        *int64   `json:"file_size"`
+	MimeType        *string  `json:"mime_type"`
+	CategoryID      *uint    `json:"category_id"`
+	TagIDs          []uint   `json:"tag_ids"`
+	IsPublished     *bool    `json:"is_published"`
+	MetaTitle       *string  `json:"meta_title"`
+	MetaDescription *string  `json:"meta_description"`
+	MetaKeywords    *string  `json:"meta_keywords"`
 }
 
 // GetBlogs 获取博客列表
@@ -233,11 +233,13 @@ func GetBlogBySlug(c *gin.Context) {
 		return
 	}
 
-	// 检查用户是否已点赞
+	// 检查用户是否已点赞（使用 Count 避免 NotFound 日志）
 	clientIP := c.ClientIP()
-	var existingLike models.BlogLike
-	isLiked := database.DB.Where("blog_id = ? AND ip = ?", blog.ID, clientIP).
-		First(&existingLike).Error == nil
+	var likeCount int64
+	database.DB.Model(&models.BlogLike{}).
+		Where("blog_id = ? AND ip = ?", blog.ID, clientIP).
+		Count(&likeCount)
+	isLiked := likeCount > 0
 
 	// 创建响应数据，包含点赞状态
 	responseData := gin.H{

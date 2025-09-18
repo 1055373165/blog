@@ -95,40 +95,81 @@ export default function AdminBlogs() {
 
   // 加载数据
   const loadBlogs = useCallback(async () => {
+    let isMounted = true;
+
     try {
       setLoading(true);
       setError(null);
 
       const response = await blogApi.getBlogs(filters, currentPage, pageSize);
-      
-      setBlogs(response.blogs);
-      setTotalPages(response.pagination.total_pages);
-      setTotalBlogs(response.pagination.total);
-      setCurrentPage(response.pagination.page);
+
+      if (!isMounted) return;
+
+      // Handle case where response is undefined or null
+      if (!response) {
+        setBlogs([]);
+        setTotalPages(1);
+        setTotalBlogs(0);
+        setCurrentPage(1);
+        return;
+      }
+
+      // Safely access response properties with fallbacks
+      setBlogs(response.data?.blogs || []);
+      setTotalPages(response.data?.pagination?.total_pages || 1);
+      setTotalBlogs(response.data?.pagination?.total || 0);
+      setCurrentPage(response.data?.pagination?.page || 1);
 
     } catch (error) {
-      setError(error instanceof Error ? error.message : '加载失败');
+      if (isMounted) {
+        setError(error instanceof Error ? error.message : '加载失败');
+        // Reset to empty state on error
+        setBlogs([]);
+        setTotalPages(1);
+        setTotalBlogs(0);
+      }
     } finally {
-      setLoading(false);
+      if (isMounted) {
+        setLoading(false);
+      }
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [filters, currentPage, pageSize]);
 
   // 加载分类和标签
   useEffect(() => {
+    let isMounted = true;
+
     const loadOptions = async () => {
       try {
         const [categoriesRes, tagsRes] = await Promise.all([
           categoriesApi.getCategories(),
           tagsApi.getTags()
         ]);
-        setCategories(categoriesRes.categories || []);
-        setTags(tagsRes.tags || []);
+
+        if (isMounted) {
+          if (categoriesRes.success) {
+            setCategories(categoriesRes.data.items || categoriesRes.data.categories || []);
+          }
+          if (tagsRes.success) {
+            setTags(tagsRes.data.items || tagsRes.data.tags || []);
+          }
+        }
       } catch (error) {
-        console.error('加载分类和标签失败:', error);
+        if (isMounted) {
+          console.error('加载分类和标签失败:', error);
+        }
       }
     };
 
     loadOptions();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // 监听筛选变化
@@ -559,7 +600,7 @@ export default function AdminBlogs() {
                         ) : (
                           <span className="text-xs text-gray-400">未分类</span>
                         )}
-                        {blog.tags.length > 0 && (
+                        {blog.tags && blog.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {blog.tags.slice(0, 2).map(tag => (
                               <span
@@ -569,7 +610,7 @@ export default function AdminBlogs() {
                                 #{tag.name}
                               </span>
                             ))}
-                            {blog.tags.length > 2 && (
+                            {blog.tags && blog.tags.length > 2 && (
                               <span className="text-xs text-gray-400">+{blog.tags.length - 2}</span>
                             )}
                           </div>
