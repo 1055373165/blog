@@ -126,6 +126,24 @@ export default function BlogPage() {
     };
   }, [blog]);
 
+  // 组件卸载时清理播放状态
+  useEffect(() => {
+    return () => {
+      const audioEl = audioRef.current;
+      const videoEl = videoRef.current;
+
+      if (audioEl && !audioEl.paused) {
+        audioEl.pause();
+      }
+      if (videoEl && !videoEl.paused) {
+        videoEl.pause();
+      }
+
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+  }, []);
+
   // 键盘快捷键：左右方向键快退/快进 10 秒
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -183,19 +201,55 @@ export default function BlogPage() {
   // 播放控制
   const togglePlayPause = async () => {
     const media = blog?.type === 'audio' ? audioRef.current : videoRef.current;
-    if (!media) return;
+    if (!media || !document.contains(media)) {
+      console.warn('Media element not found or not in document');
+      return;
+    }
 
     if (isPlaying) {
-      media.pause();
-      setIsPlaying(false);
+      try {
+        media.pause();
+        setIsPlaying(false);
+      } catch (error) {
+        console.error('Pause failed:', error);
+        setIsPlaying(false);
+      }
     } else {
       try {
+        // 确保媒体元素已加载
+        if (media.readyState < 2) {
+          console.log('Media not ready, loading...');
+          media.load();
+          // 等待元数据加载
+          await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Load timeout')), 5000);
+            media.addEventListener('loadedmetadata', () => {
+              clearTimeout(timeout);
+              resolve(void 0);
+            }, { once: true });
+            media.addEventListener('error', () => {
+              clearTimeout(timeout);
+              reject(new Error('Load failed'));
+            }, { once: true });
+          });
+        }
+
         await media.play();
         setIsPlaying(true);
       } catch (error) {
         console.error('Playback failed:', error);
-        // If playback fails, ensure the state is correct
         setIsPlaying(false);
+
+        // 如果是AbortError，可能是因为快速切换导致的
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log('Play request was interrupted, retrying...');
+          // 短暂延迟后重试
+          setTimeout(() => {
+            if (media && document.contains(media) && !isPlaying) {
+              media.play().catch(e => console.error('Retry failed:', e));
+            }
+          }, 100);
+        }
       }
     }
   };
