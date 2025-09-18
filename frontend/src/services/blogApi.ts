@@ -32,7 +32,14 @@ class BlogApiService {
       throw new Error(errorData.message || `HTTP ${response.status}`);
     }
 
-    return response.json();
+    const result = await response.json();
+
+    // 如果是后端API响应格式，提取data字段
+    if (result && typeof result === 'object' && 'success' in result && 'data' in result) {
+      return result.data;
+    }
+
+    return result;
   }
 
   // 获取博客列表
