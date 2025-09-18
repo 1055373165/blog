@@ -22,7 +22,11 @@ class BlogApiService {
       },
     };
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    // Normalize API base to ensure it contains "/api"
+    const trimmedBase = API_BASE_URL.replace(/\/$/, '');
+    const apiBase = trimmedBase.endsWith('/api') ? trimmedBase : `${trimmedBase}/api`;
+
+    const response = await fetch(`${apiBase}${endpoint}`, config);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Request failed' }));
@@ -62,22 +66,22 @@ class BlogApiService {
       params.append('sort_order', filters.sort_order);
     }
 
-    return this.request<BlogListResponse>(`/blogs?${params}`);
+    return this.request<BlogListResponse>(`/api/blogs?${params}`);
   }
 
   // 获取单个博客
   async getBlog(id: number): Promise<Blog> {
-    return this.request<Blog>(`/blogs/${id}`);
+    return this.request<Blog>(`/api/blogs/${id}`);
   }
 
   // 通过slug获取博客
   async getBlogBySlug(slug: string): Promise<Blog> {
-    return this.request<Blog>(`/blogs/slug/${slug}`);
+    return this.request<Blog>(`/api/blogs/slug/${slug}`);
   }
 
   // 创建博客
   async createBlog(data: CreateBlogInput): Promise<Blog> {
-    return this.request<Blog>('/blogs', {
+    return this.request<Blog>('/api/blogs', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -85,7 +89,7 @@ class BlogApiService {
 
   // 更新博客
   async updateBlog(id: number, data: UpdateBlogInput): Promise<Blog> {
-    return this.request<Blog>(`/blogs/${id}`, {
+    return this.request<Blog>(`/api/blogs/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -93,14 +97,14 @@ class BlogApiService {
 
   // 删除博客
   async deleteBlog(id: number): Promise<{ message: string }> {
-    return this.request<{ message: string }>(`/blogs/${id}`, {
+    return this.request<{ message: string }>(`/api/blogs/${id}`, {
       method: 'DELETE',
     });
   }
 
   // 批量删除博客
   async deleteBulkBlogs(ids: number[]): Promise<{ message: string }> {
-    return this.request<{ message: string }>('/blogs/bulk-delete', {
+    return this.request<{ message: string }>('/api/blogs/bulk-delete', {
       method: 'POST',
       body: JSON.stringify({ ids }),
     });
@@ -108,14 +112,14 @@ class BlogApiService {
 
   // 切换博客发布状态
   async togglePublishStatus(id: number): Promise<Blog> {
-    return this.request<Blog>(`/blogs/${id}/toggle-publish`, {
+    return this.request<Blog>(`/api/blogs/${id}/toggle-publish`, {
       method: 'PATCH',
     });
   }
 
   // 批量发布/取消发布
   async bulkPublish(ids: number[], is_published: boolean): Promise<{ message: string }> {
-    return this.request<{ message: string }>('/blogs/bulk-publish', {
+    return this.request<{ message: string }>('/api/blogs/bulk-publish', {
       method: 'POST',
       body: JSON.stringify({ ids, is_published }),
     });
@@ -123,14 +127,14 @@ class BlogApiService {
 
   // 点赞博客
   async likeBlog(id: number): Promise<{ message: string; is_liked: boolean; likes_count: number }> {
-    return this.request<{ message: string; is_liked: boolean; likes_count: number }>(`/blogs/${id}/like`, {
+    return this.request<{ message: string; is_liked: boolean; likes_count: number }>(`/api/blogs/${id}/like`, {
       method: 'POST',
     });
   }
 
   // 记录博客浏览
   async viewBlog(id: number): Promise<{ message: string; views_count: number }> {
-    return this.request<{ message: string; views_count: number }>(`/blogs/${id}/view`, {
+    return this.request<{ message: string; views_count: number }>(`/api/blogs/${id}/views`, {
       method: 'POST',
     });
   }
@@ -247,7 +251,7 @@ class BlogApiService {
       total_likes: number;
       audio_blogs: number;
       video_blogs: number;
-    }>('/blogs/stats');
+    }>('/api/blogs/stats');
   }
 }
 
