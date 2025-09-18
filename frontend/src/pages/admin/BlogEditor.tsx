@@ -76,8 +76,12 @@ export default function BlogEditor() {
       const loadBlog = async () => {
         try {
           setLoading(true);
-          const response = await blogApi.getBlog(Number(id));
-          const blog = response.data;
+          const blog = await blogApi.getBlog(Number(id));
+
+          if (!blog) {
+            setError('博客不存在');
+            return;
+          }
 
           setFormData({
             title: blog.title || '',
@@ -118,8 +122,8 @@ export default function BlogEditor() {
           categoriesApi.getCategories(),
           tagsApi.getTags()
         ]);
-        setCategories(categoriesRes.categories || []);
-        setTags(tagsRes.tags || []);
+        setCategories(categoriesRes.data?.articles || categoriesRes.data || []);
+        setTags(tagsRes.data?.articles || tagsRes.data || []);
       } catch (error) {
         console.error('加载分类和标签失败:', error);
       }
@@ -194,7 +198,7 @@ export default function BlogEditor() {
       };
 
       if (isEditing) {
-        await blogApi.updateBlog(Number(id), submitData);
+        await blogApi.updateBlog(Number(id), { ...submitData, id: Number(id) });
       } else {
         await blogApi.createBlog(submitData);
       }
@@ -352,7 +356,7 @@ export default function BlogEditor() {
                 </label>
                 <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
                   <ByteMDEditor
-                    value={formData.content}
+                    value={formData.content || ''}
                     onChange={(value) => updateFormData('content', value)}
                     placeholder="输入博客的详细内容..."
                   />
