@@ -424,6 +424,15 @@ export default function BlogPage() {
             
             {/* 媒体元素 */}
             <div className="relative" ref={containerRef}>
+              {blog.media_url && (
+                <div className="mb-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+                  <strong>Debug Info:</strong><br/>
+                  Type: {blog.type}<br/>
+                  Media URL: {blog.media_url}<br/>
+                  URL Valid: {blog.media_url ? 'Yes' : 'No'}
+                </div>
+              )}
+
               {blog.type === 'audio' ? (
                 <div className="relative aspect-video bg-gradient-to-br from-media-audio-100 to-media-audio-200 dark:from-media-audio-800 dark:to-media-audio-700 flex items-center justify-center">
                   <audio
