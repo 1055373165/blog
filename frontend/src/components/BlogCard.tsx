@@ -112,8 +112,8 @@ export default function BlogCard({
   };
 
   return (
-    <Card 
-      ref={cardRef} 
+    <Card
+      ref={cardRef}
       variant="elevated"
       size={variant === 'compact' ? 'sm' : variant === 'featured' ? 'lg' : 'md'}
       hoverable
@@ -121,7 +121,7 @@ export default function BlogCard({
       image={blog.thumbnail && variant !== 'compact' ? blog.thumbnail : undefined}
       imageAlt={blog.title}
       imagePosition={blog.thumbnail && variant !== 'compact' ? 'top' : undefined}
-      className={getCardClasses()}
+      className={clsx(getCardClasses(), 'min-h-[420px]')}
     >
       {/* 隐藏的音频元素 */}
       {blog.type === 'audio' && (
@@ -132,7 +132,7 @@ export default function BlogCard({
         />
       )}
 
-      <div className={`${variant === 'compact' ? 'space-y-2' : 'space-y-2.5'} h-full flex flex-col`}>
+      <div className={`${variant === 'compact' ? 'space-y-2' : 'space-y-3'} h-full flex flex-col p-1`}>
         
         {/* Header: 类型标识 + 时长 */}
         <div className="flex items-center justify-between mb-1">
@@ -261,45 +261,46 @@ export default function BlogCard({
         )}
 
         {/* 底部信息 */}
-        <div className="mt-auto pt-2 border-t border-blog-200/50 dark:border-blog-700/50">
-          <div className="flex items-center justify-between">
-            {/* 左侧：作者和时间 */}
-            <div className="flex items-center space-x-3 text-xs text-blog-500 dark:text-blog-400">
-              <span className="flex items-center font-medium">
-                <span className="w-2 h-2 bg-blog-400 dark:bg-blog-500 rounded-full mr-1.5" />
-                {blog.author.name}
-              </span>
-              
-              <span className="text-blog-400 dark:text-blog-500">•</span>
-              
-              <time className="flex items-center">
-                {formatDate(blog.published_at || blog.created_at)}
-              </time>
+        <div className="mt-auto pt-3 border-t border-blog-200/50 dark:border-blog-700/50">
+          <div className="space-y-2.5">
+            {/* 第一行：作者和时间 */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2.5 text-xs text-blog-500 dark:text-blog-400">
+                <span className="flex items-center font-medium">
+                  <span className="w-2 h-2 bg-blog-400 dark:bg-blog-500 rounded-full mr-1.5" />
+                  {blog.author.name}
+                </span>
 
-              {/* 文件大小 */}
-              {blog.file_size > 0 && variant !== 'compact' && (
-                <>
-                  <span className="text-blog-400 dark:text-blog-500">•</span>
+                <span className="text-blog-400 dark:text-blog-500">•</span>
+
+                <time className="flex items-center">
+                  {formatDate(blog.published_at || blog.created_at)}
+                </time>
+              </div>
+
+              {/* 右侧：统计信息 */}
+              {showStats && (
+                <div className="flex items-center space-x-3 text-xs text-blog-500 dark:text-blog-400">
                   <span className="flex items-center">
-                    {formatFileSize(blog.file_size)}
+                    <EyeIcon className="w-3 h-3 mr-0.5" />
+                    {blog.views_count || 0}
                   </span>
-                </>
+                  <span className="flex items-center">
+                    <HeartIcon className={clsx(
+                      'w-3 h-3 mr-0.5',
+                      blog.is_liked ? 'text-red-500 fill-current' : ''
+                    )} />
+                    {blog.likes_count || 0}
+                  </span>
+                </div>
               )}
             </div>
 
-            {/* 右侧：统计信息 */}
-            {showStats && (
-              <div className="flex items-center space-x-3 text-xs text-blog-500 dark:text-blog-400">
-                <span className="flex items-center">
-                  <EyeIcon className="w-3 h-3 mr-0.5" />
-                  {blog.views_count || 0}
-                </span>
-                <span className="flex items-center">
-                  <HeartIcon className={clsx(
-                    'w-3 h-3 mr-0.5',
-                    blog.is_liked ? 'text-red-500 fill-current' : ''
-                  )} />
-                  {blog.likes_count || 0}
+            {/* 第二行：文件大小 */}
+            {blog.file_size > 0 && variant !== 'compact' && (
+              <div className="flex items-center text-xs text-blog-500 dark:text-blog-400">
+                <span className="flex items-center bg-blog-100 dark:bg-blog-800 px-2 py-0.5 rounded-md">
+                  📁 {formatFileSize(blog.file_size)}
                 </span>
               </div>
             )}
