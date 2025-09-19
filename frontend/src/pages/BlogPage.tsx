@@ -32,7 +32,7 @@ function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const remainingSeconds = Math.floor(seconds % 60);
-  
+
   if (hours > 0) {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   } else {
@@ -43,7 +43,7 @@ function formatDuration(seconds: number): string {
 export default function BlogPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  
+
   // 媒体播放状态
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -52,27 +52,27 @@ export default function BlogPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // 博客交互状态
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [viewsCount, setViewsCount] = useState(0);
   const [showDescription, setShowDescription] = useState(true);
-  
+
   // 音频文件播放状态
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [audioVolume, setAudioVolume] = useState(0.7);
   const [isAudioMuted, setIsAudioMuted] = useState(false);
-  
+
   // Refs
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioFileRef = useRef<HTMLAudioElement>(null); // 额外音频文件ref
   const containerRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
-  
+
   // 博客数据
   const [blog, setBlog] = useState<Blog | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -109,24 +109,24 @@ export default function BlogPage() {
 
     loadBlog();
   }, [slug, navigate]);
-  
+
   // 媒体事件处理
   useEffect(() => {
     const media = blog?.type === 'audio' ? audioRef.current : videoRef.current;
     if (!media) return;
-    
+
     const updateTime = () => setCurrentTime(media.currentTime);
     const updateDuration = () => setDuration(media.duration);
     const handleEnded = () => setIsPlaying(false);
     const handleLoadStart = () => setIsLoading(true);
     const handleLoadedData = () => setIsLoading(false);
-    
+
     media.addEventListener('timeupdate', updateTime);
     media.addEventListener('loadedmetadata', updateDuration);
     media.addEventListener('ended', handleEnded);
     media.addEventListener('loadstart', handleLoadStart);
     media.addEventListener('loadeddata', handleLoadedData);
-    
+
     return () => {
       media.removeEventListener('timeupdate', updateTime);
       media.removeEventListener('loadedmetadata', updateDuration);
@@ -207,7 +207,7 @@ export default function BlogPage() {
       await requestFullscreen();
     }
   };
-  
+
   // 播放控制
   const togglePlayPause = async () => {
     const media = blog?.type === 'audio' ? audioRef.current : videoRef.current;
@@ -263,40 +263,40 @@ export default function BlogPage() {
       }
     }
   };
-  
+
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     const media = blog?.type === 'audio' ? audioRef.current : videoRef.current;
     if (!media || !progressRef.current) return;
-    
+
     const rect = progressRef.current.getBoundingClientRect();
     const percent = (e.clientX - rect.left) / rect.width;
     const newTime = percent * duration;
     media.currentTime = newTime;
     setCurrentTime(newTime);
   };
-  
+
   const skipTime = (seconds: number) => {
     const media = blog?.type === 'audio' ? audioRef.current : videoRef.current;
     if (!media) return;
-    
+
     const newTime = Math.max(0, Math.min(duration, currentTime + seconds));
     media.currentTime = newTime;
     setCurrentTime(newTime);
   };
-  
+
   const handleVolumeChange = (newVolume: number) => {
     const media = blog?.type === 'audio' ? audioRef.current : videoRef.current;
     if (!media) return;
-    
+
     setVolume(newVolume);
     media.volume = newVolume;
     setIsMuted(newVolume === 0);
   };
-  
+
   const toggleMute = () => {
     const media = blog?.type === 'audio' ? audioRef.current : videoRef.current;
     if (!media) return;
-    
+
     if (isMuted) {
       media.volume = volume;
       setIsMuted(false);
@@ -305,11 +305,11 @@ export default function BlogPage() {
       setIsMuted(true);
     }
   };
-  
+
   const changePlaybackRate = (rate: number) => {
     const media = blog?.type === 'audio' ? audioRef.current : videoRef.current;
     if (!media) return;
-    
+
     media.playbackRate = rate;
     setPlaybackRate(rate);
   };
@@ -331,7 +331,7 @@ export default function BlogPage() {
   const handleAudioSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     const audioFile = audioFileRef.current;
     if (!audioFile) return;
-    
+
     const rect = e.currentTarget.getBoundingClientRect();
     const percent = (e.clientX - rect.left) / rect.width;
     const newTime = percent * audioDuration;
@@ -342,7 +342,7 @@ export default function BlogPage() {
   const handleAudioVolumeChange = (newVolume: number) => {
     const audioFile = audioFileRef.current;
     if (!audioFile) return;
-    
+
     setAudioVolume(newVolume);
     audioFile.volume = newVolume;
     setIsAudioMuted(newVolume === 0);
@@ -351,7 +351,7 @@ export default function BlogPage() {
   const toggleAudioMute = () => {
     const audioFile = audioFileRef.current;
     if (!audioFile) return;
-    
+
     if (isAudioMuted) {
       audioFile.volume = audioVolume;
       setIsAudioMuted(false);
@@ -360,7 +360,7 @@ export default function BlogPage() {
       setIsAudioMuted(true);
     }
   };
-  
+
   // 交互功能
   const toggleLike = async () => {
     if (!blog?.id) return;
@@ -373,7 +373,7 @@ export default function BlogPage() {
       console.error('点赞失败:', error);
     }
   };
-  
+
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
@@ -386,7 +386,7 @@ export default function BlogPage() {
       // 显示复制成功提示
     }
   };
-  
+
   if (isLoading || !blog) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blog-50 via-white to-blog-100/30 dark:from-blog-950 dark:via-blog-900 dark:to-blog-800">
@@ -408,13 +408,13 @@ export default function BlogPage() {
   if (!blog) {
     return null;
   }
-  
+
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blog-50 via-white to-blog-100/30 dark:from-blog-950 dark:via-blog-900 dark:to-blog-800">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        
+
         {/* 返回按钮 */}
         <div className="mb-6">
           <button
@@ -425,7 +425,7 @@ export default function BlogPage() {
             返回博客列表
           </button>
         </div>
-        
+
         {/* 博客标题和元信息 */}
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-4">
@@ -450,11 +450,11 @@ export default function BlogPage() {
               {blog.type === 'audio' ? '音频博客' : '视频博客'}
             </span>
           </div>
-          
+
           <h1 className="text-3xl font-bold text-blog-900 dark:text-blog-100 mb-4">
             {blog.title}
           </h1>
-          
+
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-6 text-sm text-blog-600 dark:text-blog-400">
               <div className="flex items-center space-x-2">
@@ -472,21 +472,21 @@ export default function BlogPage() {
                 )}
                 <span className="font-medium">{blog.author?.name || '匿名用户'}</span>
               </div>
-              
+
               <div className="flex items-center space-x-1">
                 <ClockIcon className="w-4 h-4" />
                 <span>{formatDate(blog.published_at || blog.created_at)}</span>
               </div>
-              
+
               <div className="flex items-center space-x-1">
                 <ClockIcon className="w-4 h-4" />
                 <span>{formatDuration(blog.duration)}</span>
               </div>
-              
+
               <div className="flex items-center space-x-1">
                 <span>{formatFileSize(blog.file_size)}</span>
               </div>
-              
+
               {blog.category && (
                 <Link
                   to={`/category/${blog.category.slug}`}
@@ -497,13 +497,13 @@ export default function BlogPage() {
                 </Link>
               )}
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-1 text-sm text-blog-500 dark:text-blog-400">
                 <EyeIcon className="w-4 h-4" />
                 <span>{viewsCount.toLocaleString()}</span>
               </div>
-              
+
               <button
                 onClick={toggleLike}
                 className="flex items-center space-x-1 text-sm transition-colors duration-200 hover:scale-105"
@@ -517,7 +517,7 @@ export default function BlogPage() {
                   {likesCount}
                 </span>
               </button>
-              
+
               <button
                 onClick={handleShare}
                 className="flex items-center space-x-1 text-sm text-blog-500 dark:text-blog-400 hover:text-blog-600 dark:hover:text-blog-300 transition-colors duration-200"
@@ -528,16 +528,33 @@ export default function BlogPage() {
             </div>
           </div>
         </div>
-        
+
         {/* 媒体播放器 */}
         <div className="mb-8">
+          {/* 版本标题 */}
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold text-blog-900 dark:text-blog-100 flex items-center">
+              {blog.type === 'audio' ? (
+                <>
+                  <SpeakerWaveIcon className="w-5 h-5 text-media-audio-600 dark:text-media-audio-400 mr-2" />
+                  音频版
+                </>
+              ) : (
+                <>
+                  <VideoCameraIcon className="w-5 h-5 text-media-video-600 dark:text-media-video-400 mr-2" />
+                  视频版
+                </>
+              )}
+            </h2>
+          </div>
+
           <div className={clsx(
             'rounded-lg overflow-hidden shadow-xl',
             blog.type === 'audio'
               ? 'bg-gradient-to-br from-media-audio-50 to-media-audio-100 dark:from-media-audio-900 dark:to-media-audio-800'
               : 'bg-gradient-to-br from-media-video-50 to-media-video-100 dark:from-media-video-900 dark:to-media-video-800'
           )}>
-            
+
             {/* 媒体元素 */}
             <div className="relative" ref={containerRef}>
               {blog.type === 'audio' ? (
@@ -584,7 +601,7 @@ export default function BlogPage() {
                   Your browser does not support the video tag.
                 </video>
               )}
-              
+
               {/* 播放按钮覆盖 */}
               {!isPlaying && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20 cursor-pointer" onClick={togglePlayPause}>
@@ -594,7 +611,7 @@ export default function BlogPage() {
                 </div>
               )}
             </div>
-            
+
             {/* 媒体控制栏 */}
             <div className="p-4 space-y-4">
               {/* 进度条 */}
@@ -628,7 +645,7 @@ export default function BlogPage() {
                   <span>{formatDuration(duration)}</span>
                 </div>
               </div>
-              
+
               {/* 控制按钮 */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -638,7 +655,7 @@ export default function BlogPage() {
                   >
                     <BackwardIcon className="w-5 h-5 text-blog-600 dark:text-blog-400" />
                   </button>
-                  
+
                   <button
                     onClick={togglePlayPause}
                     className={clsx(
@@ -654,7 +671,7 @@ export default function BlogPage() {
                       <PlayIcon className="w-6 h-6 ml-0.5" />
                     )}
                   </button>
-                  
+
                   <button
                     onClick={() => skipTime(10)}
                     className="p-2 rounded-full hover:bg-blog-100 dark:hover:bg-blog-800 transition-colors duration-200"
@@ -662,7 +679,7 @@ export default function BlogPage() {
                     <ForwardIcon className="w-5 h-5 text-blog-600 dark:text-blog-400" />
                   </button>
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   {/* 倍速控制 */}
                   <div className="flex items-center space-x-1">
@@ -680,7 +697,7 @@ export default function BlogPage() {
                       <option value={2}>2x</option>
                     </select>
                   </div>
-                  
+
                   {/* 全屏切换 */}
                   <button
                     onClick={toggleFullscreen}
@@ -693,7 +710,7 @@ export default function BlogPage() {
                       <ArrowsPointingOutIcon className="w-5 h-5 text-blog-600 dark:text-blog-400" />
                     )}
                   </button>
-                  
+
                   {/* 音量控制 */}
                   <div className="flex items-center space-x-2">
                     <button
@@ -724,15 +741,16 @@ export default function BlogPage() {
 
         {/* 音频文件播放器 */}
         {blog.audio_url && (
-          <div className="bg-white dark:bg-blog-900 rounded-lg shadow-sm border border-blog-200/50 dark:border-blog-700/50 overflow-hidden mb-8">
-            <div className="p-6">
-              <div className="flex items-center mb-4">
-                <SpeakerWaveIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3" />
-                <h3 className="text-lg font-semibold text-blog-900 dark:text-blog-100">
-                  音频文件
-                </h3>
-              </div>
-              
+          <div className="mb-8">
+            {/* 音频版本标题 */}
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-blog-900 dark:text-blog-100 flex items-center">
+                <SpeakerWaveIcon className="w-5 h-5 text-media-audio-600 dark:text-media-audio-400 mr-2" />
+                音频版
+              </h2>
+            </div>
+
+            <div className="bg-white dark:bg-blog-900 rounded-lg shadow-sm border border-blog-200/50 dark:border-blog-700/50 overflow-hidden">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 border border-blue-200/50 dark:border-blue-800/50">
                 {/* 音频元素 */}
                 <audio
@@ -745,7 +763,7 @@ export default function BlogPage() {
                   onPause={() => setIsAudioPlaying(false)}
                   onEnded={() => setIsAudioPlaying(false)}
                 />
-                
+
                 {/* 进度条 */}
                 <div className="mb-4">
                   <div
@@ -762,7 +780,7 @@ export default function BlogPage() {
                     <span>{formatDuration(audioDuration)}</span>
                   </div>
                 </div>
-                
+
                 {/* 控制按钮 */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -776,12 +794,12 @@ export default function BlogPage() {
                         <PlayIcon className="w-5 h-5" />
                       )}
                     </button>
-                    
+
                     <div className="text-sm text-blue-700 dark:text-blue-300">
                       {blog.audio_duration && `时长: ${formatDuration(blog.audio_duration)}`}
                     </div>
                   </div>
-                  
+
                   {/* 音量控制 */}
                   <div className="flex items-center space-x-2">
                     <button
@@ -809,10 +827,10 @@ export default function BlogPage() {
             </div>
           </div>
         )}
-        
+
         {/* 博客内容 */}
         <div className="bg-white dark:bg-blog-900 rounded-lg shadow-sm border border-blog-200/50 dark:border-blog-700/50 overflow-hidden">
-          
+
           {/* 描述部分 */}
           <div className="p-6 border-b border-blog-200/50 dark:border-blog-700/50">
             <div className="flex items-center justify-between mb-4">
@@ -828,14 +846,14 @@ export default function BlogPage() {
                 )}
               </button>
             </div>
-            
+
             {showDescription && (
               <div className="text-blog-700 dark:text-blog-300 leading-relaxed">
                 {blog.description}
               </div>
             )}
           </div>
-          
+
           {/* 标签 */}
           <div className="p-6 border-b border-blog-200/50 dark:border-blog-700/50">
             <h3 className="text-sm font-medium text-blog-500 dark:text-blog-400 mb-3">标签</h3>
@@ -853,7 +871,7 @@ export default function BlogPage() {
               ))}
             </div>
           </div>
-          
+
           {/* 内容 */}
           {blog.content && (
             <div className="p-6">
@@ -864,7 +882,7 @@ export default function BlogPage() {
             </div>
           )}
         </div>
-        
+
       </div>
     </div>
   );

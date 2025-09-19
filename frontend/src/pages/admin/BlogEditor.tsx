@@ -133,8 +133,8 @@ export default function BlogEditor() {
           categoriesApi.getCategories(),
           tagsApi.getTags()
         ]);
-        setCategories(categoriesRes.data?.articles || categoriesRes.data || []);
-        setTags(tagsRes.data?.articles || tagsRes.data || []);
+        setCategories(categoriesRes.data?.articles || []);
+        setTags(tagsRes.data?.articles || []);
       } catch (error) {
         console.error('加载分类和标签失败:', error);
       }
@@ -545,7 +545,7 @@ export default function BlogEditor() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-go-500 focus:border-transparent"
                 >
                   <option value="">选择分类</option>
-                  {categories && categories.map(category => (
+                  {Array.isArray(categories) && categories.map(category => (
                     <option key={category.id} value={category.id}>
                       {category.name}
                     </option>
@@ -560,7 +560,7 @@ export default function BlogEditor() {
                 </label>
                 <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 max-h-48 overflow-y-auto">
                   <div className="space-y-2">
-                    {tags && tags.map(tag => (
+                    {Array.isArray(tags) && tags.map(tag => (
                       <label key={tag.id} className="flex items-center">
                         <input
                           type="checkbox"
