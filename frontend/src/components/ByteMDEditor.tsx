@@ -304,7 +304,143 @@ function ByteMDEditor({
       return []
     }
   }, [])
+
+  // 文件类型检测
+  const isImageFile = (file: File): boolean => {
+    return file.type.startsWith('image/')
+  }
+
+  // 获取文件图标
+  const getFileIcon = (fileName: string): string => {
+    const ext = fileName.toLowerCase().split('.').pop()
+    switch (ext) {
+      case 'pdf': return '📄'
+      case 'doc':
+      case 'docx': return '📝'
+      case 'xls':
+      case 'xlsx': return '📊'
+      case 'ppt':
+      case 'pptx': return '📊'
+      case 'zip':
+      case 'rar': return '🗂️'
+      case 'txt': return '📄'
+      case 'mp3':
+      case 'wav': return '🎵'
+      case 'mp4':
+      case 'avi': return '🎬'
+      default: return '📎'
+    }
+  }
+
+  // 通用文件上传处理（包括图片和其他文件）
+  const handleFileUpload = useCallback(async (files: File[]) => {
+    if (!files.length) return
+
+    // 分离图片文件和其他文件
+    const imageFiles = files.filter(isImageFile)
+    const otherFiles = files.filter(file => !isImageFile(file))
+
+    let markdownResults: string[] = []
+
+    // 处理图片文件（使用现有的uploadImages逻辑）
+    if (imageFiles.length > 0) {
+      const imageResults = await uploadImages(imageFiles)
+      const imageMarkdown = imageResults.map(result => 
+        `![${result.alt || ''}](${result.url}${result.title ? ` "${result.title}"` : ''})`
+      )
+      markdownResults.push(...imageMarkdown)
+    }
+
+    // 处理其他文件
+    if (otherFiles.length > 0) {
+      try {
+        const batchSize = Math.min(otherFiles.length, 5)
+        const batches = []
+        
+        for (let i = 0; i < otherFiles.length; i += batchSize) {
+          batches.push(otherFiles.slice(i, i + batchSize))
+        }
+        
+        for (const batch of batches) {
+          const uploadPromises = batch.map(async (file) => {
+            try {
+              const response = await uploadApi.uploadFile(file)
+              if (response.success && response.data) {
+                const icon = getFileIcon(file.name)
+                const fileSize = (file.size / 1024).toFixed(1) + 'KB'
+                if (file.size > 1024 * 1024) {
+                  const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1) + 'MB'
+                  return `[${icon} ${file.name} (${fileSizeMB})](${response.data.url})`
+                }
+                return `[${icon} ${file.name} (${fileSize})](${response.data.url})`
+              } else {
+                console.error('File upload failed:', response.error)
+                return null
+              }
+            } catch (error) {
+              console.error('Error uploading file:', file.name, error)
+              return null
+            }
+          })
+          
+          const batchResults = await Promise.all(uploadPromises)
+          const validResults = batchResults.filter(Boolean) as string[]
+          markdownResults.push(...validResults)
+        }
+      } catch (error) {
+        console.error('File upload error:', error)
+      }
+    }
+
+    // 将结果插入到编辑器中
+    if (markdownResults.length > 0) {
+      const currentValue = value || ''
+      const newContent = markdownResults.join('\n\n')
+      const updatedValue = currentValue + (currentValue.endsWith('\n') ? '' : '\n\n') + newContent + '\n\n'
+      onChange(updatedValue)
+    }
+  }, [uploadImages, value, onChange])
   
+  // 拖拽状态
+  const [isDragOver, setIsDragOver] = useState(false)
+  const dragCounterRef = useRef(0)
+
+  // 拖拽事件处理
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounterRef.current++
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragOver(true)
+    }
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounterRef.current--
+    if (dragCounterRef.current === 0) {
+      setIsDragOver(false)
+    }
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+    dragCounterRef.current = 0
+    
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length > 0) {
+      handleFileUpload(files)
+    }
+  }, [handleFileUpload])
+
   // 样式优化
   const wrapperStyle = useMemo(() => ({
     '--editor-height': `${height}px`,
@@ -316,7 +452,14 @@ function ByteMDEditor({
   const showPerformanceInfo = process.env.NODE_ENV === 'development'
   
   return (
-    <div className="bytemd-editor-wrapper" style={wrapperStyle}>
+    <div 
+      className="bytemd-editor-wrapper" 
+      style={wrapperStyle}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       {showPerformanceInfo && (isLargeDocument || isHugeDocument) && (
         <div className="performance-indicator" style={{
           position: 'absolute',
@@ -331,6 +474,41 @@ function ByteMDEditor({
           pointerEvents: 'none'
         }}>
           {isHugeDocument ? '巨大文档模式' : '大文档模式'} - {actualPerformanceMode === 'high' ? '高性能' : '标准'}
+        </div>
+      )}
+
+      {/* 拖拽悬停提示 */}
+      {isDragOver && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(59, 130, 246, 0.1)',
+          border: '2px dashed #3b82f6',
+          borderRadius: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          pointerEvents: 'none'
+        }}>
+          <div style={{
+            background: 'white',
+            padding: '20px 30px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            textAlign: 'center',
+            color: '#3b82f6',
+            fontSize: '16px',
+            fontWeight: '500'
+          }}>
+            📎 拖放文件到这里上传
+            <div style={{ fontSize: '14px', color: '#6b7280', marginTop: '5px' }}>
+              支持图片、PDF、文档等格式
+            </div>
+          </div>
         </div>
       )}
       
