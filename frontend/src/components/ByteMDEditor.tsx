@@ -129,7 +129,7 @@ function ByteMDEditor({
   
   // 动态性能检测
   useEffect(() => {
-    const documentSize = (value || '').length
+    const documentSize = value.length
     const newIsLargeDocument = documentSize > PERFORMANCE_CONFIG.LARGE_DOCUMENT_THRESHOLD
     const newIsHugeDocument = documentSize > PERFORMANCE_CONFIG.HUGE_DOCUMENT_THRESHOLD
     
@@ -142,7 +142,7 @@ function ByteMDEditor({
     } else {
       setActualPerformanceMode(performanceMode === 'high' ? 'high' : 'standard')
     }
-  }, [(value || '').length, performanceMode])
+  }, [value, performanceMode])
   
   // 智能防抖处理
   const debouncedOnChange = useCallback((newValue: string) => {
@@ -340,7 +340,7 @@ function ByteMDEditor({
     const imageFiles = files.filter(isImageFile)
     const otherFiles = files.filter(file => !isImageFile(file))
 
-    let markdownResults: string[] = []
+    const markdownResults: string[] = []
 
     // 处理图片文件（使用现有的uploadImages逻辑）
     if (imageFiles.length > 0) {
@@ -364,7 +364,7 @@ function ByteMDEditor({
         for (const batch of batches) {
           const uploadPromises = batch.map(async (file) => {
             try {
-              const response = await uploadApi.uploadFile(file)
+              const response = await uploadApi.uploadFile(file, undefined, 240000) // 240秒超时
               if (response.success && response.data) {
                 const icon = getFileIcon(file.name)
                 const fileSize = (file.size / 1024).toFixed(1) + 'KB'

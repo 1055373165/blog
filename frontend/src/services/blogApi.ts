@@ -56,8 +56,8 @@ class BlogApiService {
     if (filters.type) {
       params.append('type', filters.type);
     }
-    if (filters.category_id) {
-      params.append('category_id', filters.category_id.toString());
+    if (filters.category_ids && filters.category_ids.length > 0) {
+      params.append('category_ids', filters.category_ids.join(','));
     }
     if (filters.tag_ids && filters.tag_ids.length > 0) {
       params.append('tag_ids', filters.tag_ids.join(','));

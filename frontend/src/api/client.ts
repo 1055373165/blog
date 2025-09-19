@@ -105,7 +105,7 @@ class ApiClient {
   }
 
   // 文件上传
-  async upload<T>(url: string, file: File, onProgress?: (progress: number) => void): Promise<ApiResponse<T>> {
+  async upload<T>(url: string, file: File, onProgress?: (progress: number) => void, timeout?: number): Promise<ApiResponse<T>> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -119,6 +119,7 @@ class ApiClient {
           onProgress(progress);
         }
       },
+      timeout: timeout, // 使用传入的超时时间
     });
 
     return response.data;

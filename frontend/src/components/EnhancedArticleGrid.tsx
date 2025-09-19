@@ -157,10 +157,10 @@ const EnhancedArticleCard = ({
             </div>
 
             {/* 分类标签 */}
-            {showCategory && article.category && (
+            {showCategory && article.categories && article.categories.length > 0 && (
               <div className="absolute top-2 left-2">
                 <span className="px-2 py-1 bg-primary-600/90 backdrop-blur-sm text-white text-xs font-medium rounded-full">
-                  {article.category.name}
+                  {article.categories[0].name}
                 </span>
               </div>
             )}
@@ -305,10 +305,10 @@ const EnhancedArticleCard = ({
             </div>
 
             {/* 分类标签 */}
-            {showCategory && article.category && (
+            {showCategory && article.categories && article.categories.length > 0 && (
               <div className="absolute top-4 left-4">
                 <span className="px-3 py-1 bg-primary-600/90 backdrop-blur-sm text-white text-xs font-medium rounded-full">
-                  {article.category.name}
+                  {article.categories[0].name}
                 </span>
               </div>
             )}

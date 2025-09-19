@@ -487,15 +487,16 @@ export default function BlogPage() {
                 <span>{formatFileSize(blog.file_size)}</span>
               </div>
 
-              {blog.category && (
+              {blog.categories && blog.categories.map(category => (
                 <Link
-                  to={`/category/${blog.category.slug}`}
+                  key={category.id}
+                  to={`/category/${category.slug}`}
                   className="inline-flex items-center px-2 py-1 text-xs bg-blog-100 dark:bg-blog-800/50 text-blog-700 dark:text-blog-300 rounded-md hover:bg-blog-200 dark:hover:bg-blog-700/70 transition-colors"
                 >
                   <DocumentIcon className="w-3 h-3 mr-1" />
-                  {blog.category.name}
+                  {category.name}
                 </Link>
-              )}
+              ))}
             </div>
 
             <div className="flex items-center space-x-4">
