@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Blog, BlogFilters } from '../types';
 import BlogCard from '../components/BlogCard';
@@ -27,19 +27,14 @@ export default function BlogsPage() {
   // 筛选状态
   const [filters, setFilters] = useState<BlogFilters>({
     search: searchParams.get('search') || '',
-    type: (searchParams.get('type') as 'audio' | 'video') || undefined,
-    sort_by: (searchParams.get('sort_by') as any) || 'published_at',
-    sort_order: (searchParams.get('sort_order') as 'asc' | 'desc') || 'desc'
+    type: searchParams.get('type') as Blog['type'] || undefined,
+    sort_by: searchParams.get('sort_by') as BlogFilters['sort_by'] || 'published_at',
+    sort_order: searchParams.get('sort_order') as 'asc' | 'desc' || 'desc'
   });
 
   const pageSize = 12;
 
-  // 模拟数据加载
-  useEffect(() => {
-    loadBlogs();
-  }, [currentPage, filters]);
-
-  const loadBlogs = async () => {
+  const loadBlogs = useCallback(async () => {
     setLoading(true);
     try {
       const publicFilters = { ...filters, is_published: true };
@@ -55,7 +50,12 @@ export default function BlogsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, filters]);
+
+  useEffect(() => {
+    loadBlogs();
+  }, [loadBlogs]);
+
 
   // 处理搜索
   const handleSearch = (searchTerm: string) => {
@@ -108,12 +108,9 @@ export default function BlogsPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-6 xl:px-8 py-12">
+    <div className="max-w-4xl lg:max-w-5xl xl:max-w-7xl mx-auto px-6 xl:px-8 py-12">
       {/* 页面头部 */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-blog-800 dark:text-blog-100 mb-4">
-          音视频博客
-        </h1>
         <p className="text-xl text-blog-600 dark:text-blog-300 max-w-3xl mx-auto leading-relaxed mb-8">
           探索丰富的音频和视频内容，获得更加生动的学习体验
         </p>
@@ -198,7 +195,7 @@ export default function BlogsPage() {
                 </label>
                 <select
                   value={filters.type || ''}
-                  onChange={(e) => handleFilterChange({ type: (e.target.value || undefined) as any })}
+                  onChange={(e) => handleFilterChange({ type: e.target.value as Blog['type'] | undefined })}
                   className={clsx(
                     'block w-full px-3 py-2 border rounded-lg',
                     'bg-white dark:bg-blog-700 border-blog-200 dark:border-blog-600',
@@ -219,7 +216,7 @@ export default function BlogsPage() {
                 </label>
                 <select
                   value={filters.sort_by || 'published_at'}
-                  onChange={(e) => handleFilterChange({ sort_by: e.target.value as any })}
+                  onChange={(e) => handleFilterChange({ sort_by: e.target.value as BlogFilters['sort_by'] })}
                   className={clsx(
                     'block w-full px-3 py-2 border rounded-lg',
                     'bg-white dark:bg-blog-700 border-blog-200 dark:border-blog-600',
@@ -242,7 +239,7 @@ export default function BlogsPage() {
                 </label>
                 <select
                   value={filters.sort_order || 'desc'}
-                  onChange={(e) => handleFilterChange({ sort_order: e.target.value as any })}
+                  onChange={(e) => handleFilterChange({ sort_order: e.target.value as 'asc' | 'desc' })}
                   className={clsx(
                     'block w-full px-3 py-2 border rounded-lg',
                     'bg-white dark:bg-blog-700 border-blog-200 dark:border-blog-600',
@@ -309,16 +306,17 @@ export default function BlogsPage() {
         </div>
       ) : blogs.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+          <div className="columns-1 md:columns-2 xl:columns-3 gap-6 space-y-6 mb-8">
             {blogs.map((blog) => (
-              <BlogCard
-                key={blog.id}
-                blog={blog}
-                variant="default"
-                showCategory={true}
-                showTags={true}
-                showStats={true}
-              />
+              <div className="break-inside-avoid" key={blog.id}>
+                <BlogCard
+                  blog={blog}
+                  variant="default"
+                  showCategory={true}
+                  showTags={true}
+                  showStats={true}
+                />
+              </div>
             ))}
           </div>
 

@@ -153,10 +153,10 @@ export default function ArticleEditor() {
       ]);
 
       if (categoriesRes.success) {
-        setCategories(categoriesRes.data.categories || categoriesRes.data);
+        setCategories(categoriesRes.data.categories || (Array.isArray(categoriesRes.data) ? categoriesRes.data : []));
       }
       if (tagsRes.success) {
-        setTags(tagsRes.data.tags || tagsRes.data);
+        setTags(tagsRes.data.tags || []);
       }
       setSeries(seriesRes.items || []);
     } catch (err: any) {
