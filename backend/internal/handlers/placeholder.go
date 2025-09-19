@@ -108,11 +108,12 @@ func UploadImage(c *gin.Context) {
 
 	// 验证文件类型
 	allowedTypes := map[string]bool{
-		"image/jpeg": true,
-		"image/jpg":  true,
-		"image/png":  true,
-		"image/gif":  true,
-		"image/webp": true,
+		"image/jpeg":    true,
+		"image/jpg":     true,
+		"image/png":     true,
+		"image/gif":     true,
+		"image/webp":    true,
+		"image/svg+xml": true, // 添加 SVG 支持
 	}
 
 	contentType := header.Header.Get("Content-Type")
@@ -120,7 +121,7 @@ func UploadImage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"message": "不支持的文件类型",
-			"allowed": []string{"jpeg", "jpg", "png", "gif", "webp"},
+			"allowed": []string{"jpeg", "jpg", "png", "gif", "webp", "svg"},
 		})
 		return
 	}
@@ -149,6 +150,8 @@ func UploadImage(c *gin.Context) {
 			ext = ".gif"
 		case "image/webp":
 			ext = ".webp"
+		case "image/svg+xml":
+			ext = ".svg"
 		default:
 			ext = ".jpg"
 		}
