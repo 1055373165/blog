@@ -108,7 +108,7 @@ export default function BlogsPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-8 sm:px-12 lg:px-16 py-12">
+    <div className="max-w-4xl mx-auto px-6 xl:px-8 py-12">
       {/* 页面头部 */}
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-blog-800 dark:text-blog-100 mb-4">
@@ -309,7 +309,7 @@ export default function BlogsPage() {
         </div>
       ) : blogs.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
             {blogs.map((blog) => (
               <BlogCard
                 key={blog.id}

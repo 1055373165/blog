@@ -105,94 +105,240 @@ export default function BlogCard({
     };
   }, []);
 
+  const titleClasses = {
+    default: 'text-lg font-semibold text-blog-800 dark:text-blog-100 hover:text-blog-600 dark:hover:text-blog-300 line-clamp-2 mb-3 transition-all duration-300 group-hover:text-blog-700 dark:group-hover:text-blog-200',
+    compact: 'text-base font-semibold text-blog-800 dark:text-blog-100 hover:text-blog-600 dark:hover:text-blog-300 line-clamp-2 mb-2 transition-all duration-300 group-hover:text-blog-700 dark:group-hover:text-blog-200',
+    featured: 'text-xl font-bold text-blog-800 dark:text-blog-100 hover:text-blog-600 dark:hover:text-blog-300 line-clamp-2 mb-4 group-hover:text-blog-700 dark:group-hover:text-blog-200 transition-all duration-300',
+  };
+
   return (
-    <Link to={`/blog/${blog.slug}`} className="block group">
-      <Card
-        ref={cardRef}
-        variant="outlined"
-        hoverable
-        animated
-        className="w-full h-full flex flex-col bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/80 dark:border-slate-800/80"
-      >
-        {/* Image Thumbnail */}
-        {blog.thumbnail && variant !== 'compact' && (
-          <div className="relative overflow-hidden rounded-t-lg aspect-video">
-            <img 
-              src={blog.thumbnail} 
-              alt={blog.title} 
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-            <div className="absolute top-3 right-3 flex items-center space-x-2">
-              <div className="flex items-center space-x-1 bg-black/40 text-white px-2 py-1 rounded-full text-xs backdrop-blur-sm">
-                <ClockIcon className="w-3 h-3" />
-                <span>{formatDuration(blog.duration)}</span>
-              </div>
-              <div className="flex items-center space-x-1 bg-black/40 text-white p-1.5 rounded-full text-xs backdrop-blur-sm">
-                {blog.type === 'audio' ? <SpeakerWaveIcon className="w-3.5 h-3.5" /> : <VideoCameraIcon className="w-3.5 h-3.5" />}
-              </div>
+    <Card
+      ref={cardRef}
+      variant="elevated"
+      size={variant === 'compact' ? 'sm' : variant === 'featured' ? 'lg' : 'md'}
+      hoverable
+      animated
+      image={blog.thumbnail && variant !== 'compact' ? blog.thumbnail : undefined}
+      imageAlt={blog.title}
+      imagePosition={blog.thumbnail && variant !== 'compact' ? 'top' : undefined}
+      className={clsx(getCardClasses(), 'flex flex-col h-full')}
+    >
+      {/* 隐藏的音频元素 */}
+      {blog.type === 'audio' && (
+        <audio
+          ref={audioRef}
+          src={blog.media_url}
+          preload="metadata"
+        />
+      )}
+
+      {/* 卡片主要内容区域 - 使用 flexbox 自动分布空间 */}
+      <div className="flex flex-col h-full space-y-3">
+        
+        {/* Header: 类型标识 + 时长 */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            {/* 媒体类型图标 */}
+            <div className={clsx(
+              'flex items-center justify-center w-6 h-6 rounded-full',
+              blog.type === 'audio' 
+                ? 'bg-media-audio-100 dark:bg-media-audio-800/30 text-media-audio-600 dark:text-media-audio-400'
+                : 'bg-media-video-100 dark:bg-media-video-800/30 text-media-video-600 dark:text-media-video-400'
+            )}>
+              {blog.type === 'audio' ? (
+                <SpeakerWaveIcon className="w-3 h-3" />
+              ) : (
+                <VideoCameraIcon className="w-3 h-3" />
+              )}
             </div>
+            
+            {/* 类型标签 */}
+            <span className={clsx(
+              'text-xs font-medium px-2 py-0.5 rounded-md',
+              blog.type === 'audio'
+                ? 'bg-media-audio-100 dark:bg-media-audio-900/30 text-media-audio-700 dark:text-media-audio-300'
+                : 'bg-media-video-100 dark:bg-media-video-900/30 text-media-video-700 dark:text-media-video-300'
+            )}>
+              {blog.type === 'audio' ? '音频' : '视频'}
+            </span>
+          </div>
+          
+          {/* 时长 */}
+          <div className="flex items-center space-x-1 text-xs text-blog-500 dark:text-blog-400">
+            <ClockIcon className="w-3 h-3" />
+            <span>{formatDurationDisplay(blog.duration)}</span>
+          </div>
+        </div>
+
+        {/* 标题 - 确保充分空间显示 */}
+        <h2 className={titleClasses[variant]}>
+          <Link to={`/blog/${blog.slug}`} className="block transition-colors duration-300 leading-tight">
+            {blog.title}
+          </Link>
+        </h2>
+
+        {/* 描述 - 占用可用空间 */}
+        {variant !== 'compact' && blog.description && (
+          <p className="text-sm text-blog-600 dark:text-blog-400 line-clamp-3 flex-1 leading-relaxed">
+            {blog.description}
+          </p>
+        )}
+
+        {/* 播放控制（仅音频） */}
+        {blog.type === 'audio' && variant !== 'compact' && (
+          <div className="flex items-center space-x-3 py-2">
+            <button
+              onClick={togglePlayPause}
+              className={clsx(
+                'flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200',
+                'bg-media-audio-500 hover:bg-media-audio-600 text-white',
+                'hover:scale-110 active:scale-95'
+              )}
+            >
+              {isPlaying ? (
+                <PauseIcon className="w-4 h-4" />
+              ) : (
+                <PlayIcon className="w-4 h-4 ml-0.5" />
+              )}
+            </button>
+            
+            {/* 简化的进度条 */}
+            <div className="flex-1 h-1 bg-media-audio-200 dark:bg-media-audio-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-media-audio-500 dark:bg-media-audio-400 transition-all duration-200"
+                style={{ width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%' }}
+              />
+            </div>
+            
+            <span className="text-xs text-blog-500 dark:text-blog-400 tabular-nums">
+              {formatDurationDisplay(currentTime)} / {formatDurationDisplay(duration)}
+            </span>
           </div>
         )}
 
-        {/* Content */}
-        <div className="flex flex-col flex-1 p-5">
-          {/* Category & Tags */}
-          <div className="flex flex-wrap items-center gap-2 mb-3 min-h-[24px]">
+        {/* Spacer to push bottom content down */}
+        <div className="flex-1"></div>
+
+        {/* 底部区域 - 标签和分类 */}
+        <div className="space-y-3 mt-auto">
+          {/* 分类和标签 */}
+          <div className="space-y-2">
+            {/* 分类信息 */}
             {showCategory && blog.category && (
-              <span className="inline-block bg-slate-200/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full text-xs font-medium">
-                {blog.category.name}
-              </span>
+              <div className="flex items-center">
+                <Link
+                  to={`/category/${blog.category.slug}`}
+                  className={clsx(
+                    'inline-flex items-center px-2 py-1 text-xs font-medium rounded-md transition-all duration-200 hover:scale-105',
+                    'bg-blog-100 dark:bg-blog-800/50 text-blog-700 dark:text-blog-300',
+                    'border border-blog-200/50 dark:border-blog-700/50',
+                    'hover:bg-blog-200 dark:hover:bg-blog-700/70'
+                  )}
+                >
+                  <DocumentIcon className="w-3 h-3 mr-1" />
+                  {blog.category.name}
+                </Link>
+              </div>
             )}
-            {showTags && blog.tags && blog.tags.slice(0, 2).map(tag => (
-              <span key={tag.id} className="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">#{tag.name}</span>
-            ))}
+
+            {/* 标签 */}
+            {showTags && blog.tags && blog.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {blog.tags.slice(0, variant === 'compact' ? 2 : 3).map((tag) => (
+                  <Link
+                    key={tag.id}
+                    to={`/tag/${tag.slug}`}
+                    className={clsx(
+                      'inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded transition-all duration-200 hover:scale-105',
+                      'bg-blog-100/80 dark:bg-blog-800/60 text-blog-600 dark:text-blog-400',
+                      'border border-blog-200/50 dark:border-blog-700/50',
+                      'hover:bg-blog-200 dark:hover:bg-blog-700/80'
+                    )}
+                    style={{ backgroundColor: tag.color ? `${tag.color}15` : undefined }}
+                  >
+                    <span className="text-blog-500 dark:text-blog-500 mr-1">#</span>
+                    {tag.name}
+                  </Link>
+                ))}
+                {blog.tags.length > (variant === 'compact' ? 2 : 3) && (
+                  <span className="text-xs text-blog-500 dark:text-blog-400 px-1">
+                    +{blog.tags.length - (variant === 'compact' ? 2 : 3)}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Title */}
-          <h2 className={clsx(
-            'font-semibold text-slate-800 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors',
-            {
-              'text-lg': variant === 'default',
-              'text-base': variant === 'compact',
-              'text-xl': variant === 'featured',
-            }
-          )}>
-            {blog.title}
-          </h2>
-
-          {/* Description */}
-          {variant !== 'compact' && blog.description && (
-            <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mt-2 flex-grow">
-              {blog.description}
-            </p>
-          )}
-
-          {/* Footer */}
-          <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center text-xs text-slate-500 dark:text-slate-400 min-w-0">
-                {/* <img src={blog.author.avatar_url} alt={blog.author.name} className="w-5 h-5 rounded-full mr-2 flex-shrink-0" /> */}
-                <span className="truncate">{blog.author.name}</span>
-                <span className="mx-2 flex-shrink-0">•</span>
-                <time className="flex-shrink-0">{formatDate(blog.published_at || blog.created_at)}</time>
-              </div>
-              {showStats && (
-                <div className="flex items-center space-x-3 text-xs text-slate-500 dark:text-slate-400">
-                  <span className="flex items-center">
-                    <EyeIcon className="w-3.5 h-3.5 mr-1" />
-                    {blog.views_count || 0}
+          {/* 底部信息分隔线 */}
+          <div className="border-t border-blog-200/50 dark:border-blog-700/50 pt-3">
+            <div className="space-y-2">
+              {/* 第一行：作者和时间 */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-xs text-blog-500 dark:text-blog-400">
+                  <span className="flex items-center font-medium">
+                    <span className="w-2 h-2 bg-blog-400 dark:bg-blog-500 rounded-full mr-1.5" />
+                    {blog.author.name}
                   </span>
-                  <span className="flex items-center">
-                    <HeartIcon className={clsx('w-3.5 h-3.5 mr-1', blog.is_liked && 'text-red-500 fill-current')} />
-                    {blog.likes_count || 0}
-                  </span>
+
+                  <span className="text-blog-400 dark:text-blog-500">•</span>
+
+                  <time className="flex items-center">
+                    {formatDate(blog.published_at || blog.created_at)}
+                  </time>
                 </div>
-              )}
+
+                {/* 右侧：统计信息 */}
+                {showStats && (
+                  <div className="flex items-center space-x-3 text-xs text-blog-500 dark:text-blog-400">
+                    <span className="flex items-center">
+                      <EyeIcon className="w-3 h-3 mr-0.5" />
+                      {blog.views_count || 0}
+                    </span>
+                    <span className="flex items-center">
+                      <HeartIcon className={clsx(
+                        'w-3 h-3 mr-0.5',
+                        blog.is_liked ? 'text-red-500 fill-current' : ''
+                      )} />
+                      {blog.likes_count || 0}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* 第二行：文件大小和操作按钮 */}
+              <div className="flex items-center justify-between">
+                {/* 文件大小 */}
+                {blog.file_size > 0 && variant !== 'compact' ? (
+                  <div className="flex items-center text-xs text-blog-500 dark:text-blog-400">
+                    <span className="flex items-center bg-blog-100 dark:bg-blog-800 px-2 py-0.5 rounded-md">
+                      📁 {formatFileSize(blog.file_size)}
+                    </span>
+                  </div>
+                ) : (
+                  <div></div>
+                )}
+
+                {/* 操作按钮 */}
+                <Link 
+                  to={`/blog/${blog.slug}`}
+                  className={clsx(
+                    'inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 hover:scale-105',
+                    blog.type === 'audio'
+                      ? 'text-media-audio-600 dark:text-media-audio-400 bg-media-audio-50/50 dark:bg-media-audio-900/20 border border-media-audio-200/30 dark:border-media-audio-800/30 hover:bg-media-audio-100 dark:hover:bg-media-audio-900/40'
+                      : 'text-media-video-600 dark:text-media-video-400 bg-media-video-50/50 dark:bg-media-video-900/20 border border-media-video-200/30 dark:border-media-video-800/30 hover:bg-media-video-100 dark:hover:bg-media-video-900/40'
+                  )}
+                >
+                  <span>{blog.type === 'audio' ? '收听' : '观看'}</span>
+                  <svg className="w-3 h-3 ml-1 transform transition-transform duration-200 group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
-      </Card>
-    </Link>
+
+      </div>
+    </Card>
   );
 }

@@ -44,10 +44,10 @@ export default function SubstackLayout({ children, tocContent, className }: Subs
       {/* Mobile/Tablet Single-Column Layout */}
       <div className="lg:hidden">
         <main 
-          className="px-4 sm:px-6"
+          className="px-6 xl:px-8"
           role="main"
         >
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             {children}
           </div>
         </main>

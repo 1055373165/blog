@@ -14,6 +14,7 @@
     @apply transition-all duration-500 ease-out;
     @apply hover:-translate-y-1 hover:shadow-xl;
     @apply relative overflow-hidden;
+    @apply min-h-[24rem] h-full;
   }
 
   .premium-card-default::before {
@@ -31,12 +32,14 @@
     @apply transition-all duration-300 ease-out;
     @apply hover:-translate-y-0.5 hover:shadow-lg;
     @apply relative;
+    @apply min-h-[18rem] h-full;
   }
 
   .premium-card-featured {
     @apply transition-all duration-500 ease-out;
     @apply hover:-translate-y-2 hover:shadow-2xl;
     @apply relative overflow-hidden;
+    @apply min-h-[28rem] h-full;
   }
 
   .premium-card-featured::after {
@@ -94,6 +97,31 @@
   .text-slide-in {
     @apply transition-transform duration-300 ease-out;
     @apply group-hover:translate-x-1;
+  }
+
+  /* Responsive card optimizations */
+  @media (max-width: 768px) {
+    .premium-card-default {
+      @apply min-h-[20rem];
+    }
+    .premium-card-compact {
+      @apply min-h-[16rem];
+    }
+    .premium-card-featured {
+      @apply min-h-[24rem];
+    }
+  }
+
+  @media (max-width: 640px) {
+    .premium-card-default {
+      @apply min-h-[18rem];
+    }
+    .premium-card-compact {
+      @apply min-h-[14rem];
+    }
+    .premium-card-featured {
+      @apply min-h-[20rem];
+    }
   }
   
   .text-fade-enhance {
