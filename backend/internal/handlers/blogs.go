@@ -17,20 +17,20 @@ import (
 
 // CreateBlogRequest 创建博客请求结构
 type CreateBlogRequest struct {
-	Title           string  `json:"title" binding:"required"`
-	Description     string  `json:"description"`
-	Content         string  `json:"content"`
-	Type            string  `json:"type" binding:"required,oneof=audio video"`
-	MediaURL        string  `json:"media_url" binding:"required"`
-	Thumbnail       string  `json:"thumbnail"`
-	Duration        float64 `json:"duration"`
-	FileSize        int64   `json:"file_size"`
-	MimeType        string  `json:"mime_type"`
+	Title       string  `json:"title" binding:"required"`
+	Description string  `json:"description"`
+	Content     string  `json:"content"`
+	Type        string  `json:"type" binding:"required,oneof=audio video"`
+	MediaURL    string  `json:"media_url" binding:"required"`
+	Thumbnail   string  `json:"thumbnail"`
+	Duration    float64 `json:"duration"`
+	FileSize    int64   `json:"file_size"`
+	MimeType    string  `json:"mime_type"`
 	// 音频文件相关字段
-	AudioURL      string  `json:"audio_url"`
-	AudioDuration float64 `json:"audio_duration"`
-	AudioFileSize int64   `json:"audio_file_size"`
-	AudioMimeType string  `json:"audio_mime_type"`
+	AudioURL        string  `json:"audio_url"`
+	AudioDuration   float64 `json:"audio_duration"`
+	AudioFileSize   int64   `json:"audio_file_size"`
+	AudioMimeType   string  `json:"audio_mime_type"`
 	CategoryID      *uint   `json:"category_id"`
 	TagIDs          []uint  `json:"tag_ids"`
 	IsPublished     bool    `json:"is_published"`
@@ -41,20 +41,20 @@ type CreateBlogRequest struct {
 
 // UpdateBlogRequest 更新博客请求结构
 type UpdateBlogRequest struct {
-	Title           *string  `json:"title"`
-	Description     *string  `json:"description"`
-	Content         *string  `json:"content"`
-	Type            *string  `json:"type" binding:"omitempty,oneof=audio video"`
-	MediaURL        *string  `json:"media_url"`
-	Thumbnail       *string  `json:"thumbnail"`
-	Duration        *float64 `json:"duration"`
-	FileSize        *int64   `json:"file_size"`
-	MimeType        *string  `json:"mime_type"`
+	Title       *string  `json:"title"`
+	Description *string  `json:"description"`
+	Content     *string  `json:"content"`
+	Type        *string  `json:"type" binding:"omitempty,oneof=audio video"`
+	MediaURL    *string  `json:"media_url"`
+	Thumbnail   *string  `json:"thumbnail"`
+	Duration    *float64 `json:"duration"`
+	FileSize    *int64   `json:"file_size"`
+	MimeType    *string  `json:"mime_type"`
 	// 音频文件相关字段
-	AudioURL      *string  `json:"audio_url"`
-	AudioDuration *float64 `json:"audio_duration"`
-	AudioFileSize *int64   `json:"audio_file_size"`
-	AudioMimeType *string  `json:"audio_mime_type"`
+	AudioURL        *string  `json:"audio_url"`
+	AudioDuration   *float64 `json:"audio_duration"`
+	AudioFileSize   *int64   `json:"audio_file_size"`
+	AudioMimeType   *string  `json:"audio_mime_type"`
 	CategoryID      *uint    `json:"category_id"`
 	TagIDs          []uint   `json:"tag_ids"`
 	IsPublished     *bool    `json:"is_published"`
@@ -253,17 +253,17 @@ func GetBlogBySlug(c *gin.Context) {
 
 	// 创建响应数据，包含点赞状态
 	responseData := gin.H{
-		"id":               blog.ID,
-		"title":            blog.Title,
-		"slug":             blog.Slug,
-		"description":      blog.Description,
-		"content":          blog.Content,
-		"type":             blog.Type,
-		"media_url":        blog.MediaURL,
-		"thumbnail":        blog.Thumbnail,
-		"duration":         blog.Duration,
-		"file_size":        blog.FileSize,
-		"mime_type":        blog.MimeType,
+		"id":          blog.ID,
+		"title":       blog.Title,
+		"slug":        blog.Slug,
+		"description": blog.Description,
+		"content":     blog.Content,
+		"type":        blog.Type,
+		"media_url":   blog.MediaURL,
+		"thumbnail":   blog.Thumbnail,
+		"duration":    blog.Duration,
+		"file_size":   blog.FileSize,
+		"mime_type":   blog.MimeType,
 		// 音频文件信息
 		"audio_url":        blog.AudioURL,
 		"audio_duration":   blog.AudioDuration,
@@ -328,22 +328,22 @@ func CreateBlog(c *gin.Context) {
 
 	// 创建博客
 	blog := models.Blog{
-		AuthorID:        authorID,
-		Title:           req.Title,
-		Slug:            slug,
-		Description:     req.Description,
-		Content:         req.Content,
-		Type:            req.Type,
-		MediaURL:        req.MediaURL,
-		Thumbnail:       req.Thumbnail,
-		Duration:        req.Duration,
-		FileSize:        req.FileSize,
-		MimeType:        req.MimeType,
+		AuthorID:    authorID,
+		Title:       req.Title,
+		Slug:        slug,
+		Description: req.Description,
+		Content:     req.Content,
+		Type:        req.Type,
+		MediaURL:    req.MediaURL,
+		Thumbnail:   req.Thumbnail,
+		Duration:    req.Duration,
+		FileSize:    req.FileSize,
+		MimeType:    req.MimeType,
 		// 音频文件字段
-		AudioURL:      req.AudioURL,
-		AudioDuration: req.AudioDuration,
-		AudioFileSize: req.AudioFileSize,
-		AudioMimeType: req.AudioMimeType,
+		AudioURL:        req.AudioURL,
+		AudioDuration:   req.AudioDuration,
+		AudioFileSize:   req.AudioFileSize,
+		AudioMimeType:   req.AudioMimeType,
 		CategoryID:      req.CategoryID,
 		IsPublished:     req.IsPublished,
 		IsDraft:         !req.IsPublished,
@@ -765,6 +765,70 @@ func IncrementBlogViews(c *gin.Context) {
 }
 
 // ToggleBlogLike 切换博客点赞状态
+// ToggleBlogPublish 切换博客发布状态
+func ToggleBlogPublish(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "博客ID无效",
+		})
+		return
+	}
+
+	var blog models.Blog
+	err = database.DB.First(&blog, uint(id)).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"error":   "博客不存在",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "查询博客失败",
+		})
+		return
+	}
+
+	// 权限检查：只有作者或管理员可以操作
+	userID, _ := middleware.GetCurrentUserID(c)
+	isAdmin, _ := middleware.GetCurrentUserIsAdmin(c)
+	if blog.AuthorID != userID && !isAdmin {
+		c.JSON(http.StatusForbidden, gin.H{
+			"success": false,
+			"error":   "没有权限操作此博客",
+		})
+		return
+	}
+
+	// 切换发布状态
+	blog.IsPublished = !blog.IsPublished
+	if blog.IsPublished {
+		now := time.Now()
+		blog.PublishedAt = &now
+	} else {
+		blog.PublishedAt = nil
+	}
+
+	err = database.DB.Save(&blog).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "更新博客发布状态失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "博客发布状态更新成功",
+		"data":    blog,
+	})
+}
+
 func ToggleBlogLike(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {

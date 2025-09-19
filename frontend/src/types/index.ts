@@ -7,13 +7,19 @@ export interface ApiResponse<T> {
 }
 
 export interface PaginatedResponse<T> {
-  articles: T[];
+  items: T[];
   total: number;
   current_page: number;
   per_page: number;
   total_pages: number;
-  // 兼容性别名
-  items?: T[];
+
+  // The backend uses different keys for the items array based on the endpoint.
+  // To handle this without breaking existing code, we'll add them as optional fields.
+  articles?: T[];
+  categories?: T[];
+  tags?: T[];
+
+  // Compatibility aliases
   page?: number;
   limit?: number;
   totalPages?: number;

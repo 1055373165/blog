@@ -42,7 +42,8 @@ export default function BlogsPage() {
   const loadBlogs = async () => {
     setLoading(true);
     try {
-      const response = await blogApi.getBlogs(filters, currentPage, pageSize);
+      const publicFilters = { ...filters, is_published: true };
+      const response = await blogApi.getBlogs(publicFilters, currentPage, pageSize);
       setBlogs(response.blogs || []);
       setTotalPages(response.pagination?.total_pages || 1);
       setTotal(response.pagination?.total || 0);

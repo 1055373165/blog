@@ -133,8 +133,8 @@ export default function BlogEditor() {
           categoriesApi.getCategories(),
           tagsApi.getTags()
         ]);
-        setCategories(categoriesRes.data?.articles || []);
-        setTags(tagsRes.data?.articles || []);
+        setCategories(categoriesRes.data.categories || []);
+        setTags(tagsRes.data.tags || []);
       } catch (error) {
         console.error('加载分类和标签失败:', error);
       }
@@ -152,10 +152,10 @@ export default function BlogEditor() {
   const handleMediaUpload = (file: MediaFile) => {
     setMediaFile(file);
     updateFormData('media_url', file.url);
-    updateFormData('type', file.type);
     updateFormData('duration', file.duration || 0);
     updateFormData('file_size', file.size);
     updateFormData('mime_type', file.mime_type);
+    updateFormData('type', file.type);
   };
 
   // 处理音频文件上传
@@ -214,8 +214,18 @@ export default function BlogEditor() {
       const submitData = {
         ...formData,
         is_published: publish,
-        tag_ids: selectedTags.map(id => Number(id))
+        tag_ids: selectedTags.map(id => Number(id)),
       };
+
+      // Force the 'type' to be correct based on the mime_type to prevent validation errors.
+      if (submitData.mime_type?.startsWith('video')) {
+        submitData.type = 'video';
+      } else if (submitData.mime_type?.startsWith('audio')) {
+        submitData.type = 'audio';
+      }
+
+      console.log('Final data payload:', submitData);
+
 
       if (isEditing) {
         await blogApi.updateBlog(Number(id), { ...submitData, id: Number(id) });
@@ -393,12 +403,48 @@ export default function BlogEditor() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   媒体文件 *
                 </label>
-                <MediaUploader
-                  onFileUpload={handleMediaUpload}
-                  onError={setError}
-                  acceptedTypes={['audio/*', 'video/*']}
-                  maxSize={500}
-                />
+                {formData.media_url ? (
+                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">主媒体信息</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">文件名：</span>
+                        <span className="text-gray-900 dark:text-white truncate">{formData.media_url.split('/').pop()}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">文件类型：</span>
+                        <span className="text-gray-900 dark:text-white">{formData.mime_type}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">文件大小：</span>
+                        <span className="text-gray-900 dark:text-white">
+                          {((formData.file_size || 0) / (1024 * 1024)).toFixed(2)} MB
+                        </span>
+                      </div>
+                      {(formData.duration || 0) > 0 && (
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">时长：</span>
+                          <span className="text-gray-900 dark:text-white">
+                            {Math.floor((formData.duration || 0) / 60)}:{Math.floor((formData.duration || 0) % 60).toString().padStart(2, '0')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => updateFormData('media_url', '')}
+                      className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
+                    >
+                      移除并重新上传
+                    </button>
+                  </div>
+                ) : (
+                  <MediaUploader
+                    onFileUpload={handleMediaUpload}
+                    onError={setError}
+                    acceptedTypes={['audio/*', 'video/*']}
+                    maxSize={500}
+                  />
+                )}
               </div>
 
               {/* 缩略图上传 */}
@@ -487,12 +533,51 @@ export default function BlogEditor() {
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                   为博客添加额外的音频文件，如背景音乐、语音解说等
                 </p>
-                <MediaUploader
-                  onFileUpload={handleAudioUpload}
-                  onError={setError}
-                  acceptedTypes={['audio/*']}
-                  maxSize={200}
-                />
+                {formData.audio_url ? (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-3 flex items-center">
+                      <SpeakerWaveIcon className="w-4 h-4 mr-2" />
+                      音频文件信息
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                      <div>
+                        <span className="text-blue-700 dark:text-blue-300">文件名：</span>
+                        <span className="text-blue-900 dark:text-blue-100 truncate">{formData.audio_url.split('/').pop()}</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 dark:text-blue-300">文件类型：</span>
+                        <span className="text-blue-900 dark:text-blue-100">{formData.audio_mime_type}</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 dark:text-blue-300">文件大小：</span>
+                        <span className="text-blue-900 dark:text-blue-100">
+                          {((formData.audio_file_size || 0) / (1024 * 1024)).toFixed(2)} MB
+                        </span>
+                      </div>
+                      {(formData.audio_duration || 0) > 0 && (
+                        <div>
+                          <span className="text-blue-700 dark:text-blue-300">时长：</span>
+                          <span className="text-blue-900 dark:text-blue-100">
+                            {Math.floor((formData.audio_duration || 0) / 60)}:{Math.floor((formData.audio_duration || 0) % 60).toString().padStart(2, '0')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => updateFormData('audio_url', '')}
+                      className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
+                    >
+                      移除音频文件
+                    </button>
+                  </div>
+                ) : (
+                  <MediaUploader
+                    onFileUpload={handleAudioUpload}
+                    onError={setError}
+                    acceptedTypes={['audio/*']}
+                    maxSize={200}
+                  />
+                )}
               </div>
 
               {/* 音频信息显示 */}
@@ -545,7 +630,7 @@ export default function BlogEditor() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-go-500 focus:border-transparent"
                 >
                   <option value="">选择分类</option>
-                  {Array.isArray(categories) && categories.map(category => (
+                  {categories && categories.length > 0 && categories.map(category => (
                     <option key={category.id} value={category.id}>
                       {category.name}
                     </option>
@@ -560,7 +645,7 @@ export default function BlogEditor() {
                 </label>
                 <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 max-h-48 overflow-y-auto">
                   <div className="space-y-2">
-                    {Array.isArray(tags) && tags.map(tag => (
+                    {tags && tags.length > 0 && tags.map(tag => (
                       <label key={tag.id} className="flex items-center">
                         <input
                           type="checkbox"

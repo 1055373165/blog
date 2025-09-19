@@ -176,6 +176,7 @@ func main() {
 			blogs.DELETE("/:id", middleware.AuthRequired(), handlers.DeleteBlog)
 			blogs.POST("/:id/views", handlers.IncrementBlogViews)
 			blogs.POST("/:id/like", handlers.ToggleBlogLike)
+			blogs.PATCH("/:id/toggle-publish", middleware.AuthRequired(), handlers.ToggleBlogPublish)
 		}
 
 		// 搜索相关路由

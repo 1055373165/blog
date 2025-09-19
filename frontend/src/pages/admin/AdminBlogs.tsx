@@ -151,12 +151,8 @@ export default function AdminBlogs() {
         ]);
 
         if (isMounted) {
-          if (categoriesRes.success) {
-            setCategories(categoriesRes.data.items || categoriesRes.data.categories || []);
-          }
-          if (tagsRes.success) {
-            setTags(tagsRes.data.items || tagsRes.data.tags || []);
-          }
+          setCategories(categoriesRes.items || []);
+          setTags(tagsRes.items || []);
         }
       } catch (error) {
         if (isMounted) {
