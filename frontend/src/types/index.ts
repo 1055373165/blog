@@ -336,6 +336,12 @@ export interface Blog {
   file_size: number; // 文件大小（字节）
   mime_type?: string;
   
+  // 音频文件信息
+  audio_url?: string;
+  audio_duration?: number;
+  audio_file_size?: number;
+  audio_mime_type?: string;
+  
   // 状态字段
   is_published: boolean;
   is_draft: boolean;
@@ -373,6 +379,11 @@ export interface CreateBlogInput {
   duration?: number;
   file_size?: number;
   mime_type?: string;
+  // 音频文件相关字段
+  audio_url?: string;
+  audio_duration?: number;
+  audio_file_size?: number;
+  audio_mime_type?: string;
   category_id?: number;
   tag_ids?: number[];
   is_published: boolean;

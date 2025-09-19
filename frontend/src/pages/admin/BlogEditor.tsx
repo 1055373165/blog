@@ -46,6 +46,11 @@ export default function BlogEditor() {
     duration: 0,
     file_size: 0,
     mime_type: '',
+    // 音频文件字段
+    audio_url: '',
+    audio_duration: 0,
+    audio_file_size: 0,
+    audio_mime_type: '',
     category_id: undefined,
     tag_ids: [],
     is_published: false,
@@ -56,6 +61,7 @@ export default function BlogEditor() {
 
   // 媒体文件状态
   const [mediaFile, setMediaFile] = useState<MediaFile | null>(null);
+  const [audioFile, setAudioFile] = useState<MediaFile | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
 
   // UI状态
@@ -93,6 +99,11 @@ export default function BlogEditor() {
             duration: blog.duration || 0,
             file_size: blog.file_size || 0,
             mime_type: blog.mime_type || '',
+            // 音频文件字段
+            audio_url: blog.audio_url || '',
+            audio_duration: blog.audio_duration || 0,
+            audio_file_size: blog.audio_file_size || 0,
+            audio_mime_type: blog.audio_mime_type || '',
             category_id: blog.category_id,
             tag_ids: blog.tags ? blog.tags.map(tag => tag.id) : [],
             is_published: blog.is_published || false,
@@ -145,6 +156,15 @@ export default function BlogEditor() {
     updateFormData('duration', file.duration || 0);
     updateFormData('file_size', file.size);
     updateFormData('mime_type', file.mime_type);
+  };
+
+  // 处理音频文件上传
+  const handleAudioUpload = (file: MediaFile) => {
+    setAudioFile(file);
+    updateFormData('audio_url', file.url);
+    updateFormData('audio_duration', file.duration || 0);
+    updateFormData('audio_file_size', file.size);
+    updateFormData('audio_mime_type', file.mime_type);
   };
 
   // 处理缩略图上传
@@ -431,7 +451,7 @@ export default function BlogEditor() {
               {/* 媒体信息显示 */}
               {mediaFile && (
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">媒体信息</h4>
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">主媒体信息</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-500 dark:text-gray-400">文件名：</span>
@@ -452,6 +472,56 @@ export default function BlogEditor() {
                         <span className="text-gray-500 dark:text-gray-400">时长：</span>
                         <span className="text-gray-900 dark:text-white">
                           {Math.floor(mediaFile.duration / 60)}:{Math.floor(mediaFile.duration % 60).toString().padStart(2, '0')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 音频文件上传 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  音频文件（可选）
+                </label>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                  为博客添加额外的音频文件，如背景音乐、语音解说等
+                </p>
+                <MediaUploader
+                  onFileUpload={handleAudioUpload}
+                  onError={setError}
+                  acceptedTypes={['audio/*']}
+                  maxSize={200}
+                />
+              </div>
+
+              {/* 音频信息显示 */}
+              {audioFile && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                  <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-3 flex items-center">
+                    <SpeakerWaveIcon className="w-4 h-4 mr-2" />
+                    音频文件信息
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-blue-700 dark:text-blue-300">文件名：</span>
+                      <span className="text-blue-900 dark:text-blue-100">{audioFile.filename}</span>
+                    </div>
+                    <div>
+                      <span className="text-blue-700 dark:text-blue-300">文件类型：</span>
+                      <span className="text-blue-900 dark:text-blue-100">{audioFile.mime_type}</span>
+                    </div>
+                    <div>
+                      <span className="text-blue-700 dark:text-blue-300">文件大小：</span>
+                      <span className="text-blue-900 dark:text-blue-100">
+                        {(audioFile.size / (1024 * 1024)).toFixed(2)} MB
+                      </span>
+                    </div>
+                    {audioFile.duration && (
+                      <div>
+                        <span className="text-blue-700 dark:text-blue-300">时长：</span>
+                        <span className="text-blue-900 dark:text-blue-100">
+                          {Math.floor(audioFile.duration / 60)}:{Math.floor(audioFile.duration % 60).toString().padStart(2, '0')}
                         </span>
                       </div>
                     )}

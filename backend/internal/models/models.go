@@ -87,6 +87,12 @@ type Blog struct {
 	FileSize  int64   `json:"file_size" gorm:"default:0"` // 文件大小（字节）
 	MimeType  string  `json:"mime_type" gorm:"size:100"`
 
+	// 音频文件信息（新增）
+	AudioURL      string  `json:"audio_url" gorm:"size:500"`        // 音频文件URL
+	AudioDuration float64 `json:"audio_duration" gorm:"default:0"` // 音频时长（秒）
+	AudioFileSize int64   `json:"audio_file_size" gorm:"default:0"` // 音频文件大小（字节）
+	AudioMimeType string  `json:"audio_mime_type" gorm:"size:100"`  // 音频MIME类型
+
 	// 状态字段
 	IsPublished bool       `json:"is_published" gorm:"default:false"`
 	IsDraft     bool       `json:"is_draft" gorm:"default:true"`

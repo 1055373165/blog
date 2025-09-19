@@ -26,6 +26,11 @@ type CreateBlogRequest struct {
 	Duration        float64 `json:"duration"`
 	FileSize        int64   `json:"file_size"`
 	MimeType        string  `json:"mime_type"`
+	// 音频文件相关字段
+	AudioURL      string  `json:"audio_url"`
+	AudioDuration float64 `json:"audio_duration"`
+	AudioFileSize int64   `json:"audio_file_size"`
+	AudioMimeType string  `json:"audio_mime_type"`
 	CategoryID      *uint   `json:"category_id"`
 	TagIDs          []uint  `json:"tag_ids"`
 	IsPublished     bool    `json:"is_published"`
@@ -45,6 +50,11 @@ type UpdateBlogRequest struct {
 	Duration        *float64 `json:"duration"`
 	FileSize        *int64   `json:"file_size"`
 	MimeType        *string  `json:"mime_type"`
+	// 音频文件相关字段
+	AudioURL      *string  `json:"audio_url"`
+	AudioDuration *float64 `json:"audio_duration"`
+	AudioFileSize *int64   `json:"audio_file_size"`
+	AudioMimeType *string  `json:"audio_mime_type"`
 	CategoryID      *uint    `json:"category_id"`
 	TagIDs          []uint   `json:"tag_ids"`
 	IsPublished     *bool    `json:"is_published"`
@@ -254,6 +264,11 @@ func GetBlogBySlug(c *gin.Context) {
 		"duration":         blog.Duration,
 		"file_size":        blog.FileSize,
 		"mime_type":        blog.MimeType,
+		// 音频文件信息
+		"audio_url":        blog.AudioURL,
+		"audio_duration":   blog.AudioDuration,
+		"audio_file_size":  blog.AudioFileSize,
+		"audio_mime_type":  blog.AudioMimeType,
 		"is_published":     blog.IsPublished,
 		"is_draft":         blog.IsDraft,
 		"published_at":     blog.PublishedAt,
@@ -324,6 +339,11 @@ func CreateBlog(c *gin.Context) {
 		Duration:        req.Duration,
 		FileSize:        req.FileSize,
 		MimeType:        req.MimeType,
+		// 音频文件字段
+		AudioURL:      req.AudioURL,
+		AudioDuration: req.AudioDuration,
+		AudioFileSize: req.AudioFileSize,
+		AudioMimeType: req.AudioMimeType,
 		CategoryID:      req.CategoryID,
 		IsPublished:     req.IsPublished,
 		IsDraft:         !req.IsPublished,
@@ -504,6 +524,23 @@ func UpdateBlog(c *gin.Context) {
 
 	if req.MimeType != nil {
 		updates["mime_type"] = *req.MimeType
+	}
+
+	// 音频文件字段更新
+	if req.AudioURL != nil {
+		updates["audio_url"] = *req.AudioURL
+	}
+
+	if req.AudioDuration != nil {
+		updates["audio_duration"] = *req.AudioDuration
+	}
+
+	if req.AudioFileSize != nil {
+		updates["audio_file_size"] = *req.AudioFileSize
+	}
+
+	if req.AudioMimeType != nil {
+		updates["audio_mime_type"] = *req.AudioMimeType
 	}
 
 	if req.CategoryID != nil {

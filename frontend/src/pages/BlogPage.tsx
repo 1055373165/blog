@@ -59,9 +59,17 @@ export default function BlogPage() {
   const [viewsCount, setViewsCount] = useState(0);
   const [showDescription, setShowDescription] = useState(true);
   
+  // 音频文件播放状态
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [audioCurrentTime, setAudioCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [audioVolume, setAudioVolume] = useState(0.7);
+  const [isAudioMuted, setIsAudioMuted] = useState(false);
+  
   // Refs
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const audioFileRef = useRef<HTMLAudioElement>(null); // 额外音频文件ref
   const containerRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   
@@ -304,6 +312,53 @@ export default function BlogPage() {
     
     media.playbackRate = rate;
     setPlaybackRate(rate);
+  };
+
+  // 音频文件播放控制
+  const toggleAudioPlayPause = () => {
+    const audioFile = audioFileRef.current;
+    if (!audioFile) return;
+
+    if (isAudioPlaying) {
+      audioFile.pause();
+      setIsAudioPlaying(false);
+    } else {
+      audioFile.play();
+      setIsAudioPlaying(true);
+    }
+  };
+
+  const handleAudioSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const audioFile = audioFileRef.current;
+    if (!audioFile) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    const newTime = percent * audioDuration;
+    audioFile.currentTime = newTime;
+    setAudioCurrentTime(newTime);
+  };
+
+  const handleAudioVolumeChange = (newVolume: number) => {
+    const audioFile = audioFileRef.current;
+    if (!audioFile) return;
+    
+    setAudioVolume(newVolume);
+    audioFile.volume = newVolume;
+    setIsAudioMuted(newVolume === 0);
+  };
+
+  const toggleAudioMute = () => {
+    const audioFile = audioFileRef.current;
+    if (!audioFile) return;
+    
+    if (isAudioMuted) {
+      audioFile.volume = audioVolume;
+      setIsAudioMuted(false);
+    } else {
+      audioFile.volume = 0;
+      setIsAudioMuted(true);
+    }
   };
   
   // 交互功能
@@ -666,6 +721,94 @@ export default function BlogPage() {
             </div>
           </div>
         </div>
+
+        {/* 音频文件播放器 */}
+        {blog.audio_url && (
+          <div className="bg-white dark:bg-blog-900 rounded-lg shadow-sm border border-blog-200/50 dark:border-blog-700/50 overflow-hidden mb-8">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <SpeakerWaveIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3" />
+                <h3 className="text-lg font-semibold text-blog-900 dark:text-blog-100">
+                  音频文件
+                </h3>
+              </div>
+              
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 border border-blue-200/50 dark:border-blue-800/50">
+                {/* 音频元素 */}
+                <audio
+                  ref={audioFileRef}
+                  src={blog.audio_url}
+                  preload="metadata"
+                  onLoadedMetadata={(e) => setAudioDuration(e.currentTarget.duration || 0)}
+                  onTimeUpdate={(e) => setAudioCurrentTime(e.currentTarget.currentTime)}
+                  onPlay={() => setIsAudioPlaying(true)}
+                  onPause={() => setIsAudioPlaying(false)}
+                  onEnded={() => setIsAudioPlaying(false)}
+                />
+                
+                {/* 进度条 */}
+                <div className="mb-4">
+                  <div
+                    className="w-full h-2 bg-blue-200 dark:bg-blue-800 rounded-full cursor-pointer group"
+                    onClick={handleAudioSeek}
+                  >
+                    <div
+                      className="h-full bg-blue-500 dark:bg-blue-400 rounded-full transition-all duration-200"
+                      style={{ width: `${audioDuration > 0 ? (audioCurrentTime / audioDuration) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    <span>{formatDuration(audioCurrentTime)}</span>
+                    <span>{formatDuration(audioDuration)}</span>
+                  </div>
+                </div>
+                
+                {/* 控制按钮 */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={toggleAudioPlayPause}
+                      className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors duration-200"
+                    >
+                      {isAudioPlaying ? (
+                        <PauseIcon className="w-5 h-5" />
+                      ) : (
+                        <PlayIcon className="w-5 h-5" />
+                      )}
+                    </button>
+                    
+                    <div className="text-sm text-blue-700 dark:text-blue-300">
+                      {blog.audio_duration && `时长: ${formatDuration(blog.audio_duration)}`}
+                    </div>
+                  </div>
+                  
+                  {/* 音量控制 */}
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={toggleAudioMute}
+                      className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors duration-200"
+                    >
+                      {isAudioMuted || audioVolume === 0 ? (
+                        <SpeakerXMarkIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      ) : (
+                        <SpeakerWaveIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      )}
+                    </button>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={isAudioMuted ? 0 : audioVolume}
+                      onChange={(e) => handleAudioVolumeChange(Number(e.target.value))}
+                      className="w-16 h-1 bg-blue-200 dark:bg-blue-700 rounded-full appearance-none cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* 博客内容 */}
         <div className="bg-white dark:bg-blog-900 rounded-lg shadow-sm border border-blog-200/50 dark:border-blog-700/50 overflow-hidden">
