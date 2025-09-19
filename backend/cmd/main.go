@@ -203,6 +203,7 @@ func main() {
 			upload.POST("/file", middleware.AuthRequired(), handlers.UploadFile)
 			upload.POST("/media", middleware.AuthRequired(), handlers.UploadMedia)
 			upload.GET("/image/*filename", handlers.GetImage)
+			upload.GET("/file/*filename", handlers.GetFile)
 			upload.GET("/media/*filename", handlers.GetMedia)
 		}
 
