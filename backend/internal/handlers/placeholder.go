@@ -342,23 +342,23 @@ func UploadFile(c *gin.Context) {
 
 	// 验证文件类型（支持常见的文档类型）
 	allowedTypes := map[string]bool{
-		"application/pdf":                                                       true,
-		"application/msword":                                                    true,
+		"application/pdf":    true,
+		"application/msword": true,
 		"application/vnd.openxmlformats-officedocument.wordprocessingml.document": true,
-		"application/vnd.ms-excel":                                              true,
-		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":    true,
-		"application/vnd.ms-powerpoint":                                         true,
+		"application/vnd.ms-excel": true,
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":         true,
+		"application/vnd.ms-powerpoint":                                             true,
 		"application/vnd.openxmlformats-officedocument.presentationml.presentation": true,
-		"text/plain":                                                            true,
-		"application/zip":                                                       true,
-		"application/x-rar-compressed":                                          true,
-		"application/json":                                                      true,
-		"text/csv":                                                              true,
-		"application/epub+zip":                                                  true,
+		"text/plain":                   true,
+		"application/zip":              true,
+		"application/x-rar-compressed": true,
+		"application/json":             true,
+		"text/csv":                     true,
+		"application/epub+zip":         true,
 	}
 
 	contentType := header.Header.Get("Content-Type")
-	
+
 	// 如果content-type为空或者不在允许列表中，根据文件扩展名判断
 	if contentType == "" || !allowedTypes[contentType] {
 		ext := strings.ToLower(filepath.Ext(header.Filename))
@@ -377,7 +377,7 @@ func UploadFile(c *gin.Context) {
 			".csv":  "text/csv",
 			".epub": "application/epub+zip",
 		}
-		
+
 		if inferredType, ok := allowedExts[ext]; ok {
 			contentType = inferredType
 		} else {
@@ -390,13 +390,13 @@ func UploadFile(c *gin.Context) {
 		}
 	}
 
-	// 验证文件大小（50MB限制）
-	const maxSize = 50 * 1024 * 1024 // 50MB
+	// 验证文件大小（150MB限制）
+	const maxSize = 150 * 1024 * 1024 // 150MB
 	if header.Size > maxSize {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"message": "文件大小超过限制",
-			"maxSize": "50MB",
+			"maxSize": "150MB",
 		})
 		return
 	}
@@ -553,7 +553,7 @@ func GetFile(c *gin.Context) {
 	cfg := config.GlobalConfig
 	// 构建完整的文件路径
 	fullPath := filepath.Join(cfg.Upload.Path, "files", filePath)
-	
+
 	// 安全检查：确保路径在上传目录内
 	uploadDir, err := filepath.Abs(cfg.Upload.Path)
 	if err != nil {
@@ -594,7 +594,7 @@ func GetFile(c *gin.Context) {
 
 	// 获取文件名，用于设置下载文件名
 	fileName := filepath.Base(fullPath)
-	
+
 	// 设置适当的响应头
 	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, fileName))
 	c.Header("Content-Type", "application/octet-stream")
