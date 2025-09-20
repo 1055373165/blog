@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Blog } from '../types';
 import { blogApi } from '../services/blogApi';
 import { formatDate, formatFileSize } from '../utils';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 import {
   PlayIcon,
   PauseIcon,
@@ -877,9 +878,16 @@ export default function BlogPage() {
           {blog.content && (
             <div className="p-6">
               <h3 className="text-sm font-medium text-blog-500 dark:text-blog-400 mb-4">相关内容</h3>
-              <div className="prose prose-blog dark:prose-invert max-w-none">
-                <div dangerouslySetInnerHTML={{ __html: blog.content.replace(/\n/g, '<br>') }} />
-              </div>
+              <MarkdownRenderer
+                content={blog.content}
+                className="prose prose-blog dark:prose-invert max-w-none
+                           prose-headings:text-blog-900 dark:prose-headings:text-blog-100 prose-headings:font-medium
+                           prose-a:text-blog-600 dark:prose-a:text-blog-400 hover:prose-a:text-blog-700 dark:hover:prose-a:text-blog-300
+                           prose-strong:text-blog-900 dark:prose-strong:text-blog-100
+                           prose-code:text-blog-700 dark:prose-code:text-blog-300
+                           prose-pre:bg-blog-50 dark:prose-pre:bg-blog-900 prose-pre:border prose-pre:border-blog-200 dark:prose-pre:border-blog-700
+                           prose-blockquote:border-blog-500 prose-blockquote:bg-blog-50/50 dark:prose-blockquote:bg-blog-900/20"
+              />
             </div>
           )}
         </div>
