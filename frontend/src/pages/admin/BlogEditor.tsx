@@ -143,6 +143,29 @@ export default function BlogEditor() {
     loadOptions();
   }, []);
 
+  // 添加键盘快捷键 Cmd+S / Ctrl+S 保存功能
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // 检查 Cmd+S (Mac) 或 Ctrl+S (Windows/Linux)
+      if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+        event.preventDefault(); // 阻止浏览器默认的保存对话框
+
+        // 只有在标题不为空时才保存（基本验证）
+        if (formData.title.trim()) {
+          handleSave(false); // 非静默保存以显示用户反馈
+        }
+      }
+    };
+
+    // 将事件监听器添加到 document
+    document.addEventListener('keydown', handleKeyDown);
+
+    // 组件卸载时清理事件监听器
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [formData]); // 包含 formData 以获取最新数据
+
   // 更新表单数据
   const updateFormData = (key: keyof CreateBlogInput, value: any) => {
     setFormData(prev => ({ ...prev, [key]: value }));
@@ -226,14 +249,19 @@ export default function BlogEditor() {
 
       console.log('Final data payload:', submitData);
 
-
       if (isEditing) {
         await blogApi.updateBlog(Number(id), { ...submitData, id: Number(id) });
       } else {
-        await blogApi.createBlog(submitData);
+        const result = await blogApi.createBlog(submitData);
+        // 创建成功后更新URL为编辑模式，但不跳转页面
+        if (result && result.id) {
+          window.history.replaceState({}, '', `/admin/blogs/edit/${result.id}`);
+        }
       }
 
-      navigate('/admin/blogs');
+      // 保存成功后不跳转，停留在当前编辑器页面
+      // 可以显示保存成功的提示
+      console.log('博客保存成功');
     } catch (error) {
       setError(error instanceof Error ? error.message : '保存失败');
     } finally {
@@ -289,7 +317,7 @@ export default function BlogEditor() {
             {saving ? (
               <div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin mr-2" />
             ) : null}
-            保存草稿
+            保存
           </button>
           
           <button
