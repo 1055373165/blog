@@ -3,6 +3,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
 import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { visit } from 'unist-util-visit';
 import { 
   vscDarkPlus, 
   vs, 
@@ -61,6 +62,45 @@ interface MarkdownRendererProps {
   content: string;
   className?: string;
 }
+
+// 自定义插件：解析图片尺寸语法 {width=200 height=200}
+const remarkImageSize = () => {
+  return (tree: any) => {
+    visit(tree, 'image', (node: any) => {
+      if (node.alt) {
+        // 查找 alt 文本后面的 {width=xxx height=xxx} 模式
+        const match = node.alt.match(/^(.*?)\s*\{([^}]+)\}$/);
+        if (match) {
+          const [, cleanAlt, attributes] = match;
+          node.alt = cleanAlt.trim();
+
+          // 解析属性
+          const attrs: { [key: string]: string } = {};
+          const attrMatches = attributes.match(/(\w+)=(\d+)/g);
+          if (attrMatches) {
+            attrMatches.forEach((attr: string) => {
+              const [key, value] = attr.split('=');
+              attrs[key] = value;
+            });
+          }
+
+          // 将尺寸信息保存到 node.data
+          if (!node.data) node.data = {};
+          if (!node.data.hProperties) node.data.hProperties = {};
+
+          if (attrs.width) {
+            node.data.hProperties.width = attrs.width;
+            node.data.hProperties['data-width'] = attrs.width;
+          }
+          if (attrs.height) {
+            node.data.hProperties.height = attrs.height;
+            node.data.hProperties['data-height'] = attrs.height;
+          }
+        }
+      }
+    });
+  };
+};
 
 // Mermaid diagram component
 const MermaidDiagram = ({ code, isDark }: { code: string; isDark: boolean }) => {
@@ -695,7 +735,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       
       <div className={`prose dark:prose-invert max-w-none prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 ${className}`}>
         <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkImageSize]}
         rehypePlugins={[
           rehypeRaw,
           rehypeSlug
@@ -880,14 +920,36 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               {children}
             </td>
           ),
-          img: ({ src, alt }) => (
-            <img
-              src={src}
-              alt={alt}
-              className="max-w-full h-auto my-4"
-              loading="lazy"
-            />
-          ),
+          img: ({ src, alt, width, height, ...props }) => {
+            // 从 props 中获取自定义尺寸
+            const customWidth = width || (props as any)['data-width'];
+            const customHeight = height || (props as any)['data-height'];
+
+            // 构建样式对象
+            const style: React.CSSProperties = {};
+            let className = "max-w-full h-auto my-4";
+
+            if (customWidth || customHeight) {
+              if (customWidth) {
+                style.width = `${customWidth}px`;
+              }
+              if (customHeight) {
+                style.height = `${customHeight}px`;
+              }
+              // 当设置了自定义尺寸时，移除默认的 h-auto
+              className = "my-4";
+            }
+
+            return (
+              <img
+                src={src}
+                alt={alt}
+                className={className}
+                style={style}
+                loading="lazy"
+              />
+            );
+          },
           // 增强的折叠块支持 - 使用动态字体大小系统
           details: ({ children, ...props }) => (
             <details 
