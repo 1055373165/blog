@@ -1,5 +1,16 @@
 // 导出所有API模块
 import { apiClient } from './client';
+import type { 
+  User, 
+  Article, 
+  Submission, 
+  CreateSubmissionRequest, 
+  UpdateSubmissionRequest,
+  ReviewSubmissionRequest,
+  PaginatedResponse,
+  BlogStats
+} from '../types';
+
 export { apiClient } from './client';
 export { articlesApi } from './articles';
 export { categoriesApi } from './categories';
@@ -10,11 +21,11 @@ export * from './books';
 // 认证相关API
 export const authApi = {
   async register(data: { email: string; name: string; password: string; github_url?: string; bio?: string }) {
-    return apiClient.post<{ token: string; user: any }>('/api/auth/register', data);
+    return apiClient.post<{ token: string; user: User }>('/api/auth/register', data);
   },
 
   async login(email: string, password: string) {
-    return apiClient.post<{ token: string; user: any }>('/api/auth/login', {
+    return apiClient.post<{ token: string; user: User }>('/api/auth/login', {
       email,
       password,
     });
@@ -25,11 +36,11 @@ export const authApi = {
   },
 
   async getProfile() {
-    return apiClient.get<any>('/api/auth/profile');
+    return apiClient.get<User>('/api/auth/profile');
   },
 
-  async updateProfile(data: any) {
-    return apiClient.put<any>('/api/auth/profile', data);
+  async updateProfile(data: Partial<User>) {
+    return apiClient.put<User>('/api/auth/profile', data);
   },
 
   async changePassword(oldPassword: string, newPassword: string) {
@@ -43,22 +54,15 @@ export const authApi = {
 // 统计相关API
 export const statsApi = {
   async getStats() {
-    return apiClient.get<{
-      totalArticles: number;
-      publishedArticles: number;
-      totalViews: number;
-      totalLikes: number;
-      totalCategories: number;
-      totalTags: number;
-    }>('/api/stats');
+    return apiClient.get<BlogStats>('/api/stats');
   },
 
   async getPopularArticles(days: number = 30) {
-    return apiClient.get<any[]>(`/api/stats/popular-articles?days=${days}`);
+    return apiClient.get<Article[]>(`/api/stats/popular-articles?days=${days}`);
   },
 
   async getViewsStats(days: number = 30) {
-    return apiClient.get<any[]>(`/api/stats/views?days=${days}`);
+    return apiClient.get<{ date: string; views: number }[]>(`/api/stats/views?days=${days}`);
   },
 };
 
@@ -102,8 +106,8 @@ export const coverApi = {
 
 // 投稿相关API
 export const submissionsApi = {
-  async createSubmission(data: any) {
-    return apiClient.post<any>('/api/submissions', data);
+  async createSubmission(data: CreateSubmissionRequest) {
+    return apiClient.post<Submission>('/api/submissions', data);
   },
 
   async getMySubmissions(params?: { page?: number; limit?: number; status?: string; type?: string }) {
@@ -114,23 +118,15 @@ export const submissionsApi = {
     if (params?.type) query.append('type', params.type);
     
     const queryString = query.toString();
-    return apiClient.get<{
-      submissions: any[];
-      pagination: {
-        page: number;
-        limit: number;
-        total: number;
-        pages: number;
-      };
-    }>(`/api/submissions/my${queryString ? '?' + queryString : ''}`);
+    return apiClient.get<PaginatedResponse<Submission>>(`/api/submissions/my${queryString ? '?' + queryString : ''}`);
   },
 
   async getSubmission(id: number) {
-    return apiClient.get<any>(`/api/submissions/${id}`);
+    return apiClient.get<Submission>(`/api/submissions/${id}`);
   },
 
-  async updateSubmission(id: number, data: any) {
-    return apiClient.put<any>(`/api/submissions/${id}`, data);
+  async updateSubmission(id: number, data: UpdateSubmissionRequest) {
+    return apiClient.put<Submission>(`/api/submissions/${id}`, data);
   },
 
   async submitSubmission(id: number) {
@@ -151,18 +147,10 @@ export const submissionsApi = {
     if (params?.search) query.append('search', params.search);
     
     const queryString = query.toString();
-    return apiClient.get<{
-      submissions: any[];
-      pagination: {
-        page: number;
-        limit: number;
-        total: number;
-        pages: number;
-      };
-    }>(`/api/submissions/admin/all${queryString ? '?' + queryString : ''}`);
+    return apiClient.get<PaginatedResponse<Submission>>(`/api/submissions/admin/all${queryString ? '?' + queryString : ''}`);
   },
 
-  async reviewSubmission(id: number, data: { status: 'approved' | 'rejected'; review_notes?: string }) {
+  async reviewSubmission(id: number, data: ReviewSubmissionRequest) {
     return apiClient.post<void>(`/api/submissions/${id}/review`, data);
   },
 

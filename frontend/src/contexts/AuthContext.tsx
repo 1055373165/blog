@@ -8,6 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (data: { email: string; name: string; password: string; github_url?: string; bio?: string }) => Promise<void>;
   logout: () => void;
   refreshAuth: () => Promise<void>;
 }
@@ -96,6 +97,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const register = async (data: { email: string; name: string; password: string; github_url?: string; bio?: string }) => {
+    try {
+      const response = await authApi.register(data);
+      
+      if (response.success) {
+        const { token: newToken, user: userData } = response.data;
+        
+        // 设置状态
+        setToken(newToken);
+        setUser(userData);
+        
+        // 持久化存储
+        localStorage.setItem('auth_token', newToken);
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        // 设置API客户端token
+        apiClient.setAuthToken(newToken);
+      } else {
+        throw new Error(response.error || '注册失败');
+      }
+    } catch (error) {
+      console.error('Register error:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       // 调用后端登出接口
@@ -141,6 +168,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated,
     isLoading,
     login,
+    register,
     logout,
     refreshAuth,
   };

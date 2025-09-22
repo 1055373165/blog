@@ -91,6 +91,11 @@ func CalculateReadingTime(content string) int {
 	return minutes
 }
 
+// EstimateReadingTime 估算阅读时间（CalculateReadingTime的别名）
+func EstimateReadingTime(content string) int {
+	return CalculateReadingTime(content)
+}
+
 // countWords 计算单词数（支持中英文）
 func countWords(text string) int {
 	// 移除多余空格

@@ -223,11 +223,11 @@ export default function BlogCard({
         <div className="space-y-3 mt-auto">
           {/* 分类和标签 */}
           <div className="space-y-2">
-            {/* 分类信息 */}
-            {showCategory && blog.category && (
+            {/* 分类信息 - 只显示第一个分类 */}
+            {showCategory && blog.categories && blog.categories.length > 0 && (
               <div className="flex items-center">
                 <Link
-                  to={`/category/${blog.category.slug}`}
+                  to={`/category/${blog.categories[0].slug}`}
                   className={clsx(
                     'inline-flex items-center px-2 py-1 text-xs font-medium rounded-md transition-all duration-200 hover:scale-105',
                     'bg-blog-100 dark:bg-blog-800/50 text-blog-700 dark:text-blog-300',
@@ -236,7 +236,7 @@ export default function BlogCard({
                   )}
                 >
                   <DocumentIcon className="w-3 h-3 mr-1" />
-                  {blog.category.name}
+                  {blog.categories[0].name}
                 </Link>
               </div>
             )}

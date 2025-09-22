@@ -76,11 +76,13 @@ export default function AdminSeries() {
     try {
       const response = await seriesApi.createSeries(data);
 
-      // Backend returns Series object directly, wrapped in ApiResponse by client
+      // The API client wraps the response in an ApiResponse object.
+      // We check for success and the presence of data.
       if (response.success && response.data) {
         await loadSeries(); // Refresh the list
         showToast('系列创建成功', 'success');
       } else {
+        // Use the error message from the response if available.
         throw new Error(response.error || '创建系列失败');
       }
     } catch (err) {

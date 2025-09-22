@@ -17,15 +17,19 @@ type BaseModel struct {
 // User 用户模型
 type User struct {
 	BaseModel
-	Email    string `json:"email" gorm:"uniqueIndex;not null;size:255"`
-	Name     string `json:"name" gorm:"not null;size:255"`
-	Password string `json:"-" gorm:"not null;size:255"` // 不在JSON中显示密码
-	Avatar   string `json:"avatar"`
-	IsAdmin  bool   `json:"is_admin" gorm:"default:false"`
+	Email     string `json:"email" gorm:"uniqueIndex;not null;size:255"`
+	Name      string `json:"name" gorm:"not null;size:255"`
+	Password  string `json:"-" gorm:"not null;size:255"` // 不在JSON中显示密码
+	Avatar    string `json:"avatar"`
+	IsAdmin   bool   `json:"is_admin" gorm:"default:false"`
+	GitHubURL string `json:"github_url" gorm:"size:500"`     // GitHub链接
+	Bio       string `json:"bio" gorm:"type:text"`           // 个人简介
+	IsActive  bool   `json:"is_active" gorm:"default:true"`  // 用户状态
 
 	// 关联关系
-	Articles []Article `json:"articles,omitempty" gorm:"foreignKey:AuthorID"`
-	Blogs    []Blog    `json:"blogs,omitempty" gorm:"foreignKey:AuthorID"`
+	Articles    []Article    `json:"articles,omitempty" gorm:"foreignKey:AuthorID"`
+	Blogs       []Blog       `json:"blogs,omitempty" gorm:"foreignKey:AuthorID"`
+	Submissions []Submission `json:"submissions,omitempty" gorm:"foreignKey:AuthorID"`
 }
 
 // Category 分类模型
@@ -159,10 +163,11 @@ type Article struct {
 	LikesCount  int        `json:"likes_count" gorm:"default:0"`
 
 	// 外键
-	AuthorID    uint  `json:"author_id" gorm:"not null"`
-	CategoryID  *uint `json:"category_id"`
-	SeriesID    *uint `json:"series_id"`
-	SeriesOrder *int  `json:"series_order"`
+	AuthorID     uint  `json:"author_id" gorm:"not null"`
+	CategoryID   *uint `json:"category_id"`
+	SeriesID     *uint `json:"series_id"`
+	SeriesOrder  *int  `json:"series_order"`
+	SubmissionID *uint `json:"submission_id"` // 关联的投稿ID（如果是从投稿发布的）
 
 	// SEO字段
 	MetaTitle       string `json:"meta_title"`
@@ -170,10 +175,11 @@ type Article struct {
 	MetaKeywords    string `json:"meta_keywords"`
 
 	// 关联关系
-	Author   User      `json:"author" gorm:"foreignKey:AuthorID"`
-	Category *Category `json:"category,omitempty" gorm:"foreignKey:CategoryID"`
-	Series   *Series   `json:"series,omitempty" gorm:"foreignKey:SeriesID"`
-	Tags     []Tag     `json:"tags,omitempty" gorm:"many2many:article_tags;"`
+	Author     User        `json:"author" gorm:"foreignKey:AuthorID"`
+	Category   *Category   `json:"category,omitempty" gorm:"foreignKey:CategoryID"`
+	Series     *Series     `json:"series,omitempty" gorm:"foreignKey:SeriesID"`
+	Submission *Submission `json:"submission,omitempty" gorm:"foreignKey:SubmissionID"`
+	Tags       []Tag       `json:"tags,omitempty" gorm:"many2many:article_tags;"`
 }
 
 // ArticleView 文章浏览记录
@@ -225,6 +231,39 @@ type SearchStatistics struct {
 	SearchedAt  time.Time `json:"searched_at" gorm:"autoCreateTime"`
 }
 
+// Submission 投稿模型
+type Submission struct {
+	BaseModel
+	Title       string     `json:"title" gorm:"not null;size:255"`
+	Content     string     `json:"content" gorm:"type:longtext"`
+	Excerpt     string     `json:"excerpt"`
+	CoverImage  string     `json:"cover_image"`
+	Status      string     `json:"status" gorm:"not null;size:20;default:'draft'"` // draft, submitted, approved, rejected, published
+	Type        string     `json:"type" gorm:"not null;size:20;default:'article'"` // article, blog
+	SubmittedAt *time.Time `json:"submitted_at"`
+	ReviewedAt  *time.Time `json:"reviewed_at"`
+	ReviewNotes string     `json:"review_notes" gorm:"type:text"` // 审核备注
+	ReadingTime int        `json:"reading_time" gorm:"default:0"` // 预估阅读时间（分钟）
+
+	// 外键
+	AuthorID   uint  `json:"author_id" gorm:"not null"`
+	CategoryID *uint `json:"category_id"`
+	SeriesID   *uint `json:"series_id"`
+	ReviewerID *uint `json:"reviewer_id"` // 审核者ID
+
+	// SEO字段
+	MetaTitle       string `json:"meta_title"`
+	MetaDescription string `json:"meta_description"`
+	MetaKeywords    string `json:"meta_keywords"`
+
+	// 关联关系
+	Author   User      `json:"author" gorm:"foreignKey:AuthorID"`
+	Category *Category `json:"category,omitempty" gorm:"foreignKey:CategoryID"`
+	Series   *Series   `json:"series,omitempty" gorm:"foreignKey:SeriesID"`
+	Reviewer *User     `json:"reviewer,omitempty" gorm:"foreignKey:ReviewerID"`
+	Tags     []Tag     `json:"tags,omitempty" gorm:"many2many:submission_tags;"`
+}
+
 // Config 系统配置模型
 type Config struct {
 	ID          uint      `json:"id" gorm:"primaryKey"`
@@ -247,6 +286,7 @@ func (BlogLike) TableName() string         { return "blog_likes" }
 func (Article) TableName() string          { return "articles" }
 func (ArticleView) TableName() string      { return "article_views" }
 func (ArticleLike) TableName() string      { return "article_likes" }
+func (Submission) TableName() string       { return "submissions" }
 func (SearchIndex) TableName() string      { return "search_indexes" }
 func (SearchStatistics) TableName() string { return "search_statistics" }
 func (Config) TableName() string           { return "configs" }

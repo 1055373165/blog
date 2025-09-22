@@ -102,6 +102,7 @@ func main() {
 		// 认证相关路由
 		auth := api.Group("/auth")
 		{
+			auth.POST("/register", handlers.Register)
 			auth.POST("/login", handlers.Login)
 			auth.POST("/logout", middleware.AuthRequired(), handlers.Logout)
 			auth.GET("/profile", middleware.AuthRequired(), handlers.GetProfile)
@@ -225,6 +226,24 @@ func main() {
 			books.POST("/refresh", handlers.RefreshBooks)
 			books.GET("/metadata/:filename", handlers.GetBookMetadata)
 			books.GET("/description", handlers.GetBookDetailedDescription)
+		}
+
+		// 投稿相关路由
+		submissions := api.Group("/submissions")
+		submissions.Use(middleware.LargeRequestHandler()) // 为投稿接口设置10MB限制
+		{
+			// 用户投稿接口
+			submissions.POST("", middleware.AuthRequired(), handlers.CreateSubmission)
+			submissions.GET("/my", middleware.AuthRequired(), handlers.GetMySubmissions)
+			submissions.GET("/:id", middleware.AuthRequired(), handlers.GetSubmission)
+			submissions.PUT("/:id", middleware.AuthRequired(), handlers.UpdateSubmission)
+			submissions.POST("/:id/submit", middleware.AuthRequired(), handlers.SubmitSubmission)
+			submissions.DELETE("/:id", middleware.AuthRequired(), handlers.DeleteSubmission)
+
+			// 管理员投稿管理接口
+			submissions.GET("/admin/all", middleware.AuthRequired(), handlers.GetAllSubmissions)
+			submissions.POST("/:id/review", middleware.AuthRequired(), handlers.ReviewSubmission)
+			submissions.POST("/:id/publish", middleware.AuthRequired(), handlers.PublishSubmission)
 		}
 	}
 

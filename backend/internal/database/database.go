@@ -84,6 +84,7 @@ func AutoMigrate() error {
 		&models.Blog{},
 		&models.BlogView{},
 		&models.BlogLike{},
+		&models.Submission{},
 		&models.SearchIndex{},
 		&models.SearchStatistics{},
 		&models.Config{},

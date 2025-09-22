@@ -15,11 +15,18 @@ import {
   XMarkIcon,
   ChevronUpIcon,
   CogIcon,
-  VideoCameraIcon
+  VideoCameraIcon,
+  UserIcon,
+  ArrowRightEndOnRectangleIcon,
+  UserCircleIcon,
+  PlusIcon,
+  DocumentPlusIcon
 } from '@heroicons/react/24/outline';
 import { useTheme } from '../contexts/ThemeContext';
 import type { ColorTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import ThemeSettings from './ThemeSettings';
+import AuthModal from './AuthModal';
 
 interface NavigationItem {
   name: string;
@@ -46,8 +53,12 @@ interface FloatingNavigationProps {
 export default function FloatingNavigation({ className }: FloatingNavigationProps) {
   const location = useLocation();
   const { settings, isDark, updateColorTheme } = useTheme();
+  const { user, isAuthenticated, logout } = useAuth();
   const [themeSettingsOpen, setThemeSettingsOpen] = useState(false);
   const [isTogglingTheme, setIsTogglingTheme] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   
   // Theme toggle function - simple light/dark toggle only
   const toggleTheme = () => {
@@ -73,6 +84,29 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
     // Reset toggle state after a short delay
     setTimeout(() => setIsTogglingTheme(false), 150);
   };
+
+  // 处理用户登录
+  const handleLogin = () => {
+    setAuthModalMode('login');
+    setAuthModalOpen(true);
+  };
+
+  // 处理用户注册
+  const handleRegister = () => {
+    setAuthModalMode('register');
+    setAuthModalOpen(true);
+  };
+
+  // 处理用户登出
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setUserMenuOpen(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
@@ -280,6 +314,151 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
             
             {/* 分隔线 */}
             <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2" />
+            
+            {/* 用户按钮 */}
+            {isAuthenticated ? (
+              <div className="relative">
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className={clsx(
+                    'p-2 rounded-xl transition-all duration-300 group',
+                    'min-h-[44px] min-w-[44px] touch-manipulation',
+                    'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
+                    'hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700',
+                    userMenuOpen && 'bg-gray-100 dark:bg-gray-800'
+                  )}
+                  title={`${user?.name || '用户'} (${user?.email})`}
+                  aria-label="用户菜单"
+                >
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="w-6 h-6 rounded-full object-cover"
+                    />
+                  ) : (
+                    <UserCircleIcon className="w-6 h-6" />
+                  )}
+                </button>
+
+                {/* 用户下拉菜单 */}
+                {userMenuOpen && (
+                  <div className={clsx(
+                    'absolute top-full right-0 mt-2 w-56 rounded-xl backdrop-blur-xl transition-all duration-200 z-50',
+                    'bg-white/95 dark:bg-gray-900/95',
+                    'border border-white/30 dark:border-gray-800/30',
+                    'shadow-2xl shadow-black/20'
+                  )}>
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center space-x-3">
+                        {user?.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <UserCircleIcon className="w-10 h-10 text-gray-400" />
+                        )}
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">{user?.name}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{user?.email}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-2">
+                      <Link
+                        to="/profile"
+                        onClick={() => setUserMenuOpen(false)}
+                        className={clsx(
+                          'flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors',
+                          'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        )}
+                      >
+                        <UserIcon className="w-5 h-5" />
+                        <span>个人资料</span>
+                      </Link>
+
+                      <Link
+                        to="/submissions"
+                        onClick={() => setUserMenuOpen(false)}
+                        className={clsx(
+                          'flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors',
+                          'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        )}
+                      >
+                        <DocumentPlusIcon className="w-5 h-5" />
+                        <span>我的投稿</span>
+                      </Link>
+
+                      <Link
+                        to="/submissions/new"
+                        onClick={() => setUserMenuOpen(false)}
+                        className={clsx(
+                          'flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors',
+                          'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        )}
+                      >
+                        <PlusIcon className="w-5 h-5" />
+                        <span>新建投稿</span>
+                      </Link>
+
+                      {user?.is_admin && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setUserMenuOpen(false)}
+                          className={clsx(
+                            'flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors',
+                            'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                          )}
+                        >
+                          <CogIcon className="w-5 h-5" />
+                          <span>后台管理</span>
+                        </Link>
+                      )}
+
+                      <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
+
+                      <button
+                        onClick={handleLogout}
+                        className={clsx(
+                          'flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors w-full text-left',
+                          'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                        )}
+                      >
+                        <ArrowRightEndOnRectangleIcon className="w-5 h-5" />
+                        <span>退出登录</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center space-x-1">
+                <button
+                  onClick={handleLogin}
+                  className={clsx(
+                    'px-3 py-2 rounded-lg transition-all duration-300',
+                    'text-sm font-medium',
+                    'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
+                    'hover:bg-gray-100 dark:hover:bg-gray-800'
+                  )}
+                >
+                  登录
+                </button>
+                <button
+                  onClick={handleRegister}
+                  className={clsx(
+                    'px-3 py-2 rounded-lg transition-all duration-300',
+                    'text-sm font-medium',
+                    'bg-primary-600 hover:bg-primary-700 text-white'
+                  )}
+                >
+                  注册
+                </button>
+              </div>
+            )}
             
             {/* 主题切换 */}
             <button

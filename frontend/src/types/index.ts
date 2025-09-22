@@ -48,7 +48,10 @@ export interface User {
   email: string;
   name: string;
   avatar?: string;
+  github_url?: string;
+  bio?: string;
   is_admin: boolean;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -124,8 +127,7 @@ export interface Article {
   // 关联数据
   author: User;
   author_id: number;
-  category_id?: number;
-  category?: Category;
+  categories?: Category[];
   tags: Tag[];
   series_id?: number;
   series?: Series;
@@ -146,7 +148,7 @@ export interface CreateArticleInput {
   content: string;
   excerpt?: string;
   cover_image?: string;
-  category_id?: number;
+  category_ids?: number[];
   tag_ids?: number[];
   series_id?: number;
   series_order?: number;
@@ -186,7 +188,7 @@ export interface UpdateSeriesRequest extends Partial<CreateSeriesRequest> {
 // 搜索相关类型
 export interface SearchFilters {
   query?: string;
-  category_id?: number;
+  category_ids?: number[];
   tag_ids?: number[];
   series_id?: number;
   date_from?: string;
@@ -202,6 +204,57 @@ export interface SearchResult {
   tags: Tag[];
   series: Series[];
   total: number;
+}
+
+// 投稿相关类型
+export interface Submission {
+  id: number;
+  title: string;
+  content: string;
+  excerpt?: string;
+  cover_image?: string;
+  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'published';
+  type: 'article' | 'blog';
+  submitted_at?: string;
+  reviewed_at?: string;
+  review_notes?: string;
+  reading_time: number;
+  author_id: number;
+  category_ids?: number[];
+  series_id?: number;
+  reviewer_id?: number;
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
+  created_at: string;
+  updated_at: string;
+  author: User;
+  categories?: Category[];
+  series?: Series;
+  reviewer?: User;
+  tags: Tag[];
+}
+
+export interface CreateSubmissionRequest {
+  title: string;
+  content: string;
+  excerpt?: string;
+  cover_image?: string;
+  type: 'article' | 'blog';
+  category_ids?: number[];
+  series_id?: number;
+  tag_ids?: number[];
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
+}
+
+export interface UpdateSubmissionRequest extends Partial<CreateSubmissionRequest> {
+}
+
+export interface ReviewSubmissionRequest {
+  status: 'approved' | 'rejected';
+  review_notes?: string;
 }
 
 // 统计相关类型
@@ -361,8 +414,7 @@ export interface Blog {
   // 关联数据
   author: User;
   author_id: number;
-  category_id?: number;
-  category?: Category;
+  categories?: Category[];
   tags: Tag[];
   
   // SEO相关
@@ -390,7 +442,7 @@ export interface CreateBlogInput {
   audio_duration?: number;
   audio_file_size?: number;
   audio_mime_type?: string;
-  category_id?: number;
+  category_ids?: number[];
   tag_ids?: number[];
   is_published: boolean;
   meta_title?: string;
@@ -417,7 +469,7 @@ export interface BlogListResponse {
 export interface BlogFilters {
   search?: string;
   type?: 'audio' | 'video';
-  category_id?: number;
+  category_ids?: number[];
   tag_ids?: number[];
   is_published?: boolean;
   sort_by?: 'created_at' | 'updated_at' | 'published_at' | 'views_count' | 'likes_count' | 'title' | 'duration';

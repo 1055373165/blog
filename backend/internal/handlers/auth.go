@@ -19,11 +19,120 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+// RegisterRequest 注册请求结构
+type RegisterRequest struct {
+	Email     string `json:"email" binding:"required,email"`
+	Name      string `json:"name" binding:"required,min=2,max=50"`
+	Password  string `json:"password" binding:"required,min=6"`
+	GitHubURL string `json:"github_url,omitempty"`
+	Bio       string `json:"bio,omitempty"`
+}
+
 // UpdateProfileRequest 更新个人资料请求结构
 type UpdateProfileRequest struct {
-	Name     string `json:"name,omitempty"`
-	Avatar   string `json:"avatar,omitempty"`
-	Password string `json:"password,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Avatar    string `json:"avatar,omitempty"`
+	Password  string `json:"password,omitempty"`
+	GitHubURL string `json:"github_url,omitempty"`
+	Bio       string `json:"bio,omitempty"`
+}
+
+// Register 用户注册
+func Register(c *gin.Context) {
+	var req RegisterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "请求参数无效",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// 验证密码强度
+	if err := auth.ValidatePasswordStrength(req.Password); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	// 检查邮箱是否已存在
+	var existingUser models.User
+	err := database.DB.Where("email = ?", req.Email).First(&existingUser).Error
+	if err == nil {
+		c.JSON(http.StatusConflict, gin.H{
+			"success": false,
+			"error":   "邮箱已被注册",
+		})
+		return
+	}
+	if err != gorm.ErrRecordNotFound {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "数据库查询失败",
+		})
+		return
+	}
+
+	// 加密密码
+	hashedPassword, err := auth.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "密码加密失败",
+		})
+		return
+	}
+
+	// 创建用户
+	user := models.User{
+		Email:     req.Email,
+		Name:      req.Name,
+		Password:  hashedPassword,
+		GitHubURL: req.GitHubURL,
+		Bio:       req.Bio,
+		IsActive:  true,
+		IsAdmin:   false,
+	}
+
+	err = database.DB.Create(&user).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "用户创建失败",
+		})
+		return
+	}
+
+	// 生成JWT token
+	token, err := auth.GenerateToken(user.ID, user.Email, user.IsAdmin)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "生成token失败",
+		})
+		return
+	}
+
+	// 返回用户信息和token
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "注册成功",
+		"data": gin.H{
+			"token": token,
+			"user": gin.H{
+				"id":         user.ID,
+				"email":      user.Email,
+				"name":       user.Name,
+				"avatar":     user.Avatar,
+				"github_url": user.GitHubURL,
+				"bio":        user.Bio,
+				"is_admin":   user.IsAdmin,
+			},
+		},
+	})
 }
 
 // Login 用户登录
@@ -82,11 +191,13 @@ func Login(c *gin.Context) {
 		"data": gin.H{
 			"token": token,
 			"user": gin.H{
-				"id":       user.ID,
-				"email":    user.Email,
-				"name":     user.Name,
-				"avatar":   user.Avatar,
-				"is_admin": user.IsAdmin,
+				"id":         user.ID,
+				"email":      user.Email,
+				"name":       user.Name,
+				"avatar":     user.Avatar,
+				"github_url": user.GitHubURL,
+				"bio":        user.Bio,
+				"is_admin":   user.IsAdmin,
 			},
 		},
 	})
@@ -140,7 +251,10 @@ func GetProfile(c *gin.Context) {
 			"email":      user.Email,
 			"name":       user.Name,
 			"avatar":     user.Avatar,
+			"github_url": user.GitHubURL,
+			"bio":        user.Bio,
 			"is_admin":   user.IsAdmin,
+			"is_active":  user.IsActive,
 			"created_at": user.CreatedAt,
 			"updated_at": user.UpdatedAt,
 		},
@@ -197,6 +311,14 @@ func UpdateProfile(c *gin.Context) {
 		updates["avatar"] = req.Avatar
 	}
 	
+	if req.GitHubURL != "" {
+		updates["github_url"] = req.GitHubURL
+	}
+	
+	if req.Bio != "" {
+		updates["bio"] = req.Bio
+	}
+	
 	if req.Password != "" {
 		// 验证密码强度
 		if err := auth.ValidatePasswordStrength(req.Password); err != nil {
@@ -250,7 +372,10 @@ func UpdateProfile(c *gin.Context) {
 			"email":      user.Email,
 			"name":       user.Name,
 			"avatar":     user.Avatar,
+			"github_url": user.GitHubURL,
+			"bio":        user.Bio,
 			"is_admin":   user.IsAdmin,
+			"is_active":  user.IsActive,
 			"created_at": user.CreatedAt,
 			"updated_at": user.UpdatedAt,
 		},
