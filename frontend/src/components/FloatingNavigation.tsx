@@ -600,9 +600,16 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
       )}
       
       {/* 主题设置面板 */}
-      <ThemeSettings 
-        isOpen={themeSettingsOpen} 
-        onClose={() => setThemeSettingsOpen(false)} 
+      <ThemeSettings
+        isOpen={themeSettingsOpen}
+        onClose={() => setThemeSettingsOpen(false)}
+      />
+
+      {/* 登录注册模态框 */}
+      <AuthModal
+        isOpen={authModalOpen}
+        defaultMode={authModalMode}
+        onClose={() => setAuthModalOpen(false)}
       />
     </>
   );
