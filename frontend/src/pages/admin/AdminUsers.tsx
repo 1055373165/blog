@@ -35,6 +35,8 @@ export default function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -43,6 +45,7 @@ export default function AdminUsers() {
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: '20'
@@ -62,9 +65,20 @@ export default function AdminUsers() {
         const data = await response.json();
         setUsers(data.users || []);
         setTotalPages(Math.ceil((data.total || 0) / 20));
+        setTotalUsers(data.total || 0);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || '获取用户列表失败');
+        setUsers([]);
+        setTotalPages(1);
+        setTotalUsers(0);
       }
     } catch (error) {
       console.error('获取用户列表失败:', error);
+      setError('网络连接失败，请稍后重试');
+      setUsers([]);
+      setTotalPages(1);
+      setTotalUsers(0);
     } finally {
       setIsLoading(false);
     }
@@ -136,20 +150,26 @@ export default function AdminUsers() {
   return (
     <div className="space-y-6">
       {/* 头部 */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             用户管理
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             管理系统中的所有用户账户
           </p>
+          {totalUsers > 0 && (
+            <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+              共 {totalUsers} 个用户
+            </p>
+          )}
         </div>
       </div>
 
       {/* 筛选器 */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">筛选条件</h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               搜索用户
@@ -210,20 +230,46 @@ export default function AdminUsers() {
         </div>
       </div>
 
+      {/* 错误提示 */}
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <XCircleIcon className="w-5 h-5 text-red-500 mr-3" />
+            <div>
+              <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
+                加载失败
+              </h3>
+              <p className="text-sm text-red-700 dark:text-red-400 mt-1">
+                {error}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setError(null);
+                fetchUsers();
+              }}
+              className="ml-auto text-red-500 hover:text-red-700 dark:hover:text-red-300"
+            >
+              重试
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 用户列表 */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center">
-            <div className="animate-spin w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">加载中...</p>
+          <div className="p-12 text-center">
+            <div className="animate-spin w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full mx-auto mb-6"></div>
+            <p className="text-gray-600 dark:text-gray-400 text-lg">加载中...</p>
           </div>
         ) : filteredUsers.length === 0 ? (
-          <div className="p-8 text-center">
-            <UserIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          <div className="p-12 text-center">
+            <UserIcon className="w-20 h-20 text-gray-400 mx-auto mb-6" />
+            <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-3">
               没有找到用户
             </h3>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-gray-600 dark:text-gray-400 text-lg">
               尝试调整筛选条件或搜索关键词
             </p>
           </div>
@@ -255,16 +301,16 @@ export default function AdminUsers() {
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                    <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
+                      <td className="px-6 py-5 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                              <UserIcon className="h-6 w-6 text-gray-400" />
+                          <div className="flex-shrink-0 h-12 w-12">
+                            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-800 dark:to-blue-900 flex items-center justify-center">
+                              <UserIcon className="h-6 w-6 text-blue-600 dark:text-blue-300" />
                             </div>
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            <div className="text-sm font-semibold text-gray-900 dark:text-white">
                               {user.name}
                             </div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -317,14 +363,30 @@ export default function AdminUsers() {
                           )}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        <div>文章: {user.articles_count || 0}</div>
-                        <div>投稿: {user.submissions_count || 0}</div>
+                      <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        <div className="space-y-1">
+                          <div className="flex items-center">
+                            <span className="text-gray-600 dark:text-gray-400 w-10">文章:</span>
+                            <span className="font-medium">{user.articles_count || 0}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-gray-600 dark:text-gray-400 w-10">投稿:</span>
+                            <span className="font-medium">{user.submissions_count || 0}</span>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {new Date(user.created_at).toLocaleDateString()}
+                      <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        <div className="space-y-1">
+                          <div>{new Date(user.created_at).toLocaleDateString()}</div>
+                          {user.last_login_at && (
+                            <div className="text-xs text-gray-400">
+                              最后登录: {new Date(user.last_login_at).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      <td className="px-6 py-5 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center space-x-2">
                         <button
                           onClick={() => handleToggleAdmin(user.id, user.is_admin)}
                           className={clsx(
@@ -351,13 +413,14 @@ export default function AdminUsers() {
                           {user.is_active ? <XCircleIcon className="w-3 h-3" /> : <CheckCircleIcon className="w-3 h-3" />}
                         </button>
 
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="inline-flex items-center px-2 py-1 text-xs rounded text-red-700 bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-300"
-                          title="删除用户"
-                        >
-                          <TrashIcon className="w-3 h-3" />
-                        </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="inline-flex items-center px-2 py-1 text-xs rounded text-red-700 bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-300 transition-colors duration-200"
+                            title="删除用户"
+                          >
+                            <TrashIcon className="w-3 h-3" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -367,25 +430,31 @@ export default function AdminUsers() {
 
             {/* 分页 */}
             {totalPages > 1 && (
-              <div className="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
+              <div className="bg-white dark:bg-gray-800 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex justify-between items-center">
                   <div className="text-sm text-gray-700 dark:text-gray-300">
-                    第 {currentPage} 页，共 {totalPages} 页
+                    显示第 <span className="font-medium">{(currentPage - 1) * 20 + 1}</span> - <span className="font-medium">{Math.min(currentPage * 20, totalUsers)}</span> 条，
+                    共 <span className="font-medium">{totalUsers}</span> 条记录，<span className="font-medium">{totalPages}</span> 页
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex items-center space-x-3">
                     <Button
                       variant="secondary"
                       size="sm"
                       onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                       disabled={currentPage === 1}
+                      className="px-4 py-2"
                     >
                       上一页
                     </Button>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {currentPage} / {totalPages}
+                    </span>
                     <Button
                       variant="secondary"
                       size="sm"
                       onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                       disabled={currentPage === totalPages}
+                      className="px-4 py-2"
                     >
                       下一页
                     </Button>
