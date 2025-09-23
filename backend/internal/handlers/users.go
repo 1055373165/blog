@@ -23,14 +23,14 @@ type UserResponse struct {
 // GetUsers 获取用户列表（管理员接口）
 func GetUsers(c *gin.Context) {
 	// 检查是否为管理员
-	currentUser, exists := c.Get("current_user")
+	_, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
 		return
 	}
 
-	user := currentUser.(*models.User)
-	if !user.IsAdmin {
+	isAdmin, exists := c.Get("is_admin")
+	if !exists || !isAdmin.(bool) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "权限不足"})
 		return
 	}
@@ -124,14 +124,14 @@ func GetUsers(c *gin.Context) {
 // ToggleUserAdmin 切换用户管理员权限
 func ToggleUserAdmin(c *gin.Context) {
 	// 检查是否为管理员
-	currentUser, exists := c.Get("current_user")
+	currentUserID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
 		return
 	}
 
-	adminUser := currentUser.(*models.User)
-	if !adminUser.IsAdmin {
+	isAdmin, exists := c.Get("is_admin")
+	if !exists || !isAdmin.(bool) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "权限不足"})
 		return
 	}
@@ -144,7 +144,7 @@ func ToggleUserAdmin(c *gin.Context) {
 	}
 
 	// 不能修改自己的权限
-	if uint(userID) == adminUser.ID {
+	if uint(userID) == currentUserID.(uint) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "不能修改自己的管理员权限"})
 		return
 	}
@@ -174,14 +174,14 @@ func ToggleUserAdmin(c *gin.Context) {
 // ToggleUserActive 切换用户状态
 func ToggleUserActive(c *gin.Context) {
 	// 检查是否为管理员
-	currentUser, exists := c.Get("current_user")
+	currentUserID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
 		return
 	}
 
-	adminUser := currentUser.(*models.User)
-	if !adminUser.IsAdmin {
+	isAdmin, exists := c.Get("is_admin")
+	if !exists || !isAdmin.(bool) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "权限不足"})
 		return
 	}
@@ -194,7 +194,7 @@ func ToggleUserActive(c *gin.Context) {
 	}
 
 	// 不能禁用自己
-	if uint(userID) == adminUser.ID {
+	if uint(userID) == currentUserID.(uint) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "不能禁用自己的账户"})
 		return
 	}
@@ -224,14 +224,14 @@ func ToggleUserActive(c *gin.Context) {
 // DeleteUser 删除用户
 func DeleteUser(c *gin.Context) {
 	// 检查是否为管理员
-	currentUser, exists := c.Get("current_user")
+	currentUserID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
 		return
 	}
 
-	adminUser := currentUser.(*models.User)
-	if !adminUser.IsAdmin {
+	isAdmin, exists := c.Get("is_admin")
+	if !exists || !isAdmin.(bool) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "权限不足"})
 		return
 	}
@@ -244,7 +244,7 @@ func DeleteUser(c *gin.Context) {
 	}
 
 	// 不能删除自己
-	if uint(userID) == adminUser.ID {
+	if uint(userID) == currentUserID.(uint) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "不能删除自己的账户"})
 		return
 	}
@@ -292,14 +292,14 @@ func DeleteUser(c *gin.Context) {
 // GetUserDetail 获取用户详情（管理员接口）
 func GetUserDetail(c *gin.Context) {
 	// 检查是否为管理员
-	currentUser, exists := c.Get("current_user")
+	_, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
 		return
 	}
 
-	user := currentUser.(*models.User)
-	if !user.IsAdmin {
+	isAdmin, exists := c.Get("is_admin")
+	if !exists || !isAdmin.(bool) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "权限不足"})
 		return
 	}
