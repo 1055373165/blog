@@ -29,6 +29,7 @@ export default function AdminLayout() {
     { name: '系列管理', href: '/admin/series', icon: 'series' },
     { name: '分类管理', href: '/admin/categories', icon: 'folder' },
     { name: '标签管理', href: '/admin/tags', icon: 'tag' },
+    { name: '用户管理', href: '/admin/users', icon: 'users' },
   ];
 
   const isActive = (href: string) => {
@@ -68,6 +69,11 @@ export default function AdminLayout() {
       video: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+        </svg>
+      ),
+      users: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
         </svg>
       ),
     };

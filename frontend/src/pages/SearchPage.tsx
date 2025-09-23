@@ -297,6 +297,7 @@ export default function SearchPage() {
                         email: doc.author.email || '',
                         avatar: doc.author.avatar || '',
                         is_admin: doc.author.is_admin || false,
+                        is_active: doc.author.is_active !== undefined ? doc.author.is_active : true,
                         created_at: doc.author.created_at || '',
                         updated_at: doc.author.updated_at || '',
                       },

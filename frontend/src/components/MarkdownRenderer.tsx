@@ -2,8 +2,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
 import rehypeRaw from 'rehype-raw';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
+import { PhotoProvider, PhotoView } from 'react-photo-view';
+import 'react-photo-view/dist/react-photo-view.css';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { visit } from 'unist-util-visit';
 import { 
   vscDarkPlus, 
   vs, 
@@ -62,45 +64,6 @@ interface MarkdownRendererProps {
   content: string;
   className?: string;
 }
-
-// 自定义插件：解析图片尺寸语法 {width=200 height=200}
-const remarkImageSize = () => {
-  return (tree: any) => {
-    visit(tree, 'image', (node: any) => {
-      if (node.alt) {
-        // 查找 alt 文本后面的 {width=xxx height=xxx} 模式
-        const match = node.alt.match(/^(.*?)\s*\{([^}]+)\}$/);
-        if (match) {
-          const [, cleanAlt, attributes] = match;
-          node.alt = cleanAlt.trim();
-
-          // 解析属性
-          const attrs: { [key: string]: string } = {};
-          const attrMatches = attributes.match(/(\w+)=(\d+)/g);
-          if (attrMatches) {
-            attrMatches.forEach((attr: string) => {
-              const [key, value] = attr.split('=');
-              attrs[key] = value;
-            });
-          }
-
-          // 将尺寸信息保存到 node.data
-          if (!node.data) node.data = {};
-          if (!node.data.hProperties) node.data.hProperties = {};
-
-          if (attrs.width) {
-            node.data.hProperties.width = attrs.width;
-            node.data.hProperties['data-width'] = attrs.width;
-          }
-          if (attrs.height) {
-            node.data.hProperties.height = attrs.height;
-            node.data.hProperties['data-height'] = attrs.height;
-          }
-        }
-      }
-    });
-  };
-};
 
 // Mermaid diagram component
 const MermaidDiagram = ({ code, isDark }: { code: string; isDark: boolean }) => {
@@ -185,6 +148,22 @@ const MermaidDiagram = ({ code, isDark }: { code: string; isDark: boolean }) => 
 
 export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
   const { settings, isDark } = useTheme();
+
+  // 安全策略配置 - 扩展白名单允许图片相关属性
+  const sanitizeSchema = {
+    ...defaultSchema,
+    attributes: {
+      ...defaultSchema.attributes,
+      img: [
+        'src', 'alt', 'title', 'width', 'height', 'className', 'style',
+        'loading', 'decoding', 'data-*'
+      ]
+    },
+    protocols: {
+      ...defaultSchema.protocols,
+      src: ['http', 'https', 'data']
+    }
+  };
 
   // 统一字体大小映射 - 确保正文和折叠块使用相同的字体大小
   const getFontSizeValues = (fontSize: string) => {
@@ -734,12 +713,79 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       <div dangerouslySetInnerHTML={{ __html: foldableStyles }} />
       
       <div className={`prose dark:prose-invert max-w-none prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 ${className}`}>
-        <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkImageSize]}
-        rehypePlugins={[
-          rehypeRaw,
-          rehypeSlug
-        ]}
+        <PhotoProvider 
+          maskOpacity={isDark ? 0.9 : 0.8}
+          bannerVisible={false}
+          maskStyle={{
+            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.8)'
+          }}
+          toolbarRender={({ rotate, onRotate, scale, onScale }) => (
+            <div className={`flex items-center space-x-3 backdrop-blur-sm rounded-lg px-3 py-2 ${
+              isDark 
+                ? 'bg-gray-800/40 border border-gray-600/30' 
+                : 'bg-white/20 border border-white/30'
+            }`}>
+              <button
+                onClick={() => onScale(scale + 0.5)}
+                className={`p-2 transition-colors ${
+                  isDark 
+                    ? 'text-gray-100 hover:text-blue-300' 
+                    : 'text-white hover:text-blue-200'
+                }`}
+                aria-label="放大"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </button>
+              <button
+                onClick={() => onScale(scale - 0.5)}
+                className={`p-2 transition-colors ${
+                  isDark 
+                    ? 'text-gray-100 hover:text-blue-300' 
+                    : 'text-white hover:text-blue-200'
+                }`}
+                aria-label="缩小"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
+                </svg>
+              </button>
+              <button
+                onClick={() => onRotate(rotate + 90)}
+                className={`p-2 transition-colors ${
+                  isDark 
+                    ? 'text-gray-100 hover:text-blue-300' 
+                    : 'text-white hover:text-blue-200'
+                }`}
+                aria-label="旋转"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            </div>
+          )}
+          overlayRender={({ images, index }) => {
+            const currentImage = images[index];
+            return currentImage?.alt ? (
+              <div className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 backdrop-blur-sm px-4 py-2 rounded-lg max-w-md text-center ${
+                isDark 
+                  ? 'bg-gray-800/60 text-gray-100 border border-gray-600/30' 
+                  : 'bg-black/50 text-white border border-white/20'
+              }`}>
+                {currentImage.alt}
+              </div>
+            ) : null;
+          }}
+        >
+          <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[
+            rehypeRaw,
+            [rehypeSanitize, sanitizeSchema],
+            rehypeSlug
+          ]}
         components={{
           code: ({ inline, className, children }: { inline?: boolean; className?: string; children?: React.ReactNode }) => {
             const match = /language-(\w+)/.exec(className || '');
@@ -920,34 +966,79 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               {children}
             </td>
           ),
-          img: ({ src, alt, width, height, ...props }) => {
-            // 从 props 中获取自定义尺寸
-            const customWidth = width || (props as any)['data-width'];
-            const customHeight = height || (props as any)['data-height'];
-
-            // 构建样式对象
-            const style: React.CSSProperties = {};
-            let className = "max-w-full h-auto my-4";
-
-            if (customWidth || customHeight) {
-              if (customWidth) {
-                style.width = `${customWidth}px`;
+          img: ({ src, alt, node, ...props }) => {
+            // Fallback 语法解析：![封面 | w=480 h=320 .mx-auto .rounded](url)
+            const parseFallbackAttributes = (altText: string) => {
+              const pipeIndex = altText?.indexOf(' | ');
+              if (pipeIndex === -1) return { cleanAlt: altText, attributes: {} };
+              
+              const cleanAlt = altText.substring(0, pipeIndex);
+              const attributeString = altText.substring(pipeIndex + 3);
+              const attributes: any = {};
+              const classes: string[] = [];
+              
+              const parts = attributeString.split(/\s+/);
+              parts.forEach(part => {
+                if (part.startsWith('.')) {
+                  classes.push(part.substring(1));
+                } else if (part.includes('=')) {
+                  const [key, value] = part.split('=');
+                  if (key === 'w' || key === 'width') {
+                    attributes.width = value;
+                  } else if (key === 'h' || key === 'height') {
+                    attributes.height = value;
+                  } else {
+                    attributes[key] = value;
+                  }
+                }
+              });
+              
+              if (classes.length > 0) {
+                attributes.className = classes.join(' ');
               }
-              if (customHeight) {
-                style.height = `${customHeight}px`;
-              }
-              // 当设置了自定义尺寸时，移除默认的 h-auto
-              className = "my-4";
+              
+              return { cleanAlt, attributes };
+            };
+            
+            // 从 node.properties 获取 remark-attr 解析的属性
+            const nodeAttributes = node?.properties || {};
+            
+            // 解析 Fallback 语法
+            const { cleanAlt, attributes: fallbackAttributes } = parseFallbackAttributes(alt || '');
+            
+            // 合并属性：remark-attr 优先级更高
+            const finalAttributes = { ...fallbackAttributes, ...nodeAttributes };
+            
+            // 构建样式和类名
+            const customClasses = finalAttributes.className || '';
+            const width = finalAttributes.width;
+            const height = finalAttributes.height;
+            
+            // 基础类名，保持响应式和懒加载特性
+            const baseClasses = "max-w-full h-auto my-4 cursor-zoom-in transition-transform duration-200 hover:scale-[1.02]";
+            const finalClassName = customClasses ? `${baseClasses} ${customClasses}` : baseClasses;
+            
+            // 构建内联样式
+            const inlineStyle: React.CSSProperties = {};
+            if (width) {
+              inlineStyle.width = width.includes('%') ? width : `${width}px`;
             }
-
+            if (height) {
+              inlineStyle.height = height.includes('%') ? height : `${height}px`;
+            }
+            
             return (
-              <img
-                src={src}
-                alt={alt}
-                className={className}
-                style={style}
-                loading="lazy"
-              />
+              <PhotoView src={src}>
+                <img
+                  src={src}
+                  alt={cleanAlt}
+                  className={finalClassName}
+                  style={inlineStyle}
+                  loading="lazy"
+                  decoding="async"
+                  {...props}
+                />
+              </PhotoView>
             );
           },
           // 增强的折叠块支持 - 使用动态字体大小系统
@@ -1017,6 +1108,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       >
           {content}
         </ReactMarkdown>
+        </PhotoProvider>
       </div>
     </>
   );

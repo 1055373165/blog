@@ -1,0 +1,240 @@
+import React, { useState } from 'react';
+import { clsx } from 'clsx';
+import { useAuth } from '../contexts/AuthContext';
+import { UserIcon, CameraIcon, PencilIcon } from '@heroicons/react/24/outline';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+
+interface UserProfile {
+  name: string;
+  email: string;
+  bio: string;
+  github_url: string;
+  avatar?: string;
+}
+
+export default function ProfilePage() {
+  const { user, updateProfile } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [profileData, setProfileData] = useState<UserProfile>({
+    name: user?.name || '',
+    email: user?.email || '',
+    bio: user?.bio || '',
+    github_url: user?.github_url || '',
+    avatar: user?.avatar
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      await updateProfile(profileData);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('更新资料失败:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInputChange = (field: keyof UserProfile, value: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            请先登录
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            您需要登录后才能查看个人资料
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+          {/* 头部 */}
+          <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-8">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-white">个人资料</h1>
+              {!isEditing && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                >
+                  <PencilIcon className="w-4 h-4 mr-2" />
+                  编辑资料
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* 内容区域 */}
+          <div className="p-6">
+            <form onSubmit={handleSubmit}>
+              {/* 头像区域 */}
+              <div className="flex items-center space-x-6 mb-8">
+                <div className="relative">
+                  {profileData.avatar ? (
+                    <img
+                      src={profileData.avatar}
+                      alt={profileData.name}
+                      className="w-24 h-24 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                      <UserIcon className="w-12 h-12 text-gray-400" />
+                    </div>
+                  )}
+                  {isEditing && (
+                    <button
+                      type="button"
+                      className="absolute -bottom-2 -right-2 p-2 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors"
+                    >
+                      <CameraIcon className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    {profileData.name || '未设置姓名'}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {profileData.email}
+                  </p>
+                </div>
+              </div>
+
+              {/* 表单字段 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    姓名
+                  </label>
+                  {isEditing ? (
+                    <Input
+                      type="text"
+                      value={profileData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      placeholder="请输入您的姓名"
+                    />
+                  ) : (
+                    <p className="text-gray-900 dark:text-white p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      {profileData.name || '未设置'}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    邮箱
+                  </label>
+                  <p className="text-gray-900 dark:text-white p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    {profileData.email}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">邮箱地址不可修改</p>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    个人简介
+                  </label>
+                  {isEditing ? (
+                    <textarea
+                      value={profileData.bio}
+                      onChange={(e) => handleInputChange('bio', e.target.value)}
+                      placeholder="介绍一下自己吧..."
+                      rows={4}
+                      className={clsx(
+                        'w-full px-3 py-2 border border-gray-300 dark:border-gray-600',
+                        'rounded-lg shadow-sm placeholder-gray-400',
+                        'bg-white dark:bg-gray-700 text-gray-900 dark:text-white',
+                        'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent'
+                      )}
+                    />
+                  ) : (
+                    <p className="text-gray-900 dark:text-white p-3 bg-gray-50 dark:bg-gray-700 rounded-lg min-h-[100px]">
+                      {profileData.bio || '暂无个人简介'}
+                    </p>
+                  )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    GitHub 链接
+                  </label>
+                  {isEditing ? (
+                    <Input
+                      type="url"
+                      value={profileData.github_url}
+                      onChange={(e) => handleInputChange('github_url', e.target.value)}
+                      placeholder="https://github.com/your-username"
+                    />
+                  ) : (
+                    <p className="text-gray-900 dark:text-white p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      {profileData.github_url ? (
+                        <a
+                          href={profileData.github_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary-600 hover:text-primary-700"
+                        >
+                          {profileData.github_url}
+                        </a>
+                      ) : (
+                        '未设置'
+                      )}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* 操作按钮 */}
+              {isEditing && (
+                <div className="mt-8 flex justify-end space-x-4">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setProfileData({
+                        name: user?.name || '',
+                        email: user?.email || '',
+                        bio: user?.bio || '',
+                        github_url: user?.github_url || '',
+                        avatar: user?.avatar
+                      });
+                    }}
+                  >
+                    取消
+                  </Button>
+                  <Button
+                    type="submit"
+                    loading={isLoading}
+                    disabled={isLoading}
+                  >
+                    保存更改
+                  </Button>
+                </div>
+              )}
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -19,6 +19,9 @@ import SeriesDetailPage from './pages/SeriesDetailPage';
 import QuotesPage from './pages/QuotesPage';
 import SearchPage from './pages/SearchPage';
 import ArticlePreviewPage from './pages/ArticlePreviewPage';
+import ProfilePage from './pages/ProfilePage';
+import SubmissionsPage from './pages/SubmissionsPage';
+import SubmissionEditorPage from './pages/SubmissionEditorPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // 管理后台页面
@@ -32,6 +35,7 @@ import AdminTags from './pages/admin/AdminTags';
 import AdminSeries from './pages/admin/AdminSeries';
 import AdminBlogs from './pages/admin/AdminBlogs';
 import BlogEditor from './pages/admin/BlogEditor';
+import AdminUsers from './pages/admin/AdminUsers';
 
 // 布局组件
 import Layout from './components/Layout';
@@ -91,6 +95,10 @@ function RouterContent() {
               <Route path="series/:slug" element={<SeriesDetailPage />} />
               <Route path="quotes" element={<QuotesPage />} />
               <Route path="search" element={<SearchPage />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="submissions" element={<SubmissionsPage />} />
+              <Route path="submissions/new" element={<SubmissionEditorPage />} />
+              <Route path="submissions/:id/edit" element={<SubmissionEditorPage />} />
             </Route>
 
             {/* 文章预览路由 */}
@@ -109,6 +117,7 @@ function RouterContent() {
               <Route path="categories" element={<AdminCategories />} />
               <Route path="tags" element={<AdminTags />} />
               <Route path="series" element={<AdminSeries />} />
+              <Route path="users" element={<AdminUsers />} />
             </Route>
 
             {/* 404页面 */}
