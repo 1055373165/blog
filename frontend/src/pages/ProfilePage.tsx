@@ -69,17 +69,6 @@ export default function ProfilePage() {
           <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-8">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-white">个人资料</h1>
-              {!isEditing && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setIsEditing(true)}
-                  className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-                >
-                  <PencilIcon className="w-4 h-4 mr-2" />
-                  编辑资料
-                </Button>
-              )}
             </div>
           </div>
 
@@ -109,7 +98,7 @@ export default function ProfilePage() {
                     </button>
                   )}
                 </div>
-                <div>
+                <div className="flex-grow">
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                     {profileData.name || '未设置姓名'}
                   </h3>
@@ -117,6 +106,15 @@ export default function ProfilePage() {
                     {profileData.email}
                   </p>
                 </div>
+                {!isEditing && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <PencilIcon className="w-4 h-4 mr-2" />
+                    编辑资料
+                  </Button>
+                )}
               </div>
 
               {/* 表单字段 */}
