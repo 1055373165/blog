@@ -435,29 +435,19 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
                 )}
               </div>
             ) : (
-              <div className="flex items-center space-x-1">
-                <button
-                  onClick={handleLogin}
-                  className={clsx(
-                    'px-3 py-2 rounded-lg transition-all duration-300',
-                    'text-sm font-medium',
-                    'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
-                    'hover:bg-gray-100 dark:hover:bg-gray-800'
-                  )}
-                >
-                  登录
-                </button>
-                <button
-                  onClick={handleRegister}
-                  className={clsx(
-                    'px-3 py-2 rounded-lg transition-all duration-300',
-                    'text-sm font-medium',
-                    'bg-primary-600 hover:bg-primary-700 text-white'
-                  )}
-                >
-                  注册
-                </button>
-              </div>
+              <button
+                onClick={handleLogin}
+                className={clsx(
+                  'p-2 rounded-xl transition-all duration-300 group',
+                  'min-h-[44px] min-w-[44px] touch-manipulation',
+                  'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
+                  'hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700'
+                )}
+                title="登录"
+                aria-label="登录"
+              >
+                <UserIcon className="w-6 h-6" />
+              </button>
             )}
             
             {/* 主题切换 */}
