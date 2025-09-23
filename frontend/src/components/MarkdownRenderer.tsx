@@ -3,7 +3,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
 import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-
+import { visit } from 'unist-util-visit';
 import { 
   vscDarkPlus, 
   vs, 
@@ -63,44 +63,44 @@ interface MarkdownRendererProps {
   className?: string;
 }
 
+// 自定义插件：解析图片尺寸语法 {width=200 height=200}
+const remarkImageSize = () => {
+  return (tree: any) => {
+    visit(tree, 'image', (node: any) => {
+      if (node.alt) {
+        // 查找 alt 文本后面的 {width=xxx height=xxx} 模式
+        const match = node.alt.match(/^(.*?)\s*\{([^}]+)\}$/);
+        if (match) {
+          const [, cleanAlt, attributes] = match;
+          node.alt = cleanAlt.trim();
 
+          // 解析属性
+          const attrs: { [key: string]: string } = {};
+          const attrMatches = attributes.match(/(\w+)=(\d+)/g);
+          if (attrMatches) {
+            attrMatches.forEach((attr: string) => {
+              const [key, value] = attr.split('=');
+              attrs[key] = value;
+            });
+          }
 
+          // 将尺寸信息保存到 node.data
+          if (!node.data) node.data = {};
+          if (!node.data.hProperties) node.data.hProperties = {};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+          if (attrs.width) {
+            node.data.hProperties.width = attrs.width;
+            node.data.hProperties['data-width'] = attrs.width;
+          }
+          if (attrs.height) {
+            node.data.hProperties.height = attrs.height;
+            node.data.hProperties['data-height'] = attrs.height;
+          }
+        }
+      }
+    });
+  };
+};
 
 // Mermaid diagram component
 const MermaidDiagram = ({ code, isDark }: { code: string; isDark: boolean }) => {
@@ -189,22 +189,22 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
   // 统一字体大小映射 - 确保正文和折叠块使用相同的字体大小
   const getFontSizeValues = (fontSize: string) => {
     const fontSizeMap = {
-      'sm': { 
+      'sm': {
         base: '0.875rem',     // text-sm
         lg: '1rem',           // text-base for larger elements
         code: '0.8125rem'     // slightly smaller for code
       },
-      'base': { 
+      'base': {
         base: '1rem',         // text-base
         lg: '1.125rem',       // text-lg for larger elements  
         code: '0.875rem'      // text-sm for code
       },
-      'lg': { 
+      'lg': {
         base: '1.125rem',     // text-lg
         lg: '1.25rem',        // text-xl for larger elements
         code: '1rem'          // text-base for code
       },
-      'xl': { 
+      'xl': {
         base: '1.25rem',      // text-xl
         lg: '1.5rem',         // text-2xl for larger elements
         code: '1.125rem'      // text-lg for code
@@ -215,9 +215,9 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
 
   // 统一文字样式定义 - 确保所有正文元素完全一致
   const getUnifiedTextStyles = () => {
-    const sizeClass = settings.fontSize === 'sm' ? 'text-sm' : 
-                     settings.fontSize === 'lg' ? 'text-lg' : 
-                     settings.fontSize === 'xl' ? 'text-xl' : 'text-base';
+    const sizeClass = settings.fontSize === 'sm' ? 'text-sm' :
+      settings.fontSize === 'lg' ? 'text-lg' :
+        settings.fontSize === 'xl' ? 'text-xl' : 'text-base';
 
     return {
       className: `${sizeClass} text-gray-700 dark:text-gray-300`,
@@ -671,7 +671,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
   `;
 
   // 获取代码主题样式
-  const getCodeStyle = () => {    
+  const getCodeStyle = () => {
     const themeMap = {
       // 经典主题
       vs,
@@ -735,225 +735,225 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
 
       <div className={`prose dark:prose-invert max-w-none prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 ${className}`}>
         <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[
-          rehypeRaw,
-          rehypeSlug
-        ]}
-        components={{
-          code: ({ inline, className, children }: { inline?: boolean; className?: string; children?: React.ReactNode }) => {
-            const match = /language-(\w+)/.exec(className || '');
-            const language = match ? match[1] : '';
+          remarkPlugins={[remarkGfm, remarkImageSize]}
+          rehypePlugins={[
+            rehypeRaw,
+            rehypeSlug
+          ]}
+          components={{
+            code: ({ inline, className, children }: { inline?: boolean; className?: string; children?: React.ReactNode }) => {
+              const match = /language-(\w+)/.exec(className || '');
+              const language = match ? match[1] : '';
 
-            // 确保children是字符串
-            const codeString = String(children).trim();
+              // 确保children是字符串
+              const codeString = String(children).trim();
 
-            // Mermaid diagram rendering
-            if (!inline && language === 'mermaid') {
-              return <MermaidDiagram code={codeString} isDark={isDark} />;
-            }
+              // Mermaid diagram rendering
+              if (!inline && language === 'mermaid') {
+                return <MermaidDiagram code={codeString} isDark={isDark} />;
+              }
 
-            // 多行代码块
-            if (!inline && codeString.includes('\n')) {
+              // 多行代码块
+              if (!inline && codeString.includes('\n')) {
+                return (
+                  <div className="my-1">
+                    <SyntaxHighlighter
+                      style={getCodeStyle()}
+                      language={language || 'text'}
+                      PreTag="div"
+                      className={`!mt-0 !mb-0 !bg-transparent [&>*]:!bg-transparent [&_*]:!bg-transparent ${settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-lg' : settings.fontSize === 'xl' ? 'text-xl' : 'text-base'}`}
+                      showLineNumbers={false}
+                      wrapLines={settings.wordWrap}
+                      wrapLongLines={settings.wordWrap}
+                      customStyle={{
+                        backgroundColor: isDark ? '#111827' : '#f9fafb',
+                        background: isDark ? '#111827' : '#f9fafb',
+                        border: 'none',
+                        borderRadius: '0px',
+                        padding: '16px',
+                        margin: '0'
+                      }}
+                    >
+                      {codeString}
+                    </SyntaxHighlighter>
+                  </div>
+                );
+              }
+
+              // 行内代码
               return (
-                <div className="my-1">
-                  <SyntaxHighlighter
-                    style={getCodeStyle()}
-                    language={language || 'text'}
-                    PreTag="div"
-                    className={`!mt-0 !mb-0 !bg-transparent [&>*]:!bg-transparent [&_*]:!bg-transparent ${settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-lg' : settings.fontSize === 'xl' ? 'text-xl' : 'text-base'}`}
-                    showLineNumbers={false}
-                    wrapLines={settings.wordWrap}
-                    wrapLongLines={settings.wordWrap}
-                    customStyle={{ 
-                      backgroundColor: isDark ? '#111827' : '#f9fafb',
-                      background: isDark ? '#111827' : '#f9fafb',
-                      border: 'none',
-                      borderRadius: '0px',
-                      padding: '16px',
-                      margin: '0'
-                    }}
-                  >
-                    {codeString}
-                  </SyntaxHighlighter>
-                </div>
+                <code
+                  className={`font-mono text-gray-800 dark:text-gray-200 ${settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-base' : settings.fontSize === 'xl' ? 'text-lg' : 'text-sm'}`}
+                  style={{
+                    color: isDark ? '#e5e7eb' : '#374151',
+                    fontFamily: 'JetBrains Mono, Monaco, Consolas, monospace',
+                  }}
+                >
+                  {codeString}
+                </code>
               );
-            }
-
-            // 行内代码
-            return (
-              <code
-                className={`font-mono text-gray-800 dark:text-gray-200 ${settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-base' : settings.fontSize === 'xl' ? 'text-lg' : 'text-sm'}`}
-                style={{
-                  color: isDark ? '#e5e7eb' : '#374151',
-                  fontFamily: 'JetBrains Mono, Monaco, Consolas, monospace',
-                }}
-              >
-                {codeString}
-              </code>
-            );
-          },
-          h1: ({ children, id }) => {
-            const sizeClass = settings.fontSize === 'sm' ? 'text-2xl' : 
-                             settings.fontSize === 'lg' ? 'text-4xl' : 
-                             settings.fontSize === 'xl' ? 'text-5xl' : 'text-3xl';
-            return (
-              <h1 id={id} className={`${sizeClass} font-bold text-gray-900 dark:text-white mt-8 mb-4 first:mt-0`}>
-                {children}
-              </h1>
-            );
-          },
-          h2: ({ children, id }) => {
-            const sizeClass = settings.fontSize === 'sm' ? 'text-xl' : 
-                             settings.fontSize === 'lg' ? 'text-3xl' : 
-                             settings.fontSize === 'xl' ? 'text-4xl' : 'text-2xl';
-            return (
-              <h2 id={id} className={`${sizeClass} font-bold text-gray-900 dark:text-white mt-6 mb-3`}>
-                {children}
-              </h2>
-            );
-          },
-          h3: ({ children, id }) => {
-            const sizeClass = settings.fontSize === 'sm' ? 'text-lg' : 
-                             settings.fontSize === 'lg' ? 'text-2xl' : 
-                             settings.fontSize === 'xl' ? 'text-3xl' : 'text-xl';
-            return (
-              <h3 id={id} className={`${sizeClass} font-bold text-gray-900 dark:text-white mt-5 mb-3`}>
-                {children}
-              </h3>
-            );
-          },
-          p: ({ children }) => {
-            const textStyles = getUnifiedTextStyles();
-            return (
-              <p 
-                className={`${textStyles.className} mb-4`}
-                style={textStyles.style}
-              >
-                {children}
-              </p>
-            );
-          },
-          a: ({ href, children }) => (
-            <a
-              href={href}
-              className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline"
-              target={href?.startsWith('http') ? '_blank' : undefined}
-              rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
-            >
-              {children}
-            </a>
-          ),
-          blockquote: ({ children }) => {
-            const textStyles = getUnifiedTextStyles();
-            return (
-              <blockquote 
-                className={`border-l-4 border-primary-500 pl-4 py-1.5 my-4 ${textStyles.className}`}
-                style={{
-                  ...textStyles.style,
-                  quotes: 'none',
-                  fontStyle: 'normal',
-                }}
-              >
-                <div style={{ quotes: 'none', fontStyle: 'normal' }}>
+            },
+            h1: ({ children, id }) => {
+              const sizeClass = settings.fontSize === 'sm' ? 'text-2xl' :
+                settings.fontSize === 'lg' ? 'text-4xl' :
+                  settings.fontSize === 'xl' ? 'text-5xl' : 'text-3xl';
+              return (
+                <h1 id={id} className={`${sizeClass} font-bold text-gray-900 dark:text-white mt-8 mb-4 first:mt-0`}>
                   {children}
-                </div>
-              </blockquote>
-            );
-          },
-          ul: ({ children }) => {
-            const textStyles = getUnifiedTextStyles();
-            return (
-              <ul 
-                className={`list-disc list-outside !ml-0 pl-5 mb-4 ${textStyles.className}`} 
-                style={textStyles.style}
+                </h1>
+              );
+            },
+            h2: ({ children, id }) => {
+              const sizeClass = settings.fontSize === 'sm' ? 'text-xl' :
+                settings.fontSize === 'lg' ? 'text-3xl' :
+                  settings.fontSize === 'xl' ? 'text-4xl' : 'text-2xl';
+              return (
+                <h2 id={id} className={`${sizeClass} font-bold text-gray-900 dark:text-white mt-6 mb-3`}>
+                  {children}
+                </h2>
+              );
+            },
+            h3: ({ children, id }) => {
+              const sizeClass = settings.fontSize === 'sm' ? 'text-lg' :
+                settings.fontSize === 'lg' ? 'text-2xl' :
+                  settings.fontSize === 'xl' ? 'text-3xl' : 'text-xl';
+              return (
+                <h3 id={id} className={`${sizeClass} font-bold text-gray-900 dark:text-white mt-5 mb-3`}>
+                  {children}
+                </h3>
+              );
+            },
+            p: ({ children }) => {
+              const textStyles = getUnifiedTextStyles();
+              return (
+                <p
+                  className={`${textStyles.className} mb-4`}
+                  style={textStyles.style}
+                >
+                  {children}
+                </p>
+              );
+            },
+            a: ({ href, children }) => (
+              <a
+                href={href}
+                className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline"
+                target={href?.startsWith('http') ? '_blank' : undefined}
+                rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
               >
                 {children}
-              </ul>
-            );
-          },
-          ol: ({ children, start, ...props }) => {
-            const textStyles = getUnifiedTextStyles();
-            return (
-              <ol
-                start={start}
-                className={`list-decimal list-outside !ml-0 pl-5 mb-4 ${textStyles.className}`}
-                style={{
-                  ...textStyles.style,
-                  listStylePosition: 'outside'
-                }}
-                {...props}
-              >
+              </a>
+            ),
+            blockquote: ({ children }) => {
+              const textStyles = getUnifiedTextStyles();
+              return (
+                <blockquote
+                  className={`border-l-4 border-primary-500 pl-4 py-1.5 my-4 ${textStyles.className}`}
+                  style={{
+                    ...textStyles.style,
+                    quotes: 'none',
+                    fontStyle: 'normal',
+                  }}
+                >
+                  <div style={{ quotes: 'none', fontStyle: 'normal' }}>
+                    {children}
+                  </div>
+                </blockquote>
+              );
+            },
+            ul: ({ children }) => {
+              const textStyles = getUnifiedTextStyles();
+              return (
+                <ul
+                  className={`list-disc list-outside !ml-0 pl-5 mb-4 ${textStyles.className}`}
+                  style={textStyles.style}
+                >
+                  {children}
+                </ul>
+              );
+            },
+            ol: ({ children, start, ...props }) => {
+              const textStyles = getUnifiedTextStyles();
+              return (
+                <ol
+                  start={start}
+                  className={`list-decimal list-outside !ml-0 pl-5 mb-4 ${textStyles.className}`}
+                  style={{
+                    ...textStyles.style,
+                    listStylePosition: 'outside'
+                  }}
+                  {...props}
+                >
+                  {children}
+                </ol>
+              );
+            },
+            li: ({ children }) => {
+              const textStyles = getUnifiedTextStyles();
+              return (
+                <li
+                  className={`ml-0 ${textStyles.className}`}
+                  style={{
+                    ...textStyles.style,
+                    display: 'list-item',
+                    listStylePosition: 'outside'
+                  }}
+                >
+                  {children}
+                </li>
+              );
+            },
+            table: ({ children }) => (
+              <div className="overflow-x-auto my-4">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  {children}
+                </table>
+              </div>
+            ),
+            th: ({ children }) => (
+              <th className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {children}
-              </ol>
-            );
-          },
-          li: ({ children }) => {
-            const textStyles = getUnifiedTextStyles();
-            return (
-              <li 
-                className={`ml-0 ${textStyles.className}`} 
-                style={{
-                  ...textStyles.style,
-                  display: 'list-item',
-                  listStylePosition: 'outside'
-                }}
-              >
+              </th>
+            ),
+            td: ({ children }) => (
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
                 {children}
-              </li>
-            );
-          },
-          table: ({ children }) => (
-            <div className="overflow-x-auto my-4">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                {children}
-              </table>
-            </div>
-          ),
-          th: ({ children }) => (
-            <th className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              {children}
-            </th>
-          ),
-          td: ({ children }) => (
-            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
-              {children}
-            </td>
-          ),
-          img: ({ src, alt }) => (
-            <img
-              src={src}
-              alt={alt}
-              className="max-w-full h-auto my-4"
-              loading="lazy"
-            />
-          ),
+              </td>
+            ),
+            img: ({ src, alt, width, height, ...props }) => {
+              // 从 props 中获取自定义尺寸
+              const customWidth = width || (props as any)['data-width'];
+              const customHeight = height || (props as any)['data-height'];
 
+              // 构建样式对象
+              const style: React.CSSProperties = {};
+              let className = "max-w-full h-auto my-4";
 
+              if (customWidth || customHeight) {
+                if (customWidth) {
+                  style.width = `${customWidth}px`;
+                }
+                if (customHeight) {
+                  style.height = `${customHeight}px`;
+                }
+                // 当设置了自定义尺寸时，移除默认的 h-auto
+                className = "my-4";
+              }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-          // 增强的折叠块支持 - 使用动态字体大小系统
-          details: ({ children, ...props }) => (
-            <details 
-              className={`
+              return (
+                <img
+                  src={src}
+                  alt={alt}
+                  className={className}
+                  style={style}
+                  loading="lazy"
+                />
+              );
+            },
+            // 增强的折叠块支持 - 使用动态字体大小系统
+            details: ({ children, ...props }) => (
+              <details
+                className={`
                 foldable-block group relative my-6 
                 border border-gray-200/80 dark:border-gray-700/80 
                 rounded-xl shadow-sm hover:shadow-md
@@ -966,14 +966,14 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-300
                 dark:focus-within:ring-blue-400/20 dark:focus-within:border-blue-600
               `}
-              style={{ fontSize: fontSizes.base }}
-              {...props}
-            >
-              {children}
-            </details>
-          ),
-          summary: ({ children }) => (
-            <summary className={`
+                style={{ fontSize: fontSizes.base }}
+                {...props}
+              >
+                {children}
+              </details>
+            ),
+            summary: ({ children }) => (
+              <summary className={`
               px-5 py-4 cursor-pointer font-medium select-none
               bg-gradient-to-r from-gray-100/80 to-gray-50/60 
               dark:from-gray-700/60 dark:to-gray-800/60
@@ -999,24 +999,25 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               group-open:after:rotate-0 group-open:after:border-t-blue-600 
               dark:group-open:after:border-t-blue-400
             `}
-            style={{ 
-              fontSize: fontSizes.base,
-              fontWeight: settings.fontSize === 'sm' ? '500' : 
-                         settings.fontSize === 'lg' ? '600' : 
-                         settings.fontSize === 'xl' ? '600' : '500'
-            }}>
-              <span className="relative z-10 flex items-center">
-                <span className="mr-3 text-blue-600 dark:text-blue-400 font-mono text-xs opacity-70">
-                  ▶
+                style={{
+                  fontSize: fontSizes.base,
+                  fontWeight: settings.fontSize === 'sm' ? '500' :
+                    settings.fontSize === 'lg' ? '600' :
+                      settings.fontSize === 'xl' ? '600' : '500'
+                }}>
+                <span className="relative z-10 flex items-center">
+                  <span className="mr-3 text-blue-600 dark:text-blue-400 font-mono text-xs opacity-70">
+                    ▶
+                  </span>
+                  {children}
                 </span>
-                {children}
-              </span>
-            </summary>
-          ),
-        }}
-      >
+              </summary>
+            ),
+          }}
+        >
           {content}
         </ReactMarkdown>
       </div>
     </>
   );
+}
