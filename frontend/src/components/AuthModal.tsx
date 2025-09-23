@@ -89,7 +89,15 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
       await login(loginForm.email, loginForm.password);
       handleClose();
     } catch (error: any) {
-      setError(error.message || '登录失败，请重试');
+      console.error('登录错误:', error);
+      // 提供更详细的错误信息
+      let errorMessage = '登录失败，请重试';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -123,7 +131,25 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
       });
       handleClose();
     } catch (error: any) {
-      setError(error.message || '注册失败，请重试');
+      console.error('注册错误:', error);
+      // 提供更详细的错误信息
+      let errorMessage = '注册失败，请重试';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      // 处理常见的注册错误
+      if (errorMessage.includes('email') || errorMessage.includes('邮箱')) {
+        errorMessage = '该邮箱已被注册，请使用其他邮箱';
+      } else if (errorMessage.includes('username') || errorMessage.includes('用户名')) {
+        errorMessage = '该用户名已存在，请选择其他用户名';
+      } else if (errorMessage.includes('password') || errorMessage.includes('密码')) {
+        errorMessage = '密码格式不正确，请确保密码长度至少6位';
+      }
+
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -446,7 +446,7 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
                 title="登录"
                 aria-label="登录"
               >
-                <UserIcon className="w-6 h-6" />
+                <UserCircleIcon className="w-6 h-6" />
               </button>
             )}
             
