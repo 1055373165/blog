@@ -92,11 +92,21 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
       console.error('登录错误:', error);
       // 提供更详细的错误信息
       let errorMessage = '登录失败，请重试';
-      if (error.response?.data?.message) {
+
+      // 优先根据HTTP状态码判断错误类型
+      if (error.response?.status === 401) {
+        errorMessage = '邮箱或密码错误，请检查后重试';
+      } else if (error.response?.status === 400) {
+        errorMessage = '请检查输入信息的格式是否正确';
+      } else if (error.response?.status === 404) {
+        errorMessage = '该邮箱尚未注册，请先注册账户';
+      } else if (error.response?.data?.message) {
+        // 如果后端返回了具体错误信息，使用后端的错误信息
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
+
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -134,16 +144,25 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
       console.error('注册错误:', error);
       // 提供更详细的错误信息
       let errorMessage = '注册失败，请重试';
-      if (error.response?.data?.message) {
+
+      // 优先根据HTTP状态码判断错误类型
+      if (error.response?.status === 409) {
+        errorMessage = '该邮箱已被注册，请使用其他邮箱';
+      } else if (error.response?.status === 400) {
+        errorMessage = '请检查输入信息的格式是否正确';
+      } else if (error.response?.status === 422) {
+        errorMessage = '输入信息不符合要求，请检查后重试';
+      } else if (error.response?.data?.message) {
+        // 如果后端返回了具体错误信息，使用后端的错误信息
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
 
-      // 处理常见的注册错误
+      // 处理常见的注册错误（作为备用检查）
       if (errorMessage.includes('email') || errorMessage.includes('邮箱')) {
         errorMessage = '该邮箱已被注册，请使用其他邮箱';
-      } else if (errorMessage.includes('username') || errorMessage.includes('用户名')) {
+      } else if (errorMessage.includes('username') || errorMessage.includes('用户名') || errorMessage.includes('name')) {
         errorMessage = '该用户名已存在，请选择其他用户名';
       } else if (errorMessage.includes('password') || errorMessage.includes('密码')) {
         errorMessage = '密码格式不正确，请确保密码长度至少6位';
