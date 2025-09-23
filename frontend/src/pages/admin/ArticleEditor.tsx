@@ -8,10 +8,12 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import FileImport from '../../components/FileImport';
 import RSSImport from '../../components/RSSImport';
 import CoverImageSelector from '../../components/CoverImageSelector';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function ArticleEditor() {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const isEditing = !!id;
 
   // Form state
@@ -203,6 +205,12 @@ export default function ArticleEditor() {
   // };
 
   const handleSave = async (silent = false) => {
+    // Check admin permissions
+    if (!user?.is_admin) {
+      if (!silent) setError('只有管理员才能编辑文章');
+      return;
+    }
+
     if (!formData.title.trim()) {
       if (!silent) setError('请填写文章标题');
       return;
@@ -211,7 +219,7 @@ export default function ArticleEditor() {
     try {
       setSaving(true);
       if (!silent) setError(null);
-      
+
       const payload = {
         ...formData,
         tag_ids: (selectedTags || []).map(id => parseInt(id)),
@@ -224,7 +232,7 @@ export default function ArticleEditor() {
       } else {
         response = await articlesApi.createArticle(payload);
       }
-      
+
       if (response.success) {
         if (!silent) {
           // Show success message
@@ -234,7 +242,7 @@ export default function ArticleEditor() {
           }
         }
       } else {
-        throw new Error('保存失败');
+        throw new Error(response.error || '保存失败');
       }
     } catch (err: any) {
       if (!silent) {
@@ -246,23 +254,29 @@ export default function ArticleEditor() {
   };
 
   const handlePublish = async () => {
+    // Check admin permissions
+    if (!user?.is_admin) {
+      setError('只有管理员才能发布文章');
+      return;
+    }
+
     const wasPublished = formData.is_published;
     const newPublishedState = !wasPublished;
-    
+
     // Update the state
     handleInputChange('is_published', newPublishedState);
-    
+
     // Save with explicit published state to avoid timing issues
     const updatedFormData = {
       ...formData,
       is_published: newPublishedState,
       tag_ids: (selectedTags || []).map(id => parseInt(id)),
     };
-    
+
     try {
       setSaving(true);
       setError(null);
-      
+
       let response;
       if (isEditing && id) {
         const updatePayload = { ...updatedFormData, id: parseInt(id) };
@@ -270,7 +284,7 @@ export default function ArticleEditor() {
       } else {
         response = await articlesApi.createArticle(updatedFormData);
       }
-      
+
       if (response.success) {
         if (!isEditing) {
           navigate(`/admin/articles/${response.data.id}`, { replace: true });
@@ -607,8 +621,9 @@ export default function ArticleEditor() {
 
               <button
                 onClick={() => handleSave()}
-                disabled={saving || !formData.title.trim()}
+                disabled={saving || !formData.title.trim() || !user?.is_admin}
                 className="btn btn-primary flex items-center"
+                title={!user?.is_admin ? '只有管理员才能保存文章' : ''}
               >
                 {saving && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>}
                 {saving ? '保存中...' : '保存'}
@@ -616,12 +631,13 @@ export default function ArticleEditor() {
 
               <button
                 onClick={handlePublish}
-                disabled={saving}
+                disabled={saving || !user?.is_admin}
                 className={`btn ${
                   formData.is_published
                     ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700 hover:bg-amber-200 dark:hover:bg-amber-900/50'
                     : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
                 }`}
+                title={!user?.is_admin ? '只有管理员才能发布文章' : ''}
               >
                 {formData.is_published ? '取消发布' : '发布'}
               </button>

@@ -18,7 +18,7 @@ interface SubmissionForm {
   excerpt: string;
   type: 'article' | 'blog';
   category_id?: number;
-  tags: string[];
+  tag_ids: number[];
   status: 'draft' | 'pending';
 }
 
@@ -26,6 +26,13 @@ interface Category {
   id: number;
   name: string;
   slug: string;
+}
+
+interface Tag {
+  id: number;
+  name: string;
+  slug: string;
+  color?: string;
 }
 
 export default function SubmissionEditorPage() {
@@ -37,7 +44,8 @@ export default function SubmissionEditorPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setSaving] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [tagInput, setTagInput] = useState('');
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
 
   const [formData, setFormData] = useState<SubmissionForm>({
     title: '',
@@ -45,12 +53,13 @@ export default function SubmissionEditorPage() {
     excerpt: '',
     type: 'article',
     category_id: undefined,
-    tags: [],
+    tag_ids: [],
     status: 'draft'
   });
 
   useEffect(() => {
     fetchCategories();
+    fetchTags();
     if (isEditing) {
       fetchSubmission();
     }
@@ -71,6 +80,19 @@ export default function SubmissionEditorPage() {
     }
   };
 
+  const fetchTags = async () => {
+    try {
+      const response = await fetch('/api/tags?limit=100');
+      if (response.ok) {
+        const responseData = await response.json();
+        const tagsArray = Array.isArray(responseData) ? responseData : Array.isArray(responseData.data?.tags) ? responseData.data.tags : [];
+        setTags(tagsArray);
+      }
+    } catch (error) {
+      console.error('获取标签失败:', error);
+    }
+  };
+
   const fetchSubmission = async () => {
     if (!id) return;
 
@@ -84,15 +106,20 @@ export default function SubmissionEditorPage() {
 
       if (response.ok) {
         const data = await response.json();
+        const submissionData = data.data || data;
+        const submissionTags = submissionData.tags || [];
+
         setFormData({
-          title: data.title || '',
-          content: data.content || '',
-          excerpt: data.excerpt || '',
-          type: data.type || 'article',
-          category_id: data.category_id,
-          tags: data.tags || [],
-          status: data.status || 'draft'
+          title: submissionData.title || '',
+          content: submissionData.content || '',
+          excerpt: submissionData.excerpt || '',
+          type: submissionData.type || 'article',
+          category_id: submissionData.category_id,
+          tag_ids: submissionTags.map((tag: any) => tag.id),
+          status: submissionData.status || 'draft'
         });
+
+        setSelectedTags(submissionTags);
       }
     } catch (error) {
       console.error('获取投稿详情失败:', error);
@@ -125,11 +152,12 @@ export default function SubmissionEditorPage() {
       if (response.ok) {
         navigate('/submissions');
       } else {
-        throw new Error('提交失败');
+        const errorData = await response.json();
+        throw new Error(errorData.error || '提交失败');
       }
     } catch (error) {
       console.error('保存投稿失败:', error);
-      alert('保存失败，请重试');
+      alert(error instanceof Error ? error.message : '保存失败，请重试');
     } finally {
       setSaving(false);
     }
@@ -142,20 +170,32 @@ export default function SubmissionEditorPage() {
     }));
   };
 
-  const handleAddTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+  const handleTagToggle = (tag: Tag) => {
+    const isSelected = selectedTags.some(t => t.id === tag.id);
+
+    if (isSelected) {
+      const newSelectedTags = selectedTags.filter(t => t.id !== tag.id);
+      setSelectedTags(newSelectedTags);
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, tagInput.trim()]
+        tag_ids: newSelectedTags.map(t => t.id)
       }));
-      setTagInput('');
+    } else {
+      const newSelectedTags = [...selectedTags, tag];
+      setSelectedTags(newSelectedTags);
+      setFormData(prev => ({
+        ...prev,
+        tag_ids: newSelectedTags.map(t => t.id)
+      }));
     }
   };
 
-  const handleRemoveTag = (tag: string) => {
+  const handleRemoveTag = (tagToRemove: Tag) => {
+    const newSelectedTags = selectedTags.filter(t => t.id !== tagToRemove.id);
+    setSelectedTags(newSelectedTags);
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter(t => t !== tag)
+      tag_ids: newSelectedTags.map(t => t.id)
     }));
   };
 
@@ -183,41 +223,20 @@ export default function SubmissionEditorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20 pb-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 头部 */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigate('/submissions')}
-                className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-              >
-                <ArrowLeftIcon className="w-6 h-6" />
-              </button>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {isEditing ? '编辑投稿' : '新建投稿'}
-              </h1>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="secondary"
-                onClick={() => handleSubmit('draft')}
-                loading={isSaving}
-                disabled={isSaving || !formData.title.trim()}
-              >
-                <BookmarkIcon className="w-5 h-5 mr-2" />
-                保存草稿
-              </Button>
-              <Button
-                onClick={() => handleSubmit('pending')}
-                loading={isSaving}
-                disabled={isSaving || !formData.title.trim() || !formData.content.trim()}
-              >
-                提交审核
-              </Button>
-            </div>
+          <div className="flex items-center space-x-4 mb-6">
+            <button
+              onClick={() => navigate('/submissions')}
+              className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+            >
+              <ArrowLeftIcon className="w-6 h-6" />
+            </button>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              {isEditing ? '编辑投稿' : '新建投稿'}
+            </h1>
           </div>
         </div>
 
@@ -316,50 +335,63 @@ export default function SubmissionEditorPage() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 标签
               </label>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {formData.tags.map(tag => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-300"
-                  >
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTag(tag)}
-                      className="ml-2 text-primary-600 hover:text-primary-800"
+
+              {/* 已选择的标签 */}
+              {selectedTags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {selectedTags.map(tag => (
+                    <span
+                      key={tag.id}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-300"
+                      style={tag.color ? { backgroundColor: tag.color + '20', color: tag.color } : {}}
                     >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex space-x-2">
-                <Input
-                  type="text"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  placeholder="输入标签按回车添加"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddTag();
-                    }
-                  }}
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={handleAddTag}
-                  disabled={!tagInput.trim()}
-                >
-                  添加
-                </Button>
+                      {tag.name}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="ml-2 text-current hover:text-red-600"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* 可选择的标签 */}
+              <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 max-h-40 overflow-y-auto">
+                {tags.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map(tag => {
+                      const isSelected = selectedTags.some(t => t.id === tag.id);
+                      return (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          onClick={() => handleTagToggle(tag)}
+                          className={clsx(
+                            'px-3 py-1 rounded-full text-sm border transition-colors',
+                            isSelected
+                              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                          )}
+                          style={tag.color && isSelected ? { backgroundColor: tag.color + '20', borderColor: tag.color, color: tag.color } : {}}
+                        >
+                          {tag.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    暂无可用标签，请联系管理员添加标签
+                  </p>
+                )}
               </div>
             </div>
 
             {/* 内容 */}
-            <div className="mb-6">
+            <div className="mb-8">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 内容 *
               </label>
@@ -378,6 +410,28 @@ export default function SubmissionEditorPage() {
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                 支持 Markdown 格式
               </p>
+            </div>
+
+            {/* 操作按钮 */}
+            <div className="flex justify-center space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                variant="secondary"
+                onClick={() => handleSubmit('draft')}
+                loading={isSaving}
+                disabled={isSaving || !formData.title.trim()}
+                size="lg"
+              >
+                <BookmarkIcon className="w-5 h-5 mr-2" />
+                保存草稿
+              </Button>
+              <Button
+                onClick={() => handleSubmit('pending')}
+                loading={isSaving}
+                disabled={isSaving || !formData.title.trim() || !formData.content.trim()}
+                size="lg"
+              >
+                提交审核
+              </Button>
             </div>
           </div>
         </div>
