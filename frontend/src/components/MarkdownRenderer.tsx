@@ -509,6 +509,11 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         padding: 0 !important;
       }
 
+      /* 修复PhotoProvider z-index冲突，确保图片查看器在最顶层 */
+      .PhotoView-Portal {
+        z-index: 9999 !important;
+      }
+
       /* 展开后，summary 与第一行正文之间的间距 */
       .prose .foldable-block summary + * {
         margin-top: var(--fold-after-summary-gap, 0.75rem) !important;
@@ -758,13 +763,13 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       <div dangerouslySetInnerHTML={{ __html: foldableStyles }} />
 
       <div className={`prose dark:prose-invert max-w-none prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 ${className}`}>
-          <PhotoProvider 
+          <PhotoProvider
             maskOpacity={isDark ? 0.9 : 0.8}
             bannerVisible={false}
-            maskStyle={{
-              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.8)'
-            }}
-            toolbarRender={({ rotate, onRotate, scale, onScale }) => (
+            maskClassName={isDark ? 'bg-black/90' : 'bg-black/80'}
+            photoClosable={true}
+            maskClosable={true}
+            toolbarRender={({ rotate, onRotate, scale, onScale, onClose }) => (
               <div className={`flex items-center space-x-3 backdrop-blur-sm rounded-lg px-3 py-2 ${
                 isDark 
                   ? 'bg-gray-800/40 border border-gray-600/30' 
@@ -799,8 +804,8 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                 <button
                   onClick={() => onRotate(rotate + 90)}
                   className={`p-2 transition-colors ${
-                    isDark 
-                      ? 'text-gray-100 hover:text-blue-300' 
+                    isDark
+                      ? 'text-gray-100 hover:text-blue-300'
                       : 'text-white hover:text-blue-200'
                   }`}
                   aria-label="旋转"
@@ -809,17 +814,34 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                 </button>
+                <button
+                  onClick={onClose}
+                  className={`p-2 transition-colors ${
+                    isDark
+                      ? 'text-gray-100 hover:text-red-300'
+                      : 'text-white hover:text-red-200'
+                  }`}
+                  aria-label="关闭"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
             )}
             overlayRender={({ images, index }) => {
               const currentImage = images[index];
-              return currentImage?.alt ? (
+              // 从图片元素获取 alt 属性，而不是从 images 数组
+              const imgElement = currentImage?.originRef?.current as HTMLImageElement;
+              const altText = imgElement?.alt || '';
+
+              return altText ? (
                 <div className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 backdrop-blur-sm px-4 py-2 rounded-lg max-w-md text-center ${
-                  isDark 
-                    ? 'bg-gray-800/60 text-gray-100 border border-gray-600/30' 
+                  isDark
+                    ? 'bg-gray-800/60 text-gray-100 border border-gray-600/30'
                     : 'bg-black/50 text-white border border-white/20'
                 }`}>
-                  {currentImage.alt}
+                  {altText}
                 </div>
               ) : null;
             }}
@@ -828,7 +850,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[
             rehypeRaw,
-            [rehypeSanitize, sanitizeSchema],
+            [rehypeSanitize as any, sanitizeSchema],
             rehypeSlug
           ]}
           components={{

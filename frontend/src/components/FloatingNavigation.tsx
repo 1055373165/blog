@@ -181,6 +181,13 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
 
     // 点击外部关闭菜单
     const handleClickOutside = (event: MouseEvent) => {
+      // 检查是否有PhotoProvider活跃
+      const photoViewPortal = document.querySelector('.PhotoView-Portal');
+      if (photoViewPortal) {
+        // 如果PhotoProvider活跃，不处理点击事件，让PhotoProvider处理
+        return;
+      }
+
       // 关闭移动端菜单
       if (
         isExpanded &&
@@ -204,6 +211,13 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
     // ESC键关闭菜单
     const handleEscKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        // 检查是否有PhotoProvider活跃（通过检查是否存在PhotoView-Portal元素）
+        const photoViewPortal = document.querySelector('.PhotoView-Portal');
+        if (photoViewPortal) {
+          // 如果PhotoProvider活跃，不处理ESC键，让PhotoProvider处理
+          return;
+        }
+
         if (isExpanded) {
           setIsExpanded(false);
         }
