@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
+import { submissionsApi, categoriesApi, tagsApi } from '../api';
 import {
   DocumentTextIcon,
   VideoCameraIcon,
@@ -67,12 +68,9 @@ export default function SubmissionEditorPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories');
-      if (response.ok) {
-        const responseData = await response.json();
-        // Safely access the categories array, assuming it's nested (e.g., under a 'data' key)
-        // and ensure we always set an array.
-        const categoriesArray = Array.isArray(responseData) ? responseData : Array.isArray(responseData.data) ? responseData.data : [];
+      const response = await categoriesApi.getCategories();
+      if (response.success) {
+        const categoriesArray = Array.isArray(response.data) ? response.data : [];
         setCategories(categoriesArray);
       }
     } catch (error) {
@@ -82,10 +80,9 @@ export default function SubmissionEditorPage() {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch('/api/tags?limit=100');
-      if (response.ok) {
-        const responseData = await response.json();
-        const tagsArray = Array.isArray(responseData) ? responseData : Array.isArray(responseData.data?.tags) ? responseData.data.tags : [];
+      const response = await tagsApi.getTags({ limit: 100 });
+      if (response.success) {
+        const tagsArray = Array.isArray(response.data?.tags) ? response.data.tags : [];
         setTags(tagsArray);
       }
     } catch (error) {
@@ -98,15 +95,10 @@ export default function SubmissionEditorPage() {
 
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/submissions/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await submissionsApi.getSubmission(Number(id));
 
-      if (response.ok) {
-        const data = await response.json();
-        const submissionData = data.data || data;
+      if (response.success) {
+        const submissionData = response.data;
         const submissionTags = submissionData.tags || [];
 
         setFormData({
@@ -120,6 +112,8 @@ export default function SubmissionEditorPage() {
         });
 
         setSelectedTags(submissionTags);
+      } else {
+        throw new Error(response.error || '获取投稿详情失败');
       }
     } catch (error) {
       console.error('获取投稿详情失败:', error);
@@ -137,23 +131,17 @@ export default function SubmissionEditorPage() {
         status
       };
 
-      const url = isEditing ? `/api/submissions/${id}` : '/api/submissions';
-      const method = isEditing ? 'PUT' : 'POST';
+      let response;
+      if (isEditing) {
+        response = await submissionsApi.updateSubmission(Number(id), submitData);
+      } else {
+        response = await submissionsApi.createSubmission(submitData);
+      }
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(submitData)
-      });
-
-      if (response.ok) {
+      if (response.success) {
         navigate('/submissions');
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '提交失败');
+        throw new Error(response.error || '提交失败');
       }
     } catch (error) {
       console.error('保存投稿失败:', error);

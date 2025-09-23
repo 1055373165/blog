@@ -24,18 +24,20 @@ class ApiClient {
     // 请求拦截器
     this.client.interceptors.request.use(
       (config) => {
-        // 添加认证token
-        const token = localStorage.getItem('auth_token');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+        // 添加认证token - 优先使用headers中已设置的token，否则从localStorage读取
+        if (!config.headers.Authorization) {
+          const token = localStorage.getItem('auth_token');
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+          }
         }
 
         // 添加请求日志
-        const logData = config.data ? `Data: ${JSON.stringify(config.data)}` : 
-                       config.params ? `Params: ${JSON.stringify(config.params)}` : 
+        const logData = config.data ? `Data: ${JSON.stringify(config.data)}` :
+                       config.params ? `Params: ${JSON.stringify(config.params)}` :
                        'No payload';
         console.log(`🚀 ${config.method?.toUpperCase()} ${config.url} - ${logData}`);
-        
+
         return config;
       },
       (error) => {
@@ -55,10 +57,15 @@ class ApiClient {
         
         // 处理认证错误
         if (error.response?.status === 401) {
+          // 只清理localStorage，不自动重定向
+          // 让AuthContext处理认证失败的逻辑
           localStorage.removeItem('auth_token');
           localStorage.removeItem('user');
-          // 重定向到登录页
-          window.location.href = '/admin/login';
+
+          // 抛出具体的认证错误
+          const authError = new Error('token无效或已过期');
+          authError.name = 'AuthenticationError';
+          return Promise.reject(authError);
         }
 
         // 处理网络错误
