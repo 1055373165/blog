@@ -26,6 +26,7 @@ export default function AdminLayout() {
     { name: '仪表板', href: '/admin', icon: 'dashboard' },
     { name: '文章管理', href: '/admin/articles', icon: 'document' },
     { name: '博客管理', href: '/admin/blogs', icon: 'video' },
+    { name: '投稿管理', href: '/admin/submissions', icon: 'submissions' },
     { name: '系列管理', href: '/admin/series', icon: 'series' },
     { name: '分类管理', href: '/admin/categories', icon: 'folder' },
     { name: '标签管理', href: '/admin/tags', icon: 'tag' },
