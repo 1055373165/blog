@@ -60,8 +60,11 @@ export default function SubmissionEditorPage() {
     try {
       const response = await fetch('/api/categories');
       if (response.ok) {
-        const data = await response.json();
-        setCategories(data);
+        const responseData = await response.json();
+        // Safely access the categories array, assuming it's nested (e.g., under a 'data' key)
+        // and ensure we always set an array.
+        const categoriesArray = Array.isArray(responseData) ? responseData : Array.isArray(responseData.data) ? responseData.data : [];
+        setCategories(categoriesArray);
       }
     } catch (error) {
       console.error('获取分类失败:', error);
