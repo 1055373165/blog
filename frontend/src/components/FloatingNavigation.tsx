@@ -115,6 +115,7 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
   const navRef = useRef<HTMLElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   // 滚动监听
   useEffect(() => {
@@ -180,6 +181,7 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
 
     // 点击外部关闭菜单
     const handleClickOutside = (event: MouseEvent) => {
+      // 关闭移动端菜单
       if (
         isExpanded &&
         mobileMenuRef.current &&
@@ -188,19 +190,33 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
       ) {
         setIsExpanded(false);
       }
+
+      // 关闭用户菜单
+      if (
+        userMenuOpen &&
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setUserMenuOpen(false);
+      }
     };
 
     // ESC键关闭菜单
     const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isExpanded) {
-        setIsExpanded(false);
+      if (event.key === 'Escape') {
+        if (isExpanded) {
+          setIsExpanded(false);
+        }
+        if (userMenuOpen) {
+          setUserMenuOpen(false);
+        }
       }
     };
 
-    if (isExpanded) {
+    if (isExpanded || userMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('keydown', handleEscKey);
-      
+
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
         document.removeEventListener('keydown', handleEscKey);
@@ -211,7 +227,7 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isExpanded]);
+  }, [isExpanded, userMenuOpen]);
 
   // 键盘导航
   useEffect(() => {
@@ -343,12 +359,14 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
 
                 {/* 用户下拉菜单 */}
                 {userMenuOpen && (
-                  <div className={clsx(
-                    'absolute top-full right-0 mt-2 w-56 rounded-xl backdrop-blur-xl transition-all duration-200 z-50',
-                    'bg-white/95 dark:bg-gray-900/95',
-                    'border border-white/30 dark:border-gray-800/30',
-                    'shadow-2xl shadow-black/20'
-                  )}>
+                  <div
+                    ref={userMenuRef}
+                    className={clsx(
+                      'absolute top-full right-0 mt-2 w-56 rounded-xl backdrop-blur-xl transition-all duration-200 z-50',
+                      'bg-white/95 dark:bg-gray-900/95',
+                      'border border-white/30 dark:border-gray-800/30',
+                      'shadow-2xl shadow-black/20'
+                    )}>
                     <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                       <div className="flex items-center space-x-3">
                         {user?.avatar ? (
