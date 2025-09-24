@@ -11,7 +11,7 @@ interface AuthContextType {
   register: (data: { email: string; name: string; password: string; github_url?: string; bio?: string }) => Promise<void>;
   logout: () => void;
   refreshAuth: () => Promise<void>;
-  updateProfile: (data: { name: string; bio?: string; github_url?: string }) => Promise<void>;
+  updateProfile: (data: { name: string; bio?: string; github_url?: string; avatar?: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -163,7 +163,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const updateProfile = async (data: { name: string; bio?: string; github_url?: string }) => {
+  const updateProfile = async (data: { name: string; bio?: string; github_url?: string; avatar?: string }) => {
     try {
       const response = await authApi.updateProfile(data);
       if (response.success) {

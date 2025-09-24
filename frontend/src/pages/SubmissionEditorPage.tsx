@@ -12,6 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import Toast, { ToastType } from '../components/ui/Toast';
 
 interface SubmissionForm {
   title: string;
@@ -47,6 +48,11 @@ export default function SubmissionEditorPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [toast, setToast] = useState<{ message: string; type: ToastType; isVisible: boolean }>({
+    message: '',
+    type: 'success',
+    isVisible: false
+  });
 
   const [formData, setFormData] = useState<SubmissionForm>({
     title: '',
@@ -122,6 +128,10 @@ export default function SubmissionEditorPage() {
     }
   };
 
+  const showToast = (message: string, type: ToastType) => {
+    setToast({ message, type, isVisible: true });
+  };
+
   const handleSubmit = async (status: 'draft' | 'pending') => {
     try {
       setSaving(true);
@@ -139,13 +149,23 @@ export default function SubmissionEditorPage() {
       }
 
       if (response.success) {
-        navigate('/submissions');
+        // Show appropriate success message based on status
+        if (status === 'draft') {
+          showToast('草稿保存成功', 'success');
+        } else {
+          showToast('提交审核成功，等待管理员审核', 'success');
+        }
+        
+        // Delay navigation to allow user to see the message
+        setTimeout(() => {
+          navigate('/submissions');
+        }, 1500);
       } else {
         throw new Error(response.error || '提交失败');
       }
     } catch (error) {
       console.error('保存投稿失败:', error);
-      alert(error instanceof Error ? error.message : '保存失败，请重试');
+      showToast(error instanceof Error ? error.message : '保存失败，请重试', 'error');
     } finally {
       setSaving(false);
     }
@@ -424,6 +444,14 @@ export default function SubmissionEditorPage() {
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+      />
     </div>
   );
 }

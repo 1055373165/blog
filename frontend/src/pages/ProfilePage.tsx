@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { clsx } from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import { UserIcon, CameraIcon, PencilIcon } from '@heroicons/react/24/outline';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import { uploadApi } from '../api';
 
 interface UserProfile {
   name: string;
@@ -17,6 +18,8 @@ export default function ProfilePage() {
   const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profileData, setProfileData] = useState<UserProfile>({
     name: user?.name || '',
     email: user?.email || '',
@@ -44,6 +47,62 @@ export default function ProfilePage() {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!file) return;
+
+    // 检查文件类型
+    if (!file.type.startsWith('image/')) {
+      alert('请选择图片文件');
+      return;
+    }
+
+    // 检查文件大小（5MB限制）
+    if (file.size > 5 * 1024 * 1024) {
+      alert('图片大小不能超过5MB');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const response = await uploadApi.uploadImage(file);
+      if (response.success) {
+        const newProfileData = {
+          ...profileData,
+          avatar: response.data.url
+        };
+        setProfileData(newProfileData);
+        
+        // 直接更新用户资料
+        await updateProfile({ 
+          name: newProfileData.name,
+          bio: newProfileData.bio,
+          github_url: newProfileData.github_url,
+          avatar: response.data.url
+        });
+      } else {
+        throw new Error(response.error || '上传失败');
+      }
+    } catch (error) {
+      console.error('头像上传失败:', error);
+      alert('头像上传失败，请重试');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleAvatarUpload(file);
+    }
   };
 
   if (!user) {
@@ -89,14 +148,31 @@ export default function ProfilePage() {
                       <UserIcon className="w-12 h-12 text-gray-400" />
                     </div>
                   )}
-                  {isEditing && (
-                    <button
-                      type="button"
-                      className="absolute -bottom-2 -right-2 p-2 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors"
-                    >
+                  <button
+                    type="button"
+                    onClick={handleAvatarClick}
+                    disabled={isUploadingAvatar}
+                    className={clsx(
+                      "absolute -bottom-2 -right-2 p-2 rounded-full transition-colors",
+                      isUploadingAvatar
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-primary-600 hover:bg-primary-700 cursor-pointer",
+                      "text-white"
+                    )}
+                  >
+                    {isUploadingAvatar ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
                       <CameraIcon className="w-4 h-4" />
-                    </button>
-                  )}
+                    )}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
                 </div>
                 <div className="flex-grow">
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
