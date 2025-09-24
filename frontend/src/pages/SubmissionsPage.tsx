@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
+import { submissionsApi } from '../api';
 import {
   DocumentTextIcon,
   PlusIcon,
-  EyeIcon,
   PencilIcon,
   TrashIcon,
   ClockIcon,
@@ -14,21 +14,18 @@ import {
 } from '@heroicons/react/24/outline';
 import Button from '../components/ui/Button';
 
-interface Submission {
-  id: number;
-  title: string;
-  type: 'article' | 'blog';
-  status: 'draft' | 'pending' | 'approved' | 'rejected';
-  created_at: string;
-  updated_at: string;
-  slug?: string;
-}
+import type { Submission } from '../types';
 
 const statusConfig = {
   draft: {
     label: '草稿',
     icon: DocumentTextIcon,
     className: 'text-gray-500 bg-gray-100 dark:bg-gray-700'
+  },
+  submitted: {
+    label: '待审核',
+    icon: ClockIcon,
+    className: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20'
   },
   pending: {
     label: '待审核',
@@ -44,6 +41,11 @@ const statusConfig = {
     label: '已拒绝',
     icon: XCircleIcon,
     className: 'text-red-600 bg-red-100 dark:bg-red-900/20'
+  },
+  published: {
+    label: '已发布',
+    icon: CheckCircleIcon,
+    className: 'text-green-600 bg-green-100 dark:bg-green-900/20'
   }
 };
 
@@ -52,24 +54,30 @@ export default function SubmissionsPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'article' | 'blog'>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'pending' | 'approved' | 'rejected'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'submitted' | 'pending' | 'approved' | 'rejected' | 'published'>('all');
 
   useEffect(() => {
     fetchSubmissions();
+
+    // 监听投稿更新事件
+    const handleSubmissionUpdate = () => {
+      fetchSubmissions();
+    };
+
+    window.addEventListener('submission-updated', handleSubmissionUpdate);
+
+    return () => {
+      window.removeEventListener('submission-updated', handleSubmissionUpdate);
+    };
   }, []);
 
   const fetchSubmissions = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/submissions', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await submissionsApi.getMySubmissions();
 
-      if (response.ok) {
-        const data = await response.json();
-        setSubmissions(data);
+      if (response.success && response.data) {
+        setSubmissions(response.data.submissions || []);
       }
     } catch (error) {
       console.error('获取投稿列表失败:', error);
@@ -82,14 +90,9 @@ export default function SubmissionsPage() {
     if (!confirm('确定要删除这个投稿吗？')) return;
 
     try {
-      const response = await fetch(`/api/submissions/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await submissionsApi.deleteSubmission(id);
 
-      if (response.ok) {
+      if (response.success) {
         setSubmissions(submissions.filter(s => s.id !== id));
       }
     } catch (error) {
@@ -163,9 +166,10 @@ export default function SubmissionsPage() {
               >
                 <option value="all">全部</option>
                 <option value="draft">草稿</option>
-                <option value="pending">待审核</option>
+                <option value="submitted">待审核</option>
                 <option value="approved">已发布</option>
                 <option value="rejected">已拒绝</option>
+                <option value="published">已发布</option>
               </select>
             </div>
           </div>
@@ -231,16 +235,6 @@ export default function SubmissionsPage() {
                       </div>
 
                       <div className="flex items-center space-x-2">
-                        {submission.status === 'approved' && submission.slug && (
-                          <Link
-                            to={`/${submission.type}/${submission.slug}`}
-                            className="p-2 text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
-                            title="查看"
-                          >
-                            <EyeIcon className="w-5 h-5" />
-                          </Link>
-                        )}
-
                         <Link
                           to={`/submissions/${submission.id}/edit`}
                           className="p-2 text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"

@@ -22,6 +22,7 @@ type CreateSubmissionRequest struct {
 	Excerpt         string   `json:"excerpt"`
 	CoverImage      string   `json:"cover_image"`
 	Type            string   `json:"type" binding:"required,oneof=article blog"`
+	Status          string   `json:"status" binding:"omitempty,oneof=draft pending"`
 	CategoryID      *uint    `json:"category_id"`
 	SeriesID        *uint    `json:"series_id"`
 	TagIDs          []uint   `json:"tag_ids"`
@@ -36,6 +37,7 @@ type UpdateSubmissionRequest struct {
 	Content         string   `json:"content,omitempty"`
 	Excerpt         string   `json:"excerpt,omitempty"`
 	CoverImage      string   `json:"cover_image,omitempty"`
+	Status          string   `json:"status,omitempty" binding:"omitempty,oneof=draft pending"`
 	CategoryID      *uint    `json:"category_id,omitempty"`
 	SeriesID        *uint    `json:"series_id,omitempty"`
 	TagIDs          []uint   `json:"tag_ids,omitempty"`
@@ -74,6 +76,12 @@ func CreateSubmission(c *gin.Context) {
 	// 计算阅读时间（基于内容长度估算）
 	readingTime := utils.EstimateReadingTime(req.Content)
 
+	// 确定投稿状态
+	status := "draft" // 默认为草稿状态
+	if req.Status != "" {
+		status = req.Status
+	}
+
 	// 创建投稿
 	submission := models.Submission{
 		Title:           req.Title,
@@ -81,7 +89,7 @@ func CreateSubmission(c *gin.Context) {
 		Excerpt:         req.Excerpt,
 		CoverImage:      req.CoverImage,
 		Type:            req.Type,
-		Status:          "draft",
+		Status:          status,
 		AuthorID:        userID,
 		CategoryID:      req.CategoryID,
 		SeriesID:        req.SeriesID,
@@ -333,6 +341,9 @@ func UpdateSubmission(c *gin.Context) {
 	}
 	if req.CoverImage != "" {
 		updates["cover_image"] = req.CoverImage
+	}
+	if req.Status != "" {
+		updates["status"] = req.Status
 	}
 	if req.CategoryID != nil {
 		updates["category_id"] = req.CategoryID

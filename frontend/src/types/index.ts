@@ -18,6 +18,7 @@ export interface PaginatedResponse<T> {
   articles?: T[];
   categories?: T[];
   tags?: T[];
+  submissions?: T[];
 
   // Compatibility aliases
   page?: number;

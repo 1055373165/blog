@@ -75,8 +75,10 @@ export default function SubmissionEditorPage() {
   const fetchCategories = async () => {
     try {
       const response = await categoriesApi.getCategories();
-      if (response.success) {
-        const categoriesArray = Array.isArray(response.data) ? response.data : [];
+      if (response.success && response.data) {
+        const categoriesArray = Array.isArray(response.data.categories)
+          ? response.data.categories
+          : [];
         setCategories(categoriesArray);
       }
     } catch (error) {
@@ -149,6 +151,7 @@ export default function SubmissionEditorPage() {
       }
 
       if (response.success) {
+<<<<<<< Updated upstream
         // Show appropriate success message based on status
         if (status === 'draft') {
           showToast('草稿保存成功', 'success');
@@ -160,6 +163,11 @@ export default function SubmissionEditorPage() {
         setTimeout(() => {
           navigate('/submissions');
         }, 1500);
+=======
+        // 强制刷新提交页面的数据
+        window.dispatchEvent(new CustomEvent('submission-updated'));
+        navigate('/submissions');
+>>>>>>> Stashed changes
       } else {
         throw new Error(response.error || '提交失败');
       }
@@ -251,38 +259,16 @@ export default function SubmissionEditorPage() {
         {/* 编辑器 */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
           <div className="p-6">
-            {/* 类型选择 */}
+            {/* 类型选择 - 仅允许文章类型 */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                 内容类型
               </label>
               <div className="flex space-x-4">
-                <button
-                  type="button"
-                  onClick={() => handleInputChange('type', 'article')}
-                  className={clsx(
-                    'flex items-center px-4 py-3 rounded-lg border-2 transition-colors',
-                    formData.type === 'article'
-                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                  )}
-                >
+                <div className="flex items-center px-4 py-3 rounded-lg border-2 border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300">
                   <DocumentTextIcon className="w-5 h-5 mr-2" />
                   文章
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInputChange('type', 'blog')}
-                  className={clsx(
-                    'flex items-center px-4 py-3 rounded-lg border-2 transition-colors',
-                    formData.type === 'blog'
-                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                  )}
-                >
-                  <VideoCameraIcon className="w-5 h-5 mr-2" />
-                  博客
-                </button>
+                </div>
               </div>
             </div>
 
