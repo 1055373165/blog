@@ -151,7 +151,6 @@ export default function SubmissionEditorPage() {
       }
 
       if (response.success) {
-<<<<<<< Updated upstream
         // Show appropriate success message based on status
         if (status === 'draft') {
           showToast('草稿保存成功', 'success');
@@ -163,11 +162,6 @@ export default function SubmissionEditorPage() {
         setTimeout(() => {
           navigate('/submissions');
         }, 1500);
-=======
-        // 强制刷新提交页面的数据
-        window.dispatchEvent(new CustomEvent('submission-updated'));
-        navigate('/submissions');
->>>>>>> Stashed changes
       } else {
         throw new Error(response.error || '提交失败');
       }
