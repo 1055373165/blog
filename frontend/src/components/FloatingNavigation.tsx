@@ -35,16 +35,26 @@ interface NavigationItem {
   description?: string;
 }
 
-const navigationItems: NavigationItem[] = [
-  { name: '首页', href: '/', icon: HomeIcon, description: '回到首页' },
-  { name: '文章', href: '/articles', icon: DocumentTextIcon, description: '技术文章' },
-  { name: '博客', href: '/blogs', icon: VideoCameraIcon, description: '音频视频博客' },
-  { name: '分类', href: '/categories', icon: FolderIcon, description: '文章分类' },
-  { name: '标签', href: '/tags', icon: TagIcon, description: '文章标签' },
-  { name: '系列', href: '/series', icon: BookOpenIcon, description: '文章系列' },
-  { name: '箴言', href: '/quotes', icon: ChatBubbleBottomCenterTextIcon, description: '技术箴言' },
-  { name: '搜索', href: '/search', icon: MagnifyingGlassIcon, description: '搜索内容' },
+// 定义导航项优先级
+interface PrioritizedNavigationItem extends NavigationItem {
+  priority: 'primary' | 'secondary';
+  mobileOrder?: number;
+}
+
+const navigationItems: PrioritizedNavigationItem[] = [
+  { name: '首页', href: '/', icon: HomeIcon, description: '回到首页', priority: 'primary', mobileOrder: 1 },
+  { name: '文章', href: '/articles', icon: DocumentTextIcon, description: '技术文章', priority: 'primary', mobileOrder: 2 },
+  { name: '搜索', href: '/search', icon: MagnifyingGlassIcon, description: '搜索内容', priority: 'primary', mobileOrder: 3 },
+  { name: '博客', href: '/blogs', icon: VideoCameraIcon, description: '音频视频博客', priority: 'secondary', mobileOrder: 4 },
+  { name: '分类', href: '/categories', icon: FolderIcon, description: '文章分类', priority: 'secondary', mobileOrder: 5 },
+  { name: '标签', href: '/tags', icon: TagIcon, description: '文章标签', priority: 'secondary', mobileOrder: 6 },
+  { name: '系列', href: '/series', icon: BookOpenIcon, description: '文章系列', priority: 'secondary', mobileOrder: 7 },
+  { name: '箴言', href: '/quotes', icon: ChatBubbleBottomCenterTextIcon, description: '技术箴言', priority: 'secondary', mobileOrder: 8 },
 ];
+
+// 分离主要和次要导航项
+const primaryNavItems = navigationItems.filter(item => item.priority === 'primary');
+const secondaryNavItems = navigationItems.filter(item => item.priority === 'secondary');
 
 interface FloatingNavigationProps {
   className?: string;
@@ -59,16 +69,17 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  
+  const [isMobile, setIsMobile] = useState(false);
+
   // Theme toggle function - simple light/dark toggle only
   const toggleTheme = () => {
     if (isTogglingTheme) return; // Prevent rapid clicking
-    
+
     setIsTogglingTheme(true);
-    
+
     // Simple light/dark toggle logic
     let nextTheme: ColorTheme;
-    
+
     if (settings.colorTheme === 'system') {
       // If currently on system, toggle to opposite of what system currently is
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -78,9 +89,9 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
     } else {
       nextTheme = 'dark';
     }
-    
+
     updateColorTheme(nextTheme);
-    
+
     // Reset toggle state after a short delay
     setTimeout(() => setIsTogglingTheme(false), 150);
   };
@@ -117,21 +128,32 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
+  // 移动端检测
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // 滚动监听
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      
+
       // 判断是否滚动
       setIsScrolled(currentScrollY > 50);
-      
+
       // 判断滚动方向
       if (currentScrollY > lastScrollY && currentScrollY > 100) {
         setScrollDirection('down');
       } else {
         setScrollDirection('up');
       }
-      
+
       setLastScrollY(currentScrollY);
     };
 
@@ -141,7 +163,7 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
 
   // 更新活跃状态
   useEffect(() => {
-    const currentIndex = navigationItems.findIndex(item => 
+    const currentIndex = navigationItems.findIndex(item =>
       item.href === '/' ? location.pathname === '/' : location.pathname.startsWith(item.href)
     );
     if (currentIndex !== -1) {
@@ -149,21 +171,21 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
     }
   }, [location.pathname]);
 
-  // 更新指示器位置
+  // 更新指示器位置 - 仅在桌面端生效
   useEffect(() => {
-    if (indicatorRef.current && navRef.current) {
+    if (!isMobile && indicatorRef.current && navRef.current) {
       const activeButton = navRef.current.children[activeIndex] as HTMLElement;
       if (activeButton) {
         const rect = activeButton.getBoundingClientRect();
         const navRect = navRef.current.getBoundingClientRect();
         const left = rect.left - navRect.left;
         const width = rect.width;
-        
+
         indicatorRef.current.style.transform = `translateX(${left}px)`;
         indicatorRef.current.style.width = `${width}px`;
       }
     }
-  }, [activeIndex, isExpanded]);
+  }, [activeIndex, isExpanded, isMobile]);
 
   // 回到顶部
   const scrollToTop = () => {
@@ -258,7 +280,7 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
           '7': '/quotes',
           '8': '/search'
         };
-        
+
         if (shortcuts[key]) {
           e.preventDefault();
           window.location.href = shortcuts[key];
@@ -281,31 +303,38 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
         )}
       >
         <div className={clsx(
-          'relative px-6 py-3 rounded-2xl border backdrop-blur-xl transition-all duration-500',
+          'relative transition-all duration-500',
           'bg-white/80 dark:bg-gray-900/80',
           'border-white/20 dark:border-gray-800/20',
           'shadow-2xl shadow-black/10 dark:shadow-black/20',
           isScrolled && 'shadow-4xl',
-          'hover:shadow-[0_0_40px_rgba(59,130,246,0.15)]'
+          'hover:shadow-[0_0_40px_rgba(59,130,246,0.15)]',
+          // Mobile-specific styles
+          isMobile
+            ? 'px-3 py-2 rounded-xl border backdrop-blur-md'
+            : 'px-6 py-3 rounded-2xl border backdrop-blur-xl'
         )}>
           {/* 背景装饰 */}
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary-500/5 via-transparent to-go-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          
+
           {/* 导航项容器 */}
           <div className="relative flex items-center space-x-1">
-            {/* 活跃指示器 */}
-            <div
-              ref={indicatorRef}
-              className="absolute top-0 bottom-0 bg-gradient-to-r from-primary-500/20 to-go-500/20 rounded-xl transition-all duration-300 ease-out"
-              style={{ left: 0, width: 0 }}
-            />
-            
-            {/* 导航项 */}
+            {/* 活跃指示器 - 仅在桌面端显示 */}
+            {!isMobile && (
+              <div
+                ref={indicatorRef}
+                className="absolute top-0 bottom-0 bg-gradient-to-r from-primary-500/20 to-go-500/20 rounded-xl transition-all duration-300 ease-out"
+                style={{ left: 0, width: 0 }}
+              />
+            )}
+
+            {/* 导航项 - 响应式布局 */}
             <nav ref={navRef} className="flex items-center space-x-1">
-              {navigationItems.map((item, index) => {
+              {/* 桌面端：显示所有导航项 */}
+              {!isMobile && navigationItems.map((item, index) => {
                 const isActive = activeIndex === index;
                 const Icon = item.icon;
-                
+
                 return (
                   <Link
                     key={item.href}
@@ -324,9 +353,9 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
                         'w-4 h-4 transition-all duration-300 flex-shrink-0',
                         isActive ? 'scale-110' : 'group-hover:scale-105'
                       )} />
-                      <span className="hidden md:inline text-sm whitespace-nowrap">{item.name}</span>
+                      <span className="text-sm whitespace-nowrap">{item.name}</span>
                     </div>
-                    
+
                     {/* 悬浮提示 */}
                     <div className={clsx(
                       'absolute -top-12 left-1/2 transform -translate-x-1/2 px-2 py-1',
@@ -340,11 +369,72 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
                   </Link>
                 );
               })}
+
+              {/* 移动端：只显示主要导航项 */}
+              {isMobile && primaryNavItems.map((item) => {
+                const allItemIndex = navigationItems.findIndex(navItem => navItem.href === item.href);
+                const isActive = activeIndex === allItemIndex;
+                const Icon = item.icon;
+
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={clsx(
+                      'relative p-2 rounded-lg transition-all duration-300 group',
+                      'min-h-[40px] min-w-[40px] touch-manipulation',
+                      'flex items-center justify-center',
+                      isActive
+                        ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
+                    )}
+                    title={item.description}
+                    aria-label={item.name}
+                  >
+                    <Icon className={clsx(
+                      'w-5 h-5 transition-all duration-300 flex-shrink-0',
+                      isActive ? 'scale-110' : 'group-hover:scale-105'
+                    )} />
+                  </Link>
+                );
+              })}
             </nav>
-            
-            {/* 分隔线 */}
-            <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2" />
-            
+
+            {/* 分隔线 - 桌面端显示 */}
+            {!isMobile && <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2" />}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             {/* 用户按钮 */}
             {isAuthenticated ? (
               <div className="relative">
@@ -481,7 +571,7 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
                 <UserCircleIcon className="w-6 h-6" />
               </button>
             )}
-            
+
             {/* 主题切换 */}
             <button
               onClick={toggleTheme}
@@ -508,119 +598,142 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
                 )} />
               )}
             </button>
-            
-            {/* 主题设置 */}
-            <button
-              onClick={() => setThemeSettingsOpen(true)}
-              className={clsx(
-                'hidden md:flex p-2 rounded-xl transition-all duration-300 group items-center justify-center',
-                'min-h-[44px] min-w-[44px] touch-manipulation', // Proper touch target
-                'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
-                'hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700'
-              )}
-              title="主题设置"
-              aria-label="打开主题设置"
-            >
-              <CogIcon className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
-            </button>
-            
-            {/* 移动端菜单按钮 */}
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className={clsx(
-                'md:hidden p-2 rounded-xl transition-all duration-300',
-                'min-h-[44px] min-w-[44px] touch-manipulation', // Proper touch target size
-                'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
-                'hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700',
-                isExpanded && 'bg-gray-100 dark:bg-gray-800'
-              )}
-              aria-label={isExpanded ? '关闭菜单' : '打开菜单'}
-              aria-expanded={isExpanded}
-            >
-              {isExpanded ? (
-                <XMarkIcon className="w-5 h-5" />
-              ) : (
-                <Bars3Icon className="w-5 h-5" />
-              )}
-            </button>
+
+            {/* 主题设置 - 桌面端显示 */}
+            {!isMobile && (
+              <button
+                onClick={() => setThemeSettingsOpen(true)}
+                className={clsx(
+                  'p-2 rounded-xl transition-all duration-300 group items-center justify-center',
+                  'min-h-[44px] min-w-[44px] touch-manipulation',
+                  'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
+                  'hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700'
+                )}
+                title="主题设置"
+                aria-label="打开主题设置"
+              >
+                <CogIcon className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+              </button>
+            )}
+
+            {/* 移动端菜单按钮 - 仅在移动端显示 */}
+            {isMobile && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className={clsx(
+                  'p-2 rounded-lg transition-all duration-300',
+                  'min-h-[40px] min-w-[40px] touch-manipulation',
+                  'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
+                  'hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700',
+                  isExpanded && 'bg-gray-100 dark:bg-gray-800 text-primary-600 dark:text-primary-400'
+                )}
+                aria-label={isExpanded ? '关闭菜单' : '打开更多功能'}
+                aria-expanded={isExpanded}
+              >
+                {isExpanded ? (
+                  <XMarkIcon className="w-5 h-5" />
+                ) : (
+                  <Bars3Icon className="w-5 h-5" />
+                )}
+              </button>
+            )}
           </div>
         </div>
-        
-        {/* 移动端展开菜单 */}
-        {isExpanded && (
+
+        {/* 移动端展开菜单 - 优化布局 */}
+        {isMobile && isExpanded && (
           <div
             ref={mobileMenuRef}
             className={clsx(
-              'absolute top-full left-0 right-0 mt-2 p-4 rounded-2xl backdrop-blur-xl transition-all duration-300 z-50',
+              'absolute top-full left-0 right-0 mt-2 rounded-xl backdrop-blur-md transition-all duration-300 z-50',
               'bg-white/95 dark:bg-gray-900/95',
               'border border-white/30 dark:border-gray-800/30',
-              'shadow-2xl shadow-black/20'
+              'shadow-xl shadow-black/15'
             )}>
-            <div className="space-y-2">
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.href || 
-                  (item.href !== '/' && location.pathname.startsWith(item.href));
-                
-                return (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    onClick={() => setIsExpanded(false)}
-                    className={clsx(
-                      'flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200',
-                      'min-h-[44px] touch-manipulation', // 44px minimum for touch targets
-                      isActive
-                        ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700'
-                    )}
-                  >
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="font-medium">{item.name}</span>
-                  </Link>
-                );
-              })}
-              
-              {/* Mobile Theme Settings Button */}
-              <button
-                onClick={() => {
-                  setThemeSettingsOpen(true);
-                  setIsExpanded(false);
-                }}
-                className={clsx(
-                  'flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200',
-                  'min-h-[44px] touch-manipulation w-full text-left', // Full width and proper touch target
-                  'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700'
-                )}
-              >
-                <CogIcon className="w-5 h-5 flex-shrink-0" />
-                <span className="font-medium">主题设置</span>
-              </button>
+            {/* 次要导航项 */}
+            <div className="p-3">
+              <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 px-2">
+                内容分类
+              </div>
+              <div className="space-y-1">
+                {secondaryNavItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.href ||
+                    (item.href !== '/' && location.pathname.startsWith(item.href));
+
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      onClick={() => setIsExpanded(false)}
+                      className={clsx(
+                        'flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+                        'min-h-[44px] touch-manipulation',
+                        isActive
+                          ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700'
+                      )}
+                    >
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <span className="font-medium">{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 设置区域 */}
+            <div className="border-t border-gray-200 dark:border-gray-700 p-3">
+              <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 px-2">
+                设置
+              </div>
+              <div className="space-y-1">
+                {/* 主题设置 */}
+                <button
+                  onClick={() => {
+                    setThemeSettingsOpen(true);
+                    setIsExpanded(false);
+                  }}
+                  className={clsx(
+                    'flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+                    'min-h-[44px] touch-manipulation w-full text-left',
+                    'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700'
+                  )}
+                >
+                  <CogIcon className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-medium">主题设置</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
       </nav>
-      
-      {/* 回到顶部按钮 */}
+
+      {/* 回到顶部按钮 - 响应式 */}
       {isScrolled && (
         <button
           onClick={scrollToTop}
           className={clsx(
-            'fixed bottom-8 right-8 z-50 p-3 rounded-full backdrop-blur-xl transition-all duration-500',
+            'fixed z-50 rounded-full backdrop-blur-md transition-all duration-500',
             'bg-white/80 dark:bg-gray-900/80',
             'border border-white/20 dark:border-gray-800/20',
-            'shadow-2xl hover:shadow-4xl',
             'text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400',
-            'hover:scale-110 hover:-translate-y-1',
-            'group'
+            'hover:scale-110 hover:-translate-y-1 group',
+            // 移动端样式
+            isMobile
+              ? 'bottom-6 right-4 p-2.5 shadow-lg hover:shadow-xl'
+              : 'bottom-8 right-8 p-3 shadow-2xl hover:shadow-4xl'
           )}
           title="回到顶部"
         >
-          <ChevronUpIcon className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
+          <ChevronUpIcon className={clsx(
+            'group-hover:-translate-y-1 transition-transform',
+            isMobile ? 'w-5 h-5' : 'w-6 h-6'
+          )} />
           <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-go-500/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
       )}
-      
+
       {/* 主题设置面板 */}
       <ThemeSettings
         isOpen={themeSettingsOpen}

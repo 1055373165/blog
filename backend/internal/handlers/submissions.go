@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -666,6 +667,9 @@ func ReviewSubmission(c *gin.Context) {
 		return
 	}
 
+	// Debug logging
+	fmt.Printf("Review request: Status=%s, ReviewNotes=%s\n", req.Status, req.ReviewNotes)
+
 	var submission models.Submission
 	err = database.DB.First(&submission, uint(id)).Error
 	if err != nil {
@@ -687,7 +691,7 @@ func ReviewSubmission(c *gin.Context) {
 	if submission.Status != "submitted" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"error":   "只有已提交的投稿可以审核",
+			"error":   fmt.Sprintf("只有已提交的投稿可以审核，当前状态: %s", submission.Status),
 		})
 		return
 	}

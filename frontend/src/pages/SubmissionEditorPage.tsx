@@ -138,32 +138,60 @@ export default function SubmissionEditorPage() {
     try {
       setSaving(true);
 
-      const submitData = {
-        ...formData,
-        status
-      };
+      if (status === 'pending') {
+        // For submission, first save as draft, then submit for review
+        const submitData = {
+          ...formData,
+          status: 'draft'
+        };
 
-      let response;
-      if (isEditing) {
-        response = await submissionsApi.updateSubmission(Number(id), submitData);
-      } else {
-        response = await submissionsApi.createSubmission(submitData);
-      }
-
-      if (response.success) {
-        // Show appropriate success message based on status
-        if (status === 'draft') {
-          showToast('草稿保存成功', 'success');
+        let saveResponse;
+        if (isEditing) {
+          saveResponse = await submissionsApi.updateSubmission(Number(id), submitData);
         } else {
-          showToast('提交审核成功，等待管理员审核', 'success');
+          saveResponse = await submissionsApi.createSubmission(submitData);
         }
-        
-        // Delay navigation to allow user to see the message
-        setTimeout(() => {
-          navigate('/submissions');
-        }, 1500);
+
+        if (saveResponse.success) {
+          // Get the submission ID (for new submissions)
+          const submissionId = isEditing ? Number(id) : saveResponse.data.id;
+
+          // Now submit for review
+          const submitResponse = await submissionsApi.submitSubmission(submissionId);
+
+          if (submitResponse.success) {
+            showToast('提交审核成功，等待管理员审核', 'success');
+            setTimeout(() => {
+              navigate('/submissions');
+            }, 1500);
+          } else {
+            throw new Error(submitResponse.error || '提交审核失败');
+          }
+        } else {
+          throw new Error(saveResponse.error || '保存失败');
+        }
       } else {
-        throw new Error(response.error || '提交失败');
+        // For draft, just save
+        const submitData = {
+          ...formData,
+          status: 'draft'
+        };
+
+        let response;
+        if (isEditing) {
+          response = await submissionsApi.updateSubmission(Number(id), submitData);
+        } else {
+          response = await submissionsApi.createSubmission(submitData);
+        }
+
+        if (response.success) {
+          showToast('草稿保存成功', 'success');
+          setTimeout(() => {
+            navigate('/submissions');
+          }, 1500);
+        } else {
+          throw new Error(response.error || '保存失败');
+        }
       }
     } catch (error) {
       console.error('保存投稿失败:', error);
