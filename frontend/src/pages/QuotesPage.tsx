@@ -1,11 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Quote, QuoteFilters, ViewMode, QuoteCategory } from '../types';
+import { Quote, QuoteFilters, QuoteCategory } from '../types';
 import QuoteGrid from '../components/quotes/QuoteGrid';
-import QuoteListView from '../components/quotes/QuoteListView';
-import QuoteDetailedListView from '../components/quotes/QuoteDetailedListView';
-import QuoteMasonryView from '../components/quotes/QuoteMasonryView';
 import QuoteFiltersComponent from '../components/quotes/QuoteFilters';
-import ViewModeSelector from '../components/quotes/ViewModeSelector';
 import QuoteDetailModal from '../components/quotes/QuoteDetailModal';
 import { useQuotes } from '../hooks/useQuotes';
 import { QuoteErrorBoundary } from '../components/ErrorBoundary';
@@ -13,7 +9,6 @@ import { QuoteErrorBoundary } from '../components/ErrorBoundary';
 export default function QuotesPage() {
   const [filters, setFilters] = useState<QuoteFilters>({});
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   
   // 暂时禁用性能监控，避免性能开销
   // const performanceMetrics = process.env.NODE_ENV === 'development' 
@@ -46,10 +41,6 @@ export default function QuotesPage() {
     setSelectedQuote(null);
   }, []);
 
-  // 处理视图模式更改
-  const handleViewModeChange = useCallback((newMode: ViewMode) => {
-    setViewMode(newMode);
-  }, []);
 
   // 优化的统计信息计算 - 使用更高效的算法
   const { authorsCount, categoriesCount, availableCategories, availableTags } = useMemo(() => {
@@ -172,34 +163,19 @@ export default function QuotesPage() {
               availableTags={availableTags}
             />
 
-            {/* 视图模式选择器 */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <ViewModeSelector
-                currentMode={viewMode}
-                onModeChange={handleViewModeChange}
-                className="flex-shrink-0"
-              />
-              
-              {/* 统计信息增强 */}
-              <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                <span>当前显示 {quotes.length} 条箴言</span>
-                <span className="hidden sm:inline">•</span>
-                <span className="hidden sm:inline">
-                  {viewMode === 'grid' ? '网格视图' :
-                   viewMode === 'list' ? '列表视图' :
-                   viewMode === 'detailed' ? '详细视图' : '瀑布流视图'}
-                </span>
-                {process.env.NODE_ENV === 'development' && performanceMetrics.renderCount > 0 && (
-                  <>
-                    <span className="hidden lg:inline">•</span>
-                    <span className="hidden lg:inline text-xs">
-                      渲染: {performanceMetrics.renderCount}次 
-                      {performanceMetrics.lastRenderDuration > 0 && 
-                        ` (${performanceMetrics.lastRenderDuration.toFixed(1)}ms)`}
-                    </span>
-                  </>
-                )}
-              </div>
+            {/* 统计信息 */}
+            <div className="flex items-center justify-center gap-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
+              <span>当前显示 {quotes.length} 条箴言</span>
+              {process.env.NODE_ENV === 'development' && performanceMetrics.renderCount > 0 && (
+                <>
+                  <span className="hidden lg:inline">•</span>
+                  <span className="hidden lg:inline text-xs">
+                    渲染: {performanceMetrics.renderCount}次
+                    {performanceMetrics.lastRenderDuration > 0 &&
+                      ` (${performanceMetrics.lastRenderDuration.toFixed(1)}ms)`}
+                  </span>
+                </>
+              )}
             </div>
           </section>
         </header>
@@ -223,37 +199,12 @@ export default function QuotesPage() {
             </div>
           ) : (
             <>
-              {/* 静态展示：根据视图模式选择组件 */}
-              <div id={`quotes-content-${viewMode}`} role="tabpanel" aria-labelledby={`view-mode-${viewMode}`}>
-                {viewMode === 'grid' && (
-                  <QuoteGrid 
-                    quotes={quotes}
-                    onQuoteClick={handleQuoteClick}
-                    focusedQuoteId={focusedQuoteId}
-                  />
-                )}
-                {viewMode === 'list' && (
-                  <QuoteListView
-                    quotes={quotes}
-                    onQuoteClick={handleQuoteClick}
-                    focusedQuoteId={focusedQuoteId}
-                  />
-                )}
-                {viewMode === 'detailed' && (
-                  <QuoteDetailedListView
-                    quotes={quotes}
-                    onQuoteClick={handleQuoteClick}
-                    focusedQuoteId={focusedQuoteId}
-                  />
-                )}
-                {viewMode === 'masonry' && (
-                  <QuoteMasonryView
-                    quotes={quotes}
-                    onQuoteClick={handleQuoteClick}
-                    focusedQuoteId={focusedQuoteId}
-                  />
-                )}
-              </div>
+              {/* 箴言网格展示 */}
+              <QuoteGrid
+                quotes={quotes}
+                onQuoteClick={handleQuoteClick}
+                focusedQuoteId={focusedQuoteId}
+              />
               
             </>
             )}
