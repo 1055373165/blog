@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Quote, QuoteFilters, ViewMode } from '../types';
+import React, { useState, useCallback, useMemo } from 'react';
+import { Quote, QuoteFilters, ViewMode, QuoteCategory } from '../types';
 import QuoteGrid from '../components/quotes/QuoteGrid';
 import QuoteListView from '../components/quotes/QuoteListView';
 import QuoteDetailedListView from '../components/quotes/QuoteDetailedListView';
@@ -8,14 +8,12 @@ import QuoteFiltersComponent from '../components/quotes/QuoteFilters';
 import ViewModeSelector from '../components/quotes/ViewModeSelector';
 import QuoteDetailModal from '../components/quotes/QuoteDetailModal';
 import { useQuotes } from '../hooks/useQuotes';
-import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import { QuoteErrorBoundary } from '../components/ErrorBoundary';
 
 export default function QuotesPage() {
   const [filters, setFilters] = useState<QuoteFilters>({});
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [userViewModePreference, setUserViewModePreference] = useState<ViewMode>();
   
   // 暂时禁用性能监控，避免性能开销
   // const performanceMetrics = process.env.NODE_ENV === 'development' 
@@ -39,36 +37,18 @@ export default function QuotesPage() {
     setSelectedQuote(quote);
   }, []);
   
-  // 键盘导航
-  const {
-    focusedQuoteId,
-    handleKeyDown,
-    setFocusedQuoteId,
-    announcementText,
-  } = useKeyboardNavigation({
-    quotes,
-    onQuoteSelect: handleQuoteClick,
-    isFloatingMode: false, // 始终为静态模式
-  });
+  // 移除键盘导航功能以避免与用户登录功能冲突
+  const focusedQuoteId = null;
+  const announcementText = '';
 
   // 处理详情关闭 - 使用useCallback避免重新创建
   const handleDetailClose = useCallback(() => {
     setSelectedQuote(null);
-    // 恢复键盘焦点到之前选中的箴言
-    if (focusedQuoteId) {
-      setTimeout(() => {
-        const element = document.querySelector(`[data-quote-id="${focusedQuoteId}"]`) as HTMLElement;
-        if (element) {
-          element.focus();
-        }
-      }, 100);
-    }
-  }, [focusedQuoteId]);
+  }, []);
 
   // 处理视图模式更改
   const handleViewModeChange = useCallback((newMode: ViewMode) => {
     setViewMode(newMode);
-    setUserViewModePreference(newMode);
   }, []);
 
   // 优化的统计信息计算 - 使用更高效的算法
@@ -98,72 +78,12 @@ export default function QuotesPage() {
     return {
       authorsCount: authorsSet.size,
       categoriesCount: categoriesSet.size,
-      availableCategories: Array.from(categoriesSet),
+      availableCategories: Array.from(categoriesSet) as QuoteCategory[],
       availableTags: Array.from(tagsSet)
     };
   }, [quotes]);
 
-  // 优化的键盘快捷键处理 - 减少依赖项
-  const handleViewModeKeyDown = useCallback((event: KeyboardEvent) => {
-    // 防止在模态框打开或输入框聚焦时处理
-    if (document.querySelector('[role="dialog"]') || 
-        document.activeElement?.tagName === 'INPUT' ||
-        document.activeElement?.tagName === 'TEXTAREA') {
-      return;
-    }
 
-    // 缓存视图模式数组
-    const viewModes: ViewMode[] = ['grid', 'list', 'detailed', 'masonry'];
-    
-    switch (event.key) {
-      case '1':
-        if (!event.ctrlKey && !event.altKey && !event.metaKey && !focusedQuoteId) {
-          event.preventDefault();
-          handleViewModeChange('grid');
-        }
-        break;
-      case '2':
-        if (!event.ctrlKey && !event.altKey && !event.metaKey && !focusedQuoteId) {
-          event.preventDefault();
-          handleViewModeChange('list');
-        }
-        break;
-      case '3':
-        if (!event.ctrlKey && !event.altKey && !event.metaKey && !focusedQuoteId) {
-          event.preventDefault();
-          handleViewModeChange('detailed');
-        }
-        break;
-      case '4':
-        if (!event.ctrlKey && !event.altKey && !event.metaKey && !focusedQuoteId) {
-          event.preventDefault();
-          handleViewModeChange('masonry');
-        }
-        break;
-      case 'v':
-      case 'V':
-        if (!event.ctrlKey && !event.altKey && !event.metaKey) {
-          event.preventDefault();
-          const currentIndex = viewModes.indexOf(viewMode);
-          const nextIndex = (currentIndex + 1) % viewModes.length;
-          handleViewModeChange(viewModes[nextIndex]);
-        }
-        break;
-    }
-  }, [viewMode, handleViewModeChange, focusedQuoteId]);
-
-  // 优化的键盘事件监听 - 使用单一处理函数
-  const combinedKeyHandler = useCallback((event: KeyboardEvent) => {
-    handleKeyDown(event);
-    handleViewModeKeyDown(event);
-  }, [handleKeyDown, handleViewModeKeyDown]);
-  
-  useEffect(() => {
-    document.addEventListener('keydown', combinedKeyHandler);
-    return () => {
-      document.removeEventListener('keydown', combinedKeyHandler);
-    };
-  }, [combinedKeyHandler]);
 
   if (loading) {
     return (
@@ -335,44 +255,6 @@ export default function QuotesPage() {
                 )}
               </div>
               
-              {/* 键盘导航说明 */}
-              <section 
-                className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
-                aria-labelledby="keyboard-help-title"
-              >
-                <h3 id="keyboard-help-title" className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-3">
-                  🎹 键盘导航帮助
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-blue-800 dark:text-blue-200">
-                  <div>
-                    <h4 className="font-medium mb-2">基础导航</h4>
-                    <ul className="space-y-1">
-                      <li><kbd className="px-2 py-1 bg-white dark:bg-gray-700 rounded text-xs">方向键</kbd> 在箴言间导航</li>
-                      <li><kbd className="px-2 py-1 bg-white dark:bg-gray-700 rounded text-xs">回车/空格</kbd> 打开详情</li>
-                      <li><kbd className="px-2 py-1 bg-white dark:bg-gray-700 rounded text-xs">Esc</kbd> 关闭详情</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h4 className="font-medium mb-2">快捷操作</h4>
-                    <ul className="space-y-1">
-                      <li><kbd className="px-2 py-1 bg-white dark:bg-gray-700 rounded text-xs">Home/End</kbd> 跳转首尾</li>
-                      <li><kbd className="px-2 py-1 bg-white dark:bg-gray-700 rounded text-xs">数字键</kbd> 快速跳转</li>
-                      <li><kbd className="px-2 py-1 bg-white dark:bg-gray-700 rounded text-xs">F</kbd> 聚焦搜索框</li>
-                      <li><kbd className="px-2 py-1 bg-white dark:bg-gray-700 rounded text-xs">?</kbd> 显示帮助</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h4 className="font-medium mb-2">视图模式</h4>
-                    <ul className="space-y-1">
-                      <li><kbd className="px-2 py-1 bg-white dark:bg-gray-700 rounded text-xs">1-4</kbd> 快速切换视图</li>
-                      <li><kbd className="px-2 py-1 bg-white dark:bg-gray-700 rounded text-xs">V</kbd> 循环切换视图</li>
-                      <li className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                        1=网格 2=列表 3=详细 4=瀑布流
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </section>
             </>
             )}
           </QuoteErrorBoundary>
@@ -388,10 +270,6 @@ export default function QuotesPage() {
         onNavigateToQuote={setSelectedQuote}
       />
       
-      {/* 页面级别的键盘导航说明 */}
-      <div className="sr-only" aria-live="polite">
-        使用方向键在箴言间导航，按回车键或空格键查看详情，按问号键获取帮助。
-      </div>
     </div>
   );
 }
