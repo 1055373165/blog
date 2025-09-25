@@ -28,6 +28,11 @@ const statusConfig = {
     icon: DocumentTextIcon,
     className: 'text-gray-500 bg-gray-100 dark:bg-gray-700'
   },
+  pending: {
+    label: '待审核',
+    icon: ClockIcon,
+    className: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20'
+  },
   submitted: {
     label: '待审核',
     icon: ClockIcon,
@@ -233,7 +238,8 @@ export default function AdminSubmissions() {
             className="rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           >
             <option value="all">所有状态</option>
-            <option value="submitted">待审核</option>
+            <option value="pending">待审核(pending)</option>
+            <option value="submitted">待审核(submitted)</option>
             <option value="approved">已通过</option>
             <option value="rejected">已拒绝</option>
             <option value="published">已发布</option>
@@ -273,7 +279,11 @@ export default function AdminSubmissions() {
         ) : (
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {submissions.map((submission) => {
-              const status = statusConfig[submission.status as keyof typeof statusConfig];
+              const status = statusConfig[submission.status as keyof typeof statusConfig] || {
+                label: submission.status || '未知',
+                icon: ClockIcon,
+                className: 'text-gray-500 bg-gray-100 dark:bg-gray-700'
+              };
               const StatusIcon = status.icon;
 
               return (
@@ -347,7 +357,7 @@ export default function AdminSubmissions() {
                       )}
 
                       {/* 审核操作 */}
-                      {submission.status === 'submitted' && (
+                      {(submission.status === 'submitted' || submission.status === 'pending') && (
                         <>
                           <button
                             onClick={() => openReviewModal(submission, 'approve')}

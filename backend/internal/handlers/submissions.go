@@ -23,7 +23,7 @@ type CreateSubmissionRequest struct {
 	Excerpt         string   `json:"excerpt"`
 	CoverImage      string   `json:"cover_image"`
 	Type            string   `json:"type" binding:"required,oneof=article blog"`
-	Status          string   `json:"status" binding:"omitempty,oneof=draft pending"`
+	Status          string   `json:"status" binding:"omitempty,oneof=draft submitted"`
 	CategoryID      *uint    `json:"category_id"`
 	SeriesID        *uint    `json:"series_id"`
 	TagIDs          []uint   `json:"tag_ids"`
@@ -38,7 +38,7 @@ type UpdateSubmissionRequest struct {
 	Content         string   `json:"content,omitempty"`
 	Excerpt         string   `json:"excerpt,omitempty"`
 	CoverImage      string   `json:"cover_image,omitempty"`
-	Status          string   `json:"status,omitempty" binding:"omitempty,oneof=draft pending"`
+	Status          string   `json:"status,omitempty" binding:"omitempty,oneof=draft submitted"`
 	CategoryID      *uint    `json:"category_id,omitempty"`
 	SeriesID        *uint    `json:"series_id,omitempty"`
 	TagIDs          []uint   `json:"tag_ids,omitempty"`

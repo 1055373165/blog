@@ -214,7 +214,7 @@ export interface Submission {
   content: string;
   excerpt?: string;
   cover_image?: string;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'published';
+  status: 'draft' | 'pending' | 'submitted' | 'approved' | 'rejected' | 'published';
   type: 'article' | 'blog';
   submitted_at?: string;
   reviewed_at?: string;
