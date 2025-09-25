@@ -21,6 +21,7 @@ import SearchPage from './pages/SearchPage';
 import ArticlePreviewPage from './pages/ArticlePreviewPage';
 import ProfilePage from './pages/ProfilePage';
 import SubmissionsPage from './pages/SubmissionsPage';
+import SubmissionDetailPage from './pages/SubmissionDetailPage';
 import SubmissionEditorPage from './pages/SubmissionEditorPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -99,6 +100,7 @@ function RouterContent() {
               <Route path="profile" element={<ProfilePage />} />
               <Route path="submissions" element={<SubmissionsPage />} />
               <Route path="submissions/new" element={<SubmissionEditorPage />} />
+              <Route path="submissions/:id" element={<SubmissionDetailPage />} />
               <Route path="submissions/:id/edit" element={<SubmissionEditorPage />} />
             </Route>
 
