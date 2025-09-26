@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Article, Tag } from '../types';
+import { formatDistanceToNow } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
-import { Article } from '../types';
-import OptimizedImage from './ui/OptimizedImage';
-import { formatDate } from '../utils';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getAvatarUrl } from '../utils/avatarUtils';
 import { clsx } from 'clsx';
 
 interface EnhancedArticleGridProps {
@@ -204,7 +206,7 @@ const EnhancedArticleCard = ({
               {article.author && (
                 <div className="flex items-center space-x-2">
                   <img
-                    src={article.author.avatar || `https://ui-avatars.com/api/?name=${article.author.name}&background=random`}
+                    src={getAvatarUrl(article.author.avatar, article.author.name, 32)}
                     alt={article.author.name}
                     className="w-8 h-8 rounded-full"
                   />
@@ -351,7 +353,7 @@ const EnhancedArticleCard = ({
             <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
               {article.author && (
                 <div className="flex items-center space-x-2">
-                  <img src={article.author.avatar || `https://ui-avatars.com/api/?name=${article.author.name}&background=random`} alt={article.author.name} className="w-6 h-6 rounded-full" />
+                  <img src={getAvatarUrl(article.author.avatar, article.author.name, 24)} alt={article.author.name} className="w-6 h-6 rounded-full" />
                   <span className="font-medium text-gray-700 dark:text-gray-300">{article.author.name}</span>
                 </div>
               )}

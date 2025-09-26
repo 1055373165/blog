@@ -343,7 +343,6 @@ export default function ArticleEditor() {
         <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
           body { font-family: 'Inter', sans-serif; }
           .preview-header { 
             background: linear-gradient(90deg, rgb(254 240 138) 0%, rgb(253 186 116) 100%); 
