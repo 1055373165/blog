@@ -133,6 +133,8 @@ func main() {
 		// 评论相关路由
 		comments := api.Group("/comments")
 		{
+			comments.PUT("/:id", handlers.UpdateComment)
+			comments.DELETE("/:id", handlers.DeleteComment)
 			comments.POST("/:id/like", handlers.ToggleCommentLike)
 			comments.POST("/:id/report", handlers.ReportComment)
 		}
@@ -261,11 +263,11 @@ func main() {
 		adminUsers := api.Group("/admin/users")
 		adminUsers.Use(middleware.AuthRequired()) // 需要登录
 		{
-			adminUsers.GET("", handlers.GetUsers)                       // 获取用户列表
-			adminUsers.GET("/:id", handlers.GetUserDetail)              // 获取用户详情
-			adminUsers.PUT("/:id/toggle-admin", handlers.ToggleUserAdmin) // 切换管理员权限
+			adminUsers.GET("", handlers.GetUsers)                           // 获取用户列表
+			adminUsers.GET("/:id", handlers.GetUserDetail)                  // 获取用户详情
+			adminUsers.PUT("/:id/toggle-admin", handlers.ToggleUserAdmin)   // 切换管理员权限
 			adminUsers.PUT("/:id/toggle-active", handlers.ToggleUserActive) // 切换用户状态
-			adminUsers.DELETE("/:id", handlers.DeleteUser)              // 删除用户
+			adminUsers.DELETE("/:id", handlers.DeleteUser)                  // 删除用户
 		}
 	}
 

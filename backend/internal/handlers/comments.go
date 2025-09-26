@@ -22,6 +22,11 @@ type CreateCommentRequest struct {
 	ParentID  *uint  `json:"parent_id"`
 }
 
+// UpdateCommentRequest 更新评论请求结构
+type UpdateCommentRequest struct {
+	Content string `json:"content" binding:"required"`
+}
+
 // CommentResponse 评论响应结构
 type CommentResponse struct {
 	ID            uint              `json:"id"`
@@ -426,5 +431,133 @@ func ReportComment(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Comment reported successfully",
+	})
+}
+
+// UpdateComment 更新评论内容
+func UpdateComment(c *gin.Context) {
+	commentIDStr := c.Param("id")
+	commentID, err := strconv.ParseUint(commentIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid comment ID"})
+		return
+	}
+
+	var req UpdateCommentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 验证内容长度
+	content := strings.TrimSpace(req.Content)
+	if len(content) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Comment content cannot be empty"})
+		return
+	}
+	if len(content) > 2000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Comment content too long"})
+		return
+	}
+
+	// 获取评论
+	var comment models.Comment
+	if err := database.DB.First(&comment, uint(commentID)).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Comment not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find comment"})
+		}
+		return
+	}
+
+	// 检查权限：只有评论作者或管理员可以编辑
+	userID, exists := middleware.TryGetCurrentUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
+		return
+	}
+
+	// 获取当前用户信息
+	var currentUser models.User
+	if err := database.DB.First(&currentUser, userID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info"})
+		return
+	}
+
+	// 检查是否有权限编辑（作者本人或管理员）
+	if comment.AuthorID != userID && !currentUser.IsAdmin {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Permission denied"})
+		return
+	}
+
+	// 更新评论内容
+	comment.Content = content
+	if err := database.DB.Save(&comment).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update comment"})
+		return
+	}
+
+	// 预加载作者信息
+	if err := database.DB.Preload("Author").First(&comment, comment.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load comment data"})
+		return
+	}
+
+	// 构建响应
+	clientIP := utils.GetClientIP(c)
+	response := buildCommentResponse(comment, clientIP, 0)
+
+	c.JSON(http.StatusOK, response)
+}
+
+// DeleteComment 删除评论
+func DeleteComment(c *gin.Context) {
+	commentIDStr := c.Param("id")
+	commentID, err := strconv.ParseUint(commentIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid comment ID"})
+		return
+	}
+
+	// 获取评论
+	var comment models.Comment
+	if err := database.DB.First(&comment, uint(commentID)).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Comment not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find comment"})
+		}
+		return
+	}
+
+	// 检查权限：只有评论作者或管理员可以删除
+	userID, exists := middleware.TryGetCurrentUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
+		return
+	}
+
+	// 获取当前用户信息
+	var currentUser models.User
+	if err := database.DB.First(&currentUser, userID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info"})
+		return
+	}
+
+	// 检查是否有权限删除（作者本人或管理员）
+	if comment.AuthorID != userID && !currentUser.IsAdmin {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Permission denied"})
+		return
+	}
+
+	// 软删除评论（GORM会自动设置deleted_at字段）
+	if err := database.DB.Delete(&comment).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete comment"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Comment deleted successfully",
 	})
 }

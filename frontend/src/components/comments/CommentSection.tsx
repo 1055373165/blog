@@ -52,7 +52,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     replyToComment,
     toggleLike,
     loadMore,
-    refresh
+    refresh,
+    editComment,
+    deleteComment
   } = useComments({
     articleId,
     pageSize
@@ -128,16 +130,46 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Handle edit (placeholder)
-  const handleEdit = (commentId: number, content: string) => {
-    console.log('Edit comment:', commentId, content);
-    // TODO: Implement edit functionality
+  // Handle edit
+  const handleEdit = async (commentId: number, content: string) => {
+    try {
+      await editComment(commentId, content);
+      setNotification({
+        message: '评论编辑成功！',
+        type: 'success'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '编辑评论失败';
+      setNotification({
+        message: errorMessage,
+        type: 'error'
+      });
+      setTimeout(() => setNotification(null), 5000);
+    }
   };
 
-  // Handle delete (placeholder)
-  const handleDelete = (commentId: number) => {
-    console.log('Delete comment:', commentId);
-    // TODO: Implement delete functionality
+  // Handle delete
+  const handleDelete = async (commentId: number) => {
+    if (!window.confirm('确定要删除这条评论吗？此操作无法撤销。')) {
+      return;
+    }
+
+    try {
+      await deleteComment(commentId);
+      setNotification({
+        message: '评论删除成功！',
+        type: 'success'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '删除评论失败';
+      setNotification({
+        message: errorMessage,
+        type: 'error'
+      });
+      setTimeout(() => setNotification(null), 5000);
+    }
   };
 
   // Render sort option icon

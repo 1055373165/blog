@@ -29,6 +29,8 @@ export interface UseCommentsReturn {
   refresh: () => Promise<void>;
   updateCommentInList: (commentId: number, updates: Partial<Comment>) => void;
   removeCommentFromList: (commentId: number) => void;
+  editComment: (commentId: number, content: string) => Promise<void>;
+  deleteComment: (commentId: number) => Promise<void>;
 }
 
 export function useComments({
@@ -387,6 +389,31 @@ export function useComments({
   const hasNestedReplies = comments.some(comment => comment.replies && comment.replies.length > 0);
   console.log('Backend returned nested replies:', hasNestedReplies);
   
+  // 编辑评论
+  const editComment = useCallback(async (commentId: number, content: string) => {
+    try {
+      const updatedComment = await commentsApi.updateComment(commentId, { content });
+      updateCommentInList(commentId, {
+        content: updatedComment.content,
+        updated_at: updatedComment.updated_at
+      });
+    } catch (error) {
+      console.error('Failed to edit comment:', error);
+      throw error;
+    }
+  }, [updateCommentInList]);
+
+  // 删除评论
+  const deleteComment = useCallback(async (commentId: number) => {
+    try {
+      await commentsApi.deleteComment(commentId);
+      removeCommentFromList(commentId);
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+      throw error;
+    }
+  }, [removeCommentFromList]);
+
   // 如果后端已经返回了嵌套结构，直接使用；否则构建评论树
   const nestedComments = hasNestedReplies ? comments : buildCommentTree(comments);
 
@@ -404,6 +431,8 @@ export function useComments({
     loadMore,
     refresh,
     updateCommentInList,
-    removeCommentFromList
+    removeCommentFromList,
+    editComment,
+    deleteComment
   };
 }

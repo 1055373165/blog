@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
@@ -14,6 +14,7 @@ interface CommentActionsProps {
   showReplies?: boolean;
   onToggleReplies?: () => void;
   isOwner?: boolean;
+  isAdmin?: boolean; // 新增：是否为管理员
   onEdit?: () => void;
   onDelete?: () => void;
   className?: string;
@@ -31,12 +32,14 @@ const CommentActions: React.FC<CommentActionsProps> = ({
   showReplies = false,
   onToggleReplies,
   isOwner = false,
+  isAdmin = false, // 新增：管理员权限
   onEdit,
   onDelete,
   className = ''
 }) => {
   const [isLiking, setIsLiking] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Handle like action
   const handleLike = async () => {
@@ -52,6 +55,22 @@ const CommentActions: React.FC<CommentActionsProps> = ({
     }
   };
 
+  // 点击外部区域关闭下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showDropdown]);
+
   // Format relative time
   const formatRelativeTime = (dateString: string) => {
     try {
@@ -63,6 +82,27 @@ const CommentActions: React.FC<CommentActionsProps> = ({
     } catch (error) {
       return '时间未知';
     }
+  };
+
+  // 判断是否显示更多操作菜单
+  const shouldShowMoreActions = () => {
+    // 如果是管理员，总是显示菜单（可以删除任何评论）
+    if (isAdmin) return true;
+    // 如果是评论所有者，显示菜单（编辑/删除自己的评论）
+    if (isOwner) return true;
+    // 如果有举报功能，显示菜单
+    if (onReport) return true;
+    return false;
+  };
+
+  // 判断是否可以编辑评论
+  const canEdit = () => {
+    return isOwner && onEdit; // 只有评论所有者可以编辑
+  };
+
+  // 判断是否可以删除评论
+  const canDelete = () => {
+    return (isAdmin || isOwner) && onDelete; // 管理员或评论所有者可以删除
   };
 
   return (
@@ -155,8 +195,8 @@ const CommentActions: React.FC<CommentActionsProps> = ({
         </span>
 
         {/* More Actions Dropdown */}
-        {(isOwner || onReport) && (
-          <div className="relative">
+        {shouldShowMoreActions() && (
+          <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowDropdown(!showDropdown)}
               className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
@@ -172,53 +212,54 @@ const CommentActions: React.FC<CommentActionsProps> = ({
             <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800
                           border border-gray-200 dark:border-gray-700 rounded-lg shadow-strong z-50">
               <div className="py-2">
-                {/* Owner Actions */}
-                {isOwner && (
-                  <>
-                    {onEdit && (
-                      <button
-                        onClick={() => {
-                          setShowDropdown(false);
-                          onEdit();
-                        }}
-                        className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300
-                                 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
-                        <span>编辑</span>
-                      </button>
-                    )}
+                {/* Edit Action - 只有评论所有者可以编辑 */}
+                {canEdit() && (
+                  <button
+                    onClick={() => {
+                      setShowDropdown(false);
+                      onEdit!();
+                    }}
+                    className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300
+                             hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                    <span>编辑</span>
+                  </button>
+                )}
 
-                    {onDelete && (
-                      <button
-                        onClick={() => {
-                          setShowDropdown(false);
-                          onDelete();
-                        }}
-                        className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400
-                                 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                        <span>删除</span>
-                      </button>
-                    )}
+                {/* Delete Action - 管理员或评论所有者可以删除 */}
+                {canDelete() && (
+                  <button
+                    onClick={() => {
+                      setShowDropdown(false);
+                      onDelete!();
+                    }}
+                    className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400
+                             hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200"
+                    title={isAdmin && !isOwner ? '管理员删除' : '删除评论'}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                    <span>{isAdmin && !isOwner ? '管理员删除' : '删除'}</span>
+                  </button>
+                )}
 
-                    <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
-                  </>
+                {/* 如果有编辑或删除操作，且还有其他操作，则添加分隔线 */}
+                {(canEdit() || canDelete()) && onReport && (
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
                 )}
 
                 {/* Report Action */}
@@ -270,13 +311,6 @@ const CommentActions: React.FC<CommentActionsProps> = ({
         )}
       </div>
 
-      {/* Click outside handler for dropdown */}
-      {showDropdown && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowDropdown(false)}
-        />
-      )}
     </div>
   );
 };

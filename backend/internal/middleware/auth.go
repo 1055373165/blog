@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -154,13 +153,8 @@ func TryGetCurrentUserID(c *gin.Context) (uint, bool) {
 	// 验证JWT token
 	claims, err := auth.ValidateToken(token)
 	if err != nil {
-		// 临时调试：输出验证失败的原因
-		fmt.Printf("DEBUG: JWT validation failed: %v\n", err)
 		return 0, false
 	}
-
-	// 临时调试：输出成功解析的用户信息
-	fmt.Printf("DEBUG: JWT validation success - UserID: %d, Email: %s\n", claims.UserID, claims.Email)
 
 	// 设置到上下文中供后续使用
 	c.Set("user_id", claims.UserID)

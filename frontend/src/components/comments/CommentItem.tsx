@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Comment, CreateCommentRequest } from '../../types';
+import { useAuth } from '../../contexts/AuthContext';
 import CommentActions from './CommentActions';
 import CommentForm from './CommentForm';
 
@@ -34,8 +35,14 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [showReplies, setShowReplies] = useState(depth < 2); // Auto-show first 2 levels
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Get current user info for admin check
+  const { user } = useAuth();
+  
   // Check if current user owns this comment
   const isOwner = currentUserId === comment.author_id;
+  
+  // Check if current user is admin
+  const isAdmin = user?.is_admin || false;
 
   // Determine if we should show nested replies or flatten them
   const shouldFlattenReplies = depth >= maxDepth;
@@ -184,6 +191,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
             showReplies={showReplies}
             onToggleReplies={comment.replies && comment.replies.length > 0 ? () => setShowReplies(!showReplies) : undefined}
             isOwner={isOwner}
+            isAdmin={isAdmin}
             onEdit={onEdit ? handleEdit : undefined}
             onDelete={onDelete ? handleDelete : undefined}
           />
