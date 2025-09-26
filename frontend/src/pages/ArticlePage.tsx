@@ -12,6 +12,7 @@ import { useReadingTime } from '../hooks/useReadingTime';
 import { formatDate } from '../utils';
 import '../styles/foldable-article.css';
 import EnhancedArticleGrid from '../components/EnhancedArticleGrid';
+import { CommentSection } from '../components/comments';
 
 // Memoized RelatedArticles component to prevent unnecessary re-renders
 const RelatedArticles = memo(({ articles }: { articles: Article[] }) => {
@@ -447,6 +448,20 @@ export default function ArticlePage() {
               </div>
             </div>
             </article>
+
+            {/* Comment Section */}
+            {article && (
+              <div className="mt-16">
+                <CommentSection
+                  articleId={article.id.toString()}
+                  currentUserId={undefined} // TODO: Add current user context
+                  maxDepth={3}
+                  pageSize={10}
+                  autoFocus={false}
+                  showNewCommentForm={true}
+                />
+              </div>
+            )}
 
             {/* Related Articles - 使用优化的组件 */}
             <RelatedArticles articles={relatedArticles} />

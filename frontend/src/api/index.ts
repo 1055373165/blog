@@ -16,6 +16,7 @@ export { articlesApi } from './articles';
 export { categoriesApi } from './categories';
 export { tagsApi } from './tags';
 export { seriesApi } from './series';
+export { commentsApi } from './comments';
 export * from './books';
 
 // 认证相关API

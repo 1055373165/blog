@@ -476,3 +476,74 @@ export interface BlogFilters {
   sort_by?: 'created_at' | 'updated_at' | 'published_at' | 'views_count' | 'likes_count' | 'title' | 'duration';
   sort_order?: 'asc' | 'desc';
 }
+
+// 评论相关类型
+export interface Comment {
+  id: number;
+  content: string;
+  author: User;
+  author_id: number;
+  article_id: number;
+  parent_id?: number;
+  likes_count: number;
+  replies_count: number;
+  is_liked?: boolean;
+  is_approved?: boolean;
+  replies?: Comment[];
+  depth?: number; // 嵌套深度，用于UI渲染
+  created_at: string;
+  updated_at: string;
+}
+
+// 评论创建请求类型
+export interface CreateCommentRequest {
+  content: string;
+  article_id: number;
+  parent_id?: number;
+}
+
+// 评论更新请求类型
+export interface UpdateCommentRequest {
+  content: string;
+}
+
+// 评论分页响应类型
+export interface CommentsResponse {
+  comments: Comment[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+  };
+  total_comments: number;
+}
+
+// 评论排序选项
+export type CommentSortOption = 'newest' | 'oldest' | 'most_liked';
+
+// 评论筛选参数
+export interface CommentFilters {
+  page?: number;
+  limit?: number;
+  sort_by?: CommentSortOption;
+  parent_id?: number;
+}
+
+// 评论表单状态
+export interface CommentFormState {
+  content: string;
+  isSubmitting: boolean;
+  replyToId?: number;
+  replyToAuthor?: string;
+  isDraft: boolean;
+}
+
+// 评论操作结果
+export interface CommentActionResult {
+  success: boolean;
+  comment?: Comment;
+  error?: string;
+}
