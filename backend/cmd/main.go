@@ -124,6 +124,17 @@ func main() {
 			articles.POST("/:id/views", handlers.IncrementArticleViews)
 			articles.POST("/:id/like", handlers.ToggleArticleLike)
 			articles.GET("/:id/related", handlers.GetRelatedArticles)
+
+			// 评论相关路由
+			articles.GET("/:id/comments", handlers.GetComments)
+			articles.POST("/:id/comments", handlers.CreateComment)
+		}
+
+		// 评论相关路由
+		comments := api.Group("/comments")
+		{
+			comments.POST("/:id/like", handlers.ToggleCommentLike)
+			comments.POST("/:id/report", handlers.ReportComment)
 		}
 
 		// 分类相关路由

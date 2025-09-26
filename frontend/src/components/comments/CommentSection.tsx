@@ -185,7 +185,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
           <h2 id="comments-heading" className="text-2xl font-bold text-gray-900 dark:text-white font-heading">
-            评论讨论
+            评论
             {totalComments > 0 && (
               <span className="ml-3 text-lg font-medium text-go-600 dark:text-go-400">
                 ({totalComments})

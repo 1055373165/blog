@@ -264,6 +264,42 @@ type Submission struct {
 	Tags     []Tag     `json:"tags,omitempty" gorm:"many2many:submission_tags;"`
 }
 
+// Comment 评论模型
+type Comment struct {
+	BaseModel
+	Content       string     `json:"content" gorm:"type:text;not null"`
+	IsApproved    bool       `json:"is_approved" gorm:"default:false"`
+	LikesCount    int        `json:"likes_count" gorm:"default:0"`
+	RepliesCount  int        `json:"replies_count" gorm:"default:0"`
+	IsReported    bool       `json:"is_reported" gorm:"default:false"`
+	ReportReason  string     `json:"report_reason"`
+
+	// 外键
+	ArticleID uint  `json:"article_id" gorm:"not null;index"`
+	AuthorID  uint  `json:"author_id" gorm:"not null;index"`
+	ParentID  *uint `json:"parent_id" gorm:"index"` // 父评论ID，用于回复
+
+	// 关联关系
+	Article  Article    `json:"article" gorm:"foreignKey:ArticleID"`
+	Author   User       `json:"author" gorm:"foreignKey:AuthorID"`
+	Parent   *Comment   `json:"parent,omitempty" gorm:"foreignKey:ParentID"`
+	Replies  []Comment  `json:"replies,omitempty" gorm:"foreignKey:ParentID"`
+	Likes    []CommentLike `json:"-" gorm:"foreignKey:CommentID"`
+}
+
+// CommentLike 评论点赞记录
+type CommentLike struct {
+	ID        uint      `json:"id" gorm:"primaryKey"`
+	CommentID uint      `json:"comment_id" gorm:"not null;index"`
+	IP        string    `json:"ip" gorm:"not null;size:45"`
+	UserID    *uint     `json:"user_id" gorm:"index"` // 可选，登录用户
+	LikedAt   time.Time `json:"liked_at" gorm:"autoCreateTime"`
+
+	// 关联关系
+	Comment Comment `json:"comment" gorm:"foreignKey:CommentID"`
+	User    *User   `json:"user,omitempty" gorm:"foreignKey:UserID"`
+}
+
 // Config 系统配置模型
 type Config struct {
 	ID          uint      `json:"id" gorm:"primaryKey"`
@@ -286,6 +322,8 @@ func (BlogLike) TableName() string         { return "blog_likes" }
 func (Article) TableName() string          { return "articles" }
 func (ArticleView) TableName() string      { return "article_views" }
 func (ArticleLike) TableName() string      { return "article_likes" }
+func (Comment) TableName() string          { return "comments" }
+func (CommentLike) TableName() string      { return "comment_likes" }
 func (Submission) TableName() string       { return "submissions" }
 func (SearchIndex) TableName() string      { return "search_indexes" }
 func (SearchStatistics) TableName() string { return "search_statistics" }
