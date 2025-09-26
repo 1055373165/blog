@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"blog-backend/internal/database"
+	"blog-backend/internal/middleware"
 	"blog-backend/internal/models"
 	"blog-backend/pkg/utils"
 )
@@ -244,26 +245,34 @@ func CreateComment(c *gin.Context) {
 		return
 	}
 
-	// 创建匿名用户（临时方案，后续可集成真实用户系统）
-	clientIP := utils.GetClientIP(c)
-
-	// 查找或创建匿名用户
+	// 获取用户信息 - 优先使用认证用户，否则创建匿名用户
 	var user models.User
-	err = database.DB.Where("email = ?", "anonymous@"+clientIP).First(&user).Error
-	if err == gorm.ErrRecordNotFound {
-		// 创建匿名用户
-		user = models.User{
-			Email: "anonymous@" + clientIP,
-			Name:  "匿名用户",
-			Bio:   "匿名评论者",
-		}
-		if err := database.DB.Create(&user).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+	
+	// 尝试获取当前认证用户（支持可选认证）
+	if userID, exists := middleware.TryGetCurrentUserID(c); exists {
+		// 使用认证用户
+		if err := database.DB.First(&user, userID).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find authenticated user"})
 			return
 		}
-	} else if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find user"})
-		return
+	} else {
+		// 创建或查找匿名用户
+		clientIP := utils.GetClientIP(c)
+		if err := database.DB.Where("email = ?", "anonymous@"+clientIP).First(&user).Error; err == gorm.ErrRecordNotFound {
+			// 创建匿名用户
+			user = models.User{
+				Email: "anonymous@" + clientIP,
+				Name:  "匿名用户",
+				Bio:   "匿名评论者",
+			}
+			if err := database.DB.Create(&user).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create anonymous user"})
+				return
+			}
+		} else if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find anonymous user"})
+			return
+		}
 	}
 
 	// 创建评论

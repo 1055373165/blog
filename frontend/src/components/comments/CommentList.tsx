@@ -58,27 +58,20 @@ const CommentList: React.FC<CommentListProps> = ({
   // Show empty state
   if (!loading && comments.length === 0) {
     return (
-      <div className={`text-center py-12 ${className}`}>
-        <div className="max-w-md mx-auto">
-          <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-go-100 to-go-200 dark:from-go-800 dark:to-go-700 rounded-full flex items-center justify-center">
-            <svg className="w-10 h-10 text-go-500 dark:text-go-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              />
-            </svg>
-          </div>
-
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            暂无评论
-          </h3>
-
-          <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-            成为第一个评论者，分享你的想法和见解
-          </p>
+      <div className={`text-center py-16 ${className}`}>
+        <div className="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-500">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            />
+          </svg>
         </div>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">
+          暂无评论，成为第一个评论者
+        </p>
       </div>
     );
   }
@@ -109,17 +102,17 @@ const CommentList: React.FC<CommentListProps> = ({
 
       {/* Load More Button */}
       {hasMore && (
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center border-t border-gray-100 dark:border-gray-800 pt-8">
           <button
             onClick={handleLoadMore}
             disabled={loadingMore}
             className={`
-              inline-flex items-center px-6 py-3 rounded-lg font-medium text-sm
-              transition-all duration-200
+              inline-flex items-center px-4 py-2 text-sm font-medium rounded-md
+              transition-colors duration-200
               ${
                 loadingMore
-                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                  : 'bg-white dark:bg-gray-800 text-go-600 dark:text-go-400 border-2 border-go-200 dark:border-go-700 hover:border-go-300 dark:hover:border-go-600 hover:bg-go-50 dark:hover:bg-go-900/20 hover:shadow-soft hover:-translate-y-0.5'
+                  ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
               }
             `}
           >
@@ -154,18 +147,10 @@ const CommentList: React.FC<CommentListProps> = ({
 
       {/* End of Comments Message */}
       {!hasMore && comments.length > 0 && (
-        <div className="mt-8 text-center py-6 border-t border-gray-200 dark:border-gray-700">
-          <div className="inline-flex items-center text-sm text-gray-500 dark:text-gray-400">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+        <div className="mt-8 text-center py-4 border-t border-gray-100 dark:border-gray-800">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
             已显示全部 {comments.length} 条评论
-          </div>
+          </p>
         </div>
       )}
     </div>

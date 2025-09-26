@@ -50,13 +50,13 @@ export function useComments({
     const commentMap = new Map<number, Comment>();
     const rootComments: Comment[] = [];
 
-    // 初始化所有评论，添加 replies 数组
-    flatComments.forEach(comment => {
+    // 过滤掉无效的评论并初始化所有评论，添加 replies 数组
+    flatComments.filter(comment => comment && comment.id).forEach(comment => {
       commentMap.set(comment.id, { ...comment, replies: [], depth: 0 });
     });
 
     // 构建树结构
-    flatComments.forEach(comment => {
+    flatComments.filter(comment => comment && comment.id).forEach(comment => {
       const commentWithReplies = commentMap.get(comment.id);
       if (!commentWithReplies) return;
 
@@ -112,18 +112,57 @@ export function useComments({
         sort_by: sort
       };
 
-      const response: CommentsResponse = await commentsApi.getComments(articleId, filters);
+      const response = await commentsApi.getComments(articleId, filters);
 
-      if (isFirstPage) {
-        setComments(response.comments);
-        setCurrentPage(1);
-      } else {
-        setComments(prev => [...prev, ...response.comments]);
+      // 验证响应数据结构 - 处理可能的不同响应格式
+      console.log('Comments API response:', response);
+      
+      let comments: Comment[] = [];
+      let totalComments = 0;
+      let pagination = { has_next: false, page: 1 };
+
+      // 检查响应是否是 CommentsResponse 格式
+      if (response && typeof response === 'object') {
+        if ('comments' in response && Array.isArray(response.comments)) {
+          // 后端实际返回的格式：{comments, total, page, page_size, has_more, total_pages}
+          comments = response.comments;
+          totalComments = (response as any).total || (response as any).total_comments || 0;
+          
+          // 构建 pagination 对象
+          const responseAny = response as any;
+          pagination = {
+            has_next: responseAny.has_more || false,
+            page: responseAny.page || 1
+          };
+          
+          // 调试日志：检查评论数据结构（仅开发环境）
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Raw comments from backend:', comments);
+            console.log('Comments with replies:', comments.filter(c => c.replies && c.replies.length > 0));
+          }
+        } else if (Array.isArray(response)) {
+          // 直接返回评论数组的格式
+          comments = response;
+          totalComments = response.length;
+          pagination = { has_next: false, page: 1 };
+        } else {
+          console.warn('Unexpected comments response format:', response);
+          comments = [];
+          totalComments = 0;
+          pagination = { has_next: false, page: 1 };
+        }
       }
 
-      setTotalComments(response.total_comments);
-      setHasMore(response.pagination.has_next);
-      setCurrentPage(response.pagination.page);
+      if (isFirstPage) {
+        setComments(comments);
+        setCurrentPage(1);
+      } else {
+        setComments(prev => [...prev, ...comments]);
+      }
+
+      setTotalComments(totalComments);
+      setHasMore(pagination.has_next);
+      setCurrentPage(pagination.page);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '加载评论失败';
       setError(errorMessage);
@@ -139,21 +178,60 @@ export function useComments({
     try {
       setError(null);
       const newComment = await commentsApi.createComment(data);
+      
+      console.log('Raw API response for new comment:', newComment);
+      
+      // 验证新评论数据 - 检查不同的响应格式
+      let validComment: Comment;
+      
+      if (!newComment) {
+        throw new Error('No comment data received from API');
+      }
+      
+      // 将响应转换为 any 类型以便检查不同的格式
+      const response = newComment as any;
+      
+      // 检查是否是直接的评论对象
+      if (response.id) {
+        validComment = response as Comment;
+      }
+      // 检查是否是包装在 data 属性中的评论对象
+      else if (response.data && response.data.id) {
+        validComment = response.data as Comment;
+      }
+      // 检查其他可能的包装格式
+      else if (typeof response === 'object' && Object.keys(response).length > 0) {
+        // 尝试找到包含 id 的对象
+        const possibleComment = Object.values(response).find((value: any) => 
+          value && typeof value === 'object' && value.id
+        );
+        if (possibleComment) {
+          validComment = possibleComment as Comment;
+        } else {
+          console.error('Cannot find valid comment in response:', response);
+          throw new Error('Invalid comment data structure received');
+        }
+      } else {
+        console.error('Invalid comment response format:', response);
+        throw new Error('Invalid comment data received');
+      }
 
-      // 乐观更新
-      setComments(prev => {
-        const updatedComments = [newComment, ...prev];
-        return buildCommentTree(updatedComments);
-      });
+      console.log('Validated comment:', validComment);
+
+      // 更新评论计数
       setTotalComments(prev => prev + 1);
 
-      return newComment;
+      // 刷新评论列表以获取最新数据（包括服务器端的任何处理）
+      await loadComments(1, sortBy);
+
+      return validComment;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '发布评论失败';
       setError(errorMessage);
+      console.error('Failed to create comment:', err);
       throw err;
     }
-  }, [buildCommentTree]);
+  }, [buildCommentTree, loadComments, sortBy]);
 
   // 回复评论
   const replyToComment = useCallback(async (parentId: number, data: CreateCommentRequest): Promise<Comment> => {
@@ -161,48 +239,85 @@ export function useComments({
       setError(null);
       const reply = await commentsApi.replyToComment(parentId, data);
 
-      // 乐观更新
-      setComments(prev => {
-        const updatedComments = [...prev.flat(), reply]; // 展平后添加回复
-        return buildCommentTree(updatedComments);
-      });
+      console.log('Raw API response for new reply:', reply);
+      
+      // 验证回复数据 - 检查不同的响应格式
+      let validReply: Comment;
+      
+      if (!reply) {
+        throw new Error('No reply data received from API');
+      }
+      
+      // 将响应转换为 any 类型以便检查不同的格式
+      const response = reply as any;
+      
+      // 检查是否是直接的评论对象
+      if (response.id) {
+        validReply = response as Comment;
+      }
+      // 检查是否是包装在 data 属性中的评论对象
+      else if (response.data && response.data.id) {
+        validReply = response.data as Comment;
+      }
+      // 检查其他可能的包装格式
+      else if (typeof response === 'object' && Object.keys(response).length > 0) {
+        // 尝试找到包含 id 的对象
+        const possibleReply = Object.values(response).find((value: any) => 
+          value && typeof value === 'object' && value.id
+        );
+        if (possibleReply) {
+          validReply = possibleReply as Comment;
+        } else {
+          console.error('Cannot find valid reply in response:', response);
+          throw new Error('Invalid reply data structure received');
+        }
+      } else {
+        console.error('Invalid reply response format:', response);
+        throw new Error('Invalid reply data received');
+      }
+
+      console.log('Validated reply:', validReply);
+
+      // 更新评论计数
       setTotalComments(prev => prev + 1);
 
-      return reply;
+      // 刷新评论列表以获取最新数据（包括服务器端的任何处理）
+      await loadComments(1, sortBy);
+
+      return validReply;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '发布回复失败';
       setError(errorMessage);
+      console.error('Failed to create reply:', err);
       throw err;
     }
-  }, [buildCommentTree]);
+  }, [buildCommentTree, loadComments, sortBy]);
 
   // 切换点赞
   const toggleLike = useCallback(async (commentId: number): Promise<void> => {
     try {
       setError(null);
 
-      // 乐观更新UI
-      updateCommentInList(commentId, (comment) => ({
-        is_liked: !comment.is_liked,
-        likes_count: comment.is_liked ? comment.likes_count - 1 : comment.likes_count + 1
-      }));
-
+      // 直接调用 API，不使用乐观更新以避免双重更新
       const result = await commentsApi.toggleCommentLike(commentId);
+      
+      console.log('Toggle like result:', result);
 
-      // 使用服务器返回的实际数据
-      updateCommentInList(commentId, {
-        is_liked: result.liked,
-        likes_count: result.likes_count
-      });
+      // 验证响应数据
+      if (result && typeof result.liked === 'boolean' && typeof result.likes_count === 'number') {
+        // 使用服务器返回的实际数据更新UI
+        updateCommentInList(commentId, {
+          is_liked: result.liked,
+          likes_count: result.likes_count
+        });
+      } else {
+        console.error('Invalid like response:', result);
+        throw new Error('Invalid response from like API');
+      }
     } catch (err) {
-      // 回滚乐观更新
-      updateCommentInList(commentId, (comment) => ({
-        is_liked: !comment.is_liked,
-        likes_count: comment.is_liked ? comment.likes_count + 1 : comment.likes_count - 1
-      }));
-
       const errorMessage = err instanceof Error ? err.message : '操作失败';
       setError(errorMessage);
+      console.error('Failed to toggle like:', err);
       throw err;
     }
   }, []);
@@ -268,8 +383,12 @@ export function useComments({
     loadComments();
   }, [loadComments]);
 
-  // 构建最终的嵌套评论树
-  const nestedComments = buildCommentTree(comments);
+  // 检查后端是否已经返回了嵌套结构
+  const hasNestedReplies = comments.some(comment => comment.replies && comment.replies.length > 0);
+  console.log('Backend returned nested replies:', hasNestedReplies);
+  
+  // 如果后端已经返回了嵌套结构，直接使用；否则构建评论树
+  const nestedComments = hasNestedReplies ? comments : buildCommentTree(comments);
 
   return {
     comments: nestedComments,

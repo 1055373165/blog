@@ -13,6 +13,7 @@ import { formatDate } from '../utils';
 import '../styles/foldable-article.css';
 import EnhancedArticleGrid from '../components/EnhancedArticleGrid';
 import { CommentSection } from '../components/comments';
+import { useAuth } from '../contexts/AuthContext';
 
 // Memoized RelatedArticles component to prevent unnecessary re-renders
 const RelatedArticles = memo(({ articles }: { articles: Article[] }) => {
@@ -39,6 +40,7 @@ export default function ArticlePage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const contentRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
   
   const [article, setArticle] = useState<Article | null>(null);
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
@@ -454,7 +456,7 @@ export default function ArticlePage() {
               <div className="mt-16">
                 <CommentSection
                   articleId={article.id.toString()}
-                  currentUserId={undefined} // TODO: Add current user context
+                  currentUserId={user?.id}
                   maxDepth={3}
                   pageSize={10}
                   autoFocus={false}

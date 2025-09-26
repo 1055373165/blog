@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { CommentSortOption, CreateCommentRequest } from '../../types';
 import { useComments } from '../../hooks/useComments';
+import { useAuth } from '../../contexts/AuthContext';
 import CommentForm from './CommentForm';
 import CommentList from './CommentList';
 
@@ -23,10 +24,20 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   autoFocus = false,
   showNewCommentForm = true
 }) => {
+  const { user, isAuthenticated } = useAuth();
   const [notification, setNotification] = useState<{
     message: string;
     type: 'success' | 'error';
   } | null>(null);
+
+  // 调试：检查用户认证状态（仅在开发环境）
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 CommentSection Debug:');
+    console.log('  - isAuthenticated:', isAuthenticated);
+    console.log('  - user:', user);
+    console.log('  - currentUserId prop:', currentUserId);
+    console.log('  - localStorage auth_token:', localStorage.getItem('auth_token') ? 'exists' : 'not found');
+  }
 
   // Use comments hook
   const {
@@ -183,94 +194,62 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
       {/* Section Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 id="comments-heading" className="text-2xl font-bold text-gray-900 dark:text-white font-heading">
-            评论
+        <div className="flex items-center justify-between pb-6 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              评论
+            </h2>
             {totalComments > 0 && (
-              <span className="ml-3 text-lg font-medium text-go-600 dark:text-go-400">
-                ({totalComments})
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {totalComments} 条
               </span>
             )}
-          </h2>
+          </div>
 
-          {/* Refresh Button */}
-          <button
-            onClick={refresh}
-            disabled={loading}
-            className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400
-                     hover:text-go-600 dark:hover:text-go-400 hover:bg-go-50 dark:hover:bg-go-900/20
-                     rounded-lg transition-all duration-200"
-            title="刷新评论"
-          >
-            <svg
-              className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            <span>刷新</span>
-          </button>
-        </div>
-
-        {/* Sort Options */}
-        {totalComments > 0 && (
-          <div className="flex items-center space-x-2 comment-sort-mobile">
-            <span className="text-sm text-gray-600 dark:text-gray-400 font-medium hidden sm:inline">
-              排序：
-            </span>
-            <div className="flex items-center space-x-1 comment-sort-mobile">
+          {/* Sort Options */}
+          {totalComments > 0 && (
+            <div className="flex items-center gap-1">
               {sortOptions.map((option) => (
                 <button
                   key={option.value}
                   onClick={() => setSortBy(option.value)}
                   className={`
-                    flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium
-                    transition-all duration-200
+                    px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-200
                     ${
                       sortBy === option.value
-                        ? 'bg-go-600 text-white shadow-soft'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-go-600 dark:hover:text-go-400 hover:bg-go-50 dark:hover:bg-go-900/20'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }
                   `}
                 >
-                  {renderSortIcon(option.icon)}
-                  <span>{option.label}</span>
+                  {option.label}
                 </button>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Global Error Message */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
-          <div className="flex items-center">
-            <svg className="w-5 h-5 text-red-600 dark:text-red-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div>
-              <p className="text-sm font-medium text-red-800 dark:text-red-300">
-                加载失败
-              </p>
-              <p className="text-sm text-red-700 dark:text-red-400">
-                {error}
-              </p>
-            </div>
-            <button
-              onClick={refresh}
-              className="ml-auto text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
-            >
-              重试
-            </button>
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg flex items-start">
+          <svg className="w-5 h-5 text-red-600 dark:text-red-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-red-800 dark:text-red-300">
+              加载失败
+            </p>
+            <p className="text-sm text-red-700 dark:text-red-400">
+              {error}
+            </p>
           </div>
+          <button
+            onClick={refresh}
+            className="ml-3 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm"
+          >
+            重试
+          </button>
         </div>
       )}
 

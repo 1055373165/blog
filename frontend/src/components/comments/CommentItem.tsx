@@ -96,72 +96,82 @@ const CommentItem: React.FC<CommentItemProps> = ({
       id={`comment-${comment.id}`}
       className={`${
         depth > 0
-          ? `ml-4 sm:ml-6 md:ml-8 pl-3 sm:pl-4 border-l-2 border-go-200 dark:border-go-700 comment-thread-line comment-reply-mobile sm:comment-reply-xs`
+          ? `ml-6 pl-6 border-l border-gray-200 dark:border-gray-700 relative`
           : ''
-      } comment-gpu-acceleration ${className}`}
+      } ${className}`}
     >
-      {/* Main Comment Card */}
-      <div className="card hover:shadow-strong transition-all duration-300 mb-4 sm:mb-6 comment-item-mobile sm:comment-item-xs comment-glow-dark">
-        <div className="p-4 sm:p-6">
-          {/* Comment Header */}
-          <div className="flex items-start gap-3 mb-4">
-            {/* Author Avatar */}
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-go-500 to-go-600 text-white rounded-xl
-                          flex items-center justify-center font-semibold shadow-soft flex-shrink-0 comment-avatar-xs sm:comment-avatar comment-action-hover">
-              {comment.author.name.charAt(0).toUpperCase()}
-            </div>
+      {/* Reply connection line for nested comments */}
+      {depth > 0 && (
+        <div className="absolute left-0 top-0 w-px h-6 bg-gray-200 dark:bg-gray-700 -translate-x-px"></div>
+      )}
 
-            {/* Author Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-2 mb-1">
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                  {comment.author.name}
-                </h4>
-
-                {/* Author Badge */}
-                {comment.author.is_admin && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-                                 bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
-                    管理员
-                  </span>
-                )}
-
-                {isOwner && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-                                 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                    我的评论
-                  </span>
-                )}
-              </div>
-
-              {/* Author Bio (optional) */}
-              {comment.author.bio && (
-                <p className="text-xs text-go-600 dark:text-go-400 truncate">
-                  {comment.author.bio}
-                </p>
-              )}
-            </div>
-
-            {/* Comment Status */}
-            {!comment.is_approved && (
-              <div className="flex-shrink-0">
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                               bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  待审核
-                </span>
-              </div>
+      {/* Main Comment */}
+      <div className="py-6 border-b border-gray-100 dark:border-gray-800 last:border-b-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors duration-200">
+        {/* Comment Header */}
+        <div className="flex items-start gap-4 mb-3">
+          {/* Author Avatar */}
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-full
+                        flex items-center justify-center font-medium text-sm flex-shrink-0">
+            {comment.author.avatar ? (
+              <img 
+                src={comment.author.avatar} 
+                alt={comment.author.name}
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              comment.author.name.charAt(0).toUpperCase()
             )}
           </div>
 
-          {/* Comment Content */}
-          <div className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+          {/* Author Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h4 className="font-medium text-gray-900 dark:text-white text-sm">
+                {comment.author.name}
+              </h4>
+
+              {/* Author Badge */}
+              {comment.author.is_admin && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium
+                               bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                  管理员
+                </span>
+              )}
+
+              {isOwner && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium
+                               bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                  我的
+                </span>
+              )}
+
+              {/* Comment Status */}
+              {!comment.is_approved && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium
+                               bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                  待审核
+                </span>
+              )}
+            </div>
+
+            {/* Author Bio (optional) */}
+            {comment.author.bio && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                {comment.author.bio}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Comment Content */}
+        <div className="ml-14 mb-3">
+          <div className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300 leading-relaxed">
             <div dangerouslySetInnerHTML={renderContent} />
           </div>
+        </div>
 
-          {/* Comment Actions */}
+        {/* Comment Actions */}
+        <div className="ml-14">
           <CommentActions
             commentId={comment.id}
             likesCount={comment.likes_count}
@@ -182,7 +192,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
       {/* Reply Form */}
       {showReplyForm && (
-        <div className="mb-6">
+        <div className="ml-14 mt-4 mb-6">
           <CommentForm
             articleId={articleId}
             parentId={comment.id}

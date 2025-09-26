@@ -20,7 +20,21 @@ export const commentsApi = {
     const response = await apiClient.get<CommentsResponse>(
       `/api/articles/${articleId}/comments${queryString ? `?${queryString}` : ''}`
     );
-    return response.data;
+    console.log('Comments API - getComments response:', response);
+    
+    // 检查响应格式 - 后端可能直接返回评论数据，而不是包装在 ApiResponse 中
+    const responseAny = response as any;
+    
+    if (response && response.data) {
+      // 如果是 ApiResponse 格式
+      return response.data;
+    } else if (responseAny && responseAny.comments) {
+      // 如果后端直接返回评论数据
+      return responseAny as CommentsResponse;
+    } else {
+      console.error('Unexpected response format:', response);
+      throw new Error('Invalid response format from server');
+    }
   },
 
   // 发布新评论
@@ -29,16 +43,50 @@ export const commentsApi = {
       `/api/articles/${data.article_id}/comments`,
       data
     );
-    return response.data;
+    console.log('Comments API - createComment response:', response);
+    
+    // 检查响应格式 - 后端可能直接返回评论对象，而不是包装在 ApiResponse 中
+    const responseAny = response as any;
+    
+    if (response && response.data) {
+      // 如果是 ApiResponse 格式
+      return response.data;
+    } else if (responseAny && responseAny.id) {
+      // 如果后端直接返回评论对象
+      return responseAny as Comment;
+    } else {
+      console.error('Unexpected response format:', response);
+      throw new Error('Invalid response format from server');
+    }
   },
 
   // 回复评论
   async replyToComment(commentId: number, data: CreateCommentRequest): Promise<Comment> {
+    // 回复使用相同的创建评论端点，但在请求体中包含 parent_id
+    const replyData = {
+      ...data,
+      parent_id: commentId
+    };
+    
     const response = await apiClient.post<Comment>(
-      `/api/comments/${commentId}/reply`,
-      data
+      `/api/articles/${data.article_id}/comments`,
+      replyData
     );
-    return response.data;
+    console.log('Comments API - replyToComment response:', response);
+    
+    // 检查响应格式 - 后端可能直接返回评论对象，而不是包装在 ApiResponse 中
+    const responseAny = response as any;
+    
+    if (response && response.data) {
+      // 如果是 ApiResponse 格式
+      return response.data;
+    } else if (responseAny && responseAny.id) {
+      // 如果后端直接返回评论对象
+      return responseAny as Comment;
+    } else {
+      console.error('Unexpected response format:', response);
+      throw new Error('Invalid response format from server');
+    }
   },
 
   // 点赞/取消点赞评论
@@ -46,7 +94,21 @@ export const commentsApi = {
     const response = await apiClient.post<{ liked: boolean; likes_count: number }>(
       `/api/comments/${commentId}/like`
     );
-    return response.data;
+    console.log('Comments API - toggleCommentLike response:', response);
+    
+    // 检查响应格式 - 后端可能直接返回点赞数据，而不是包装在 ApiResponse 中
+    const responseAny = response as any;
+    
+    if (response && response.data) {
+      // 如果是 ApiResponse 格式
+      return response.data;
+    } else if (responseAny && typeof responseAny.liked === 'boolean') {
+      // 如果后端直接返回点赞数据
+      return responseAny as { liked: boolean; likes_count: number };
+    } else {
+      console.error('Unexpected response format:', response);
+      throw new Error('Invalid response format from server');
+    }
   },
 
   // 更新评论内容

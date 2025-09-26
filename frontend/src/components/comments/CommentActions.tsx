@@ -66,19 +66,18 @@ const CommentActions: React.FC<CommentActionsProps> = ({
   };
 
   return (
-    <div className={`flex items-center justify-between pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700 comment-actions-mobile sm:comment-actions-xs ${className}`}>
+    <div className={`flex items-center justify-between text-sm ${className}`}>
       {/* Left Actions */}
-      <div className="flex items-center space-x-2 sm:space-x-4">
+      <div className="flex items-center gap-4">
         {/* Like Button */}
         <button
           onClick={handleLike}
           disabled={isLiking}
           className={`
-            flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium
-            transition-all duration-200 comment-action-hover comment-mobile-touch comment-focus-ring
+            flex items-center gap-1 text-xs font-medium transition-colors duration-200
             ${isLiked
-              ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 like-bounce'
-              : 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+              ? 'text-red-600 dark:text-red-400'
+              : 'text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400'
             }
             ${isLiking ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           `}
@@ -107,10 +106,8 @@ const CommentActions: React.FC<CommentActionsProps> = ({
         {/* Reply Button */}
         <button
           onClick={onReply}
-          className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium
-                   text-go-600 dark:text-go-400 hover:text-go-700 dark:hover:text-go-300
-                   bg-go-50 dark:bg-go-900/20 hover:bg-go-100 dark:hover:bg-go-900/30
-                   transition-all duration-200 comment-action-hover comment-mobile-touch comment-focus-ring"
+          className="flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 
+                   hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
           title="回复评论"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,10 +125,8 @@ const CommentActions: React.FC<CommentActionsProps> = ({
         {repliesCount > 0 && onToggleReplies && (
           <button
             onClick={onToggleReplies}
-            className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium
-                     text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200
-                     bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800
-                     transition-all duration-200 comment-action-hover comment-mobile-touch comment-focus-ring"
+            className="flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 
+                     hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200"
             title={showReplies ? '收起回复' : '查看回复'}
           >
             <svg
@@ -153,25 +148,24 @@ const CommentActions: React.FC<CommentActionsProps> = ({
       </div>
 
       {/* Right Actions */}
-      <div className="flex items-center space-x-2 sm:space-x-4">
+      <div className="flex items-center gap-3">
         {/* Time Stamp */}
-        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium hidden sm:block">
+        <span className="text-xs text-gray-400 dark:text-gray-500">
           {formatRelativeTime(createdAt)}
         </span>
 
         {/* More Actions Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setShowDropdown(!showDropdown)}
-            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
-                     hover:bg-gray-100 dark:hover:bg-gray-800
-                     transition-all duration-200 comment-mobile-touch comment-focus-ring comment-action-hover"
-            title="更多选项"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-            </svg>
-          </button>
+        {(isOwner || onReport) && (
+          <div className="relative">
+            <button
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
+              title="更多选项"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+              </svg>
+            </button>
 
           {/* Dropdown Menu */}
           {showDropdown && (
@@ -272,7 +266,8 @@ const CommentActions: React.FC<CommentActionsProps> = ({
               </div>
             </div>
           )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Click outside handler for dropdown */}

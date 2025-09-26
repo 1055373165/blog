@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -123,4 +124,49 @@ func GetCurrentUserClaims(c *gin.Context) (*auth.Claims, bool) {
 		return nil, false
 	}
 	return claims.(*auth.Claims), true
+}
+
+// TryGetCurrentUserID 尝试从请求中获取用户ID（可选认证）
+// 即使没有使用AuthRequired中间件也能工作
+func TryGetCurrentUserID(c *gin.Context) (uint, bool) {
+	// 首先尝试从上下文中获取（如果使用了AuthRequired中间件）
+	if userID, exists := c.Get("user_id"); exists {
+		return userID.(uint), true
+	}
+
+	// 如果上下文中没有，尝试手动解析token
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		return 0, false
+	}
+
+	// 检查Bearer token格式
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return 0, false
+	}
+
+	token := parts[1]
+	if token == "" {
+		return 0, false
+	}
+
+	// 验证JWT token
+	claims, err := auth.ValidateToken(token)
+	if err != nil {
+		// 临时调试：输出验证失败的原因
+		fmt.Printf("DEBUG: JWT validation failed: %v\n", err)
+		return 0, false
+	}
+
+	// 临时调试：输出成功解析的用户信息
+	fmt.Printf("DEBUG: JWT validation success - UserID: %d, Email: %s\n", claims.UserID, claims.Email)
+
+	// 设置到上下文中供后续使用
+	c.Set("user_id", claims.UserID)
+	c.Set("user_email", claims.Email)
+	c.Set("is_admin", claims.IsAdmin)
+	c.Set("claims", claims)
+
+	return claims.UserID, true
 }
