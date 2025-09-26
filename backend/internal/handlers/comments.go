@@ -246,7 +246,6 @@ func CreateComment(c *gin.Context) {
 
 	// 创建匿名用户（临时方案，后续可集成真实用户系统）
 	clientIP := utils.GetClientIP(c)
-	userAgent := c.GetHeader("User-Agent")
 
 	// 查找或创建匿名用户
 	var user models.User

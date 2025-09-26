@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"html"
 	"math"
+	"net"
 	"regexp"
 	"strings"
 	"time"
-	
+
+	"github.com/gin-gonic/gin"
 	"blog-backend/internal/database"
 	"blog-backend/internal/models"
 )
@@ -211,4 +213,41 @@ func IsValidEmail(email string) bool {
 func GenerateExcerpt(content string, maxLength int) string {
 	plainText := StripHTML(content)
 	return TruncateText(plainText, maxLength)
+}
+
+// GetClientIP 获取客户端真实IP地址
+func GetClientIP(c *gin.Context) string {
+	// 检查 X-Forwarded-For 头
+	forwarded := c.GetHeader("X-Forwarded-For")
+	if forwarded != "" {
+		// X-Forwarded-For 可能包含多个IP，取第一个
+		ips := strings.Split(forwarded, ",")
+		clientIP := strings.TrimSpace(ips[0])
+		if net.ParseIP(clientIP) != nil {
+			return clientIP
+		}
+	}
+
+	// 检查 X-Real-IP 头
+	realIP := c.GetHeader("X-Real-IP")
+	if realIP != "" && net.ParseIP(realIP) != nil {
+		return realIP
+	}
+
+	// 检查 CF-Connecting-IP (Cloudflare)
+	cfIP := c.GetHeader("CF-Connecting-IP")
+	if cfIP != "" && net.ParseIP(cfIP) != nil {
+		return cfIP
+	}
+
+	// 使用 RemoteAddr
+	remoteAddr := c.Request.RemoteAddr
+	if ip, _, err := net.SplitHostPort(remoteAddr); err == nil {
+		if net.ParseIP(ip) != nil {
+			return ip
+		}
+	}
+
+	// 如果以上都无法获取有效IP，返回默认值
+	return "127.0.0.1"
 }
