@@ -466,11 +466,60 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['var(--font-body)', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
-        mono: ['var(--font-code)', '"SF Mono"', 'Monaco', '"Cascadia Code"', 'Consolas', 'monospace'],
-        heading: ['var(--font-heading)', 'var(--font-body)', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
-        body: ['var(--font-body)', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
-        code: ['var(--font-code)', '"SF Mono"', 'Monaco', '"Cascadia Code"', 'Consolas', 'monospace'],
+        sans: [
+          'system-ui', 
+          '-apple-system', 
+          'BlinkMacSystemFont', 
+          '"Segoe UI"', 
+          'Roboto', 
+          '"Helvetica Neue"', 
+          'Arial', 
+          '"Noto Sans"', 
+          'sans-serif', 
+          '"Apple Color Emoji"', 
+          '"Segoe UI Emoji"', 
+          '"Segoe UI Symbol"', 
+          '"Noto Color Emoji"'
+        ],
+        mono: [
+          '"SF Mono"', 
+          'Monaco', 
+          '"Cascadia Code"', 
+          '"Roboto Mono"', 
+          'Consolas', 
+          '"Liberation Mono"', 
+          '"Menlo"', 
+          'monospace'
+        ],
+        heading: [
+          'system-ui', 
+          '-apple-system', 
+          'BlinkMacSystemFont', 
+          '"Segoe UI"', 
+          'Roboto', 
+          '"Helvetica Neue"', 
+          'Arial', 
+          'sans-serif'
+        ],
+        body: [
+          'system-ui', 
+          '-apple-system', 
+          'BlinkMacSystemFont', 
+          '"Segoe UI"', 
+          'Roboto', 
+          '"Helvetica Neue"', 
+          'Arial', 
+          'sans-serif'
+        ],
+        code: [
+          '"SF Mono"', 
+          'Monaco', 
+          '"Cascadia Code"', 
+          '"Roboto Mono"', 
+          'Consolas', 
+          '"Liberation Mono"', 
+          'monospace'
+        ],
       },
       typography: {
         DEFAULT: {

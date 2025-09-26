@@ -1,11 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Article, Tag } from '../types';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAvatarUrl } from '../utils/avatarUtils';
 import { clsx } from 'clsx';
+
+// Format date helper function
+const formatDate = (dateString: string) => {
+  return format(new Date(dateString), 'yyyy年MM月dd日', { locale: zhCN });
+};
 
 interface EnhancedArticleGridProps {
   articles: Article[];
@@ -140,17 +145,14 @@ const EnhancedArticleCard = ({
         {/* 左侧图片 */}
         {article.cover_image && (
           <div className="relative overflow-hidden w-48 h-32 bg-gray-100 dark:bg-gray-700 rounded-lg flex-shrink-0">
-            <OptimizedImage
+            <img
               src={article.cover_image}
               alt={article.title}
-              aspectRatio="3/2"
-              priority={index < 3}
               className={clsx(
-                'transition-all duration-500 group-hover:scale-105',
+                'w-full h-full object-cover transition-all duration-500 group-hover:scale-105',
                 imageLoaded ? 'opacity-100' : 'opacity-0'
               )}
               onLoad={() => setImageLoaded(true)}
-              placeholder="skeleton"
             />
 
             {/* 阅读时间 */}
@@ -282,17 +284,14 @@ const EnhancedArticleCard = ({
         {/* 图片容器 */}
         {article.cover_image && (
           <div className="relative overflow-hidden aspect-video bg-gray-100 dark:bg-gray-700">
-            <OptimizedImage
+            <img
               src={article.cover_image}
               alt={article.title}
-              aspectRatio="16/9"
-              priority={index < 6} // 前两行图片优先加载，避免首屏下方一行不显示
               className={clsx(
-                'transition-all duration-700 group-hover:scale-110',
+                'w-full h-full object-cover transition-all duration-700 group-hover:scale-110',
                 imageLoaded ? 'opacity-100' : 'opacity-0'
               )}
               onLoad={() => setImageLoaded(true)}
-              placeholder="skeleton"
             />
             
             {/* 图片悬浮遮罩 */}

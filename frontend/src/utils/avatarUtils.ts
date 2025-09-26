@@ -61,7 +61,8 @@ export function generateLocalAvatar(name: string, size: number = 40): string {
     </svg>
   `;
   
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+  // 使用 encodeURIComponent 来处理包含中文字符的 SVG
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
 /**

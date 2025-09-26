@@ -8,6 +8,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import FileImport from '../../components/FileImport';
 import RSSImport from '../../components/RSSImport';
 import CoverImageSelector from '../../components/CoverImageSelector';
+import ArticlePreview from '../../components/ArticlePreview';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function ArticleEditor() {
@@ -32,18 +33,17 @@ export default function ArticleEditor() {
     meta_keywords: '',
     author_name: '',
   });
-
   // Note: Using ByteMD as the single editor solution
 
   // UI state
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  // const [showAdvanced, setShowAdvanced] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [activeTab, setActiveTab] = useState<'content' | 'settings' | 'seo' | 'import'>('content');
   const [showImportModal, setShowImportModal] = useState(false);
   const [importType, setImportType] = useState<'file' | 'rss'>('file');
-
   // Data for dropdowns
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
@@ -301,174 +301,10 @@ export default function ArticleEditor() {
   };
 
   const handlePreview = () => {
-    // Open preview in new tab/window
-    if (isEditing && id) {
-      window.open(`/articles/${id}/preview`, '_blank');
-    } else {
-      // For new articles, create a temporary preview with current content
-      openTempPreview();
-    }
+    // Toggle preview mode instead of opening new window
+    setIsPreviewMode(!isPreviewMode);
   };
 
-  const openTempPreview = () => {
-    // Create a new window for temporary preview
-    const previewWindow = window.open('', '_blank', 'width=1200,height=800');
-    
-    if (!previewWindow) {
-      alert('请允许弹窗后再试');
-      return;
-    }
-
-    // Generate preview HTML with current form data
-    const previewHTML = generatePreviewHTML();
-    
-    // Write content to new window
-    previewWindow.document.write(previewHTML);
-    previewWindow.document.close();
-  };
-
-  const generatePreviewHTML = () => {
-    // Get content statistics for the preview
-    const stats = getContentStats();
-    
-    return `
-      <!DOCTYPE html>
-      <html lang="zh-CN">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${formData.title || '无标题文章'} - 预览</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
-        <style>
-          body { font-family: 'Inter', sans-serif; }
-          .preview-header { 
-            background: linear-gradient(90deg, rgb(254 240 138) 0%, rgb(253 186 116) 100%); 
-            border-bottom: 1px solid rgb(251 191 36);
-          }
-          .markdown-content h1, .markdown-content h2, .markdown-content h3, 
-          .markdown-content h4, .markdown-content h5, .markdown-content h6 {
-            font-weight: 600;
-            margin-top: 2em;
-            margin-bottom: 1em;
-            line-height: 1.25;
-          }
-          .markdown-content h1 { font-size: 2em; }
-          .markdown-content h2 { font-size: 1.5em; }
-          .markdown-content h3 { font-size: 1.25em; }
-          .markdown-content p { margin-bottom: 1em; line-height: 1.7; }
-          .markdown-content code { 
-            background: rgb(243 244 246); 
-            padding: 0.125rem 0.25rem; 
-            border-radius: 0.25rem; 
-            font-size: 0.875em;
-          }
-          .markdown-content pre { 
-            background: rgb(243 244 246); 
-            padding: 1rem; 
-            border-radius: 0.5rem; 
-            overflow-x: auto; 
-            margin: 1em 0;
-          }
-          .markdown-content blockquote {
-            border-left: 4px solid rgb(229 231 235);
-            padding-left: 1rem;
-            margin: 1em 0;
-            font-style: normal;
-            color: rgb(107 114 128);
-          }
-          .markdown-content ul, .markdown-content ol { margin: 1em 0; padding-left: 2em; }
-          .markdown-content li { margin: 0.5em 0; }
-          .markdown-content img { max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1em 0; }
-          .markdown-content a { color: rgb(59 130 246); text-decoration: underline; }
-          .markdown-content table { width: 100%; border-collapse: collapse; margin: 1em 0; }
-          .markdown-content th, .markdown-content td { border: 1px solid rgb(229 231 235); padding: 0.5rem; }
-          .markdown-content th { background: rgb(249 250 251); font-weight: 600; }
-        </style>
-      </head>
-      <body class="bg-gray-50">
-        <!-- Preview Header -->
-        <div class="preview-header">
-          <div class="max-w-4xl mx-auto px-6 py-4">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center">
-                <svg class="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-                <span class="text-sm font-semibold text-yellow-800">临时预览 - 未保存的草稿</span>
-              </div>
-              <button onclick="window.close()" class="px-3 py-1 text-sm bg-yellow-200 text-yellow-800 rounded hover:bg-yellow-300">
-                关闭预览
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="max-w-4xl mx-auto px-6 py-8">
-          <!-- Article Header -->
-          <header class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-4">${formData.title || '无标题文章'}</h1>
-            ${formData.excerpt ? `<p class="text-lg text-gray-600 leading-relaxed">${formData.excerpt}</p>` : ''}
-            
-            <!-- Article Meta -->
-            <div class="flex items-center text-sm text-gray-500 mt-4 space-x-4">
-              <span>预计阅读时间: ${stats.readingTime} 分钟</span>
-              <span>字数: ${stats.words.toLocaleString()}</span>
-              <span>段落: ${stats.paragraphs}</span>
-              ${stats.images > 0 ? `<span>图片: ${stats.images}</span>` : ''}
-            </div>
-          </header>
-
-          <!-- Cover Image -->
-          ${formData.cover_image ? `
-            <div class="mb-8">
-              <img src="${formData.cover_image}" alt="封面图片" class="w-full h-64 object-cover rounded-xl shadow-lg" />
-            </div>
-          ` : ''}
-
-          <!-- Article Content -->
-          <article class="markdown-content prose prose-lg max-w-none">
-            <div id="content"></div>
-          </article>
-        </div>
-
-        <script>
-          // Render markdown content
-          document.addEventListener('DOMContentLoaded', function() {
-            const content = ${JSON.stringify(formData.content || '暂无内容')};
-            const contentElement = document.getElementById('content');
-            
-            // Configure marked
-            marked.setOptions({
-              highlight: function(code, lang) {
-                if (lang && hljs.getLanguage(lang)) {
-                  try {
-                    return hljs.highlight(code, { language: lang }).value;
-                  } catch (err) {}
-                }
-                try {
-                  return hljs.highlightAuto(code).value;
-                } catch (err) {}
-                return code;
-              },
-              breaks: true,
-              gfm: true
-            });
-            
-            // Render content
-            if (content.trim()) {
-              contentElement.innerHTML = marked.parse(content);
-            } else {
-              contentElement.innerHTML = '<p class="text-gray-500 text-center py-12">暂无内容</p>';
-            }
-          });
-        </script>
-      </body>
-      </html>
-    `;
-  };
 
   const handleFileImport = (content: string, metadata?: any) => {
     setFormData(prev => ({
@@ -718,18 +554,49 @@ export default function ArticleEditor() {
                   />
                 </div>
 
-                {/* Content Editor */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                {/* Preview Mode Toggle */}
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     文章内容 *
                   </label>
-                  
-                  <ByteMDEditor
-                    value={formData.content}
-                    onChange={(value) => handleInputChange('content', value)}
-                    height={Math.max(800, window.innerHeight - 300)}
-                    placeholder="开始编写你的精彩文章..."
-                  />
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setIsPreviewMode(false)}
+                      className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                        !isPreviewMode
+                          ? 'bg-go-100 text-go-700 dark:bg-go-900/30 dark:text-go-300'
+                          : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      编辑
+                    </button>
+                    <button
+                      onClick={() => setIsPreviewMode(true)}
+                      className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                        isPreviewMode
+                          ? 'bg-go-100 text-go-700 dark:bg-go-900/30 dark:text-go-300'
+                          : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      预览
+                    </button>
+                  </div>
+                </div>
+
+                {/* Content Editor or Preview */}
+                <div>
+                  {isPreviewMode ? (
+                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800 min-h-[600px]">
+                      <ArticlePreview article={formData} />
+                    </div>
+                  ) : (
+                    <ByteMDEditor
+                      value={formData.content}
+                      onChange={(value) => handleInputChange('content', value)}
+                      height={Math.max(800, window.innerHeight - 300)}
+                      placeholder="开始编写你的精彩文章..."
+                    />
+                  )}
                 </div>
               </div>
             )}
