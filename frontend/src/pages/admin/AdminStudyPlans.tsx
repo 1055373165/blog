@@ -115,8 +115,18 @@ const AdminStudyPlans: React.FC = () => {
     setShowManageContentModal(true);
     // 获取学习计划的内容
     try {
+      console.log('Fetching study items for plan:', plan.id);
       const response = await studyPlanApi.getStudyItems(plan.id);
-      setStudyItems(response?.items || []);
+      console.log('Initial study items response:', response);
+
+      // 直接使用 response.items，因为 getStudyItems API 直接返回包含 items 的对象
+      if (response && response.items) {
+        setStudyItems(response.items);
+        console.log('Initial study items count:', response.items.length);
+      } else {
+        console.warn('Unexpected initial response structure:', response);
+        setStudyItems([]);
+      }
     } catch (error) {
       console.error('获取学习内容失败:', error);
       setStudyItems([]);
@@ -127,18 +137,34 @@ const AdminStudyPlans: React.FC = () => {
     if (!selectedPlan) return;
 
     try {
-      await studyPlanApi.addArticleToStudyPlan(selectedPlan.id, {
+      console.log('Adding article to plan:', { planId: selectedPlan.id, articleId });
+
+      const addResult = await studyPlanApi.addArticleToStudyPlan(selectedPlan.id, {
         article_id: articleId,
         importance_level: 3,
         difficulty_level: 3
       });
 
+      console.log('Add article result:', addResult);
+
       // 刷新学习内容列表
+      console.log('Fetching updated study items for plan:', selectedPlan.id);
       const response = await studyPlanApi.getStudyItems(selectedPlan.id);
-      setStudyItems(response?.items || []);
+      console.log('Study items response:', response);
+
+      // 直接使用 response.items，因为 getStudyItems API 直接返回包含 items 的对象
+      if (response && response.items) {
+        setStudyItems(response.items);
+        console.log('Updated study items count:', response.items.length);
+      } else {
+        console.warn('Unexpected response structure:', response);
+        setStudyItems([]);
+      }
 
       // 刷新学习计划列表以更新统计
       fetchStudyPlans();
+
+      console.log('Article added successfully');
     } catch (error) {
       console.error('添加文章失败:', error);
       alert('添加文章失败');
@@ -293,17 +319,17 @@ const AdminStudyPlans: React.FC = () => {
                   </div>
 
                   {/* 进度条 */}
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between text-sm">
+                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between text-sm mb-2">
                       <span className="text-gray-600">学习进度</span>
                       <span className="text-gray-900 font-medium">
                         {plan.completed_items}/{plan.total_items}
                         ({getProgressPercentage(plan.completed_items, plan.total_items)}%)
                       </span>
                     </div>
-                    <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
-                        className="bg-blue-600 h-2 rounded-full"
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                         style={{
                           width: `${getProgressPercentage(plan.completed_items, plan.total_items)}%`
                         }}
@@ -312,17 +338,17 @@ const AdminStudyPlans: React.FC = () => {
                   </div>
 
                   {/* 掌握进度 */}
-                  <div className="mt-2">
-                    <div className="flex items-center justify-between text-sm">
+                  <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between text-sm mb-2">
                       <span className="text-gray-600">掌握进度</span>
                       <span className="text-gray-900 font-medium">
                         {plan.mastered_items}/{plan.total_items}
                         ({getProgressPercentage(plan.mastered_items, plan.total_items)}%)
                       </span>
                     </div>
-                    <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
-                        className="bg-green-600 h-2 rounded-full"
+                        className="bg-green-600 h-2 rounded-full transition-all duration-300"
                         style={{
                           width: `${getProgressPercentage(plan.mastered_items, plan.total_items)}%`
                         }}
@@ -332,17 +358,17 @@ const AdminStudyPlans: React.FC = () => {
                 </div>
 
                 {/* 操作按钮 */}
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3 ml-6">
                   <button
                     onClick={() => handleManageContent(plan)}
-                    className="flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                    className="flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
                   >
-                    <BookOpenIcon className="w-4 h-4 mr-1" />
+                    <BookOpenIcon className="w-4 h-4 mr-2" />
                     管理内容
                   </button>
                   <button
                     onClick={() => handleTogglePlanStatus(plan.id, plan.is_active)}
-                    className={`flex items-center px-3 py-1 rounded-md transition-colors ${
+                    className={`flex items-center px-4 py-2 rounded-md transition-colors ${
                       plan.is_active
                         ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
                         : 'bg-green-100 text-green-700 hover:bg-green-200'
@@ -352,9 +378,9 @@ const AdminStudyPlans: React.FC = () => {
                   </button>
                   <button
                     onClick={() => handleDeletePlan(plan.id)}
-                    className="flex items-center px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+                    className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
                   >
-                    <TrashIcon className="w-4 h-4 mr-1" />
+                    <TrashIcon className="w-4 h-4 mr-2" />
                     删除
                   </button>
                 </div>
