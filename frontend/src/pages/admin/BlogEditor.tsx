@@ -459,7 +459,14 @@ export default function BlogEditor() {
                       )}
                     </div>
                     <button
-                      onClick={() => updateFormData('media_url', '')}
+                      onClick={() => {
+                        updateFormData('media_url', '');
+                        updateFormData('duration', 0);
+                        updateFormData('file_size', 0);
+                        updateFormData('mime_type', '');
+                        updateFormData('type', '');
+                        setMediaFile(null);
+                      }}
                       className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
                     >
                       移除并重新上传
@@ -522,36 +529,6 @@ export default function BlogEditor() {
                 </div>
               </div>
 
-              {/* 媒体信息显示 */}
-              {mediaFile && (
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">主媒体信息</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500 dark:text-gray-400">文件名：</span>
-                      <span className="text-gray-900 dark:text-white">{mediaFile.filename}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 dark:text-gray-400">文件类型：</span>
-                      <span className="text-gray-900 dark:text-white">{mediaFile.mime_type}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 dark:text-gray-400">文件大小：</span>
-                      <span className="text-gray-900 dark:text-white">
-                        {(mediaFile.size / (1024 * 1024)).toFixed(2)} MB
-                      </span>
-                    </div>
-                    {mediaFile.duration && (
-                      <div>
-                        <span className="text-gray-500 dark:text-gray-400">时长：</span>
-                        <span className="text-gray-900 dark:text-white">
-                          {Math.floor(mediaFile.duration / 60)}:{Math.floor(mediaFile.duration % 60).toString().padStart(2, '0')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {/* 音频文件上传 */}
               <div>
@@ -592,7 +569,13 @@ export default function BlogEditor() {
                       )}
                     </div>
                     <button
-                      onClick={() => updateFormData('audio_url', '')}
+                      onClick={() => {
+                        updateFormData('audio_url', '');
+                        updateFormData('audio_duration', 0);
+                        updateFormData('audio_file_size', 0);
+                        updateFormData('audio_mime_type', '');
+                        setAudioFile(null);
+                      }}
                       className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
                     >
                       移除音频文件
@@ -608,39 +591,6 @@ export default function BlogEditor() {
                 )}
               </div>
 
-              {/* 音频信息显示 */}
-              {audioFile && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                  <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-3 flex items-center">
-                    <SpeakerWaveIcon className="w-4 h-4 mr-2" />
-                    音频文件信息
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-blue-700 dark:text-blue-300">文件名：</span>
-                      <span className="text-blue-900 dark:text-blue-100">{audioFile.filename}</span>
-                    </div>
-                    <div>
-                      <span className="text-blue-700 dark:text-blue-300">文件类型：</span>
-                      <span className="text-blue-900 dark:text-blue-100">{audioFile.mime_type}</span>
-                    </div>
-                    <div>
-                      <span className="text-blue-700 dark:text-blue-300">文件大小：</span>
-                      <span className="text-blue-900 dark:text-blue-100">
-                        {(audioFile.size / (1024 * 1024)).toFixed(2)} MB
-                      </span>
-                    </div>
-                    {audioFile.duration && (
-                      <div>
-                        <span className="text-blue-700 dark:text-blue-300">时长：</span>
-                        <span className="text-blue-900 dark:text-blue-100">
-                          {Math.floor(audioFile.duration / 60)}:{Math.floor(audioFile.duration % 60).toString().padStart(2, '0')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           )}
 

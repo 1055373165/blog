@@ -53,8 +53,8 @@ func GenerateUniqueSlug(baseSlug string) string {
 	counter := 1
 	
 	for {
-		var article models.Article
-		err := database.DB.Where("slug = ?", slug).First(&article).Error
+		var blog models.Blog
+		err := database.DB.Where("slug = ?", slug).First(&blog).Error
 		if err != nil {
 			// slug不存在，可以使用
 			break
