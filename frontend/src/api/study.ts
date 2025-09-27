@@ -229,31 +229,31 @@ export const studyPlanApi = {
     limit?: number;
     is_active?: boolean;
   }): Promise<StudyPlanListResponse> => {
-    const { data } = await apiClient.get('/study/plans', { params });
+    const { data } = await apiClient.get('/api/study/plans', { params });
     return data;
   },
 
   // 获取单个学习计划详情
   getStudyPlan: async (id: number): Promise<{ plan: StudyPlan }> => {
-    const { data } = await apiClient.get(`/study/plans/${id}`);
+    const { data } = await apiClient.get(`/api/study/plans/${id}`);
     return data;
   },
 
   // 创建学习计划
   createStudyPlan: async (plan: CreateStudyPlanRequest): Promise<{ message: string; plan: StudyPlan }> => {
-    const { data } = await apiClient.post('/study/plans', plan);
+    const { data } = await apiClient.post('/api/study/plans', plan);
     return data;
   },
 
   // 更新学习计划
   updateStudyPlan: async (id: number, updates: UpdateStudyPlanRequest): Promise<{ message: string; plan: StudyPlan }> => {
-    const { data } = await apiClient.put(`/study/plans/${id}`, updates);
+    const { data } = await apiClient.put(`/api/study/plans/${id}`, updates);
     return data;
   },
 
   // 删除学习计划
   deleteStudyPlan: async (id: number): Promise<{ message: string }> => {
-    const { data } = await apiClient.delete(`/study/plans/${id}`);
+    const { data } = await apiClient.delete(`/api/study/plans/${id}`);
     return data;
   },
 };
@@ -265,7 +265,7 @@ export const studyItemApi = {
     planId: number,
     article: AddArticleToStudyPlanRequest
   ): Promise<{ message: string; study_item: StudyItem }> => {
-    const { data } = await apiClient.post(`/study/plans/${planId}/articles`, article);
+    const { data } = await apiClient.post(`/api/study/plans/${planId}/articles`, article);
     return data;
   },
 
@@ -278,13 +278,13 @@ export const studyItemApi = {
       status?: string;
     }
   ): Promise<StudyItemListResponse> => {
-    const { data } = await apiClient.get(`/study/plans/${planId}/items`, { params });
+    const { data } = await apiClient.get(`/api/study/plans/${planId}/items`, { params });
     return data;
   },
 
   // 移除学习项目
   removeStudyItem: async (itemId: number): Promise<{ message: string }> => {
-    const { data } = await apiClient.delete(`/study/items/${itemId}`);
+    const { data } = await apiClient.delete(`/api/study/items/${itemId}`);
     return data;
   },
 
@@ -293,7 +293,7 @@ export const studyItemApi = {
     itemId: number,
     updates: UpdateStudyItemNotesRequest
   ): Promise<{ message: string; item: StudyItem }> => {
-    const { data } = await apiClient.put(`/study/items/${itemId}/notes`, updates);
+    const { data } = await apiClient.put(`/api/study/items/${itemId}/notes`, updates);
     return data;
   },
 };
@@ -305,7 +305,7 @@ export const studyProgressApi = {
     itemId: number,
     session: RecordStudySessionRequest
   ): Promise<StudySessionResponse> => {
-    const { data } = await apiClient.post(`/study/items/${itemId}/study`, session);
+    const { data } = await apiClient.post(`/api/study/items/${itemId}/study`, session);
     return data;
   },
 
@@ -314,7 +314,7 @@ export const studyProgressApi = {
     limit?: number;
     include_new?: boolean;
   }): Promise<StudyItemListResponse> => {
-    const { data } = await apiClient.get('/study/due', { params });
+    const { data } = await apiClient.get('/api/study/due', { params });
     return data;
   },
 
@@ -326,7 +326,7 @@ export const studyProgressApi = {
       days?: number;
     }
   ): Promise<StudyAnalyticsResponse> => {
-    const { data } = await apiClient.get(`/study/plans/${planId}/analytics`, { params });
+    const { data } = await apiClient.get(`/api/study/plans/${planId}/analytics`, { params });
     return data;
   },
 };
