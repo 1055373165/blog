@@ -123,10 +123,14 @@ func (h *StudyHandler) GetStudyPlans(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"plans": plans,
-		"total": total,
-		"page":  page,
-		"limit": limit,
+		"success": true,
+		"message": "获取学习计划列表成功",
+		"data": gin.H{
+			"plans": plans,
+			"total": total,
+			"page":  page,
+			"limit": limit,
+		},
 	})
 }
 
