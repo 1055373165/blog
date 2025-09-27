@@ -35,6 +35,11 @@ func (h *ReminderHandler) GetReminders(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	offset := (page - 1) * limit
 
+	// 处理空状态参数，将空字符串视为显示所有状态
+	if status == "" {
+		status = "all"
+	}
+
 	var reminders []models.StudyReminder
 	var total int64
 
