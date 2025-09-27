@@ -15,7 +15,6 @@ interface CommentActionsProps {
   onToggleReplies?: () => void;
   isOwner?: boolean;
   isAdmin?: boolean; // 新增：是否为管理员
-  onEdit?: () => void;
   onDelete?: () => void;
   className?: string;
 }
@@ -33,7 +32,6 @@ const CommentActions: React.FC<CommentActionsProps> = ({
   onToggleReplies,
   isOwner = false,
   isAdmin = false, // 新增：管理员权限
-  onEdit,
   onDelete,
   className = ''
 }) => {
@@ -95,10 +93,6 @@ const CommentActions: React.FC<CommentActionsProps> = ({
     return false;
   };
 
-  // 判断是否可以编辑评论
-  const canEdit = () => {
-    return isOwner && onEdit; // 只有评论所有者可以编辑
-  };
 
   // 判断是否可以删除评论
   const canDelete = () => {
@@ -212,28 +206,6 @@ const CommentActions: React.FC<CommentActionsProps> = ({
             <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800
                           border border-gray-200 dark:border-gray-700 rounded-lg shadow-strong z-50">
               <div className="py-2">
-                {/* Edit Action - 只有评论所有者可以编辑 */}
-                {canEdit() && (
-                  <button
-                    onClick={() => {
-                      setShowDropdown(false);
-                      onEdit!();
-                    }}
-                    className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300
-                             hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
-                    <span>编辑</span>
-                  </button>
-                )}
-
                 {/* Delete Action - 管理员或评论所有者可以删除 */}
                 {canDelete() && (
                   <button
@@ -257,8 +229,8 @@ const CommentActions: React.FC<CommentActionsProps> = ({
                   </button>
                 )}
 
-                {/* 如果有编辑或删除操作，且还有其他操作，则添加分隔线 */}
-                {(canEdit() || canDelete()) && onReport && (
+                {/* 如果有删除操作，且还有其他操作，则添加分隔线 */}
+                {canDelete() && onReport && (
                   <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
                 )}
 

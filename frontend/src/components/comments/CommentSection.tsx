@@ -53,7 +53,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     toggleLike,
     loadMore,
     refresh,
-    editComment,
     deleteComment
   } = useComments({
     articleId,
@@ -130,24 +129,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Handle edit
-  const handleEdit = async (commentId: number, content: string) => {
-    try {
-      await editComment(commentId, content);
-      setNotification({
-        message: '评论编辑成功！',
-        type: 'success'
-      });
-      setTimeout(() => setNotification(null), 3000);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '编辑评论失败';
-      setNotification({
-        message: errorMessage,
-        type: 'error'
-      });
-      setTimeout(() => setNotification(null), 5000);
-    }
-  };
 
   // Handle delete
   const handleDelete = async (commentId: number) => {
@@ -307,7 +288,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         onReply={handleReply}
         onLike={handleLike}
         onReport={handleReport}
-        onEdit={handleEdit}
         onDelete={handleDelete}
         currentUserId={currentUserId}
         maxDepth={maxDepth}

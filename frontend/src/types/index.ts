@@ -502,10 +502,6 @@ export interface CreateCommentRequest {
   parent_id?: number;
 }
 
-// 评论更新请求类型
-export interface UpdateCommentRequest {
-  content: string;
-}
 
 // 评论分页响应类型
 export interface CommentsResponse {

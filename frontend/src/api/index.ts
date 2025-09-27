@@ -70,11 +70,49 @@ export const statsApi = {
 // 文件上传相关API
 export const uploadApi = {
   async uploadImage(file: File, onProgress?: (progress: number) => void) {
-    return apiClient.upload<{ url: string; filename: string }>('/api/upload/image', file, onProgress);
+    const response = await apiClient.upload<{ url: string; filename: string }>('/api/upload/image', file, onProgress);
+    console.log('Upload API - uploadImage response:', response);
+    
+    // 检查响应格式 - 后端可能直接返回上传数据，而不是包装在 ApiResponse 中
+    const responseAny = response as any;
+    
+    if (response && response.data) {
+      // 如果是 ApiResponse 格式
+      return response;
+    } else if (responseAny && responseAny.url) {
+      // 如果后端直接返回上传数据，包装成 ApiResponse 格式
+      return {
+        success: true,
+        data: responseAny,
+        message: '上传成功'
+      };
+    } else {
+      console.error('Unexpected upload response format:', response);
+      throw new Error('Invalid response format from server');
+    }
   },
 
   async uploadFile(file: File, onProgress?: (progress: number) => void, timeout?: number) {
-    return apiClient.upload<{ url: string; filename: string }>('/api/upload/file', file, onProgress, timeout);
+    const response = await apiClient.upload<{ url: string; filename: string }>('/api/upload/file', file, onProgress, timeout);
+    console.log('Upload API - uploadFile response:', response);
+    
+    // 检查响应格式 - 后端可能直接返回上传数据，而不是包装在 ApiResponse 中
+    const responseAny = response as any;
+    
+    if (response && response.data) {
+      // 如果是 ApiResponse 格式
+      return response;
+    } else if (responseAny && responseAny.url) {
+      // 如果后端直接返回上传数据，包装成 ApiResponse 格式
+      return {
+        success: true,
+        data: responseAny,
+        message: '上传成功'
+      };
+    } else {
+      console.error('Unexpected upload response format:', response);
+      throw new Error('Invalid response format from server');
+    }
   },
 };
 

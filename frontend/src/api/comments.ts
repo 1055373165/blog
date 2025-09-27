@@ -3,7 +3,6 @@ import {
   Comment,
   CommentsResponse,
   CreateCommentRequest,
-  UpdateCommentRequest,
   CommentFilters
 } from '../types';
 
@@ -111,14 +110,6 @@ export const commentsApi = {
     }
   },
 
-  // 更新评论内容
-  async updateComment(commentId: number, data: UpdateCommentRequest): Promise<Comment> {
-    const response = await apiClient.put<Comment>(
-      `/api/comments/${commentId}`,
-      data
-    );
-    return response.data;
-  },
 
   // 删除评论
   async deleteComment(commentId: number): Promise<void> {

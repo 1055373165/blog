@@ -29,7 +29,6 @@ export interface UseCommentsReturn {
   refresh: () => Promise<void>;
   updateCommentInList: (commentId: number, updates: Partial<Comment>) => void;
   removeCommentFromList: (commentId: number) => void;
-  editComment: (commentId: number, content: string) => Promise<void>;
   deleteComment: (commentId: number) => Promise<void>;
 }
 
@@ -389,19 +388,6 @@ export function useComments({
   const hasNestedReplies = comments.some(comment => comment.replies && comment.replies.length > 0);
   console.log('Backend returned nested replies:', hasNestedReplies);
   
-  // 编辑评论
-  const editComment = useCallback(async (commentId: number, content: string) => {
-    try {
-      const updatedComment = await commentsApi.updateComment(commentId, { content });
-      updateCommentInList(commentId, {
-        content: updatedComment.content,
-        updated_at: updatedComment.updated_at
-      });
-    } catch (error) {
-      console.error('Failed to edit comment:', error);
-      throw error;
-    }
-  }, [updateCommentInList]);
 
   // 删除评论
   const deleteComment = useCallback(async (commentId: number) => {
@@ -432,7 +418,6 @@ export function useComments({
     refresh,
     updateCommentInList,
     removeCommentFromList,
-    editComment,
     deleteComment
   };
 }

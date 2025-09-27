@@ -13,7 +13,6 @@ interface CommentListProps {
   onReply: (parentId: number, data: CreateCommentRequest) => Promise<void>;
   onLike: (commentId: number) => Promise<void>;
   onReport?: (commentId: number) => void;
-  onEdit?: (commentId: number, content: string) => void;
   onDelete?: (commentId: number) => void;
   currentUserId?: number;
   maxDepth?: number;
@@ -30,7 +29,6 @@ const CommentList: React.FC<CommentListProps> = ({
   onReply,
   onLike,
   onReport,
-  onEdit,
   onDelete,
   currentUserId,
   maxDepth = 3,
@@ -90,7 +88,6 @@ const CommentList: React.FC<CommentListProps> = ({
             onReply={onReply}
             onLike={onLike}
             onReport={onReport}
-            onEdit={onEdit}
             onDelete={onDelete}
             currentUserId={currentUserId}
             className={`comment-fade-in comment-will-change ${

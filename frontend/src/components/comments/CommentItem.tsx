@@ -12,7 +12,6 @@ interface CommentItemProps {
   onReply: (parentId: number, data: CreateCommentRequest) => Promise<void>;
   onLike: (commentId: number) => Promise<void>;
   onReport?: (commentId: number) => void;
-  onEdit?: (commentId: number, content: string) => void;
   onDelete?: (commentId: number) => void;
   currentUserId?: number;
   className?: string;
@@ -26,7 +25,6 @@ const CommentItem: React.FC<CommentItemProps> = ({
   onReply,
   onLike,
   onReport,
-  onEdit,
   onDelete,
   currentUserId,
   className = ''
@@ -84,12 +82,6 @@ const CommentItem: React.FC<CommentItemProps> = ({
     }
   };
 
-  // Handle edit
-  const handleEdit = () => {
-    if (onEdit) {
-      onEdit(comment.id, comment.content);
-    }
-  };
 
   // Handle delete
   const handleDelete = () => {
@@ -192,7 +184,6 @@ const CommentItem: React.FC<CommentItemProps> = ({
             onToggleReplies={comment.replies && comment.replies.length > 0 ? () => setShowReplies(!showReplies) : undefined}
             isOwner={isOwner}
             isAdmin={isAdmin}
-            onEdit={onEdit ? handleEdit : undefined}
             onDelete={onDelete ? handleDelete : undefined}
           />
         </div>
@@ -278,7 +269,6 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   onReply={onReply}
                   onLike={onLike}
                   onReport={onReport}
-                  onEdit={onEdit}
                   onDelete={onDelete}
                   currentUserId={currentUserId}
                 />

@@ -67,26 +67,41 @@ export default function ProfilePage() {
     setIsUploadingAvatar(true);
     try {
       const response = await uploadApi.uploadImage(file);
-      if (response.success) {
-        const newProfileData = {
-          ...profileData,
-          avatar: response.data.url
-        };
-        setProfileData(newProfileData);
-        
-        // 直接更新用户资料
-        await updateProfile({ 
-          name: newProfileData.name,
-          bio: newProfileData.bio,
-          github_url: newProfileData.github_url,
-          avatar: response.data.url
-        });
+      console.log('Avatar upload response:', response);
+      
+      // 检查不同的响应格式
+      let avatarUrl: string;
+      
+      if (response && response.success && response.data && response.data.url) {
+        // 标准 ApiResponse 格式：{ success: true, data: { url: "..." } }
+        avatarUrl = response.data.url;
+      } else if (response && response.data && response.data.url) {
+        // ApiResponse 格式但没有 success 字段：{ data: { url: "..." } }
+        avatarUrl = response.data.url;
+      } else if (response && (response as any).url) {
+        // 直接返回数据格式：{ url: "..." }
+        avatarUrl = (response as any).url;
       } else {
-        throw new Error(response.error || '上传失败');
+        console.error('Unexpected upload response format:', response);
+        throw new Error('上传响应格式错误');
       }
+      
+      const newProfileData = {
+        ...profileData,
+        avatar: avatarUrl
+      };
+      setProfileData(newProfileData);
+      
+      // 直接更新用户资料
+      await updateProfile({ 
+        name: newProfileData.name,
+        bio: newProfileData.bio,
+        github_url: newProfileData.github_url,
+        avatar: avatarUrl
+      });
     } catch (error) {
       console.error('头像上传失败:', error);
-      alert('头像上传失败，请重试');
+      alert(`头像上传失败：${error instanceof Error ? error.message : '请重试'}`);
     } finally {
       setIsUploadingAvatar(false);
     }
