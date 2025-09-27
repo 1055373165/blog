@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"backend/internal/models"
-	"backend/internal/services"
+	"blog-backend/internal/models"
+	"blog-backend/internal/services"
 )
 
 // StudyHandler 学习系统处理器

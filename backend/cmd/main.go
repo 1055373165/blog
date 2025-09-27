@@ -269,6 +269,32 @@ func main() {
 			adminUsers.PUT("/:id/toggle-active", handlers.ToggleUserActive) // 切换用户状态
 			adminUsers.DELETE("/:id", handlers.DeleteUser)                  // 删除用户
 		}
+
+		// 学习系统路由
+		studyHandler := handlers.NewStudyHandler(database.DB)
+		study := api.Group("/study")
+		study.Use(middleware.AuthRequired()) // 需要登录
+		{
+			// 学习计划管理
+			study.GET("/plans", studyHandler.GetStudyPlans)
+			study.POST("/plans", studyHandler.CreateStudyPlan)
+			study.GET("/plans/:id", studyHandler.GetStudyPlan)
+			study.PUT("/plans/:id", studyHandler.UpdateStudyPlan)
+			study.DELETE("/plans/:id", studyHandler.DeleteStudyPlan)
+
+			// 学习项目管理
+			study.POST("/plans/:id/articles", studyHandler.AddArticleToStudyPlan)
+			study.GET("/plans/:id/items", studyHandler.GetStudyItems)
+			study.DELETE("/items/:item_id", studyHandler.RemoveStudyItem)
+			study.PUT("/items/:item_id/notes", studyHandler.UpdateStudyItemNotes)
+
+			// 学习进度管理
+			study.POST("/items/:item_id/study", studyHandler.RecordStudySession)
+			study.GET("/due", studyHandler.GetDueStudyItems)
+
+			// 学习分析
+			study.GET("/plans/:id/analytics", studyHandler.GetStudyAnalytics)
+		}
 	}
 
 	// 开发环境兼容路由：支持无 /api 前缀的上传路径
