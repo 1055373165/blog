@@ -63,7 +63,7 @@ const AdminStudyPlans: React.FC = () => {
   const fetchStudyPlans = async () => {
     try {
       const response = await studyPlanApi.getStudyPlans();
-      setStudyPlans(response.data.plans || []);
+      setStudyPlans(response.plans || []);
     } catch (error) {
       console.error('获取学习计划失败:', error);
     } finally {
