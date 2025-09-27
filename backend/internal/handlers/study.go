@@ -830,31 +830,12 @@ func (h *StudyHandler) GenerateStudyReminders(c *gin.Context) {
 	// 创建提醒服务
 	reminderService := services.NewStudyReminderService(h.db)
 
-	// 生成各种类型的提醒
-	var errors []string
-
-	// 生成复习提醒
-	if err := reminderService.CreateReviewReminders(); err != nil {
-		log.Printf("生成复习提醒失败: %v", err)
-		errors = append(errors, "复习提醒生成失败")
-	}
-
-	// 生成目标提醒
-	if err := reminderService.CreateGoalReminders(); err != nil {
-		log.Printf("生成目标提醒失败: %v", err)
-		errors = append(errors, "目标提醒生成失败")
-	}
-
-	// 生成逾期提醒
-	if err := reminderService.CreateOverdueReminders(); err != nil {
-		log.Printf("生成逾期提醒失败: %v", err)
-		errors = append(errors, "逾期提醒生成失败")
-	}
-
-	if len(errors) > 0 {
-		c.JSON(http.StatusPartialContent, gin.H{
-			"message": "提醒生成部分成功",
-			"errors":  errors,
+	// 为特定学习计划生成提醒（包括初始化新项目）
+	if err := reminderService.CreateRemindersForStudyPlan(uint(planID)); err != nil {
+		log.Printf("生成学习计划提醒失败: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "提醒生成失败",
+			"details": err.Error(),
 		})
 		return
 	}

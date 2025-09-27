@@ -49,11 +49,11 @@ func (s *StudyReminderService) CreateReviewReminders() error {
 	// 查找需要复习的学习项目
 	var studyItems []models.StudyItem
 	now := time.Now()
-	
+
 	err := s.db.Preload("Article").Preload("StudyPlan").
 		Where("next_review_at <= ? AND status != 'mastered'", now).
 		Find(&studyItems).Error
-	
+
 	if err != nil {
 		return fmt.Errorf("查询需要复习的项目失败: %v", err)
 	}
@@ -61,9 +61,9 @@ func (s *StudyReminderService) CreateReviewReminders() error {
 	for _, item := range studyItems {
 		// 检查是否已经有未读的复习提醒
 		var existingReminder models.StudyReminder
-		err := s.db.Where("study_item_id = ? AND status = 'pending' AND reminder_type = 'review'", 
+		err := s.db.Where("study_item_id = ? AND status = 'pending' AND reminder_type = 'review'",
 			item.ID).First(&existingReminder).Error
-		
+
 		if err == gorm.ErrRecordNotFound {
 			// 创建新的复习提醒
 			reminder := models.StudyReminder{
@@ -76,14 +76,156 @@ func (s *StudyReminderService) CreateReviewReminders() error {
 				Message:        s.generateReviewMessage(item),
 				NotificationMethod: "system",
 			}
-			
+
 			if err := s.db.Create(&reminder).Error; err != nil {
 				log.Printf("创建复习提醒失败: %v", err)
 				continue
 			}
 		}
 	}
-	
+
+	return nil
+}
+
+// CreateRemindersForStudyPlan 为学习计划创建提醒（包括新项目）
+func (s *StudyReminderService) CreateRemindersForStudyPlan(studyPlanID uint) error {
+	// 首先为新的学习项目设置初始复习时间
+	if err := s.initializeNewStudyItems(studyPlanID); err != nil {
+		return fmt.Errorf("初始化新学习项目失败: %v", err)
+	}
+
+	// 然后创建各种类型的提醒
+	if err := s.createReviewRemindersForPlan(studyPlanID); err != nil {
+		return fmt.Errorf("创建复习提醒失败: %v", err)
+	}
+
+	if err := s.createGoalRemindersForPlan(studyPlanID); err != nil {
+		return fmt.Errorf("创建目标提醒失败: %v", err)
+	}
+
+	return nil
+}
+
+// initializeNewStudyItems 为新的学习项目设置初始复习时间
+func (s *StudyReminderService) initializeNewStudyItems(studyPlanID uint) error {
+	var newItems []models.StudyItem
+	err := s.db.Where("study_plan_id = ? AND status = 'new' AND next_review_at IS NULL",
+		studyPlanID).Find(&newItems).Error
+
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+	for _, item := range newItems {
+		// 设置初始复习时间（24小时后开始第一次复习）
+		initialReviewTime := now.Add(24 * time.Hour)
+
+		err := s.db.Model(&item).Updates(map[string]interface{}{
+			"next_review_at": initialReviewTime,
+			"status":        "learning",
+		}).Error
+
+		if err != nil {
+			log.Printf("更新学习项目失败: %v", err)
+			continue
+		}
+	}
+
+	return nil
+}
+
+// createReviewRemindersForPlan 为特定学习计划创建复习提醒
+func (s *StudyReminderService) createReviewRemindersForPlan(studyPlanID uint) error {
+	var studyItems []models.StudyItem
+	now := time.Now()
+
+	err := s.db.Preload("Article").Preload("StudyPlan").
+		Where("study_plan_id = ? AND next_review_at <= ? AND status != 'mastered'",
+			studyPlanID, now.Add(7*24*time.Hour)). // 查找一周内需要复习的项目
+		Find(&studyItems).Error
+
+	if err != nil {
+		return err
+	}
+
+	for _, item := range studyItems {
+		// 检查是否已经有未读的复习提醒
+		var existingReminder models.StudyReminder
+		err := s.db.Where("study_item_id = ? AND status = 'pending' AND reminder_type = 'review'",
+			item.ID).First(&existingReminder).Error
+
+		if err == gorm.ErrRecordNotFound {
+			// 创建新的复习提醒
+			reminder := models.StudyReminder{
+				StudyItemID:    item.ID,
+				ReminderAt:     *item.NextReviewAt,
+				Status:         "pending",
+				ReminderType:   "review",
+				Priority:       s.calculatePriority(item),
+				Title:          fmt.Sprintf("复习提醒：%s", item.Article.Title),
+				Message:        s.generateReviewMessage(item),
+				NotificationMethod: "system",
+			}
+
+			if err := s.db.Create(&reminder).Error; err != nil {
+				log.Printf("创建复习提醒失败: %v", err)
+				continue
+			}
+		}
+	}
+
+	return nil
+}
+
+// createGoalRemindersForPlan 为特定学习计划创建目标提醒
+func (s *StudyReminderService) createGoalRemindersForPlan(studyPlanID uint) error {
+	var plan models.StudyPlan
+	err := s.db.First(&plan, studyPlanID).Error
+	if err != nil {
+		return err
+	}
+
+	if !plan.IsActive {
+		return nil // 非活跃计划不创建目标提醒
+	}
+
+	now := time.Now()
+	today := now.Format("2006-01-02")
+
+	// 检查今日学习进度
+	var todayCount int64
+	s.db.Model(&models.StudyLog{}).
+		Joins("JOIN study_items ON study_logs.study_item_id = study_items.id").
+		Where("study_items.study_plan_id = ? AND DATE(study_logs.created_at) = ?",
+			studyPlanID, today).
+		Count(&todayCount)
+
+	// 如果未达到每日目标，创建提醒
+	if int(todayCount) < plan.DailyGoal {
+		remaining := plan.DailyGoal - int(todayCount)
+
+		reminder := models.StudyReminder{
+			StudyItemID:    0, // 目标提醒不关联具体项目
+			ReminderAt:     now.Add(2 * time.Hour), // 2小时后提醒
+			Status:         "pending",
+			ReminderType:   "goal",
+			Priority:       3,
+			Title:          fmt.Sprintf("%s - 每日学习目标提醒", plan.Name),
+			Message:        fmt.Sprintf("您今天还需要学习 %d 个项目才能完成每日目标", remaining),
+			NotificationMethod: "system",
+		}
+
+		// 检查是否已有今日目标提醒
+		var existingReminder models.StudyReminder
+		err := s.db.Where("reminder_type = 'goal' AND DATE(created_at) = ? AND status = 'pending' AND title LIKE ?",
+			today, fmt.Sprintf("%%%s%%", plan.Name)).First(&existingReminder).Error
+
+		if err == gorm.ErrRecordNotFound {
+			s.db.Create(&reminder)
+		}
+	}
+
 	return nil
 }
 
