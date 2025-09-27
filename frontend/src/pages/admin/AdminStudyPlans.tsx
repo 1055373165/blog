@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PlusIcon, TrashIcon, AcademicCapIcon, ChartBarIcon, BookOpenIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { studyPlanApi } from '../../api/study';
+import StudyPlanContentManager from '../../components/StudyPlanContentManager';
 
 interface StudyPlan {
   id: number;
@@ -209,6 +210,12 @@ const AdminStudyPlans: React.FC = () => {
       console.error('删除学习计划失败:', error);
       alert('删除失败');
     }
+  };
+
+  const handleCloseContentManager = () => {
+    setShowManageContentModal(false);
+    setSelectedPlan(null);
+    setStudyItems([]);
   };
 
   if (loading) {
@@ -537,124 +544,15 @@ const AdminStudyPlans: React.FC = () => {
 
       {/* 管理学习内容模态框 */}
       {showManageContentModal && selectedPlan && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-5/6 max-w-4xl shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  管理学习内容 - {selectedPlan.name}
-                </h3>
-                <button
-                  onClick={() => {
-                    setShowManageContentModal(false);
-                    setSelectedPlan(null);
-                    setStudyItems([]);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XMarkIcon className="w-6 h-6" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* 可用文章列表 */}
-                <div>
-                  <h4 className="text-md font-medium text-gray-900 mb-3">可添加的文章</h4>
-                  <div className="max-h-96 overflow-y-auto border rounded-lg">
-                    {articles.filter(article =>
-                      !studyItems.some(item => item.article?.id === article.id)
-                    ).map((article) => (
-                      <div key={article.id} className="p-3 border-b last:border-b-0 hover:bg-gray-50">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h5 className="text-sm font-medium text-gray-900 truncate">
-                              {article.title}
-                            </h5>
-                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                              {article.excerpt}
-                            </p>
-                            <div className="flex items-center text-xs text-gray-400 mt-2">
-                              <span>阅读时长: {article.reading_time}分钟</span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => handleAddArticleToPlan(article.id)}
-                            className="ml-3 flex items-center px-2 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200 transition-colors"
-                          >
-                            <PlusIcon className="w-3 h-3 mr-1" />
-                            添加
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                    {articles.filter(article =>
-                      !studyItems.some(item => item.article?.id === article.id)
-                    ).length === 0 && (
-                      <div className="p-8 text-center text-gray-500">
-                        <p>暂无可添加的文章</p>
-                        <p className="text-sm">所有文章都已添加到学习计划中</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* 已添加的学习项目 */}
-                <div>
-                  <h4 className="text-md font-medium text-gray-900 mb-3">
-                    学习内容 ({studyItems.length}项)
-                  </h4>
-                  <div className="max-h-96 overflow-y-auto border rounded-lg">
-                    {studyItems.map((item) => (
-                      <div key={item.id} className="p-3 border-b last:border-b-0 hover:bg-gray-50">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h5 className="text-sm font-medium text-gray-900 truncate">
-                              {item.article.title}
-                            </h5>
-                            <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
-                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                item.status === 'mastered' ? 'bg-green-100 text-green-800' :
-                                item.status === 'learning' ? 'bg-blue-100 text-blue-800' :
-                                item.status === 'review' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
-                                {item.status === 'new' ? '新项目' :
-                                 item.status === 'learning' ? '学习中' :
-                                 item.status === 'review' ? '复习中' :
-                                 item.status === 'mastered' ? '已掌握' : item.status}
-                              </span>
-                              <span>重要性: {item.importance_level}/5</span>
-                              <span>难度: {item.difficulty_level}/5</span>
-                            </div>
-                            {item.next_review_at && (
-                              <p className="text-xs text-gray-400 mt-1">
-                                下次复习: {new Date(item.next_review_at).toLocaleDateString()}
-                              </p>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => handleRemoveStudyItem(item.id)}
-                            className="ml-3 flex items-center px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200 transition-colors"
-                          >
-                            <XMarkIcon className="w-3 h-3 mr-1" />
-                            移除
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                    {studyItems.length === 0 && (
-                      <div className="p-8 text-center text-gray-500">
-                        <BookOpenIcon className="mx-auto h-12 w-12 text-gray-400 mb-2" />
-                        <p>暂无学习内容</p>
-                        <p className="text-sm">从左侧添加文章开始学习</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <StudyPlanContentManager
+          selectedPlan={selectedPlan}
+          studyItems={studyItems}
+          articles={articles}
+          onAddArticle={handleAddArticleToPlan}
+          onRemoveItem={handleRemoveStudyItem}
+          onClose={handleCloseContentManager}
+          getAlgorithmLabel={getAlgorithmLabel}
+        />
       )}
     </div>
   );
