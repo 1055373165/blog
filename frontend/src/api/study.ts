@@ -262,8 +262,8 @@ export const studyPlanApi = {
     planId: number,
     article: AddArticleToStudyPlanRequest
   ): Promise<{ message: string; study_item: StudyItem }> => {
-    const { data } = await apiClient.post(`/api/study/plans/${planId}/articles`, article);
-    return data;
+    const response = await apiClient.post(`/api/study/plans/${planId}/articles`, article);
+    return response;
   },
 
   // 获取学习项目列表
@@ -275,14 +275,14 @@ export const studyPlanApi = {
       status?: string;
     }
   ): Promise<StudyItemListResponse> => {
-    const { data } = await apiClient.get(`/api/study/plans/${planId}/items`, { params });
-    return data;
+    const response = await apiClient.get(`/api/study/plans/${planId}/items`, { params });
+    return response;
   },
 
   // 移除学习项目
   removeStudyItem: async (itemId: number): Promise<{ message: string }> => {
-    const { data } = await apiClient.delete(`/api/study/items/${itemId}`);
-    return data;
+    const response = await apiClient.delete(`/api/study/items/${itemId}`);
+    return response;
   },
 };
 
@@ -293,8 +293,8 @@ export const studyItemApi = {
     planId: number,
     article: AddArticleToStudyPlanRequest
   ): Promise<{ message: string; study_item: StudyItem }> => {
-    const { data } = await apiClient.post(`/api/study/plans/${planId}/articles`, article);
-    return data;
+    const response = await apiClient.post(`/api/study/plans/${planId}/articles`, article);
+    return response;
   },
 
   // 获取学习项目列表
@@ -306,14 +306,14 @@ export const studyItemApi = {
       status?: string;
     }
   ): Promise<StudyItemListResponse> => {
-    const { data } = await apiClient.get(`/api/study/plans/${planId}/items`, { params });
-    return data;
+    const response = await apiClient.get(`/api/study/plans/${planId}/items`, { params });
+    return response;
   },
 
   // 移除学习项目
   removeStudyItem: async (itemId: number): Promise<{ message: string }> => {
-    const { data } = await apiClient.delete(`/api/study/items/${itemId}`);
-    return data;
+    const response = await apiClient.delete(`/api/study/items/${itemId}`);
+    return response;
   },
 
   // 更新学习项目笔记
