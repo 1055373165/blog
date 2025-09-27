@@ -299,6 +299,10 @@ func main() {
 
 			// 学习分析
 			study.GET("/plans/:id/analytics", studyHandler.GetStudyAnalytics)
+
+			// 学习提醒管理
+			study.GET("/plans/:id/reminders", studyHandler.GetStudyPlanReminders)
+			study.POST("/plans/:id/generate-reminders", studyHandler.GenerateStudyReminders)
 		}
 
 		// 提醒系统路由

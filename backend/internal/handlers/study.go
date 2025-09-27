@@ -810,3 +810,90 @@ func (h *StudyHandler) UpdateStudyItemNotes(c *gin.Context) {
 		"item":    item,
 	})
 }
+
+// GenerateStudyReminders 为学习计划生成提醒
+func (h *StudyHandler) GenerateStudyReminders(c *gin.Context) {
+	planIDStr := c.Param("id")
+	planID, err := strconv.ParseUint(planIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的学习计划ID"})
+		return
+	}
+
+	// 验证学习计划是否存在且属于当前用户
+	var plan models.StudyPlan
+	if err := h.db.Where("id = ?", planID).First(&plan).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "学习计划不存在"})
+		return
+	}
+
+	// 创建提醒服务
+	reminderService := services.NewStudyReminderService(h.db)
+
+	// 生成各种类型的提醒
+	var errors []string
+
+	// 生成复习提醒
+	if err := reminderService.CreateReviewReminders(); err != nil {
+		log.Printf("生成复习提醒失败: %v", err)
+		errors = append(errors, "复习提醒生成失败")
+	}
+
+	// 生成目标提醒
+	if err := reminderService.CreateGoalReminders(); err != nil {
+		log.Printf("生成目标提醒失败: %v", err)
+		errors = append(errors, "目标提醒生成失败")
+	}
+
+	// 生成逾期提醒
+	if err := reminderService.CreateOverdueReminders(); err != nil {
+		log.Printf("生成逾期提醒失败: %v", err)
+		errors = append(errors, "逾期提醒生成失败")
+	}
+
+	if len(errors) > 0 {
+		c.JSON(http.StatusPartialContent, gin.H{
+			"message": "提醒生成部分成功",
+			"errors":  errors,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "提醒生成成功",
+	})
+}
+
+// GetStudyPlanReminders 获取学习计划相关的提醒
+func (h *StudyHandler) GetStudyPlanReminders(c *gin.Context) {
+	planIDStr := c.Param("id")
+	planID, err := strconv.ParseUint(planIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的学习计划ID"})
+		return
+	}
+
+	// 验证学习计划是否存在
+	var plan models.StudyPlan
+	if err := h.db.Where("id = ?", planID).First(&plan).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "学习计划不存在"})
+		return
+	}
+
+	// 查询相关提醒
+	var reminders []models.StudyReminder
+	err = h.db.Preload("StudyItem.Article").
+		Joins("LEFT JOIN study_items ON study_reminders.study_item_id = study_items.id").
+		Where("study_items.study_plan_id = ? OR (study_reminders.study_item_id IS NULL AND study_reminders.reminder_type = 'goal')", planID).
+		Order("study_reminders.priority DESC, study_reminders.reminder_at ASC").
+		Find(&reminders).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取提醒失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"reminders": reminders,
+	})
+}
