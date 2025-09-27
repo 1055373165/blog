@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, AcademicCapIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, AcademicCapIcon, ChartBarIcon, BookOpenIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { studyPlanApi } from '../../api/study';
 
 interface StudyPlan {
@@ -35,9 +35,9 @@ const AdminStudyPlans: React.FC = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showAddArticleModal, setShowAddArticleModal] = useState(false);
+  const [showManageContentModal, setShowManageContentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<StudyPlan | null>(null);
-  const [selectedArticles, setSelectedArticles] = useState<number[]>([]);
+  const [studyItems, setStudyItems] = useState<any[]>([]);
 
   const [newPlan, setNewPlan] = useState({
     name: '',
@@ -75,7 +75,7 @@ const AdminStudyPlans: React.FC = () => {
     try {
       const response = await fetch('/api/articles?limit=100');
       const data = await response.json();
-      setArticles(data.articles || []);
+      setArticles(data.data?.articles || []);
     } catch (error) {
       console.error('获取文章列表失败:', error);
     }
@@ -110,19 +110,78 @@ const AdminStudyPlans: React.FC = () => {
     return algorithms.find(alg => alg.value === algorithm)?.label || algorithm;
   };
 
-  const handleViewPlan = (plan: StudyPlan) => {
-    alert(`学习计划详情：
+  const handleManageContent = async (plan: StudyPlan) => {
+    setSelectedPlan(plan);
+    setShowManageContentModal(true);
+    // 获取学习计划的内容
+    try {
+      const response = await studyPlanApi.getStudyItems(plan.id);
+      setStudyItems(response.items || []);
+    } catch (error) {
+      console.error('获取学习内容失败:', error);
+    }
+  };
 
-名称：${plan.name}
-描述：${plan.description}
-算法：${getAlgorithmLabel(plan.spacing_algorithm)}
-难度等级：${plan.difficulty_level}
-目标：日${plan.daily_goal}个 / 周${plan.weekly_goal}个 / 月${plan.monthly_goal}个
-进度：${plan.completed_items}/${plan.total_items} (已完成)
-掌握：${plan.mastered_items}/${plan.total_items} (已掌握)
-状态：${plan.is_active ? '激活' : '暂停'}
-创建时间：${new Date(plan.created_at).toLocaleString()}
-创建者：${plan.creator.name}`);
+  const handleAddArticleToPlan = async (articleId: number) => {
+    if (!selectedPlan) return;
+
+    try {
+      await studyPlanApi.addArticleToStudyPlan(selectedPlan.id, {
+        article_id: articleId,
+        importance_level: 3,
+        difficulty_level: 3
+      });
+
+      // 刷新学习内容列表
+      const response = await studyPlanApi.getStudyItems(selectedPlan.id);
+      setStudyItems(response.items || []);
+
+      // 刷新学习计划列表以更新统计
+      fetchStudyPlans();
+    } catch (error) {
+      console.error('添加文章失败:', error);
+      alert('添加文章失败');
+    }
+  };
+
+  const handleRemoveStudyItem = async (itemId: number) => {
+    try {
+      await studyPlanApi.removeStudyItem(itemId);
+
+      // 刷新学习内容列表
+      if (selectedPlan) {
+        const response = await studyPlanApi.getStudyItems(selectedPlan.id);
+        setStudyItems(response.items || []);
+      }
+
+      // 刷新学习计划列表以更新统计
+      fetchStudyPlans();
+    } catch (error) {
+      console.error('移除学习项目失败:', error);
+      alert('移除失败');
+    }
+  };
+
+  const handleTogglePlanStatus = async (planId: number, isActive: boolean) => {
+    try {
+      await studyPlanApi.updateStudyPlan(planId, { is_active: !isActive });
+      fetchStudyPlans();
+    } catch (error) {
+      console.error('更新计划状态失败:', error);
+      alert('更新状态失败');
+    }
+  };
+
+  const handleDeletePlan = async (planId: number) => {
+    if (!confirm('确定要删除这个学习计划吗？这将删除所有相关的学习项目。')) return;
+
+    try {
+      await studyPlanApi.deleteStudyPlan(planId);
+      fetchStudyPlans();
+    } catch (error) {
+      console.error('删除学习计划失败:', error);
+      alert('删除失败');
+    }
   };
 
   if (loading) {
@@ -184,7 +243,7 @@ const AdminStudyPlans: React.FC = () => {
                   {studyPlans.reduce((sum, plan) => sum + plan.total_items, 0)}
                 </p>
               </div>
-              <EyeIcon className="w-8 h-8 text-purple-500" />
+              <BookOpenIcon className="w-8 h-8 text-purple-500" />
             </div>
           </div>
           <div className="bg-white p-4 rounded-lg shadow border-l-4 border-orange-500">
@@ -274,11 +333,28 @@ const AdminStudyPlans: React.FC = () => {
                 {/* 操作按钮 */}
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => handleViewPlan(plan)}
+                    onClick={() => handleManageContent(plan)}
                     className="flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
                   >
-                    <EyeIcon className="w-4 h-4 mr-1" />
-                    查看
+                    <BookOpenIcon className="w-4 h-4 mr-1" />
+                    管理内容
+                  </button>
+                  <button
+                    onClick={() => handleTogglePlanStatus(plan.id, plan.is_active)}
+                    className={`flex items-center px-3 py-1 rounded-md transition-colors ${
+                      plan.is_active
+                        ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    }`}
+                  >
+                    {plan.is_active ? '暂停' : '激活'}
+                  </button>
+                  <button
+                    onClick={() => handleDeletePlan(plan.id)}
+                    className="flex items-center px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+                  >
+                    <TrashIcon className="w-4 h-4 mr-1" />
+                    删除
                   </button>
                 </div>
               </div>
@@ -355,6 +431,23 @@ const AdminStudyPlans: React.FC = () => {
                   </select>
                 </div>
 
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    难度等级
+                  </label>
+                  <select
+                    value={newPlan.difficulty_level}
+                    onChange={(e) => setNewPlan({ ...newPlan, difficulty_level: parseInt(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value={1}>1 - 很简单</option>
+                    <option value={2}>2 - 简单</option>
+                    <option value={3}>3 - 中等</option>
+                    <option value={4}>4 - 困难</option>
+                    <option value={5}>5 - 很困难</option>
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-3 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -410,6 +503,120 @@ const AdminStudyPlans: React.FC = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 管理学习内容模态框 */}
+      {showManageContentModal && selectedPlan && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-10 mx-auto p-5 border w-5/6 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  管理学习内容 - {selectedPlan.name}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowManageContentModal(false);
+                    setSelectedPlan(null);
+                    setStudyItems([]);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XMarkIcon className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* 可用文章列表 */}
+                <div>
+                  <h4 className="text-md font-medium text-gray-900 mb-3">可添加的文章</h4>
+                  <div className="max-h-96 overflow-y-auto border rounded-lg">
+                    {articles.filter(article =>
+                      !studyItems.some(item => item.article.id === article.id)
+                    ).map((article) => (
+                      <div key={article.id} className="p-3 border-b last:border-b-0 hover:bg-gray-50">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 truncate">
+                              {article.title}
+                            </h5>
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                              {article.excerpt}
+                            </p>
+                            <div className="flex items-center text-xs text-gray-400 mt-2">
+                              <span>阅读时长: {article.reading_time}分钟</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleAddArticleToPlan(article.id)}
+                            className="ml-3 flex items-center px-2 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200 transition-colors"
+                          >
+                            <PlusIcon className="w-3 h-3 mr-1" />
+                            添加
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 已添加的学习项目 */}
+                <div>
+                  <h4 className="text-md font-medium text-gray-900 mb-3">
+                    学习内容 ({studyItems.length}项)
+                  </h4>
+                  <div className="max-h-96 overflow-y-auto border rounded-lg">
+                    {studyItems.map((item) => (
+                      <div key={item.id} className="p-3 border-b last:border-b-0 hover:bg-gray-50">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 truncate">
+                              {item.article.title}
+                            </h5>
+                            <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                item.status === 'mastered' ? 'bg-green-100 text-green-800' :
+                                item.status === 'learning' ? 'bg-blue-100 text-blue-800' :
+                                item.status === 'review' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {item.status === 'new' ? '新项目' :
+                                 item.status === 'learning' ? '学习中' :
+                                 item.status === 'review' ? '复习中' :
+                                 item.status === 'mastered' ? '已掌握' : item.status}
+                              </span>
+                              <span>重要性: {item.importance_level}/5</span>
+                              <span>难度: {item.difficulty_level}/5</span>
+                            </div>
+                            {item.next_review_at && (
+                              <p className="text-xs text-gray-400 mt-1">
+                                下次复习: {new Date(item.next_review_at).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => handleRemoveStudyItem(item.id)}
+                            className="ml-3 flex items-center px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200 transition-colors"
+                          >
+                            <XMarkIcon className="w-3 h-3 mr-1" />
+                            移除
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {studyItems.length === 0 && (
+                      <div className="p-8 text-center text-gray-500">
+                        <BookOpenIcon className="mx-auto h-12 w-12 text-gray-400 mb-2" />
+                        <p>暂无学习内容</p>
+                        <p className="text-sm">从左侧添加文章开始学习</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

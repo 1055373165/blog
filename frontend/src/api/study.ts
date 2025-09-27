@@ -256,6 +256,34 @@ export const studyPlanApi = {
     const { data } = await apiClient.delete(`/api/study/plans/${id}`);
     return data;
   },
+
+  // 添加文章到学习计划
+  addArticleToStudyPlan: async (
+    planId: number,
+    article: AddArticleToStudyPlanRequest
+  ): Promise<{ message: string; study_item: StudyItem }> => {
+    const { data } = await apiClient.post(`/api/study/plans/${planId}/articles`, article);
+    return data;
+  },
+
+  // 获取学习项目列表
+  getStudyItems: async (
+    planId: number,
+    params?: {
+      page?: number;
+      limit?: number;
+      status?: string;
+    }
+  ): Promise<StudyItemListResponse> => {
+    const { data } = await apiClient.get(`/api/study/plans/${planId}/items`, { params });
+    return data;
+  },
+
+  // 移除学习项目
+  removeStudyItem: async (itemId: number): Promise<{ message: string }> => {
+    const { data } = await apiClient.delete(`/api/study/items/${itemId}`);
+    return data;
+  },
 };
 
 // 学习项目管理
