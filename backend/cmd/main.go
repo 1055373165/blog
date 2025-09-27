@@ -12,6 +12,7 @@ import (
 	"blog-backend/internal/database"
 	"blog-backend/internal/handlers"
 	"blog-backend/internal/middleware"
+	"blog-backend/internal/services"
 	"blog-backend/pkg/auth"
 	"blog-backend/pkg/search"
 )
@@ -43,6 +44,10 @@ func main() {
 		log.Printf("搜索引擎初始化失败: %v", err)
 		log.Println("将使用数据库搜索作为备选方案")
 	}
+
+	// 启动学习提醒调度器
+	reminderService := services.NewStudyReminderService(database.DB)
+	reminderService.StartReminderScheduler()
 
 	// 设置Gin模式
 	gin.SetMode(cfg.Server.Mode)
@@ -294,6 +299,20 @@ func main() {
 
 			// 学习分析
 			study.GET("/plans/:id/analytics", studyHandler.GetStudyAnalytics)
+		}
+
+		// 提醒系统路由
+		reminderHandler := handlers.NewReminderHandler(database.DB)
+		reminders := api.Group("/reminders")
+		// 移除认证中间件，管理员功能暂时开放访问
+		{
+			reminders.GET("", reminderHandler.GetReminders)                    // 获取提醒列表
+			reminders.GET("/unread-count", reminderHandler.GetUnreadCount)     // 获取未读数量
+			reminders.GET("/stats", reminderHandler.GetReminderStats)          // 获取统计信息
+			reminders.POST("/:id/read", reminderHandler.MarkAsRead)            // 标记为已读
+			reminders.POST("/:id/complete", reminderHandler.MarkAsCompleted)   // 标记为完成
+			reminders.POST("/batch-read", reminderHandler.BatchMarkAsRead)     // 批量标记为已读
+			reminders.POST("", reminderHandler.CreateManualReminder)           // 创建手动提醒
 		}
 	}
 

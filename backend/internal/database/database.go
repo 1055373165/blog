@@ -90,6 +90,12 @@ func AutoMigrate() error {
 		&models.SearchIndex{},
 		&models.SearchStatistics{},
 		&models.Config{},
+		// 学习系统模型
+		&models.StudyPlan{},
+		&models.StudyItem{},
+		&models.StudyLog{},
+		&models.StudyReminder{},
+		&models.StudyAnalytics{},
 	)
 
 	if err != nil {

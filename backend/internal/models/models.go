@@ -419,11 +419,11 @@ type StudyLog struct {
 type StudyReminder struct {
 	BaseModel
 	StudyItemID uint      `json:"study_item_id" gorm:"not null;index"`
-	ReminderAt  time.Time `json:"reminder_at" gorm:"not null;index"`
-	Status      string    `json:"status" gorm:"default:'pending';size:20"` // pending, sent, completed, skipped, cancelled
+	ReminderAt  time.Time `json:"scheduled_at" gorm:"not null;index"`
+	Status      string    `json:"status" gorm:"default:'pending';size:20"` // pending, read, completed
 
 	// 提醒类型和内容
-	ReminderType string `json:"reminder_type" gorm:"default:'review';size:20"` // review, practice, assessment, goal
+	ReminderType string `json:"type" gorm:"default:'review';size:20"` // review, goal, overdue, achievement, manual
 	Priority     int    `json:"priority" gorm:"default:3;check:priority >= 1 AND priority <= 5"` // 提醒优先级
 	Title        string `json:"title" gorm:"size:255"`
 	Message      string `json:"message" gorm:"type:text"`

@@ -357,6 +357,18 @@ export const studyProgressApi = {
     const { data } = await apiClient.get(`/api/study/plans/${planId}/analytics`, { params });
     return data;
   },
+
+  // 获取学习计划相关的提醒
+  getStudyPlanReminders: async (planId: number): Promise<{reminders: StudyReminder[]}> => {
+    const { data } = await apiClient.get(`/api/study/plans/${planId}/reminders`);
+    return data;
+  },
+
+  // 触发学习项目的提醒生成
+  generateStudyReminders: async (planId: number): Promise<{message: string}> => {
+    const { data } = await apiClient.post(`/api/study/plans/${planId}/generate-reminders`);
+    return data;
+  },
 };
 
 // 导出所有API

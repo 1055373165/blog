@@ -39,6 +39,7 @@ import BlogEditor from './pages/admin/BlogEditor';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminSubmissions from './pages/admin/AdminSubmissions';
 import AdminStudyPlans from './pages/admin/AdminStudyPlans';
+import AdminReminders from './pages/admin/AdminReminders';
 
 // 布局组件
 import Layout from './components/Layout';
@@ -120,6 +121,7 @@ function RouterContent() {
               <Route path="blogs/:id/edit" element={<BlogEditor />} />
               <Route path="submissions" element={<AdminSubmissions />} />
               <Route path="study-plans" element={<AdminStudyPlans />} />
+              <Route path="reminders" element={<AdminReminders />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="tags" element={<AdminTags />} />
               <Route path="series" element={<AdminSeries />} />
