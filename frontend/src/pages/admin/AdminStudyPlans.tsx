@@ -110,6 +110,21 @@ const AdminStudyPlans: React.FC = () => {
     return algorithms.find(alg => alg.value === algorithm)?.label || algorithm;
   };
 
+  const handleViewPlan = (plan: StudyPlan) => {
+    alert(`学习计划详情：
+
+名称：${plan.name}
+描述：${plan.description}
+算法：${getAlgorithmLabel(plan.spacing_algorithm)}
+难度等级：${plan.difficulty_level}
+目标：日${plan.daily_goal}个 / 周${plan.weekly_goal}个 / 月${plan.monthly_goal}个
+进度：${plan.completed_items}/${plan.total_items} (已完成)
+掌握：${plan.mastered_items}/${plan.total_items} (已掌握)
+状态：${plan.is_active ? '激活' : '暂停'}
+创建时间：${new Date(plan.created_at).toLocaleString()}
+创建者：${plan.creator.name}`);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -258,7 +273,10 @@ const AdminStudyPlans: React.FC = () => {
 
                 {/* 操作按钮 */}
                 <div className="flex items-center space-x-2">
-                  <button className="flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors">
+                  <button
+                    onClick={() => handleViewPlan(plan)}
+                    className="flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                  >
                     <EyeIcon className="w-4 h-4 mr-1" />
                     查看
                   </button>
