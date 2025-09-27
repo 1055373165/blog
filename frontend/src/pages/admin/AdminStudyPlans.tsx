@@ -116,9 +116,11 @@ const AdminStudyPlans: React.FC = () => {
     // 获取学习计划的内容
     try {
       const response = await studyPlanApi.getStudyItems(plan.id);
-      setStudyItems(response.items || []);
+      console.log('获取学习内容响应:', response);
+      setStudyItems(response?.items || []);
     } catch (error) {
       console.error('获取学习内容失败:', error);
+      setStudyItems([]);
     }
   };
 
@@ -134,7 +136,7 @@ const AdminStudyPlans: React.FC = () => {
 
       // 刷新学习内容列表
       const response = await studyPlanApi.getStudyItems(selectedPlan.id);
-      setStudyItems(response.items || []);
+      setStudyItems(response?.items || []);
 
       // 刷新学习计划列表以更新统计
       fetchStudyPlans();
@@ -151,7 +153,7 @@ const AdminStudyPlans: React.FC = () => {
       // 刷新学习内容列表
       if (selectedPlan) {
         const response = await studyPlanApi.getStudyItems(selectedPlan.id);
-        setStudyItems(response.items || []);
+        setStudyItems(response?.items || []);
       }
 
       // 刷新学习计划列表以更新统计
@@ -534,8 +536,9 @@ const AdminStudyPlans: React.FC = () => {
                 <div>
                   <h4 className="text-md font-medium text-gray-900 mb-3">可添加的文章</h4>
                   <div className="max-h-96 overflow-y-auto border rounded-lg">
+                    {console.log('调试信息 - articles:', articles.length, 'studyItems:', studyItems.length)}
                     {articles.filter(article =>
-                      !studyItems.some(item => item.article.id === article.id)
+                      !studyItems.some(item => item.article?.id === article.id)
                     ).map((article) => (
                       <div key={article.id} className="p-3 border-b last:border-b-0 hover:bg-gray-50">
                         <div className="flex justify-between items-start">
@@ -560,6 +563,14 @@ const AdminStudyPlans: React.FC = () => {
                         </div>
                       </div>
                     ))}
+                    {articles.filter(article =>
+                      !studyItems.some(item => item.article?.id === article.id)
+                    ).length === 0 && (
+                      <div className="p-8 text-center text-gray-500">
+                        <p>暂无可添加的文章</p>
+                        <p className="text-sm">所有文章都已添加到学习计划中</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
