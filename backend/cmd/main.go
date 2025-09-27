@@ -273,7 +273,7 @@ func main() {
 		// 学习系统路由
 		studyHandler := handlers.NewStudyHandler(database.DB)
 		study := api.Group("/study")
-		study.Use(middleware.AuthRequired()) // 需要登录
+		// 移除认证中间件，管理员功能暂时开放访问
 		{
 			// 学习计划管理
 			study.GET("/plans", studyHandler.GetStudyPlans)
