@@ -311,6 +311,178 @@ type Config struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
+// StudyPlan 学习计划模型
+type StudyPlan struct {
+	BaseModel
+	Name        string `json:"name" gorm:"not null;size:255"`
+	Description string `json:"description" gorm:"type:text"`
+	IsActive    bool   `json:"is_active" gorm:"default:true"`
+
+	// 学习算法配置
+	SpacingAlgorithm string `json:"spacing_algorithm" gorm:"default:'ebbinghaus';size:50"` // ebbinghaus, sm2, anki
+	DifficultyLevel  int    `json:"difficulty_level" gorm:"default:3;check:difficulty_level >= 1 AND difficulty_level <= 5"`
+
+	// 目标设置
+	DailyGoal   int `json:"daily_goal" gorm:"default:5"`   // 每日学习目标数量
+	WeeklyGoal  int `json:"weekly_goal" gorm:"default:30"` // 每周学习目标数量
+	MonthlyGoal int `json:"monthly_goal" gorm:"default:120"` // 每月学习目标数量
+
+	// 统计字段
+	TotalItems     int `json:"total_items" gorm:"default:0"`
+	CompletedItems int `json:"completed_items" gorm:"default:0"`
+	MasteredItems  int `json:"mastered_items" gorm:"default:0"`
+
+	// 外键
+	CreatorID uint `json:"creator_id" gorm:"not null"`
+
+	// 关联关系
+	Creator    User        `json:"creator" gorm:"foreignKey:CreatorID"`
+	StudyItems []StudyItem `json:"study_items,omitempty" gorm:"foreignKey:StudyPlanID"`
+}
+
+// StudyItem 学习项目模型
+type StudyItem struct {
+	BaseModel
+	StudyPlanID uint `json:"study_plan_id" gorm:"not null;index"`
+	ArticleID   uint `json:"article_id" gorm:"not null;index"`
+
+	// 学习状态
+	Status             string  `json:"status" gorm:"default:'new';size:20"` // new, learning, review, mastered, suspended
+	CurrentInterval    int     `json:"current_interval" gorm:"default:1"`   // 当前间隔天数
+	EaseFactor         float64 `json:"ease_factor" gorm:"default:2.5"`      // SM2算法的简易因子
+	ConsecutiveCorrect int     `json:"consecutive_correct" gorm:"default:0"`
+	ConsecutiveFailed  int     `json:"consecutive_failed" gorm:"default:0"`
+
+	// 时间记录
+	NextReviewAt   *time.Time `json:"next_review_at" gorm:"index"`
+	LastReviewedAt *time.Time `json:"last_reviewed_at"`
+	FirstStudiedAt *time.Time `json:"first_studied_at"`
+	MasteredAt     *time.Time `json:"mastered_at"`
+
+	// 学习统计
+	TotalReviews   int     `json:"total_reviews" gorm:"default:0"`
+	TotalStudyTime int     `json:"total_study_time" gorm:"default:0"` // 总学习时间（秒）
+	AverageRating  float64 `json:"average_rating" gorm:"default:0"`   // 平均难度评分
+
+	// 刻意练习数据
+	WeakPoints       string `json:"weak_points" gorm:"type:text"`         // 薄弱知识点
+	StudyNotes       string `json:"study_notes" gorm:"type:text"`         // 学习笔记
+	PersonalRating   int    `json:"personal_rating" gorm:"default:0"`     // 个人掌握度评分 1-10
+	ImportanceLevel  int    `json:"importance_level" gorm:"default:3"`    // 重要程度 1-5
+	DifficultyLevel  int    `json:"difficulty_level" gorm:"default:3"`    // 难度等级 1-5
+
+	// 关联关系
+	StudyPlan StudyPlan  `json:"study_plan" gorm:"foreignKey:StudyPlanID"`
+	Article   Article    `json:"article" gorm:"foreignKey:ArticleID"`
+	StudyLogs []StudyLog `json:"study_logs,omitempty" gorm:"foreignKey:StudyItemID"`
+}
+
+// StudyLog 学习记录模型
+type StudyLog struct {
+	BaseModel
+	StudyItemID uint `json:"study_item_id" gorm:"not null;index"`
+
+	// 本次学习信息
+	ReviewType  string `json:"review_type" gorm:"not null;size:20"` // initial, review, practice, test, summary
+	Rating      int    `json:"rating" gorm:"not null;check:rating >= 1 AND rating <= 5"` // 1-5 难度评级
+	StudyTime   int    `json:"study_time" gorm:"not null"` // 本次学习时间（秒）
+	Completion  bool   `json:"completion" gorm:"default:true"` // 是否完成学习
+
+	// 学习方式和内容
+	StudyMethod    string `json:"study_method" gorm:"size:50"`  // read, quiz, summary, explanation, practice
+	StudyMaterials string `json:"study_materials" gorm:"type:text"` // 学习材料记录
+	Notes          string `json:"notes" gorm:"type:text"`       // 本次学习笔记
+	KeyPoints      string `json:"key_points" gorm:"type:text"`  // 关键知识点
+
+	// 学习效果评估
+	Understanding   int    `json:"understanding" gorm:"default:0;check:understanding >= 0 AND understanding <= 10"`   // 理解程度 0-10
+	Retention      int    `json:"retention" gorm:"default:0;check:retention >= 0 AND retention <= 10"`         // 记忆保持度 0-10
+	Application    int    `json:"application" gorm:"default:0;check:application >= 0 AND application <= 10"`   // 应用能力 0-10
+	Confidence     int    `json:"confidence" gorm:"default:0;check:confidence >= 0 AND confidence <= 10"`      // 信心程度 0-10
+
+	// 间隔重复算法数据
+	PreviousInterval int     `json:"previous_interval"`
+	NewInterval      int     `json:"new_interval"`
+	PreviousEase     float64 `json:"previous_ease"`
+	NewEase          float64 `json:"new_ease"`
+
+	// 环境和设备信息
+	DeviceType  string `json:"device_type" gorm:"size:50"`   // desktop, mobile, tablet
+	Location    string `json:"location" gorm:"size:100"`     // 学习地点
+	TimeOfDay   string `json:"time_of_day" gorm:"size:20"`   // morning, afternoon, evening, night
+
+	// 关联关系
+	StudyItem StudyItem `json:"study_item" gorm:"foreignKey:StudyItemID"`
+}
+
+// StudyReminder 学习提醒模型
+type StudyReminder struct {
+	BaseModel
+	StudyItemID uint      `json:"study_item_id" gorm:"not null;index"`
+	ReminderAt  time.Time `json:"reminder_at" gorm:"not null;index"`
+	Status      string    `json:"status" gorm:"default:'pending';size:20"` // pending, sent, completed, skipped, cancelled
+
+	// 提醒类型和内容
+	ReminderType string `json:"reminder_type" gorm:"default:'review';size:20"` // review, practice, assessment, goal
+	Priority     int    `json:"priority" gorm:"default:3;check:priority >= 1 AND priority <= 5"` // 提醒优先级
+	Title        string `json:"title" gorm:"size:255"`
+	Message      string `json:"message" gorm:"type:text"`
+
+	// 提醒方式
+	NotificationMethod string `json:"notification_method" gorm:"default:'system';size:50"` // system, email, sms, webhook
+	IsRecurring       bool   `json:"is_recurring" gorm:"default:false"`
+	RecurrencePattern string `json:"recurrence_pattern" gorm:"size:100"` // daily, weekly, custom
+
+	// 执行信息
+	SentAt       *time.Time `json:"sent_at"`
+	CompletedAt  *time.Time `json:"completed_at"`
+	SnoozeUntil  *time.Time `json:"snooze_until"`
+	AttemptCount int        `json:"attempt_count" gorm:"default:0"`
+
+	// 关联关系
+	StudyItem StudyItem `json:"study_item" gorm:"foreignKey:StudyItemID"`
+}
+
+// StudyAnalytics 学习分析模型
+type StudyAnalytics struct {
+	BaseModel
+	StudyPlanID uint   `json:"study_plan_id" gorm:"not null;index"`
+	Date        string `json:"date" gorm:"not null;index;size:10"` // YYYY-MM-DD
+	PeriodType  string `json:"period_type" gorm:"not null;size:10"` // daily, weekly, monthly
+
+	// 基础学习统计
+	ItemsReviewed  int     `json:"items_reviewed" gorm:"default:0"`
+	StudyTime      int     `json:"study_time" gorm:"default:0"` // 总学习时间（秒）
+	SessionCount   int     `json:"session_count" gorm:"default:0"` // 学习会话数
+	AverageRating  float64 `json:"average_rating" gorm:"default:0"`
+	CompletionRate float64 `json:"completion_rate" gorm:"default:0"` // 完成率
+
+	// 学习进度统计
+	NewItems      int `json:"new_items" gorm:"default:0"`      // 新学习项目
+	ReviewedItems int `json:"reviewed_items" gorm:"default:0"` // 复习项目
+	MasteredItems int `json:"mastered_items" gorm:"default:0"` // 掌握项目
+	FailedItems   int `json:"failed_items" gorm:"default:0"`   // 失败项目
+
+	// 效率和质量指标
+	EfficiencyScore   float64 `json:"efficiency_score" gorm:"default:0"`   // 学习效率分数
+	RetentionRate     float64 `json:"retention_rate" gorm:"default:0"`     // 知识保持率
+	ProgressVelocity  float64 `json:"progress_velocity" gorm:"default:0"`  // 进步速度
+	ConsistencyScore  float64 `json:"consistency_score" gorm:"default:0"`  // 学习一致性
+
+	// 目标达成情况
+	DailyGoalAchieved   bool    `json:"daily_goal_achieved" gorm:"default:false"`
+	WeeklyGoalProgress  float64 `json:"weekly_goal_progress" gorm:"default:0"`  // 周目标进度百分比
+	MonthlyGoalProgress float64 `json:"monthly_goal_progress" gorm:"default:0"` // 月目标进度百分比
+
+	// 学习模式分析
+	PreferredStudyTime string `json:"preferred_study_time" gorm:"size:20"` // 偏好学习时间
+	AvgSessionDuration int    `json:"avg_session_duration" gorm:"default:0"` // 平均学习时长
+	MostUsedMethod     string `json:"most_used_method" gorm:"size:50"`     // 最常用学习方法
+
+	// 关联关系
+	StudyPlan StudyPlan `json:"study_plan" gorm:"foreignKey:StudyPlanID"`
+}
+
 // 定义表名
 func (User) TableName() string             { return "users" }
 func (Category) TableName() string         { return "categories" }
@@ -328,3 +500,8 @@ func (Submission) TableName() string       { return "submissions" }
 func (SearchIndex) TableName() string      { return "search_indexes" }
 func (SearchStatistics) TableName() string { return "search_statistics" }
 func (Config) TableName() string           { return "configs" }
+func (StudyPlan) TableName() string        { return "study_plans" }
+func (StudyItem) TableName() string        { return "study_items" }
+func (StudyLog) TableName() string         { return "study_logs" }
+func (StudyReminder) TableName() string    { return "study_reminders" }
+func (StudyAnalytics) TableName() string   { return "study_analytics" }
