@@ -116,7 +116,6 @@ const AdminStudyPlans: React.FC = () => {
     // 获取学习计划的内容
     try {
       const response = await studyPlanApi.getStudyItems(plan.id);
-      console.log('获取学习内容响应:', response);
       setStudyItems(response?.items || []);
     } catch (error) {
       console.error('获取学习内容失败:', error);
@@ -536,7 +535,6 @@ const AdminStudyPlans: React.FC = () => {
                 <div>
                   <h4 className="text-md font-medium text-gray-900 mb-3">可添加的文章</h4>
                   <div className="max-h-96 overflow-y-auto border rounded-lg">
-                    {console.log('调试信息 - articles:', articles.length, 'studyItems:', studyItems.length)}
                     {articles.filter(article =>
                       !studyItems.some(item => item.article?.id === article.id)
                     ).map((article) => (
