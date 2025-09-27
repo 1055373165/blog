@@ -78,7 +78,8 @@
       "mcp__ide__getDiagnostics",
       "Bash(sudo nginx:*)",
       "Bash(SHELL=/bin/bash PWD=/Users/smy/projects/blog/backend bash -c \"cd /Users/smy/projects/blog/backend && pwd && ls -la cmd/ && go version\")",
-      "Bash(SHELL=/bin/bash PWD=/Users/smy/projects/blog/backend bash -c \"cd /Users/smy/projects/blog/backend && go run cmd/main.go\")"
+      "Bash(SHELL=/bin/bash PWD=/Users/smy/projects/blog/backend bash -c \"cd /Users/smy/projects/blog/backend && go run cmd/main.go\")",
+      "Bash(../start-dev.sh)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
