@@ -345,8 +345,8 @@ export default function AdminSubmissions() {
                         <EyeIcon className="w-5 h-5" />
                       </Link>
 
-                      {/* 编辑（仅草稿和被拒绝的可编辑） */}
-                      {(submission.status === 'draft' || submission.status === 'rejected') && (
+                      {/* 编辑（管理员可编辑所有非已发布的投稿） */}
+                      {submission.status !== 'published' && (
                         <Link
                           to={`/submissions/${submission.id}/edit`}
                           className="p-2 text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
