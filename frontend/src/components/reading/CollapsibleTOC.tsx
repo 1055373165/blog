@@ -14,7 +14,7 @@ interface CollapsibleTOCProps {
 export default function CollapsibleTOC({
   contentSelector = 'main, .content, article',
   headingSelector = 'h1, h2, h3, h4, h5, h6',
-  maxLevel = 3,
+  maxLevel = 5,
   showNumbers = false,
   autoCollapse = false,
   className

@@ -279,7 +279,7 @@ export default function ArticlePage() {
         tocContent={
           <StripTOC
             contentSelector=".article-content"
-            maxLevel={3}
+            maxLevel={5}
           />
         }
       >
@@ -488,7 +488,7 @@ export default function ArticlePage() {
       <div className="lg:hidden">
         <CollapsibleTOC
           contentSelector=".article-content"
-          maxLevel={3}
+          maxLevel={5}
           autoCollapse={false}
         />
       </div>

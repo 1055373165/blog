@@ -153,39 +153,57 @@ function StripTOCItem({
   // Get hierarchical green styling based on heading level
   const getBorderStyle = () => {
     const styles = {
-      1: { 
-        color: 'border-green-600 dark:border-green-500', 
+      1: {
+        color: 'border-green-600 dark:border-green-500',
         width: 'border-l-4',
         height: 'h-10'
       },
-      2: { 
-        color: 'border-green-500 dark:border-green-400', 
+      2: {
+        color: 'border-green-500 dark:border-green-400',
         width: 'border-l-3',
         height: 'h-8'
       },
-      3: { 
-        color: 'border-green-400 dark:border-green-300', 
+      3: {
+        color: 'border-green-400 dark:border-green-300',
         width: 'border-l-2',
         height: 'h-6'
+      },
+      4: {
+        color: 'border-green-300 dark:border-green-200',
+        width: 'border-l-2',
+        height: 'h-5'
+      },
+      5: {
+        color: 'border-green-200 dark:border-green-100',
+        width: 'border-l-1',
+        height: 'h-4'
       }
     };
-    return styles[item.level as keyof typeof styles] || styles[3];
+    return styles[item.level as keyof typeof styles] || styles[5];
   };
 
   // Get text color hierarchy for expanded items
   const getTextColor = () => {
     if (isActive) {
-      return item.level === 1 
+      return item.level === 1
         ? 'text-gray-900 dark:text-gray-100'
         : item.level === 2
-        ? 'text-gray-800 dark:text-gray-200' 
-        : 'text-gray-700 dark:text-gray-300';
+        ? 'text-gray-800 dark:text-gray-200'
+        : item.level === 3
+        ? 'text-gray-700 dark:text-gray-300'
+        : item.level === 4
+        ? 'text-gray-600 dark:text-gray-400'
+        : 'text-gray-500 dark:text-gray-500';
     }
     return item.level === 1
       ? 'text-gray-700 dark:text-gray-300'
       : item.level === 2
       ? 'text-gray-600 dark:text-gray-400'
-      : 'text-gray-500 dark:text-gray-500';
+      : item.level === 3
+      ? 'text-gray-500 dark:text-gray-500'
+      : item.level === 4
+      ? 'text-gray-400 dark:text-gray-600'
+      : 'text-gray-300 dark:text-gray-700';
   };
 
   const borderStyle = getBorderStyle();
@@ -208,11 +226,12 @@ function StripTOCItem({
         className={clsx(
           'block py-3 px-4 text-sm transition-all duration-200',
           'hover:bg-gray-50/50 dark:hover:bg-gray-800/30',
-          // Progressive indentation: H1=1rem, H2=2rem, H3=3rem, H4+=4rem
+          // Progressive indentation: H1=1rem, H2=2rem, H3=3rem, H4=4rem, H5+=5rem
           item.level === 1 && 'pl-4',
           item.level === 2 && 'pl-8',
           item.level === 3 && 'pl-12',
-          item.level >= 4 && 'pl-16',
+          item.level === 4 && 'pl-16',
+          item.level >= 5 && 'pl-20',
           // Hierarchical text colors
           getTextColor(),
           // Background for active state
@@ -220,7 +239,8 @@ function StripTOCItem({
           // Font size and weight based on level
           item.level === 1 && 'text-base font-semibold',
           item.level === 2 && 'font-medium',
-          item.level >= 4 && 'text-xs'
+          item.level === 4 && 'text-xs',
+          item.level >= 5 && 'text-xs opacity-75'
         )}
         aria-current={isActive ? 'true' : undefined}
       >
@@ -246,7 +266,7 @@ function StripTOCItem({
 export default function StripTOC({
   contentSelector,
   headingSelector,
-  maxLevel = 3,
+  maxLevel = 5,
   className,
   onActiveChange
 }: StripTOCProps) {

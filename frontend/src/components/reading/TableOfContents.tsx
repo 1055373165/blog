@@ -242,10 +242,11 @@ function TocItemComponent({
       <div 
         className={clsx(
           'flex items-center group transition-colors duration-200',
-          // Progressive indentation: H1=0, H2=1rem, H3=2rem, H4+=2.5rem
+          // Progressive indentation: H1=0, H2=1rem, H3=2rem, H4=2.5rem, H5+=3rem
           level === 2 && 'ml-4',
-          level === 3 && 'ml-8', 
-          level >= 4 && 'ml-10'
+          level === 3 && 'ml-8',
+          level === 4 && 'ml-10',
+          level >= 5 && 'ml-12'
         )}
       >
         {/* 展开/折叠按钮 */}
@@ -282,7 +283,8 @@ function TocItemComponent({
               ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 font-medium'
               : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
             level === 1 && 'font-medium',
-            level >= 4 && 'text-xs'
+            level === 4 && 'text-xs',
+            level >= 5 && 'text-xs opacity-80'
           )}
           aria-current={isActive ? 'true' : undefined}
         >
@@ -324,7 +326,7 @@ export default function TableOfContents({
   contentSelector,
   headingSelector,
   className,
-  maxLevel = 3,
+  maxLevel = 5,
   isCollapsible = true,
   showNumbers = false,
   position = 'sticky',
