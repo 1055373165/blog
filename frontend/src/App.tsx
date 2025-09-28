@@ -17,6 +17,7 @@ import TagPage from './pages/TagPage';
 import SeriesPage from './pages/SeriesPage';
 import SeriesDetailPage from './pages/SeriesDetailPage';
 import QuotesPage from './pages/QuotesPage';
+import QuoteDetailPage from './pages/QuoteDetailPage';
 import SearchPage from './pages/SearchPage';
 import ArticlePreviewPage from './pages/ArticlePreviewPage';
 import ProfilePage from './pages/ProfilePage';
@@ -98,6 +99,7 @@ function RouterContent() {
               <Route path="series" element={<SeriesPage />} />
               <Route path="series/:slug" element={<SeriesDetailPage />} />
               <Route path="quotes" element={<QuotesPage />} />
+              <Route path="quotes/:id" element={<QuoteDetailPage />} />
               <Route path="search" element={<SearchPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="submissions" element={<SubmissionsPage />} />
