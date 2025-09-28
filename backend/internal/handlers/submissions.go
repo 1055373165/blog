@@ -299,8 +299,9 @@ func UpdateSubmission(c *gin.Context) {
 		return
 	}
 
-	// 检查权限：只有作者本人可以更新
-	if submission.AuthorID != userID {
+	// 检查权限：作者本人或管理员可以更新
+	isAdmin, _ := middleware.GetCurrentUserIsAdmin(c)
+	if submission.AuthorID != userID && !isAdmin {
 		c.JSON(http.StatusForbidden, gin.H{
 			"success": false,
 			"error":   "无权修改该投稿",
