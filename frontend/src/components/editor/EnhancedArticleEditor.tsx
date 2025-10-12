@@ -24,8 +24,6 @@ interface EnhancedArticleEditorProps {
   onChange: (content: string) => void;
   placeholder?: string;
   height?: number;
-  onAutoSave?: (content: string) => Promise<void>;
-  autoSaveInterval?: number; // in milliseconds
   className?: string;
 }
 
@@ -34,8 +32,6 @@ export default function EnhancedArticleEditor({
   onChange,
   placeholder = '开始编写你的文章...',
   height = 500,
-  onAutoSave,
-  autoSaveInterval = 10000, // 10 seconds default
   className = '',
 }: EnhancedArticleEditorProps) {
   
@@ -96,12 +92,8 @@ export default function EnhancedArticleEditor({
   }, []);
   const [mode, setMode] = useState<'rich' | 'markdown' | 'preview'>('rich');
   const [markdownContent, setMarkdownContent] = useState('');
-  const [isAutoSaving, setIsAutoSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showMediaUploader, setShowMediaUploader] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastContentRef = useRef(value);
 
   // Initialize Tiptap editor
   const editor = useEditor({
@@ -158,24 +150,9 @@ export default function EnhancedArticleEditor({
     onUpdate: ({ editor }) => {
       const content = editor.getHTML();
       onChange(content);
-      
+
       // Update markdown content for preview mode
       setMarkdownContent(convertHtmlToMarkdown(content));
-      
-      // Auto-save logic
-      if (onAutoSave && content !== lastContentRef.current) {
-        lastContentRef.current = content;
-        
-        // Clear existing timeout
-        if (autoSaveTimeoutRef.current) {
-          clearTimeout(autoSaveTimeoutRef.current);
-        }
-        
-        // Set new timeout
-        autoSaveTimeoutRef.current = setTimeout(() => {
-          handleAutoSave(content);
-        }, autoSaveInterval);
-      }
     },
     editorProps: {
       attributes: {
@@ -184,21 +161,6 @@ export default function EnhancedArticleEditor({
       },
     },
   });
-
-  // Auto-save handler
-  const handleAutoSave = useCallback(async (content: string) => {
-    if (!onAutoSave) return;
-    
-    try {
-      setIsAutoSaving(true);
-      await onAutoSave(content);
-      setLastSaved(new Date());
-    } catch (error) {
-      console.error('Auto-save failed:', error);
-    } finally {
-      setIsAutoSaving(false);
-    }
-  }, [onAutoSave]);
 
   // Convert HTML to Markdown (improved)
   const convertHtmlToMarkdown = useCallback((html: string): string => {
@@ -479,21 +441,18 @@ export default function EnhancedArticleEditor({
     event.preventDefault();
   }, []);
 
-  // Cleanup auto-save timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
-  }, []);
-
   // Update editor content when value changes externally
+  // Only update if the editor is empty or value is significantly different
   useEffect(() => {
-    if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value);
-      // Update markdown content when value changes
-      setMarkdownContent(convertHtmlToMarkdown(value));
+    if (editor) {
+      const currentContent = editor.getHTML();
+      // Only update if editor is empty or if this is initial load
+      if (!currentContent || currentContent === '<p></p>') {
+        if (value && value !== currentContent) {
+          editor.commands.setContent(value);
+          setMarkdownContent(convertHtmlToMarkdown(value));
+        }
+      }
     }
   }, [value, editor, convertHtmlToMarkdown]);
 
@@ -592,18 +551,6 @@ export default function EnhancedArticleEditor({
               <span>📎</span>
               <span>支持 Ctrl+V 粘贴 / 拖拽图片</span>
             </div>
-            {isAutoSaving && (
-              <div className="flex items-center space-x-1 text-blue-500">
-                <div className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <span>自动保存中...</span>
-              </div>
-            )}
-            {lastSaved && !isAutoSaving && (
-              <div className="flex items-center space-x-1 text-green-500">
-                <span>✓</span>
-                <span>已保存 {lastSaved.toLocaleTimeString()}</span>
-              </div>
-            )}
           </div>
         </div>
 
