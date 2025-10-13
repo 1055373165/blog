@@ -530,6 +530,14 @@ func UpdateArticle(c *gin.Context) {
 		updates["meta_keywords"] = *req.MetaKeywords
 	}
 
+	// 如果管理员传入了作者显示名，则更新该文章的作者显示名（不影响其他文章）
+	if req.AuthorDisplayName != nil {
+		trimmed := strings.TrimSpace(*req.AuthorDisplayName)
+		if isAdmin {
+			updates["author_display_name"] = trimmed
+		}
+	}
+
 	// 开始事务
 	tx := database.DB.Begin()
 
@@ -543,14 +551,6 @@ func UpdateArticle(c *gin.Context) {
 				"error":   "更新文章失败",
 			})
 			return
-		}
-	}
-
-	// 如果管理员传入了作者显示名，则更新该文章的作者显示名（不影响其他文章）
-	if req.AuthorDisplayName != nil {
-		trimmed := strings.TrimSpace(*req.AuthorDisplayName)
-		if isAdmin {
-			updates["author_display_name"] = trimmed
 		}
 	}
 
