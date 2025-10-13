@@ -23,7 +23,7 @@ export default function ArticleEditor() {
     content: '',
     excerpt: '',
     cover_image: '',
-    category_ids: [],
+    category_id: undefined,
     tag_ids: [],
     series_id: undefined,
     series_order: undefined,
@@ -31,7 +31,7 @@ export default function ArticleEditor() {
     meta_title: '',
     meta_description: '',
     meta_keywords: '',
-    author_name: '',
+    author_display_name: '',
   });
   // Note: Using ByteMD as the single editor solution
 
@@ -125,7 +125,7 @@ export default function ArticleEditor() {
           content: article.content,
           excerpt: article.excerpt,
           cover_image: article.cover_image || '',
-          category_ids: (article.categories || []).map(cat => cat.id),
+          category_id: article.categories?.[0]?.id,
           tag_ids: (article.tags || []).map(tag => tag.id),
           series_id: article.series_id,
           series_order: article.series_order,
@@ -133,7 +133,7 @@ export default function ArticleEditor() {
           meta_title: article.meta_title || '',
           meta_description: article.meta_description || '',
           meta_keywords: article.meta_keywords || '',
-          author_name: article.author?.name || '',
+          author_display_name: article.author_display_name || article.author?.name || '',
         });
         setSelectedTags((article.tags || []).map(tag => tag.id.toString()));
       } else {
@@ -382,7 +382,7 @@ export default function ArticleEditor() {
       issues.push('建议添加文章摘要');
     }
     
-    if (!formData.category_ids || formData.category_ids.length === 0) {
+    if (!formData.category_id) {
       issues.push('建议选择文章分类');
     }
     
@@ -640,22 +640,29 @@ export default function ArticleEditor() {
                   {/* Categories */}
                   <div className="card p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                      文章分类
+                      文章分类（单选）
                     </h3>
                     <div className="space-y-3 max-h-64 overflow-y-auto">
+                      <label className="flex items-center group cursor-pointer">
+                        <input
+                          type="radio"
+                          name="category"
+                          checked={!formData.category_id}
+                          onChange={() => handleInputChange('category_id', undefined)}
+                          className="rounded-full border-gray-300 dark:border-gray-600 text-go-600 focus:ring-go-500 dark:bg-gray-700"
+                        />
+                        <span className="ml-3 text-sm text-gray-700 dark:text-gray-300 group-hover:text-go-600 dark:group-hover:text-go-400 transition-colors">
+                          无分类
+                        </span>
+                      </label>
                       {(categories || []).map((category) => (
                         <label key={category.id} className="flex items-center group cursor-pointer">
                           <input
-                            type="checkbox"
-                            checked={(formData.category_ids || []).includes(category.id)}
-                            onChange={() => {
-                              const currentCategoryIds = formData.category_ids || [];
-                              const newCategoryIds = currentCategoryIds.includes(category.id)
-                                ? currentCategoryIds.filter(id => id !== category.id)
-                                : [...currentCategoryIds, category.id];
-                              handleInputChange('category_ids', newCategoryIds);
-                            }}
-                            className="rounded border-gray-300 dark:border-gray-600 text-go-600 focus:ring-go-500 dark:bg-gray-700"
+                            type="radio"
+                            name="category"
+                            checked={formData.category_id === category.id}
+                            onChange={() => handleInputChange('category_id', category.id)}
+                            className="rounded-full border-gray-300 dark:border-gray-600 text-go-600 focus:ring-go-500 dark:bg-gray-700"
                           />
                           <span className="ml-3 text-sm text-gray-700 dark:text-gray-300 group-hover:text-go-600 dark:group-hover:text-go-400 transition-colors">
                             {category.name}
@@ -706,13 +713,13 @@ export default function ArticleEditor() {
                     </label>
                     <input
                       type="text"
-                      value={formData.author_name || ''}
-                      onChange={(e) => handleInputChange('author_name', e.target.value)}
+                      value={formData.author_display_name || ''}
+                      onChange={(e) => handleInputChange('author_display_name', e.target.value)}
                       placeholder="例如：管理员、张三..."
                       className="input"
                     />
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      修改此项将更新该文章作者用户的名称，并用于前台展示。
+                      修改此项仅影响当前文章的作者显示名，不会影响其他文章。
                     </p>
                   </div>
 

@@ -17,35 +17,36 @@ import (
 
 // CreateArticleRequest 创建文章请求结构
 type CreateArticleRequest struct {
-	Title           string  `json:"title" binding:"required"`
-	Content         string  `json:"content" binding:"required"`
-	Excerpt         *string `json:"excerpt"`
-	CoverImage      string  `json:"cover_image"`
-	CategoryID      *uint   `json:"category_id"`
-	TagIDs          []uint  `json:"tag_ids"`
-	SeriesID        *uint   `json:"series_id"`
-	SeriesOrder     *int    `json:"series_order"`
-	IsPublished     bool    `json:"is_published"`
-	MetaTitle       string  `json:"meta_title"`
-	MetaDescription string  `json:"meta_description"`
-	MetaKeywords    string  `json:"meta_keywords"`
+	Title             string  `json:"title" binding:"required"`
+	Content           string  `json:"content" binding:"required"`
+	Excerpt           *string `json:"excerpt"`
+	CoverImage        string  `json:"cover_image"`
+	CategoryID        *uint   `json:"category_id"`
+	TagIDs            []uint  `json:"tag_ids"`
+	SeriesID          *uint   `json:"series_id"`
+	SeriesOrder       *int    `json:"series_order"`
+	IsPublished       bool    `json:"is_published"`
+	AuthorDisplayName string  `json:"author_display_name"` // 每篇文章独立的作者显示名
+	MetaTitle         string  `json:"meta_title"`
+	MetaDescription   string  `json:"meta_description"`
+	MetaKeywords      string  `json:"meta_keywords"`
 }
 
 // UpdateArticleRequest 更新文章请求结构
 type UpdateArticleRequest struct {
-	Title           *string `json:"title"`
-	Content         *string `json:"content"`
-	Excerpt         *string `json:"excerpt"`
-	CoverImage      *string `json:"cover_image"`
-	CategoryID      *uint   `json:"category_id"`
-	TagIDs          []uint  `json:"tag_ids"`
-	SeriesID        *uint   `json:"series_id"`
-	SeriesOrder     *int    `json:"series_order"`
-	IsPublished     *bool   `json:"is_published"`
-	MetaTitle       *string `json:"meta_title"`
-	MetaDescription *string `json:"meta_description"`
-	MetaKeywords    *string `json:"meta_keywords"`
-	AuthorName     *string `json:"author_name"`
+	Title             *string `json:"title"`
+	Content           *string `json:"content"`
+	Excerpt           *string `json:"excerpt"`
+	CoverImage        *string `json:"cover_image"`
+	CategoryID        *uint   `json:"category_id"`
+	TagIDs            []uint  `json:"tag_ids"`
+	SeriesID          *uint   `json:"series_id"`
+	SeriesOrder       *int    `json:"series_order"`
+	IsPublished       *bool   `json:"is_published"`
+	AuthorDisplayName *string `json:"author_display_name"` // 每篇文章独立的作者显示名（替代原来的author_name）
+	MetaTitle         *string `json:"meta_title"`
+	MetaDescription   *string `json:"meta_description"`
+	MetaKeywords      *string `json:"meta_keywords"`
 }
 
 // GetArticles 获取文章列表
@@ -319,21 +320,22 @@ func CreateArticle(c *gin.Context) {
 
 	// 创建文章
 	article := models.Article{
-		AuthorID:        authorID,
-		Title:           req.Title,
-		Slug:            slug,
-		Content:         req.Content,
-		Excerpt:         excerpt,
-		CoverImage:      req.CoverImage,
-		CategoryID:      req.CategoryID,
-		SeriesID:        req.SeriesID,
-		SeriesOrder:     req.SeriesOrder,
-		IsPublished:     req.IsPublished,
-		IsDraft:         !req.IsPublished,
-		ReadingTime:     readingTime,
-		MetaTitle:       req.MetaTitle,
-		MetaDescription: req.MetaDescription,
-		MetaKeywords:    req.MetaKeywords,
+		AuthorID:          authorID,
+		Title:             req.Title,
+		Slug:              slug,
+		Content:           req.Content,
+		Excerpt:           excerpt,
+		CoverImage:        req.CoverImage,
+		CategoryID:        req.CategoryID,
+		SeriesID:          req.SeriesID,
+		SeriesOrder:       req.SeriesOrder,
+		IsPublished:       req.IsPublished,
+		IsDraft:           !req.IsPublished,
+		ReadingTime:       readingTime,
+		AuthorDisplayName: req.AuthorDisplayName,
+		MetaTitle:         req.MetaTitle,
+		MetaDescription:   req.MetaDescription,
+		MetaKeywords:      req.MetaKeywords,
 	}
 
 	// 如果是发布状态，设置发布时间
@@ -544,18 +546,11 @@ func UpdateArticle(c *gin.Context) {
 		}
 	}
 
-	// 如果管理员传入了作者显示名，则更新对应用户的名称
-	if req.AuthorName != nil {
-		trimmed := strings.TrimSpace(*req.AuthorName)
-		if trimmed != "" && isAdmin {
-			if err := tx.Model(&models.User{}).Where("id = ?", article.AuthorID).Update("name", trimmed).Error; err != nil {
-				tx.Rollback()
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"success": false,
-					"error":   "更新作者信息失败",
-				})
-				return
-			}
+	// 如果管理员传入了作者显示名，则更新该文章的作者显示名（不影响其他文章）
+	if req.AuthorDisplayName != nil {
+		trimmed := strings.TrimSpace(*req.AuthorDisplayName)
+		if isAdmin {
+			updates["author_display_name"] = trimmed
 		}
 	}
 

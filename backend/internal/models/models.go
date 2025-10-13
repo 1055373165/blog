@@ -163,11 +163,12 @@ type Article struct {
 	LikesCount  int        `json:"likes_count" gorm:"default:0"`
 
 	// 外键
-	AuthorID     uint  `json:"author_id" gorm:"not null"`
-	CategoryID   *uint `json:"category_id"`
-	SeriesID     *uint `json:"series_id"`
-	SeriesOrder  *int  `json:"series_order"`
-	SubmissionID *uint `json:"submission_id"` // 关联的投稿ID（如果是从投稿发布的）
+	AuthorID          uint   `json:"author_id" gorm:"not null"`
+	AuthorDisplayName string `json:"author_display_name" gorm:"size:100"` // 每篇文章独立的作者显示名
+	CategoryID        *uint  `json:"category_id"`
+	SeriesID          *uint  `json:"series_id"`
+	SeriesOrder       *int   `json:"series_order"`
+	SubmissionID      *uint  `json:"submission_id"` // 关联的投稿ID（如果是从投稿发布的）
 
 	// SEO字段
 	MetaTitle       string `json:"meta_title"`

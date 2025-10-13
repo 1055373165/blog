@@ -128,6 +128,7 @@ export interface Article {
   // 关联数据
   author: User;
   author_id: number;
+  author_display_name?: string; // 每篇文章独立的作者显示名
   categories?: Category[];
   tags: Tag[];
   series_id?: number;
@@ -149,7 +150,7 @@ export interface CreateArticleInput {
   content: string;
   excerpt?: string;
   cover_image?: string;
-  category_ids?: number[];
+  category_id?: number; // 文章只能属于一个分类
   tag_ids?: number[];
   series_id?: number;
   series_order?: number;
@@ -157,8 +158,8 @@ export interface CreateArticleInput {
   meta_title?: string;
   meta_description?: string;
   meta_keywords?: string;
-  // 新增：可选作者显示名，供后台编辑时更新作者信息
-  author_name?: string;
+  // 每篇文章独立的作者显示名，不影响其他文章
+  author_display_name?: string;
 }
 
 export interface UpdateArticleInput extends Partial<CreateArticleInput> {
