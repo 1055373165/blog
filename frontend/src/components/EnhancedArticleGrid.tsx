@@ -208,11 +208,13 @@ const EnhancedArticleCard = ({
               {article.author && (
                 <div className="flex items-center space-x-2">
                   <img
-                    src={getAvatarUrl(article.author.avatar, article.author.name, 32)}
-                    alt={article.author.name}
+                    src={getAvatarUrl(article.author.avatar, article.author_display_name || article.author.name, 32)}
+                    alt={article.author_display_name || article.author.name}
                     className="w-8 h-8 rounded-full"
                   />
-                  <span className="font-medium text-gray-700 dark:text-gray-300">{article.author.name}</span>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">
+                    {article.author_display_name || article.author.name}
+                  </span>
                 </div>
               )}
               <time
@@ -352,8 +354,8 @@ const EnhancedArticleCard = ({
             <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
               {article.author && (
                 <div className="flex items-center space-x-2">
-                  <img src={getAvatarUrl(article.author.avatar, article.author.name, 24)} alt={article.author.name} className="w-6 h-6 rounded-full" />
-                  <span className="font-medium text-gray-700 dark:text-gray-300">{article.author.name}</span>
+                  <img src={getAvatarUrl(article.author.avatar, article.author_display_name || article.author.name, 24)} alt={article.author_display_name || article.author.name} className="w-6 h-6 rounded-full" />
+                  <span className="font-medium text-gray-700 dark:text-gray-300">{article.author_display_name || article.author.name}</span>
                 </div>
               )}
               <time dateTime={article.published_at || article.created_at}>

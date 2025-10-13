@@ -191,6 +191,7 @@ export default function ArticlePage() {
       series: article.series,
       tags: article.tags,
       author: article.author,
+      author_display_name: article.author_display_name,
       publishedAt: article.published_at || article.created_at,
       excerpt: article.excerpt
     };
@@ -346,11 +347,11 @@ export default function ArticlePage() {
             {/* Author - 使用缓存的数据 */}
             <div className="flex items-center">
               <div className="w-12 h-12 bg-gradient-to-br from-go-500 to-go-600 text-white rounded-xl flex items-center justify-center font-semibold text-lg shadow-soft">
-                {memoizedContent?.author.name.charAt(0).toUpperCase()}
+                {(memoizedContent?.author_display_name || memoizedContent?.author.name)?.charAt(0).toUpperCase()}
               </div>
               <div className="ml-4">
                 <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {memoizedContent?.author.name}
+                  {memoizedContent?.author_display_name || memoizedContent?.author.name}
                 </div>
                 <div className="text-xs text-go-600 dark:text-go-400 font-medium">
                   作者
