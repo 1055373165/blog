@@ -121,10 +121,7 @@ function ByteMDEditor({
   const [isHugeDocument, setIsHugeDocument] = useState(false)
   const [actualPerformanceMode, setActualPerformanceMode] = useState<'standard' | 'high'>('standard')
   
-  // 防抖和批处理相关
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const pendingValueRef = useRef<string>(value)
-  const lastUpdateTimeRef = useRef(Date.now())
+  // 编辑器引用
   const editorRef = useRef<CodeMirrorEditor | null>(null)
   
   // 动态性能检测
@@ -144,46 +141,11 @@ function ByteMDEditor({
     }
   }, [value, performanceMode])
   
-  // 智能防抖处理
-  const debouncedOnChange = useCallback((newValue: string) => {
-    pendingValueRef.current = newValue
-    
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current)
-    }
-    
-    const debounceTime = isHugeDocument 
-      ? PERFORMANCE_CONFIG.DEBOUNCE_TIMES.huge
-      : isLargeDocument 
-        ? PERFORMANCE_CONFIG.DEBOUNCE_TIMES.large
-        : PERFORMANCE_CONFIG.DEBOUNCE_TIMES.standard
-    
-    debounceTimerRef.current = setTimeout(() => {
-      const now = Date.now()
-      const timeSinceLastUpdate = now - lastUpdateTimeRef.current
-      
-      // 节流：确保更新间隔不少于 UPDATE_INTERVAL
-      if (timeSinceLastUpdate >= PERFORMANCE_CONFIG.UPDATE_INTERVAL) {
-        onChange(pendingValueRef.current)
-        lastUpdateTimeRef.current = now
-      } else {
-        // 延迟到合适的时间点
-        setTimeout(() => {
-          onChange(pendingValueRef.current)
-          lastUpdateTimeRef.current = Date.now()
-        }, PERFORMANCE_CONFIG.UPDATE_INTERVAL - timeSinceLastUpdate)
-      }
-    }, debounceTime)
-  }, [onChange, isLargeDocument, isHugeDocument])
+  // 直接onChange处理 - 移除自动防抖以避免光标跳动
+  const handleChange = useCallback((newValue: string) => {
+    onChange(newValue)
+  }, [onChange])
   
-  // 清理防抖定时器
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current)
-      }
-    }
-  }, [])
   
   // 缓存插件配置
   const plugins = useMemo(() => getPlugins(), [])
@@ -515,7 +477,7 @@ function ByteMDEditor({
       <Editor
         value={value || ''}
         plugins={plugins}
-        onChange={debouncedOnChange}
+        onChange={handleChange}
         placeholder={placeholder}
         mode="split"
         previewDebounce={previewDebounce}
