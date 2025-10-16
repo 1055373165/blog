@@ -11,8 +11,17 @@ export default function QuoteDetailPage() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [quotesWithLikes, setQuotesWithLikes] = useState<Quote[]>([]);
 
   useEffect(() => {
+    // 初始化所有quotes的点赞状态
+    const quotesWithInitialLikes = quotesData.map(q => ({
+      ...q,
+      isLiked: q.isLiked ?? false,
+      likesCount: q.likesCount ?? 0
+    }));
+    setQuotesWithLikes(quotesWithInitialLikes);
+
     if (!id) {
       setError('箴言ID不能为空');
       setLoading(false);
@@ -20,8 +29,8 @@ export default function QuoteDetailPage() {
     }
 
     try {
-      // 从静态数据中查找对应的箴言
-      const foundQuote = quotesData.find(q => q.id === id);
+      // 从初始化后的数据中查找对应的箴言
+      const foundQuote = quotesWithInitialLikes.find(q => q.id === id);
 
       if (!foundQuote) {
         setError('找不到对应的箴言');
@@ -44,6 +53,39 @@ export default function QuoteDetailPage() {
 
   const handleNavigateToQuote = (newQuote: Quote) => {
     navigate(`/quotes/${newQuote.id}`);
+  };
+
+  const handleLike = (quoteId: string, isLiked: boolean) => {
+    setQuotesWithLikes(prevQuotes => 
+      prevQuotes.map(q => {
+        if (q.id === quoteId) {
+          const newLikesCount = isLiked 
+            ? (q.likesCount ?? 0) + 1 
+            : Math.max((q.likesCount ?? 0) - 1, 0);
+          return {
+            ...q,
+            isLiked,
+            likesCount: newLikesCount
+          };
+        }
+        return q;
+      })
+    );
+    
+    // 更新当前quote以便Modal显示最新状态
+    setQuote(prevQuote => {
+      if (prevQuote && prevQuote.id === quoteId) {
+        const newLikesCount = isLiked 
+          ? (prevQuote.likesCount ?? 0) + 1 
+          : Math.max((prevQuote.likesCount ?? 0) - 1, 0);
+        return {
+          ...prevQuote,
+          isLiked,
+          likesCount: newLikesCount
+        };
+      }
+      return prevQuote;
+    });
   };
 
   if (loading) {
@@ -86,7 +128,8 @@ export default function QuoteDetailPage() {
           quote={quote}
           isOpen={true}
           onClose={handleClose}
-          quotes={quotesData}
+          onLike={handleLike}
+          quotes={quotesWithLikes}
           onNavigateToQuote={handleNavigateToQuote}
         />
       </QuoteErrorBoundary>

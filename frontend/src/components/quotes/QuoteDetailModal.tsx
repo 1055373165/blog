@@ -9,8 +9,6 @@ interface QuoteDetailModalProps {
   onClose: () => void;
   onLike?: (quoteId: string, isLiked: boolean) => void;
   onShare?: (quote: Quote) => void;
-  likesCount?: number;
-  isLiked?: boolean;
   // 新增导航支持
   quotes?: Quote[];
   onNavigateToQuote?: (quote: Quote) => void;
@@ -21,16 +19,12 @@ export default function QuoteDetailModal({
   isOpen, 
   onClose, 
   onLike, 
-  onShare, 
-  likesCount = 0, 
-  isLiked = false,
+  onShare,
   quotes = [],
   onNavigateToQuote
 }: QuoteDetailModalProps) {
   // 移除动画相关状态
   const [showContent, setShowContent] = useState(true);
-  const [localLikesCount, setLocalLikesCount] = useState(likesCount);
-  const [localIsLiked, setLocalIsLiked] = useState(isLiked);
   const [isLiking, setIsLiking] = useState(false);
   const [showShareTooltip, setShowShareTooltip] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -42,11 +36,9 @@ export default function QuoteDetailModal({
   // 使用滚动锁定Hook来保持滚动位置
   useScrollLock(isOpen);
 
-  // 同步props到本地状态
-  useEffect(() => {
-    setLocalLikesCount(likesCount);
-    setLocalIsLiked(isLiked);
-  }, [likesCount, isLiked]);
+  // 从quote对象读取点赞状态
+  const localIsLiked = quote?.isLiked ?? false;
+  const localLikesCount = quote?.likesCount ?? 0;
 
   // 直接显示内容，无动画延迟
   useEffect(() => {
@@ -59,23 +51,15 @@ export default function QuoteDetailModal({
     
     setIsLiking(true);
     const newIsLiked = !localIsLiked;
-    const newCount = newIsLiked ? localLikesCount + 1 : localLikesCount - 1;
-    
-    // 乐观更新UI
-    setLocalIsLiked(newIsLiked);
-    setLocalLikesCount(newCount);
     
     try {
       await onLike?.(quote.id, newIsLiked);
     } catch (error) {
-      // 如果失败，回滚状态
-      setLocalIsLiked(!newIsLiked);
-      setLocalLikesCount(localLikesCount);
       console.error('点赞失败:', error);
     } finally {
       setIsLiking(false);
     }
-  }, [quote, localIsLiked, localLikesCount, isLiking, onLike]);
+  }, [quote, localIsLiked, isLiking, onLike]);
 
   // 优化分享功能 - 直接复制链接
   const handleShare = useCallback(async () => {

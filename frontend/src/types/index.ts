@@ -361,6 +361,9 @@ export interface Quote {
   createdAt: string;
   // 新增中文解释字段
   chineseExplanation?: string;
+  // 点赞相关字段 - 每个箴言独立的状态
+  isLiked?: boolean;
+  likesCount?: number;
 }
 
 export interface QuoteFilters {

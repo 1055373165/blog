@@ -9,6 +9,7 @@ import { QuoteErrorBoundary } from '../components/ErrorBoundary';
 export default function QuotesPage() {
   const [filters, setFilters] = useState<QuoteFilters>({});
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
+  const [quotesWithLikes, setQuotesWithLikes] = useState<Quote[]>([]);
   
   // 暂时禁用性能监控，避免性能开销
   // const performanceMetrics = process.env.NODE_ENV === 'development' 
@@ -18,6 +19,16 @@ export default function QuotesPage() {
   
   // 直接使用过滤器，不使用防抖
   const { quotes, loading, error, refetch, retryCount } = useQuotes(filters);
+  
+  // 初始化点赞状态
+  React.useEffect(() => {
+    const quotesWithInitialLikes = quotes.map(quote => ({
+      ...quote,
+      isLiked: quote.isLiked ?? false,
+      likesCount: quote.likesCount ?? 0
+    }));
+    setQuotesWithLikes(quotesWithInitialLikes);
+  }, [quotes]);
   
   // 智能视图模式选择 - 暂时禁用以避免额外的重新渲染
   // const optimalViewMode = useOptimalViewMode(quotes, viewMode, userViewModePreference);
@@ -32,6 +43,40 @@ export default function QuotesPage() {
     setSelectedQuote(quote);
   }, []);
   
+  // 处理点赞功能
+  const handleLike = useCallback((quoteId: string, isLiked: boolean) => {
+    setQuotesWithLikes(prevQuotes => 
+      prevQuotes.map(quote => {
+        if (quote.id === quoteId) {
+          const newLikesCount = isLiked 
+            ? (quote.likesCount ?? 0) + 1 
+            : Math.max((quote.likesCount ?? 0) - 1, 0);
+          return {
+            ...quote,
+            isLiked,
+            likesCount: newLikesCount
+          };
+        }
+        return quote;
+      })
+    );
+    
+    // 更新selectedQuote以便Modal显示最新状态
+    setSelectedQuote(prevSelected => {
+      if (prevSelected && prevSelected.id === quoteId) {
+        const newLikesCount = isLiked 
+          ? (prevSelected.likesCount ?? 0) + 1 
+          : Math.max((prevSelected.likesCount ?? 0) - 1, 0);
+        return {
+          ...prevSelected,
+          isLiked,
+          likesCount: newLikesCount
+        };
+      }
+      return prevSelected;
+    });
+  }, []);
+  
   // 移除键盘导航功能以避免与用户登录功能冲突
   const focusedQuoteId = null;
   const announcementText = '';
@@ -44,7 +89,7 @@ export default function QuotesPage() {
 
   // 优化的统计信息计算 - 使用更高效的算法
   const { authorsCount, categoriesCount, availableCategories, availableTags } = useMemo(() => {
-    if (quotes.length === 0) {
+    if (quotesWithLikes.length === 0) {
       return {
         authorsCount: 0,
         categoriesCount: 0,
@@ -58,7 +103,7 @@ export default function QuotesPage() {
     const tagsSet = new Set<string>();
     
     // 单次遍历计算所有统计信息
-    for (const quote of quotes) {
+    for (const quote of quotesWithLikes) {
       authorsSet.add(quote.author);
       categoriesSet.add(quote.category);
       for (const tag of quote.tags) {
@@ -72,7 +117,7 @@ export default function QuotesPage() {
       availableCategories: Array.from(categoriesSet) as QuoteCategory[],
       availableTags: Array.from(tagsSet)
     };
-  }, [quotes]);
+  }, [quotesWithLikes]);
 
 
 
@@ -146,7 +191,7 @@ export default function QuotesPage() {
 
           {/* 统计信息 - 使用useMemo优化计算 */}
           <div className="flex justify-center items-center gap-8 mb-6 text-sm text-gray-500 dark:text-gray-400">
-            <span>共 {quotes.length} 条箴言</span>
+            <span>共 {quotesWithLikes.length} 条箴言</span>
             <span>•</span>
             <span>来自 {authorsCount} 位大师</span>
             <span>•</span>
@@ -165,7 +210,7 @@ export default function QuotesPage() {
 
             {/* 统计信息 */}
             <div className="flex items-center justify-center gap-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
-              <span>当前显示 {quotes.length} 条箴言</span>
+              <span>当前显示 {quotesWithLikes.length} 条箴言</span>
               {process.env.NODE_ENV === 'development' && performanceMetrics.renderCount > 0 && (
                 <>
                   <span className="hidden lg:inline">•</span>
@@ -183,7 +228,7 @@ export default function QuotesPage() {
         {/* 内容区域 */}
         <main id="main-content" role="main" aria-label="箴言列表">
           <QuoteErrorBoundary>
-            {quotes.length === 0 ? (
+            {quotesWithLikes.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
                 <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
@@ -201,7 +246,7 @@ export default function QuotesPage() {
             <>
               {/* 箴言网格展示 */}
               <QuoteGrid
-                quotes={quotes}
+                quotes={quotesWithLikes}
                 onQuoteClick={handleQuoteClick}
                 focusedQuoteId={focusedQuoteId}
               />
@@ -217,7 +262,8 @@ export default function QuotesPage() {
         quote={selectedQuote}
         isOpen={!!selectedQuote}
         onClose={handleDetailClose}
-        quotes={quotes}
+        onLike={handleLike}
+        quotes={quotesWithLikes}
         onNavigateToQuote={setSelectedQuote}
       />
       
