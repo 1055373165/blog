@@ -365,44 +365,24 @@ export default function Hero({ className }: HeroProps) {
                     <div className="space-y-1 sm:space-y-2">
                       <div className="ml-4 text-white break-words">
                         <span>fmt.<span className="text-blue-400">Println</span>(</span>
-                        <span className="text-green-400 break-all">"Hi! I'm Sun Mengyu, a passionate Go developer with 3 years of experience."</span>
+                        <span className="text-green-400 break-all">"Hi! I'm Sun Mengyu, a Go enthusiast."</span>
                         <span>)</span>
                       </div>
                       <div className="ml-4 text-white break-words">
                         <span>fmt.<span className="text-blue-400">Println</span>(</span>
-                        <span className="text-green-400 break-all">"Core Focus: Go microservices, system architecture design, and design patterns."</span>
+                        <span className="text-green-400 break-all">"知识就在那里，缺的是新的表达方式。"</span>
                         <span>)</span>
                       </div>
                       <div className="ml-4 text-white break-words">
                         <span>fmt.<span className="text-blue-400">Println</span>(</span>
-                        <span className="text-green-400 break-all">"System Knowledge: Operating systems, computer networks, high concurrency & availability."</span>
+                        <span className="text-green-400 break-all">"平庸的团队，创造不出伟大的产品。"</span>
                         <span>)</span>
-                      </div>
+                      </div>                                          
                       <div className="ml-4 text-white break-words">
                         <span>fmt.<span className="text-blue-400">Println</span>(</span>
-                        <span className="text-green-400 break-all">"Architecture Skills: UML modeling, OOP design, code standards, and observability."</span>
+                        <span className="text-green-400 break-all">"信息、知识、智慧、直觉"</span>
                         <span>)</span>
-                      </div>
-                      <div className="ml-4 text-white break-words">
-                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
-                        <span className="text-green-400 break-all">"DevOps & Performance: Container tech, high-performance optimization, distributed systems."</span>
-                        <span>)</span>
-                      </div>
-                      <div className="ml-4 text-white break-words">
-                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
-                        <span className="text-green-400 break-all">"Tools & Learning: ClaudeCode, Windsurf, Go source code exploration, modern workflows."</span>
-                        <span>)</span>
-                      </div>
-                      <div className="ml-4 text-white break-words">
-                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
-                        <span className="text-green-400 break-all">"Goal: Building robust, scalable, maintainable systems with clean code principles."</span>
-                        <span>)</span>
-                      </div>
-                      <div className="ml-4 text-white break-words">
-                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
-                        <span className="text-green-400 break-all">"知识就在那里，缺少的是新的表达方式。"</span>
-                        <span>)</span>
-                      </div>                      
+                      </div> 
                     </div>
                     <div className="text-white">{"}"}</div>
                   </div>
