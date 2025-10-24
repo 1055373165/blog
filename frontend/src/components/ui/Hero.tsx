@@ -345,7 +345,7 @@ export default function Hero({ className }: HeroProps) {
                 <div className="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-go-500/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </div>
               {/* 增强的Code Snippet */}
-              <FloatingCard className="mt-16 max-w-7xl mx-auto" depth={20}>
+              <FloatingCard className="mt-16 w-full max-w-7xl mx-auto" depth={20}>
                 <div className="bg-gray-900 dark:bg-gray-950 rounded-xl p-6 shadow-2xl border border-gray-700 relative overflow-hidden">
                   {/* 代码背景效果 */}
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-purple-900/10 to-green-900/20 opacity-50" />
