@@ -359,31 +359,58 @@ export default function Hero({ className }: HeroProps) {
                     <div className="ml-4 text-gray-400 font-mono text-sm">about_me.go</div>
                   </div>
                   <div className="font-mono text-xs sm:text-sm text-left overflow-x-auto scrollbar-thin">
-                    <div className="text-purple-400">package <span className="text-white">main</span></div>
-                    <div className="text-purple-400"><br></br>import <span className="text-green-400">"fmt"</span></div>
-                    <div className="mt-4 text-purple-400">func <span className="text-blue-400">main</span><span className="text-white">() {"{"}</span></div>
-                    <div className="space-y-1 sm:space-y-2">
-                      <div className="ml-4 text-white break-words">
-                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
-                        <span className="text-green-400 break-all">"Hi! I'm Sun Mengyu, a Go enthusiast."</span>
-                        <span>)</span>
-                      </div>
-                      <div className="ml-4 text-white break-words">
-                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
-                        <span className="text-green-400 break-all">"知识就在那里，缺的是新的表达方式。"</span>
-                        <span>)</span>
-                      </div>
-                      <div className="ml-4 text-white break-words">
-                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
-                        <span className="text-green-400 break-all">"平庸的团队，创造不出伟大的产品。"</span>
-                        <span>)</span>
-                      </div>                                          
-                      <div className="ml-4 text-white break-words">
-                        <span>fmt.<span className="text-blue-400">Println</span>(</span>
-                        <span className="text-green-400 break-all">"信息、知识、智慧、直觉"</span>
-                        <span>)</span>
-                      </div> 
+                    <div className="text-purple-400">func <span className="text-blue-400">main</span><span className="text-white">() {"{"}</span></div>
+                    <div className="ml-4 mt-2">
+                      <span className="text-white">me := </span>
+                      <span className="text-blue-400">Person</span>
+                      <span className="text-white">{"{"}</span>
                     </div>
+                    <div className="space-y-1 ml-8">
+                      <div className="text-white">
+                        <span className="text-purple-400">Name:</span>
+                        <span> </span>
+                        <span className="text-green-400">"Sunmengyu"</span>
+                        <span>,</span>
+                      </div>
+                      <div className="text-white">
+                        <span className="text-purple-400">Role:</span>
+                        <span> </span>
+                        <span className="text-green-400">"Software Engineer"</span>
+                        <span>,</span>
+                      </div>
+                      <div className="text-white">
+                        <span className="text-purple-400">Company:</span>
+                        <span> </span>
+                        <span className="text-green-400">"MeiTuan"</span>
+                        <span>,</span>
+                      </div>
+                      <div className="text-white">
+                        <span className="text-purple-400">Location:</span>
+                        <span> </span>
+                        <span className="text-green-400">"BeiJing"</span>
+                        <span>,</span>
+                      </div>
+                      <div className="text-white">
+                        <span className="text-purple-400">Site:</span>
+                        <span> </span>
+                        <span className="text-green-400">"https://www.godepth.top"</span>
+                        <span>,</span>
+                      </div>
+                      <div className="text-white">
+                        <span className="text-purple-400">Interests:</span>
+                        <span> []</span>
+                        <span className="text-blue-400">string</span>
+                        <span>{"{"}</span>
+                      </div>
+                      <div className="ml-4 space-y-1">
+                        <div className="text-green-400">"Go",</div>
+                        <div className="text-green-400">"Sport",</div>
+                        <div className="text-green-400">"Blockchain",</div>
+                        <div className="text-green-400">"CyberSecurity",</div>
+                      </div>
+                      <div className="text-white">{"}"}</div>
+                    </div>
+                    <div className="ml-4 text-white">{"}"}</div>
                     <div className="text-white">{"}"}</div>
                   </div>
                 </div>
