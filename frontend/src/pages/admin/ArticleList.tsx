@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Article, PaginatedResponse } from '../../types';
+import { Article, PaginatedResponse, Category } from '../../types';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import Pagination from '../../components/Pagination';
 import { apiClient } from '../../api/client';
+import { categoriesApi } from '../../api/categories';
 
 export default function ArticleList() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -13,10 +14,32 @@ export default function ArticleList() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
 
   useEffect(() => {
     loadArticles();
-  }, [currentPage, filter]);
+  }, [currentPage, filter, searchTerm, selectedCategoryId]);
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      const response = await categoriesApi.getCategories({ limit: 100 });
+      if (response.success) {
+        setCategories(response.data.categories || response.data.items || []);
+      }
+    } catch (err) {
+      console.error('Failed to load categories:', err);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
 
   const loadArticles = async () => {
     try {
@@ -30,6 +53,14 @@ export default function ArticleList() {
       
       if (filter !== 'all') {
         queryParams.set('is_published', filter === 'published' ? 'true' : 'false');
+      }
+      
+      if (searchTerm.trim()) {
+        queryParams.set('search', searchTerm.trim());
+      }
+      
+      if (selectedCategoryId) {
+        queryParams.set('category_id', selectedCategoryId.toString());
       }
 
       const response = await apiClient.get(`/api/articles?${queryParams}`);
@@ -132,33 +163,113 @@ export default function ArticleList() {
           </div>
         )}
 
-        {/* Filters */}
-        <div className="mb-6 card p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center space-x-4">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">筛选条件:</span>
-              <div className="flex rounded-lg overflow-hidden shadow-soft">
-                {[
-                  { key: 'all', label: '全部' },
-                  { key: 'published', label: '已发布' },
-                  { key: 'draft', label: '草稿' },
-                ].map((option) => (
-                  <button
-                    key={option.key}
-                    onClick={() => setFilter(option.key as any)}
-                    className={`px-4 py-2 text-sm font-medium border-r border-gray-200 dark:border-gray-600 last:border-r-0 transition-all duration-200 ${
-                      filter === option.key
-                        ? 'bg-go-100 dark:bg-go-900/30 text-go-700 dark:text-go-300'
-                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-go-50 dark:hover:bg-go-900/10'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+        {/* Search and Filters */}
+        <div className="mb-6 space-y-4">
+          {/* Search Box */}
+          <div className="card p-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="搜索文章标题..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1); // Reset to first page when searching
+                    }}
+                    className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-go-500 focus:border-transparent transition-all duration-200"
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={() => {
+                        setSearchTerm('');
+                        setCurrentPage(1);
+                      }}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="sm:w-64">
+                <select
+                  value={selectedCategoryId || ''}
+                  onChange={(e) => {
+                    setSelectedCategoryId(e.target.value ? parseInt(e.target.value) : null);
+                    setCurrentPage(1); // Reset to first page when filtering
+                  }}
+                  className="block w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-go-500 focus:border-transparent transition-all duration-200"
+                  disabled={categoriesLoading}
+                >
+                  <option value="">全部分类</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name} ({category.articles_count})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              共 {total} 篇文章
+          </div>
+          
+          {/* Status Filters */}
+          <div className="card p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center space-x-4">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">状态筛选:</span>
+                <div className="flex rounded-lg overflow-hidden shadow-soft">
+                  {[
+                    { key: 'all', label: '全部' },
+                    { key: 'published', label: '已发布' },
+                    { key: 'draft', label: '草稿' },
+                  ].map((option) => (
+                    <button
+                      key={option.key}
+                      onClick={() => {
+                        setFilter(option.key as any);
+                        setCurrentPage(1); // Reset to first page when filtering
+                      }}
+                      className={`px-4 py-2 text-sm font-medium border-r border-gray-200 dark:border-gray-600 last:border-r-0 transition-all duration-200 ${
+                        filter === option.key
+                          ? 'bg-go-100 dark:bg-go-900/30 text-go-700 dark:text-go-300'
+                          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-go-50 dark:hover:bg-go-900/10'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                {/* Active filters indicator */}
+                {(searchTerm || selectedCategoryId) && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <span>筛选已激活:</span>
+                    {searchTerm && (
+                      <span className="inline-flex items-center px-2 py-1 text-xs bg-go-100 dark:bg-go-900/30 text-go-700 dark:text-go-300 rounded-md">
+                        搜索: {searchTerm}
+                      </span>
+                    )}
+                    {selectedCategoryId && (
+                      <span className="inline-flex items-center px-2 py-1 text-xs bg-go-100 dark:bg-go-900/30 text-go-700 dark:text-go-300 rounded-md">
+                        分类: {categories.find(c => c.id === selectedCategoryId)?.name || '未知'}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  共 {total} 篇文章
+                </div>
+              </div>
             </div>
           </div>
         </div>

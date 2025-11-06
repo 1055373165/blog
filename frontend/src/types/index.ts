@@ -129,7 +129,8 @@ export interface Article {
   author: User;
   author_id: number;
   author_display_name?: string; // 每篇文章独立的作者显示名
-  categories?: Category[];
+  category?: Category; // 文章的主分类
+  categories?: Category[]; // 支持多分类（向后兼容）
   tags: Tag[];
   series_id?: number;
   series?: Series;
@@ -150,7 +151,7 @@ export interface CreateArticleInput {
   content: string;
   excerpt?: string;
   cover_image?: string;
-  category_id?: number; // 文章只能属于一个分类
+  category_ids?: number[]; // 文章可以属于多个分类
   tag_ids?: number[];
   series_id?: number;
   series_order?: number;

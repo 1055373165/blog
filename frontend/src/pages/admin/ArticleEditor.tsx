@@ -23,7 +23,7 @@ export default function ArticleEditor() {
     content: '',
     excerpt: '',
     cover_image: '',
-    category_id: undefined,
+    category_ids: [],
     tag_ids: [],
     series_id: undefined,
     series_order: undefined,
@@ -50,6 +50,7 @@ export default function ArticleEditor() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [series, setSeries] = useState<Series[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   
   // Editor height calculation
@@ -125,7 +126,7 @@ export default function ArticleEditor() {
           content: article.content,
           excerpt: article.excerpt,
           cover_image: article.cover_image || '',
-          category_id: article.categories?.[0]?.id,
+          category_ids: (article.categories || []).map(category => category.id),
           tag_ids: (article.tags || []).map(tag => tag.id),
           series_id: article.series_id,
           series_order: article.series_order,
@@ -136,6 +137,7 @@ export default function ArticleEditor() {
           author_display_name: article.author_display_name || article.author?.name || '',
         });
         setSelectedTags((article.tags || []).map(tag => tag.id.toString()));
+        setSelectedCategories((article.categories || []).map(category => category.id.toString()));
       } else {
         throw new Error('加载文章失败');
       }
@@ -184,6 +186,16 @@ export default function ArticleEditor() {
     handleInputChange('tag_ids', newSelectedTags);
   };
 
+  const handleCategoryToggle = (categoryId: string) => {
+    const currentCategories = selectedCategories || [];
+    const newSelectedCategories = currentCategories.includes(categoryId)
+      ? currentCategories.filter(id => id !== categoryId)
+      : [...currentCategories, categoryId];
+    
+    setSelectedCategories(newSelectedCategories);
+    handleInputChange('category_ids', newSelectedCategories);
+  };
+
   const generateExcerpt = () => {
     if (!formData.content) return;
     
@@ -224,6 +236,7 @@ export default function ArticleEditor() {
       const payload = {
         ...formData,
         tag_ids: (selectedTags || []).map(id => parseInt(id)),
+        category_ids: (selectedCategories || []).map(id => parseInt(id)),
       };
 
       let response;
@@ -272,6 +285,7 @@ export default function ArticleEditor() {
       ...formData,
       is_published: newPublishedState,
       tag_ids: (selectedTags || []).map(id => parseInt(id)),
+      category_ids: (selectedCategories || []).map(id => parseInt(id)),
     };
 
     try {
@@ -382,7 +396,7 @@ export default function ArticleEditor() {
       issues.push('建议添加文章摘要');
     }
     
-    if (!formData.category_id) {
+    if (!formData.category_ids || formData.category_ids.length === 0) {
       issues.push('建议选择文章分类');
     }
     
@@ -640,29 +654,16 @@ export default function ArticleEditor() {
                   {/* Categories */}
                   <div className="card p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                      文章分类（单选）
+                      文章分类
                     </h3>
                     <div className="space-y-3 max-h-64 overflow-y-auto">
-                      <label className="flex items-center group cursor-pointer">
-                        <input
-                          type="radio"
-                          name="category"
-                          checked={!formData.category_id}
-                          onChange={() => handleInputChange('category_id', undefined)}
-                          className="rounded-full border-gray-300 dark:border-gray-600 text-go-600 focus:ring-go-500 dark:bg-gray-700"
-                        />
-                        <span className="ml-3 text-sm text-gray-700 dark:text-gray-300 group-hover:text-go-600 dark:group-hover:text-go-400 transition-colors">
-                          无分类
-                        </span>
-                      </label>
                       {(categories || []).map((category) => (
                         <label key={category.id} className="flex items-center group cursor-pointer">
                           <input
-                            type="radio"
-                            name="category"
-                            checked={formData.category_id === category.id}
-                            onChange={() => handleInputChange('category_id', category.id)}
-                            className="rounded-full border-gray-300 dark:border-gray-600 text-go-600 focus:ring-go-500 dark:bg-gray-700"
+                            type="checkbox"
+                            checked={(selectedCategories || []).includes(category.id.toString())}
+                            onChange={() => handleCategoryToggle(category.id.toString())}
+                            className="rounded border-gray-300 dark:border-gray-600 text-go-600 focus:ring-go-500 dark:bg-gray-700"
                           />
                           <span className="ml-3 text-sm text-gray-700 dark:text-gray-300 group-hover:text-go-600 dark:group-hover:text-go-400 transition-colors">
                             {category.name}
