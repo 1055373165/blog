@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Article, PaginatedResponse, Category } from '../../types';
+import { Article, PaginatedResponse, Category, Tag } from '../../types';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import Pagination from '../../components/Pagination';
 import { apiClient } from '../../api/client';
 import { categoriesApi } from '../../api/categories';
+import { tagsApi } from '../../api/tags';
 
 export default function ArticleList() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -14,17 +15,37 @@ export default function ArticleList() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState(''); // 用户输入的搜索词
+  const [searchTerm, setSearchTerm] = useState(''); // 实际用于搜索的词
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [tagsLoading, setTagsLoading] = useState(false);
+  const [showTagsDropdown, setShowTagsDropdown] = useState(false);
+  const tagsDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadArticles();
-  }, [currentPage, filter, searchTerm, selectedCategoryId]);
+  }, [currentPage, filter, searchTerm, selectedCategoryId, selectedTagIds]);
 
   useEffect(() => {
     loadCategories();
+    loadTags();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tagsDropdownRef.current && !tagsDropdownRef.current.contains(event.target as Node)) {
+        setShowTagsDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const loadCategories = async () => {
@@ -38,6 +59,20 @@ export default function ArticleList() {
       console.error('Failed to load categories:', err);
     } finally {
       setCategoriesLoading(false);
+    }
+  };
+
+  const loadTags = async () => {
+    try {
+      setTagsLoading(true);
+      const response = await tagsApi.getTags({ limit: 100, sort_by: 'articles_count', sort_order: 'desc' });
+      if (response.success) {
+        setTags(response.data.items || []);
+      }
+    } catch (err) {
+      console.error('Failed to load tags:', err);
+    } finally {
+      setTagsLoading(false);
     }
   };
 
@@ -62,6 +97,10 @@ export default function ArticleList() {
       if (selectedCategoryId) {
         queryParams.set('category_id', selectedCategoryId.toString());
       }
+      
+      if (selectedTagIds.length > 0) {
+        queryParams.set('tag_ids', selectedTagIds.join(','));
+      }
 
       const response = await apiClient.get(`/api/articles?${queryParams}`);
       
@@ -77,6 +116,32 @@ export default function ArticleList() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = () => {
+    setSearchTerm(searchInput.trim());
+    setCurrentPage(1);
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    setSearchTerm('');
+    setCurrentPage(1);
+  };
+
+  const handleTagToggle = (tagId: number) => {
+    setSelectedTagIds(prev => {
+      const newSelection = prev.includes(tagId)
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId];
+      setCurrentPage(1); // Reset to first page when filtering
+      return newSelection;
+    });
+  };
+
+  const handleClearAllTags = () => {
+    setSelectedTagIds([]);
+    setCurrentPage(1);
   };
 
   const handleDelete = async (id: number) => {
@@ -177,46 +242,150 @@ export default function ArticleList() {
                   </div>
                   <input
                     type="text"
-                    placeholder="搜索文章标题..."
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setCurrentPage(1); // Reset to first page when searching
+                    placeholder="搜索文章标题... (按回车搜索)"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSearch();
+                      }
                     }}
-                    className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-go-500 focus:border-transparent transition-all duration-200"
+                    className="block w-full pl-10 pr-12 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-go-500 focus:border-transparent transition-all duration-200"
                   />
-                  {searchTerm && (
+                  <div className="absolute inset-y-0 right-0 flex items-center">
+                    {/* Search button */}
                     <button
-                      onClick={() => {
-                        setSearchTerm('');
-                        setCurrentPage(1);
-                      }}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      onClick={handleSearch}
+                      className="mr-1 p-1.5 text-gray-400 hover:text-go-600 dark:hover:text-go-400 transition-colors"
+                      title="搜索"
                     >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
                     </button>
-                  )}
+                    {/* Clear button */}
+                    {(searchInput || searchTerm) && (
+                      <button
+                        onClick={handleClearSearch}
+                        className="mr-3 p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                        title="清除搜索"
+                      >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="sm:w-64">
-                <select
-                  value={selectedCategoryId || ''}
-                  onChange={(e) => {
-                    setSelectedCategoryId(e.target.value ? parseInt(e.target.value) : null);
-                    setCurrentPage(1); // Reset to first page when filtering
-                  }}
-                  className="block w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-go-500 focus:border-transparent transition-all duration-200"
-                  disabled={categoriesLoading}
-                >
-                  <option value="">全部分类</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name} ({category.articles_count})
-                    </option>
-                  ))}
-                </select>
+              <div className="flex gap-3">
+                <div className="w-48">
+                  <select
+                    value={selectedCategoryId || ''}
+                    onChange={(e) => {
+                      setSelectedCategoryId(e.target.value ? parseInt(e.target.value) : null);
+                      setCurrentPage(1); // Reset to first page when filtering
+                    }}
+                    className="block w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-go-500 focus:border-transparent transition-all duration-200"
+                    disabled={categoriesLoading}
+                  >
+                    <option value="">全部分类</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name} ({category.articles_count})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="relative" ref={tagsDropdownRef}>
+                    <div 
+                      className="flex flex-wrap gap-2 p-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 min-h-[42px] focus-within:ring-2 focus-within:ring-go-500 focus-within:border-transparent transition-all duration-200 cursor-pointer"
+                      onClick={() => setShowTagsDropdown(!showTagsDropdown)}
+                    >
+                      {selectedTagIds.length > 0 ? (
+                        <>
+                          {selectedTagIds.map(tagId => {
+                            const tag = tags.find(t => t.id === tagId);
+                            return tag ? (
+                              <span
+                                key={tag.id}
+                                className="inline-flex items-center px-2 py-1 text-xs bg-go-100 dark:bg-go-900/30 text-go-700 dark:text-go-300 rounded-md"
+                              >
+                                {tag.name}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleTagToggle(tag.id);
+                                  }}
+                                  className="ml-1 text-go-500 hover:text-go-700 dark:hover:text-go-300"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ) : null;
+                          })}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleClearAllTags();
+                            }}
+                            className="text-xs text-gray-500 hover:text-red-600 dark:hover:text-red-400 px-2 py-1"
+                          >
+                            清空
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-sm text-gray-500 dark:text-gray-400">选择标签...</span>
+                      )}
+                      <div className="ml-auto flex items-center">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                    {/* Tags dropdown */}
+                    {showTagsDropdown && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-lg z-10 max-h-48 overflow-y-auto">
+                        {tagsLoading ? (
+                          <div className="p-3 text-center text-gray-500">加载中...</div>
+                        ) : tags.length > 0 ? (
+                          tags.map(tag => (
+                            <button
+                              key={tag.id}
+                              onClick={() => {
+                                handleTagToggle(tag.id);
+                                if (!selectedTagIds.includes(tag.id)) {
+                                  // Only close dropdown when deselecting, keep open when selecting multiple
+                                }
+                              }}
+                              className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                                selectedTagIds.includes(tag.id)
+                                  ? 'bg-go-100 dark:bg-go-900/30 text-go-700 dark:text-go-300'
+                                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              <span className="flex items-center justify-between">
+                                <span className="flex items-center">
+                                  {selectedTagIds.includes(tag.id) && (
+                                    <svg className="w-4 h-4 mr-2 text-go-500" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                  )}
+                                  {tag.name}
+                                </span>
+                                <span className="text-xs text-gray-500">({tag.articles_count})</span>
+                              </span>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-3 text-center text-gray-500">暂无标签</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -251,17 +420,47 @@ export default function ArticleList() {
               </div>
               <div className="flex items-center gap-4">
                 {/* Active filters indicator */}
-                {(searchTerm || selectedCategoryId) && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                {(searchTerm || selectedCategoryId || selectedTagIds.length > 0) && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 flex-wrap">
                     <span>筛选已激活:</span>
                     {searchTerm && (
                       <span className="inline-flex items-center px-2 py-1 text-xs bg-go-100 dark:bg-go-900/30 text-go-700 dark:text-go-300 rounded-md">
                         搜索: {searchTerm}
+                        <button
+                          onClick={() => {
+                            setSearchTerm('');
+                            setSearchInput('');
+                            setCurrentPage(1);
+                          }}
+                          className="ml-1 text-go-500 hover:text-go-700 dark:hover:text-go-300"
+                        >
+                          ×
+                        </button>
                       </span>
                     )}
                     {selectedCategoryId && (
                       <span className="inline-flex items-center px-2 py-1 text-xs bg-go-100 dark:bg-go-900/30 text-go-700 dark:text-go-300 rounded-md">
                         分类: {categories.find(c => c.id === selectedCategoryId)?.name || '未知'}
+                        <button
+                          onClick={() => {
+                            setSelectedCategoryId(null);
+                            setCurrentPage(1);
+                          }}
+                          className="ml-1 text-go-500 hover:text-go-700 dark:hover:text-go-300"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )}
+                    {selectedTagIds.length > 0 && (
+                      <span className="inline-flex items-center px-2 py-1 text-xs bg-go-100 dark:bg-go-900/30 text-go-700 dark:text-go-300 rounded-md">
+                        标签: {selectedTagIds.length} 个
+                        <button
+                          onClick={handleClearAllTags}
+                          className="ml-1 text-go-500 hover:text-go-700 dark:hover:text-go-300"
+                        >
+                          ×
+                        </button>
                       </span>
                     )}
                   </div>
