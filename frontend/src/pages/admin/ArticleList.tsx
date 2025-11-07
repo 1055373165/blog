@@ -66,8 +66,12 @@ export default function ArticleList() {
     try {
       setTagsLoading(true);
       const response = await tagsApi.getTags({ limit: 100, sort_by: 'articles_count', sort_order: 'desc' });
-      if (response.success) {
-        setTags(response.data.items || []);
+      console.log('Tags API Response:', response); // Debug log
+      if (response.success && response.data) {
+        const data = response.data as PaginatedResponse<Tag>;
+        const tags = data.tags || data.items || [];
+        console.log('Loaded tags:', tags); // Debug log
+        setTags(tags);
       }
     } catch (err) {
       console.error('Failed to load tags:', err);
