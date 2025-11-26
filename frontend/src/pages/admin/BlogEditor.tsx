@@ -33,7 +33,10 @@ interface MediaFile {
 export default function BlogEditor() {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
-  const isEditing = id && id !== 'new';
+  
+  // 使用本地状态追踪博客ID，解决创建后再次保存会创建新记录的问题
+  const [blogId, setBlogId] = useState<number | null>(id && id !== 'new' ? Number(id) : null);
+  const isEditing = blogId !== null;
 
   // 表单状态
   const [formData, setFormData] = useState<CreateBlogInput>({
@@ -249,12 +252,13 @@ export default function BlogEditor() {
 
       console.log('Final data payload:', submitData);
 
-      if (isEditing) {
-        await blogApi.updateBlog(Number(id), { ...submitData, id: Number(id) });
+      if (isEditing && blogId) {
+        await blogApi.updateBlog(blogId, { ...submitData, id: blogId });
       } else {
         const result = await blogApi.createBlog(submitData);
-        // 创建成功后更新URL为编辑模式，但不跳转页面
+        // 创建成功后更新本地状态和URL，确保后续保存是更新而非创建
         if (result && result.id) {
+          setBlogId(result.id);
           window.history.replaceState({}, '', `/admin/blogs/edit/${result.id}`);
         }
       }
