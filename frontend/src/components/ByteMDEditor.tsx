@@ -294,6 +294,12 @@ function ByteMDEditor({
     }
   }
 
+  // 使用 ref 来存储最新的 value，避免闭包问题
+  const valueRef = useRef(value)
+  useEffect(() => {
+    valueRef.current = value
+  }, [value])
+
   // 通用文件上传处理（包括图片和其他文件）
   const handleFileUpload = useCallback(async (files: File[]) => {
     if (!files.length) return
@@ -327,6 +333,7 @@ function ByteMDEditor({
           const uploadPromises = batch.map(async (file) => {
             try {
               const response = await uploadApi.uploadFile(file, undefined, 240000) // 240秒超时
+              console.log('File upload response:', response)
               if (response.success && response.data) {
                 const icon = getFileIcon(file.name)
                 const fileSize = (file.size / 1024).toFixed(1) + 'KB'
@@ -354,14 +361,16 @@ function ByteMDEditor({
       }
     }
 
-    // 将结果插入到编辑器中
+    // 将结果插入到编辑器中 - 使用 ref 获取最新的 value
     if (markdownResults.length > 0) {
-      const currentValue = value || ''
+      const currentValue = valueRef.current || ''
       const newContent = markdownResults.join('\n\n')
       const updatedValue = currentValue + (currentValue.endsWith('\n') ? '' : '\n\n') + newContent + '\n\n'
+      console.log('Inserting markdown:', newContent)
+      console.log('Updated value:', updatedValue)
       onChange(updatedValue)
     }
-  }, [uploadImages, value, onChange])
+  }, [uploadImages, onChange])
   
   // 拖拽状态
   const [isDragOver, setIsDragOver] = useState(false)
