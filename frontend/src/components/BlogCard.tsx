@@ -14,6 +14,7 @@ import {
   DocumentIcon
 } from '@heroicons/react/24/outline';
 import { clsx } from 'clsx';
+import { useAuth } from '../contexts/AuthContext';
 
 // 格式化时长（秒转为 mm:ss 或 hh:mm:ss）
 function formatDuration(seconds: number): string {
@@ -45,6 +46,8 @@ export default function BlogCard({
   showTags = true,
   showStats = true
 }: BlogCardProps) {
+  const { user } = useAuth();
+  const isAdmin = user?.is_admin || false;
   const cardRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -287,8 +290,8 @@ export default function BlogCard({
                   </time>
                 </div>
 
-                {/* 右侧：统计信息 */}
-                {showStats && (
+                {/* 右侧：统计信息 - 仅管理员可见 */}
+                {showStats && isAdmin && (
                   <div className="flex items-center space-x-3 text-xs text-blog-500 dark:text-blog-400">
                     <span className="flex items-center">
                       <EyeIcon className="w-3 h-3 mr-0.5" />

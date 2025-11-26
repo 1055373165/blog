@@ -41,6 +41,7 @@ export default function ArticlePage() {
   const navigate = useNavigate();
   const contentRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  const isAdmin = user?.is_admin || false;
   
   const [article, setArticle] = useState<Article | null>(null);
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
@@ -379,13 +380,17 @@ export default function ArticlePage() {
 
             {/* Stats */}
             <div className="flex items-center space-x-4 text-sm">
-              <span className="flex items-center text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 px-3 py-2 rounded-lg">
-                <svg className="w-4 h-4 mr-2 text-go-600 dark:text-go-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                  <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                </svg>
-                {views_count} 次阅读
-              </span>
+              {/* 浏览量 - 仅管理员可见 */}
+              {isAdmin && (
+                <span className="flex items-center text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 px-3 py-2 rounded-lg">
+                  <svg className="w-4 h-4 mr-2 text-go-600 dark:text-go-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                  </svg>
+                  {views_count} 次阅读
+                </span>
+              )}
+              {/* 点赞按钮 - 所有用户可点击，但只有管理员能看到数量 */}
               <button
                 onClick={handleLike}
                 disabled={likeLoading}
@@ -398,11 +403,12 @@ export default function ArticlePage() {
                 {likeLoading ? (
                   <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
                 ) : (
-                  <svg className="w-4 h-4 mr-2" fill={liked ? 'currentColor' : 'none'} stroke={liked ? 'none' : 'currentColor'} viewBox="0 0 24 24">
+                  <svg className={`w-4 h-4 ${isAdmin ? 'mr-2' : ''}`} fill={liked ? 'currentColor' : 'none'} stroke={liked ? 'none' : 'currentColor'} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
                 )}
-                <span className="font-medium">{likes_count}</span>
+                {/* 点赞数量 - 仅管理员可见 */}
+                {isAdmin && <span className="font-medium">{likes_count}</span>}
               </button>
             </div>
           </div>

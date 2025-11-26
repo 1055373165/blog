@@ -150,7 +150,7 @@ export default function HomePage() {
             articles={recentArticles}
             loading={loading}
             variant={layoutVariant}
-            showStats={true}
+            showStats={false}
             showCategory={true}
             showTags={true}
           />

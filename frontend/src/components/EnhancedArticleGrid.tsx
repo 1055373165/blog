@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAvatarUrl } from '../utils/avatarUtils';
 import { clsx } from 'clsx';
+import { useAuth } from '../contexts/AuthContext';
 
 // Format date helper function
 const formatDate = (dateString: string) => {
@@ -431,8 +432,13 @@ export default function EnhancedArticleGrid({
   showExcerpt = true,
   gridColumns
 }: EnhancedArticleGridProps) {
+  const { user } = useAuth();
+  const isAdmin = user?.is_admin || false;
   const [columnCount, setColumnCount] = useState(3);
   const masonryColumns = useMasonryLayout(articles, columnCount);
+  
+  // Only show stats if user is admin
+  const shouldShowStats = showStats && isAdmin;
 
   useEffect(() => {
     const updateColumnCount = () => {
@@ -491,7 +497,7 @@ export default function EnhancedArticleGrid({
                 key={article.id}
                 article={article}
                 index={columnIndex * column.length + index}
-                showStats={showStats}
+                showStats={shouldShowStats}
                 showCategory={showCategory}
                 showTags={showTags}
                 showExcerpt={showExcerpt}
@@ -513,7 +519,7 @@ export default function EnhancedArticleGrid({
             key={article.id}
             article={article}
             index={index}
-            showStats={showStats}
+            showStats={shouldShowStats}
             showCategory={showCategory}
             showTags={showTags}
             showExcerpt={showExcerpt}
@@ -532,7 +538,7 @@ export default function EnhancedArticleGrid({
           <EnhancedArticleCard
             article={articles[0]}
             index={0}
-            showStats={showStats}
+            showStats={shouldShowStats}
             showCategory={showCategory}
             showTags={showTags}
             showExcerpt={showExcerpt}
@@ -548,7 +554,7 @@ export default function EnhancedArticleGrid({
               key={article.id}
               article={article}
               index={index + 1}
-              showStats={showStats}
+              showStats={shouldShowStats}
               showCategory={showCategory}
               showTags={showTags}
               showExcerpt={showExcerpt}
@@ -568,7 +574,7 @@ export default function EnhancedArticleGrid({
           key={article.id}
           article={article}
           index={index}
-          showStats={showStats}
+          showStats={shouldShowStats}
           showCategory={showCategory}
           showTags={showTags}
           showExcerpt={showExcerpt}
