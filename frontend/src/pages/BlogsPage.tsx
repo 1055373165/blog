@@ -306,17 +306,16 @@ export default function BlogsPage() {
         </div>
       ) : blogs.length > 0 ? (
         <>
-          <div className="columns-1 md:columns-2 xl:columns-3 gap-6 space-y-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
             {blogs.map((blog) => (
-              <div className="break-inside-avoid" key={blog.id}>
-                <BlogCard
-                  blog={blog}
-                  variant="default"
-                  showCategory={true}
-                  showTags={true}
-                  showStats={true}
-                />
-              </div>
+              <BlogCard
+                key={blog.id}
+                blog={blog}
+                variant="default"
+                showCategory={true}
+                showTags={true}
+                showStats={true}
+              />
             ))}
           </div>
 
