@@ -389,7 +389,7 @@ const EnhancedArticleCard = ({
   );
 };
 
-// 瀑布流布局计算Hook
+// 瀑布流布局计算Hook - 按行填充，从左到右、从上到下的顺序
 const useMasonryLayout = (articles: Article[], columnCount: number = 3) => {
   const [columns, setColumns] = useState<Article[][]>([]);
 
@@ -400,19 +400,11 @@ const useMasonryLayout = (articles: Article[], columnCount: number = 3) => {
     }
 
     const newColumns: Article[][] = Array.from({ length: columnCount }, () => []);
-    const columnHeights = new Array(columnCount).fill(0);
 
-    articles.forEach((article) => {
-      // 简单的高度估算 - 实际项目中可能需要更精确的计算
-      const estimatedHeight = 200 + (article.excerpt?.length || 100) * 0.5 + 
-                            (article.tags?.length || 0) * 20 + 
-                            (article.cover_image ? 200 : 0);
-      
-      // 找到最短的列
-      const shortestColumnIndex = columnHeights.indexOf(Math.min(...columnHeights));
-      
-      newColumns[shortestColumnIndex].push(article);
-      columnHeights[shortestColumnIndex] += estimatedHeight;
+    // 按行填充：第1篇->第1列，第2篇->第2列，第3篇->第3列，第4篇->第1列...
+    articles.forEach((article, index) => {
+      const columnIndex = index % columnCount;
+      newColumns[columnIndex].push(article);
     });
 
     setColumns(newColumns);
