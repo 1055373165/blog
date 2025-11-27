@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeftIcon,
@@ -36,7 +36,13 @@ export default function BlogEditor() {
   
   // 使用本地状态追踪博客ID，解决创建后再次保存会创建新记录的问题
   const [blogId, setBlogId] = useState<number | null>(id && id !== 'new' ? Number(id) : null);
+  const blogIdRef = useRef(blogId); // 使用 ref 避免闭包问题
   const isEditing = blogId !== null;
+
+  // 同步 blogId 到 ref
+  useEffect(() => {
+    blogIdRef.current = blogId;
+  }, [blogId]);
 
   // 表单状态
   const [formData, setFormData] = useState<CreateBlogInput>({
@@ -146,29 +152,6 @@ export default function BlogEditor() {
     loadOptions();
   }, []);
 
-  // 添加键盘快捷键 Cmd+S / Ctrl+S 保存功能
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // 检查 Cmd+S (Mac) 或 Ctrl+S (Windows/Linux)
-      if ((event.metaKey || event.ctrlKey) && event.key === 's') {
-        event.preventDefault(); // 阻止浏览器默认的保存对话框
-
-        // 只有在标题不为空时才保存（基本验证）
-        if (formData.title.trim()) {
-          handleSave(false); // 非静默保存以显示用户反馈
-        }
-      }
-    };
-
-    // 将事件监听器添加到 document
-    document.addEventListener('keydown', handleKeyDown);
-
-    // 组件卸载时清理事件监听器
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [formData]); // 包含 formData 以获取最新数据
-
   // 更新表单数据
   const updateFormData = (key: keyof CreateBlogInput, value: any) => {
     setFormData(prev => ({ ...prev, [key]: value }));
@@ -229,9 +212,13 @@ export default function BlogEditor() {
     return true;
   };
 
-  // 保存博客
-  const handleSave = async (publish: boolean = false) => {
+  // 保存博客 - 使用 useCallback 和 ref 避免闭包问题
+  const handleSave = useCallback(async (publish: boolean = false) => {
     if (!validateForm()) return;
+
+    // 使用 ref 获取最新的 blogId，避免闭包问题
+    const currentBlogId = blogIdRef.current;
+    const currentIsEditing = currentBlogId !== null;
 
     try {
       setSaving(true);
@@ -251,27 +238,50 @@ export default function BlogEditor() {
       }
 
       console.log('Final data payload:', submitData);
+      console.log('currentBlogId:', currentBlogId, 'currentIsEditing:', currentIsEditing);
 
-      if (isEditing && blogId) {
-        await blogApi.updateBlog(blogId, { ...submitData, id: blogId });
+      if (currentIsEditing && currentBlogId) {
+        await blogApi.updateBlog(currentBlogId, { ...submitData, id: currentBlogId });
+        console.log('博客更新成功, ID:', currentBlogId);
       } else {
         const result = await blogApi.createBlog(submitData);
         // 创建成功后更新本地状态和URL，确保后续保存是更新而非创建
         if (result && result.id) {
           setBlogId(result.id);
+          blogIdRef.current = result.id; // 立即更新 ref
           window.history.replaceState({}, '', `/admin/blogs/edit/${result.id}`);
+          console.log('博客创建成功, 新ID:', result.id);
         }
       }
-
-      // 保存成功后不跳转，停留在当前编辑器页面
-      // 可以显示保存成功的提示
-      console.log('博客保存成功');
     } catch (error) {
       setError(error instanceof Error ? error.message : '保存失败');
     } finally {
       setSaving(false);
     }
-  };
+  }, [formData, selectedTags, validateForm]);
+
+  // 添加键盘快捷键 Cmd+S / Ctrl+S 保存功能
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // 检查 Cmd+S (Mac) 或 Ctrl+S (Windows/Linux)
+      if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+        event.preventDefault(); // 阻止浏览器默认的保存对话框
+
+        // 只有在标题不为空时才保存（基本验证）
+        if (formData.title.trim()) {
+          handleSave(false); // 非静默保存以显示用户反馈
+        }
+      }
+    };
+
+    // 将事件监听器添加到 document
+    document.addEventListener('keydown', handleKeyDown);
+
+    // 组件卸载时清理事件监听器
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [formData.title, handleSave]); // 只依赖 title 和 handleSave
 
   if (loading) {
     return (
