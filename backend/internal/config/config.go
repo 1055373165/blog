@@ -139,7 +139,7 @@ func LoadConfig() error {
 		},
 		JWT: JWTConfig{
 			Secret:    getEnv("JWT_SECRET", "sunmengyu"),
-			ExpiresIn: getDurationEnv("JWT_EXPIRES_IN", "24h"),
+			ExpiresIn: getDurationEnv("JWT_EXPIRES_IN", "72h"),
 		},
 		Redis: RedisConfig{
 			Host:     getEnv("REDIS_HOST", "localhost"),

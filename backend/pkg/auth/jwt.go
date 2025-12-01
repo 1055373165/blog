@@ -32,9 +32,9 @@ func GenerateToken(userID uint, email string, isAdmin bool) (string, error) {
 	// 获取过期时间
 	expiresIn := os.Getenv("JWT_EXPIRES_IN")
 	if expiresIn == "" {
-		expiresIn = "24h"
+		expiresIn = "72h"
 	}
-	
+
 	duration, err := time.ParseDuration(expiresIn)
 	if err != nil {
 		duration = 24 * time.Hour // 默认24小时

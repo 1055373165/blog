@@ -155,7 +155,7 @@ REDIS_PORT=6379
 
 # JWT
 JWT_SECRET=${JWT_SECRET}
-JWT_EXPIRES_IN=24h
+JWT_EXPIRES_IN=72h
 
 # Frontend build API base
 # DOMAIN is optional; if set, used to derive VITE_API_BASE_URL
