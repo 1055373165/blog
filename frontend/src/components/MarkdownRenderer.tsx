@@ -3,8 +3,10 @@ import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
-import { PhotoProvider, PhotoView } from 'react-photo-view';
-import 'react-photo-view/dist/react-photo-view.css';
+import Lightbox from 'yet-another-react-lightbox';
+import 'yet-another-react-lightbox/styles.css';
+import Zoom from 'yet-another-react-lightbox/plugins/zoom';
+import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { visit } from 'unist-util-visit';
 import { 
@@ -58,7 +60,7 @@ import {
   atelierSulphurpoolDark
 } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { useTheme } from '../contexts/ThemeContext';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import mermaid from 'mermaid';
 
 interface MarkdownRendererProps {
@@ -188,6 +190,36 @@ const MermaidDiagram = ({ code, isDark }: { code: string; isDark: boolean }) => 
 
 export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
   const { settings, isDark } = useTheme();
+  
+  // 图片查看器状态管理
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [slides, setSlides] = useState<Array<{ src: string; alt?: string }>>([]);
+  const imageIndexMapRef = useRef<Map<string, number>>(new Map());
+  
+  // 收集所有图片信息
+  useEffect(() => {
+    const imageElements = document.querySelectorAll('.markdown-image');
+    const newSlides: Array<{ src: string; alt?: string }> = [];
+    const newIndexMap = new Map<string, number>();
+    
+    imageElements.forEach((img, index) => {
+      const src = (img as HTMLImageElement).src;
+      const alt = (img as HTMLImageElement).alt;
+      newSlides.push({ src, alt });
+      newIndexMap.set(src, index);
+    });
+    
+    setSlides(newSlides);
+    imageIndexMapRef.current = newIndexMap;
+  }, [content]);
+  
+  // 打开图片查看器
+  const openLightbox = useCallback((src: string) => {
+    const index = imageIndexMapRef.current.get(src) || 0;
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  }, []);
 
     // 安全策略配置 - 扩展白名单允许图片相关属性和代码块属性
   const sanitizeSchema = {
@@ -509,9 +541,9 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         padding: 0 !important;
       }
 
-      /* 修复PhotoProvider z-index冲突，确保图片查看器在最顶层 */
-      .PhotoView-Portal {
-        z-index: 9999 !important;
+      /* Lightbox样式优化 */
+      .yarl__container {
+        background: rgba(0, 0, 0, 0.9) !important;
       }
 
       /* 展开后，summary 与第一行正文之间的间距 */
@@ -763,89 +795,6 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       <div dangerouslySetInnerHTML={{ __html: foldableStyles }} />
 
       <div className={`prose dark:prose-invert max-w-none prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 ${className}`}>
-          <PhotoProvider
-            maskOpacity={isDark ? 0.9 : 0.8}
-            bannerVisible={false}
-            maskClassName={isDark ? 'bg-black/90' : 'bg-black/80'}
-            photoClosable={true}
-            maskClosable={true}
-            toolbarRender={({ rotate, onRotate, scale, onScale, onClose }) => (
-              <div className={`flex items-center space-x-3 backdrop-blur-sm rounded-lg px-3 py-2 ${
-                isDark 
-                  ? 'bg-gray-800/40 border border-gray-600/30' 
-                  : 'bg-white/20 border border-white/30'
-              }`}>
-                <button
-                  onClick={() => onScale(scale + 0.5)}
-                  className={`p-2 transition-colors ${
-                    isDark 
-                      ? 'text-gray-100 hover:text-blue-300' 
-                      : 'text-white hover:text-blue-200'
-                  }`}
-                  aria-label="放大"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => onScale(scale - 0.5)}
-                  className={`p-2 transition-colors ${
-                    isDark 
-                      ? 'text-gray-100 hover:text-blue-300' 
-                      : 'text-white hover:text-blue-200'
-                  }`}
-                  aria-label="缩小"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => onRotate(rotate + 90)}
-                  className={`p-2 transition-colors ${
-                    isDark
-                      ? 'text-gray-100 hover:text-blue-300'
-                      : 'text-white hover:text-blue-200'
-                  }`}
-                  aria-label="旋转"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                </button>
-                <button
-                  onClick={onClose}
-                  className={`p-2 transition-colors ${
-                    isDark
-                      ? 'text-gray-100 hover:text-red-300'
-                      : 'text-white hover:text-red-200'
-                  }`}
-                  aria-label="关闭"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            )}
-            overlayRender={({ images, index }) => {
-              const currentImage = images[index];
-              // 从图片元素获取 alt 属性，而不是从 images 数组
-              const imgElement = currentImage?.originRef?.current as HTMLImageElement;
-              const altText = imgElement?.alt || '';
-
-              return altText ? (
-                <div className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 backdrop-blur-sm px-4 py-2 rounded-lg max-w-md text-center ${
-                  isDark
-                    ? 'bg-gray-800/60 text-gray-100 border border-gray-600/30'
-                    : 'bg-black/50 text-white border border-white/20'
-                }`}>
-                  {altText}
-                </div>
-              ) : null;
-            }}
-          >
           <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[
@@ -1082,7 +1031,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               const height = finalAttributes.height;
               
               // 基础类名，保持响应式和懒加载特性
-              const baseClasses = "max-w-full h-auto my-4 cursor-zoom-in transition-transform duration-200 hover:scale-[1.02]";
+              const baseClasses = "max-w-full h-auto my-4 cursor-zoom-in transition-all duration-200 hover:scale-[1.02] hover:shadow-lg rounded-lg";
               const finalClassName = customClasses ? `${baseClasses} ${customClasses}` : baseClasses;
               
               // 构建内联样式
@@ -1094,18 +1043,19 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                 inlineStyle.height = height.includes('%') ? height : `${height}px`;
               }
               
+              if (!src) return null;
+              
               return (
-                <PhotoView src={src}>
-                  <img
-                    src={src}
-                    alt={cleanAlt}
-                    className={finalClassName}
-                    style={inlineStyle}
-                    loading="lazy"
-                    decoding="async"
-                    {...props}
-                  />
-                </PhotoView>
+                <img
+                  src={src}
+                  alt={cleanAlt}
+                  className={`markdown-image ${finalClassName}`}
+                  style={inlineStyle}
+                  loading="lazy"
+                  decoding="async"
+                  onClick={() => openLightbox(src)}
+                  {...props}
+                />
               );
             },
             // 增强的折叠块支持 - 使用动态字体大小系统
@@ -1175,8 +1125,71 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         >
           {content}
           </ReactMarkdown>
-          </PhotoProvider>
       </div>
+      
+      {/* Lightbox 组件 */}
+      <Lightbox
+        open={lightboxOpen}
+        close={() => setLightboxOpen(false)}
+        index={lightboxIndex}
+        slides={slides}
+        plugins={[Zoom, Fullscreen]}
+        zoom={{
+          maxZoomPixelRatio: 5,
+          zoomInMultiplier: 2,
+          doubleTapDelay: 300,
+          doubleClickDelay: 300,
+          doubleClickMaxStops: 2,
+          keyboardMoveDistance: 50,
+          wheelZoomDistanceFactor: 100,
+          pinchZoomDistanceFactor: 100,
+          scrollToZoom: true,
+        }}
+        controller={{
+          closeOnPullDown: true,
+          closeOnBackdropClick: true,
+        }}
+        render={{
+          slide: ({ slide }) => (
+            <div className="flex items-center justify-center h-full">
+              <img
+                src={slide.src}
+                alt={slide.alt}
+                className="max-w-full max-h-full object-contain"
+                style={{
+                  maxWidth: '90vw',
+                  maxHeight: '90vh',
+                }}
+              />
+            </div>
+          ),
+          iconClose: () => (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ),
+          iconZoomIn: () => (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          ),
+          iconZoomOut: () => (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
+            </svg>
+          ),
+          iconEnterFullscreen: () => (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 3H5a2 2 0 00-2 2v3m2-5h3m0 0v3M3 16v3a2 2 0 002 2h3m-6-5h3m0 0v3m10-3h3a2 2 0 002-2v-3m-6 5h3m0-3v3m0-10V5a2 2 0 00-2-2h-3m6 5h-3m0 0V3" />
+            </svg>
+          ),
+          iconExitFullscreen: () => (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9V4.5M9 9H4.5M9 9L3.5 3.5M15 9h4.5M15 9V4.5M15 9l5.5-5.5M9 15v4.5M9 15H4.5M9 15l-5.5 5.5M15 15h4.5M15 15v4.5m0 0l5.5 5.5" />
+            </svg>
+          ),
+        }}
+      />
     </>
   );
 }
