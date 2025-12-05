@@ -197,33 +197,71 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
   const [slides, setSlides] = useState<Array<{ src: string; alt?: string; width?: number; height?: number }>>([]);
   const imageIndexMapRef = useRef<Map<string, number>>(new Map());
   
-  // 收集所有图片信息
+  // 收集所有图片信息（优化版：处理懒加载图片的尺寸获取）
   useEffect(() => {
     const imageElements = document.querySelectorAll('.markdown-image');
     const newSlides: Array<{ src: string; alt?: string; width?: number; height?: number }> = [];
     const newIndexMap = new Map<string, number>();
-    
+
     imageElements.forEach((img, index) => {
       const imgEl = img as HTMLImageElement;
       const src = imgEl.src;
       const alt = imgEl.alt;
-      const width = imgEl.naturalWidth || undefined;
-      const height = imgEl.naturalHeight || undefined;
+
+      // 优化策略：优先使用 naturalWidth，fallback 到 DOM 尺寸
+      let width: number | undefined = imgEl.naturalWidth;
+      let height: number | undefined = imgEl.naturalHeight;
+
+      // 如果图片尚未加载（懒加载），尝试从 data 属性或计算样式获取
+      if (!width || !height) {
+        width = imgEl.width || parseInt(imgEl.getAttribute('width') || '0') || undefined;
+        height = imgEl.height || parseInt(imgEl.getAttribute('height') || '0') || undefined;
+      }
 
       newSlides.push({ src, alt, width, height });
       newIndexMap.set(src, index);
     });
-    
+
     setSlides(newSlides);
     imageIndexMapRef.current = newIndexMap;
   }, [content]);
   
-  // 打开图片查看器
-  const openLightbox = useCallback((src: string) => {
+  // 打开图片查看器（优化版：等待图片加载完成并获取尺寸）
+  const openLightbox = useCallback(async (src: string) => {
     const index = imageIndexMapRef.current.get(src) || 0;
+
+    // 如果当前 slide 缺少尺寸信息，等待图片加载完成
+    const currentSlide = slides[index];
+    if (!currentSlide?.width || !currentSlide?.height) {
+      const img = document.querySelector(`.markdown-image[src="${src}"]`) as HTMLImageElement;
+      if (img && (!img.naturalWidth || !img.naturalHeight)) {
+        await new Promise<void>((resolve) => {
+          if (img.complete) {
+            resolve();
+          } else {
+            img.addEventListener('load', () => resolve(), { once: true });
+            img.addEventListener('error', () => resolve(), { once: true }); // 即使加载失败也继续
+            // 超时保护：500ms 后强制继续
+            setTimeout(resolve, 500);
+          }
+        });
+
+        // 重新收集尺寸信息
+        const width = img.naturalWidth || undefined;
+        const height = img.naturalHeight || undefined;
+        if (width && height) {
+          setSlides(prev => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], width, height };
+            return updated;
+          });
+        }
+      }
+    }
+
     setLightboxIndex(index);
     setLightboxOpen(true);
-  }, []);
+  }, [slides]);
 
     // 安全策略配置 - 扩展白名单允许图片相关属性和代码块属性
   const sanitizeSchema = {
@@ -545,9 +583,19 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         padding: 0 !important;
       }
 
-      /* Lightbox样式优化：减弱遮罩强度，避免遮挡图片细节 */
+      /* Lightbox样式优化：增强遮罩强度，提升图片与背景的对比度 */
       .yarl__container {
-        background: rgba(0, 0, 0, 0.75) !important;
+        background: rgba(0, 0, 0, 0.90) !important;
+      }
+
+      /* 暗模式适配：使用更深的遮罩以获得最佳视觉效果 */
+      .dark .yarl__container {
+        background: rgba(0, 0, 0, 0.95) !important;
+      }
+
+      /* 图片容器：确保图片清晰可见 */
+      .yarl__slide {
+        background: transparent !important;
       }
 
       /* 展开后，summary 与第一行正文之间的间距 */
@@ -1139,11 +1187,11 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         slides={slides}
         plugins={[Zoom, Fullscreen]}
         zoom={{
-          maxZoomPixelRatio: 5,
-          zoomInMultiplier: 2,
+          maxZoomPixelRatio: 3,           // 降至 3x（5x 过大可能导致像素化）
+          zoomInMultiplier: 1.5,          // 降至 1.5x（2x 步进过大）
           doubleTapDelay: 300,
           doubleClickDelay: 300,
-          doubleClickMaxStops: 2,
+          doubleClickMaxStops: 3,         // 增至 3 步（提供更多缩放级别）
           keyboardMoveDistance: 50,
           wheelZoomDistanceFactor: 100,
           pinchZoomDistanceFactor: 100,
@@ -1154,19 +1202,6 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
           closeOnBackdropClick: true,
         }}
         render={{
-          slide: ({ slide }) => (
-            <div className="flex items-center justify-center h-full">
-              <img
-                src={slide.src}
-                alt={slide.alt}
-                className="max-w-full max-h-full object-contain"
-                style={{
-                  maxWidth: '90vw',
-                  maxHeight: '90vh',
-                }}
-              />
-            </div>
-          ),
           iconClose: () => (
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
