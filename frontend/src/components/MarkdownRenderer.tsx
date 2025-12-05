@@ -194,19 +194,23 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
   // 图片查看器状态管理
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [slides, setSlides] = useState<Array<{ src: string; alt?: string }>>([]);
+  const [slides, setSlides] = useState<Array<{ src: string; alt?: string; width?: number; height?: number }>>([]);
   const imageIndexMapRef = useRef<Map<string, number>>(new Map());
   
   // 收集所有图片信息
   useEffect(() => {
     const imageElements = document.querySelectorAll('.markdown-image');
-    const newSlides: Array<{ src: string; alt?: string }> = [];
+    const newSlides: Array<{ src: string; alt?: string; width?: number; height?: number }> = [];
     const newIndexMap = new Map<string, number>();
     
     imageElements.forEach((img, index) => {
-      const src = (img as HTMLImageElement).src;
-      const alt = (img as HTMLImageElement).alt;
-      newSlides.push({ src, alt });
+      const imgEl = img as HTMLImageElement;
+      const src = imgEl.src;
+      const alt = imgEl.alt;
+      const width = imgEl.naturalWidth || undefined;
+      const height = imgEl.naturalHeight || undefined;
+
+      newSlides.push({ src, alt, width, height });
       newIndexMap.set(src, index);
     });
     
@@ -541,9 +545,9 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         padding: 0 !important;
       }
 
-      /* Lightbox样式优化 */
+      /* Lightbox样式优化：减弱遮罩强度，避免遮挡图片细节 */
       .yarl__container {
-        background: rgba(0, 0, 0, 0.9) !important;
+        background: rgba(0, 0, 0, 0.75) !important;
       }
 
       /* 展开后，summary 与第一行正文之间的间距 */
