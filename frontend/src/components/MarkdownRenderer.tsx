@@ -593,9 +593,29 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         background: rgba(0, 0, 0, 0.95) !important;
       }
 
-      /* 图片容器：确保图片清晰可见 */
+      /* 图片容器：白色画布效果，确保黑色线条清晰可见 */
       .yarl__slide {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 2rem !important;
         background: transparent !important;
+      }
+
+      /* 图片本身：添加白色背景、内边距和阴影，形成画廊效果 */
+      .yarl__slide img {
+        background: white !important;
+        padding: 1.5rem !important;
+        border-radius: 8px !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+        max-width: calc(100vw - 8rem) !important;
+        max-height: calc(100vh - 8rem) !important;
+        object-fit: contain !important;
+      }
+
+      /* 暗模式：使用浅灰色背景，既保持对比度又不刺眼 */
+      .dark .yarl__slide img {
+        background: #f3f4f6 !important;
       }
 
       /* 展开后，summary 与第一行正文之间的间距 */
