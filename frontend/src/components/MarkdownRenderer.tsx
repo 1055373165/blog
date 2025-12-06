@@ -604,15 +604,27 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         overflow: visible !important;
       }
 
-      /* 图片本身：添加白色背景、内边距和阴影，形成画廊效果 */
+      /* 图片本身：添加白色背景，形成画廊效果 */
       .yarl__slide img {
         background: white !important;
-        padding: 1.5rem !important;
+        /* 使用 outline 创建白色边框，不占据布局空间，不影响拖拽 */
+        outline: 24px solid white !important;
+        outline-offset: 0px !important;
         border-radius: 8px !important;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
         /* 移除 max-width/max-height 限制，允许 Zoom 插件自由控制尺寸 */
         /* Zoom 插件会自动处理：初始适配视窗，缩放后可超出并拖拽 */
         object-fit: contain !important;
+        /* 确保图片可以被拖拽 */
+        user-select: none !important;
+        -webkit-user-drag: none !important;
+        pointer-events: auto !important;
+        cursor: grab !important;
+      }
+
+      /* 拖拽时的光标 */
+      .yarl__slide img:active {
+        cursor: grabbing !important;
       }
 
       /* 确保所有 Lightbox 容器允许溢出，支持缩放后的拖拽查看 */
@@ -622,9 +634,10 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         overflow: visible !important;
       }
 
-      /* 禁用容器的 pointer-events 限制，确保拖拽手势正常工作 */
+      /* 确保拖拽手势能够正确触发 */
       .yarl__slide {
         pointer-events: auto !important;
+        touch-action: none !important;  /* 禁用浏览器默认触摸行为，让Zoom插件接管 */
       }
 
       /* 暗模式：使用浅灰色背景，既保持对比度又不刺眼 */
