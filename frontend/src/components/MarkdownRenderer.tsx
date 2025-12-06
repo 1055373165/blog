@@ -1234,11 +1234,11 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         slides={slides}
         plugins={[Zoom, Fullscreen]}
         zoom={{
-          maxZoomPixelRatio: 3,           // 降至 3x（5x 过大可能导致像素化）
+          maxZoomPixelRatio: 8,           // 提升至 8x（适配大型 SVG 图表的细节查看）
           zoomInMultiplier: 1.5,          // 降至 1.5x（2x 步进过大）
           doubleTapDelay: 300,
           doubleClickDelay: 300,
-          doubleClickMaxStops: 3,         // 增至 3 步（提供更多缩放级别）
+          doubleClickMaxStops: 4,         // 增至 4 步（提供更多缩放级别）
           keyboardMoveDistance: 50,
           wheelZoomDistanceFactor: 100,
           pinchZoomDistanceFactor: 100,
