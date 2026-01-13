@@ -178,6 +178,23 @@ export default function ArticleList() {
     }
   };
 
+  const handleCategoryChange = async (article: Article, categoryId: number | null) => {
+    try {
+      await apiClient.put(`/api/articles/${article.id}`, {
+        category_id: categoryId,
+      });
+      
+      const newCategory = categoryId ? categories.find(c => c.id === categoryId) : null;
+      setArticles(articles.map(a => 
+        a.id === article.id 
+          ? { ...a, category: newCategory || undefined, category_id: categoryId || undefined }
+          : a
+      ));
+    } catch (err: any) {
+      alert(err.message || '更新分类时出错');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-CN', {
       year: 'numeric',
@@ -544,13 +561,18 @@ export default function ArticleList() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {article.category?.name ? (
-                        <span className="inline-flex items-center px-2.5 py-1 text-xs font-medium bg-go-100 dark:bg-go-900/30 text-go-700 dark:text-go-300 rounded-lg">
-                          {article.category.name}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-gray-400 dark:text-gray-500">未分类</span>
-                      )}
+                      <select
+                        value={article.category?.id || ''}
+                        onChange={(e) => handleCategoryChange(article, e.target.value ? parseInt(e.target.value) : null)}
+                        className="text-xs font-medium bg-go-50 dark:bg-go-900/20 text-go-700 dark:text-go-300 border border-go-200 dark:border-go-700 rounded-lg px-2 py-1 focus:ring-2 focus:ring-go-500 focus:border-go-500 cursor-pointer hover:bg-go-100 dark:hover:bg-go-900/30 transition-colors"
+                      >
+                        <option value="">未分类</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-3">

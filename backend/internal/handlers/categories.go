@@ -80,11 +80,11 @@ func GetCategories(c *gin.Context) {
 		return
 	}
 
-	// 为每个分类计算文章数量
+	// 为每个分类计算文章数量（包括草稿）
 	for i := range categories {
 		var articleCount int64
 		database.DB.Model(&models.Article{}).
-			Where("category_id = ? AND is_published = ?", categories[i].ID, true).
+			Where("category_id = ?", categories[i].ID).
 			Count(&articleCount)
 		categories[i].ArticlesCount = int(articleCount)
 	}
@@ -142,12 +142,12 @@ func loadChildrenRecursively(category *models.Category) {
 		// 加载孙分类
 		database.DB.Where("parent_id = ?", category.Children[i].ID).
 			Find(&category.Children[i].Children)
-		
+
 		// 递归处理
 		if len(category.Children[i].Children) > 0 {
 			loadChildrenRecursively(&category.Children[i])
 		}
-		
+
 		// 计算文章数量
 		category.Children[i].ArticlesCount = calculateCategoryArticleCount(category.Children[i].ID, false)
 	}
@@ -156,13 +156,13 @@ func loadChildrenRecursively(category *models.Category) {
 // calculateCategoryArticleCount 计算分类文章数量
 func calculateCategoryArticleCount(categoryID uint, includeChildren bool) int {
 	var count int64
-	
+
 	if includeChildren {
 		// 获取所有子分类ID
 		var childIDs []uint
 		getAllChildCategoryIDs(categoryID, &childIDs)
 		childIDs = append(childIDs, categoryID)
-		
+
 		database.DB.Model(&models.Article{}).
 			Where("category_id IN ? AND is_published = ?", childIDs, true).
 			Count(&count)
@@ -171,7 +171,7 @@ func calculateCategoryArticleCount(categoryID uint, includeChildren bool) int {
 			Where("category_id = ? AND is_published = ?", categoryID, true).
 			Count(&count)
 	}
-	
+
 	return int(count)
 }
 
@@ -179,7 +179,7 @@ func calculateCategoryArticleCount(categoryID uint, includeChildren bool) int {
 func getAllChildCategoryIDs(parentID uint, childIDs *[]uint) {
 	var children []models.Category
 	database.DB.Where("parent_id = ?", parentID).Find(&children)
-	
+
 	for _, child := range children {
 		*childIDs = append(*childIDs, child.ID)
 		getAllChildCategoryIDs(child.ID, childIDs)
@@ -685,13 +685,13 @@ func GetArticlesByCategory(c *gin.Context) {
 
 	// 排序
 	allowedSortFields := map[string]bool{
-		"created_at":    true,
-		"updated_at":    true,
-		"published_at":  true,
-		"title":         true,
-		"views_count":   true,
-		"likes_count":   true,
-		"reading_time":  true,
+		"created_at":   true,
+		"updated_at":   true,
+		"published_at": true,
+		"title":        true,
+		"views_count":  true,
+		"likes_count":  true,
+		"reading_time": true,
 	}
 	if !allowedSortFields[sortBy] {
 		sortBy = "created_at"
@@ -725,8 +725,8 @@ func GetArticlesByCategory(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": gin.H{
-			"category":   category,
-			"articles":   articles,
+			"category": category,
+			"articles": articles,
 			"pagination": gin.H{
 				"page":        page,
 				"limit":       limit,
