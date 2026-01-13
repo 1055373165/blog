@@ -37,6 +37,13 @@ export default function ArticleList() {
   const [showArticleSelector, setShowArticleSelector] = useState(false);
   const [selectedCategoryForAdd, setSelectedCategoryForAdd] = useState<number | null>(null);
 
+  // 子分类创建
+  const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
+  const [subCategoryParentId, setSubCategoryParentId] = useState<number | null>(null);
+  const [subCategoryParentName, setSubCategoryParentName] = useState<string>('');
+  const [subCategoryName, setSubCategoryName] = useState('');
+  const [subCategoryCreating, setSubCategoryCreating] = useState(false);
+
   useEffect(() => {
     loadArticles();
   }, [currentPage, filter, searchTerm, selectedCategoryId, selectedTagIds]);
@@ -253,6 +260,36 @@ export default function ArticleList() {
     } catch (error) {
       console.error('Failed to add articles:', error);
       alert('添加文章失败');
+    }
+  };
+
+  // 处理添加子分类
+  const handleAddSubCategory = (parentId: number, parentName: string) => {
+    setSubCategoryParentId(parentId);
+    setSubCategoryParentName(parentName);
+    setSubCategoryName('');
+    setShowSubCategoryModal(true);
+  };
+
+  const handleCreateSubCategory = async () => {
+    if (!subCategoryName.trim() || subCategoryParentId === null) return;
+
+    setSubCategoryCreating(true);
+    try {
+      await categoriesApi.createCategory({
+        name: subCategoryName.trim(),
+        parent_id: subCategoryParentId.toString(),
+      });
+      setShowSubCategoryModal(false);
+      setSubCategoryName('');
+      // 刷新分类树和分类列表
+      loadCategoryTree();
+      loadCategories();
+    } catch (error) {
+      console.error('Failed to create sub-category:', error);
+      alert('创建子分类失败');
+    } finally {
+      setSubCategoryCreating(false);
     }
   };
 
@@ -783,6 +820,7 @@ export default function ArticleList() {
               categories={categoryTree}
               onRefresh={loadCategoryTree}
               onAddArticles={handleAddArticlesToCategory}
+              onAddSubCategory={handleAddSubCategory}
             />
           )}
         </div>
@@ -809,6 +847,55 @@ export default function ArticleList() {
             : undefined
         }
       />
-    </div >
+
+      {/* 子分类创建模态框 */}
+      {showSubCategoryModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-black/50 transition-opacity"
+              onClick={() => setShowSubCategoryModal(false)}
+            />
+            <div className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                创建子分类
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                将在「{subCategoryParentName}」下创建子分类
+              </p>
+              <input
+                type="text"
+                placeholder="子分类名称"
+                value={subCategoryName}
+                onChange={(e) => setSubCategoryName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleCreateSubCategory();
+                  }
+                }}
+                className="block w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-go-500 focus:border-transparent mb-4"
+                autoFocus
+              />
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowSubCategoryModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleCreateSubCategory}
+                  disabled={!subCategoryName.trim() || subCategoryCreating}
+                  className="px-4 py-2 text-sm font-medium text-white bg-go-600 hover:bg-go-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors"
+                >
+                  {subCategoryCreating ? '创建中...' : '创建'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

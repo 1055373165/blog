@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
     DndContext,
@@ -24,6 +24,7 @@ interface CategoryTreeViewProps {
     categories: CategoryTreeNode[];
     onRefresh: () => void;
     onAddArticles: (categoryId: number) => void;
+    onAddSubCategory?: (parentId: number, parentName: string) => void;
 }
 
 interface SortableArticleRowProps {
@@ -91,8 +92,8 @@ function SortableArticleRow({ article, categoryId, onRemove, formatDate }: Sorta
 
             {/* 状态标签 */}
             <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${article.is_published
-                    ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
-                    : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                 }`}>
                 {article.is_published ? '已发布' : '草稿'}
             </span>
@@ -128,10 +129,13 @@ interface CategoryNodeProps {
     depth: number;
     onRefresh: () => void;
     onAddArticles: (categoryId: number) => void;
+    onAddSubCategory?: (parentId: number, parentName: string) => void;
+    expandedIds: Set<number>;
+    onToggleExpand: (id: number) => void;
 }
 
-function CategoryNode({ category, depth, onRefresh, onAddArticles }: CategoryNodeProps) {
-    const [isExpanded, setIsExpanded] = useState(true);
+function CategoryNode({ category, depth, onRefresh, onAddArticles, onAddSubCategory, expandedIds, onToggleExpand }: CategoryNodeProps) {
+    const isExpanded = expandedIds.has(category.id);
     const [articles, setArticles] = useState<Article[]>(category.articles || []);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -198,10 +202,10 @@ function CategoryNode({ category, depth, onRefresh, onAddArticles }: CategoryNod
             <div className="flex items-center gap-2 py-2">
                 {/* 展开/折叠按钮 */}
                 <button
-                    onClick={() => setIsExpanded(!isExpanded)}
+                    onClick={() => onToggleExpand(category.id)}
                     className={`p-1 rounded-lg transition-colors ${hasContent
-                            ? 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500'
-                            : 'text-gray-300 cursor-default'
+                        ? 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500'
+                        : 'text-gray-300 cursor-default'
                         }`}
                     disabled={!hasContent}
                 >
@@ -232,6 +236,20 @@ function CategoryNode({ category, depth, onRefresh, onAddArticles }: CategoryNod
                         <span className="ml-2 text-xs text-go-500">保存中...</span>
                     )}
                 </div>
+
+                {/* 添加子分类按钮 */}
+                {onAddSubCategory && (
+                    <button
+                        onClick={() => onAddSubCategory(category.id, category.name)}
+                        className="flex items-center gap-1 px-2 py-1 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                        title="添加子分类"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                        子分类
+                    </button>
+                )}
 
                 {/* 添加文章按钮 */}
                 <button
@@ -283,6 +301,9 @@ function CategoryNode({ category, depth, onRefresh, onAddArticles }: CategoryNod
                                 depth={depth + 1}
                                 onRefresh={onRefresh}
                                 onAddArticles={onAddArticles}
+                                onAddSubCategory={onAddSubCategory}
+                                expandedIds={expandedIds}
+                                onToggleExpand={onToggleExpand}
                             />
                         ))}
                 </div>
@@ -291,8 +312,48 @@ function CategoryNode({ category, depth, onRefresh, onAddArticles }: CategoryNod
     );
 }
 
+// 获取所有分类 ID（用于全部展开）
+function getAllCategoryIds(categories: CategoryTreeNode[]): number[] {
+    const ids: number[] = [];
+    for (const cat of categories) {
+        ids.push(cat.id);
+        if (cat.children && cat.children.length > 0) {
+            ids.push(...getAllCategoryIds(cat.children));
+        }
+    }
+    return ids;
+}
+
 // 主组件
-export default function CategoryTreeView({ categories, onRefresh, onAddArticles }: CategoryTreeViewProps) {
+export default function CategoryTreeView({ categories, onRefresh, onAddArticles, onAddSubCategory }: CategoryTreeViewProps) {
+    // 默认全部折叠（空集合）
+    const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+
+    // 当分类数据变化时，重置为默认折叠状态
+    useEffect(() => {
+        setExpandedIds(new Set());
+    }, [categories]);
+
+    const handleToggleExpand = (id: number) => {
+        setExpandedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
+    };
+
+    const handleExpandAll = () => {
+        setExpandedIds(new Set(getAllCategoryIds(categories)));
+    };
+
+    const handleCollapseAll = () => {
+        setExpandedIds(new Set());
+    };
+
     if (categories.length === 0) {
         return (
             <div className="text-center py-16">
@@ -314,17 +375,60 @@ export default function CategoryTreeView({ categories, onRefresh, onAddArticles 
         );
     }
 
+    const allExpanded = expandedIds.size >= getAllCategoryIds(categories).length;
+
     return (
-        <div className="space-y-2">
-            {categories.map((category) => (
-                <CategoryNode
-                    key={category.id}
-                    category={category}
-                    depth={0}
-                    onRefresh={onRefresh}
-                    onAddArticles={onAddArticles}
-                />
-            ))}
+        <div className="space-y-4">
+            {/* 工具栏 */}
+            <div className="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-gray-700">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                    共 {categories.length} 个顶级分类
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleExpandAll}
+                        disabled={allExpanded}
+                        className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${allExpanded
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                        全部展开
+                    </button>
+                    <button
+                        onClick={handleCollapseAll}
+                        disabled={expandedIds.size === 0}
+                        className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${expandedIds.size === 0
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        全部折叠
+                    </button>
+                </div>
+            </div>
+
+            {/* 分类树 */}
+            <div className="space-y-2">
+                {categories.map((category) => (
+                    <CategoryNode
+                        key={category.id}
+                        category={category}
+                        depth={0}
+                        onRefresh={onRefresh}
+                        onAddArticles={onAddArticles}
+                        onAddSubCategory={onAddSubCategory}
+                        expandedIds={expandedIds}
+                        onToggleExpand={handleToggleExpand}
+                    />
+                ))}
+            </div>
         </div>
     );
 }
