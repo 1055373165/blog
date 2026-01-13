@@ -87,6 +87,12 @@ export interface UpdateCategoryRequest {
   parent_id?: number;
 }
 
+// 分类树节点（包含文章列表，用于分类维度视图）
+export interface CategoryTreeNode extends Category {
+  children?: CategoryTreeNode[];
+  articles?: Article[];
+}
+
 // 标签相关类型
 export interface Tag {
   id: number;
@@ -124,7 +130,7 @@ export interface Article {
   views_count: number;
   likes_count: number;
   is_liked?: boolean;
-  
+
   // 关联数据
   author: User;
   author_id: number;
@@ -135,12 +141,12 @@ export interface Article {
   series_id?: number;
   series?: Series;
   series_order?: number;
-  
+
   // SEO相关
   meta_title?: string;
   meta_description?: string;
   meta_keywords?: string;
-  
+
   created_at: string;
   updated_at: string;
 }
@@ -393,41 +399,41 @@ export interface Blog {
   description: string;
   content: string;
   type: 'audio' | 'video';
-  
+
   // 媒体文件信息
   media_url: string;
   thumbnail?: string;
   duration: number; // 时长（秒）
   file_size: number; // 文件大小（字节）
   mime_type?: string;
-  
+
   // 音频文件信息
   audio_url?: string;
   audio_duration?: number;
   audio_file_size?: number;
   audio_mime_type?: string;
-  
+
   // 状态字段
   is_published: boolean;
   is_draft: boolean;
   published_at?: string;
-  
+
   // 统计字段
   views_count: number;
   likes_count: number;
   is_liked?: boolean;
-  
+
   // 关联数据
   author: User;
   author_id: number;
   categories?: Category[];
   tags: Tag[];
-  
+
   // SEO相关
   meta_title?: string;
   meta_description?: string;
   meta_keywords?: string;
-  
+
   created_at: string;
   updated_at: string;
 }

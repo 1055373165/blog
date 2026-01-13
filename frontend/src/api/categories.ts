@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { Category, PaginatedResponse } from '../types';
+import { Category, CategoryTreeNode, PaginatedResponse } from '../types';
 
 export const categoriesApi = {
   // 获取分类列表
@@ -14,7 +14,7 @@ export const categoriesApi = {
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.parent_id) queryParams.append('parent_id', params.parent_id);
     if (params?.include_children) queryParams.append('include_children', 'true');
-    
+
     const queryString = queryParams.toString();
     return apiClient.get<PaginatedResponse<Category>>(`/api/categories${queryString ? '?' + queryString : ''}`);
   },
@@ -22,6 +22,11 @@ export const categoriesApi = {
   // 获取分类树结构
   async getCategoryTree() {
     return apiClient.get<Category[]>('/api/categories/tree');
+  },
+
+  // 获取分类树结构（包含文章）
+  async getCategoryTreeWithArticles() {
+    return apiClient.get<CategoryTreeNode[]>('/api/categories/tree?include_articles=true');
   },
 
   // 获取单个分类
@@ -62,5 +67,24 @@ export const categoriesApi = {
   // 批量删除分类
   async deleteCategories(ids: string[]) {
     return apiClient.post<void>('/api/categories/batch-delete', { ids });
+  },
+
+  // 添加文章到分类
+  async addArticlesToCategory(categoryId: number, articleIds: number[]) {
+    return apiClient.post<{ added_count: number }>(`/api/categories/${categoryId}/articles`, {
+      article_ids: articleIds,
+    });
+  },
+
+  // 从分类移除文章
+  async removeArticleFromCategory(categoryId: number, articleId: number) {
+    return apiClient.delete<void>(`/api/categories/${categoryId}/articles/${articleId}`);
+  },
+
+  // 更新分类内文章排序
+  async updateCategoryArticlesOrder(categoryId: number, articleIds: number[]) {
+    return apiClient.put<void>(`/api/categories/${categoryId}/articles/sort`, {
+      article_ids: articleIds,
+    });
   },
 };

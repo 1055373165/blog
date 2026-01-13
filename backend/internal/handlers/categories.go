@@ -108,6 +108,8 @@ func GetCategories(c *gin.Context) {
 
 // GetCategoryTree 获取分类树结构
 func GetCategoryTree(c *gin.Context) {
+	includeArticles := c.DefaultQuery("include_articles", "false") == "true"
+
 	// 获取所有顶级分类
 	var categories []models.Category
 	err := database.DB.Where("parent_id IS NULL").
@@ -128,6 +130,11 @@ func GetCategoryTree(c *gin.Context) {
 		loadChildrenRecursively(&categories[i])
 		// 计算文章数量（包括子分类）
 		categories[i].ArticlesCount = calculateCategoryArticleCount(categories[i].ID, true)
+	}
+
+	// 如果需要包含文章，加载每个分类下的文章
+	if includeArticles {
+		loadArticlesForCategoryTree(categories)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -184,6 +191,60 @@ func getAllChildCategoryIDs(parentID uint, childIDs *[]uint) {
 		*childIDs = append(*childIDs, child.ID)
 		getAllChildCategoryIDs(child.ID, childIDs)
 	}
+}
+
+// loadArticlesForCategoryTree 为分类树加载文章
+func loadArticlesForCategoryTree(categories []models.Category) {
+	for i := range categories {
+		loadArticlesForCategory(&categories[i])
+		// 递归处理子分类
+		if len(categories[i].Children) > 0 {
+			loadArticlesForCategoryTree(categories[i].Children)
+		}
+	}
+}
+
+// loadArticlesForCategory 为单个分类加载文章（按 sort_order 排序）
+func loadArticlesForCategory(category *models.Category) {
+	// 通过 article_categories 关联表查询文章，按 sort_order 排序
+	var articleCategories []models.ArticleCategory
+	database.DB.Where("category_id = ?", category.ID).
+		Order("sort_order ASC, created_at DESC").
+		Find(&articleCategories)
+
+	if len(articleCategories) == 0 {
+		category.Articles = []models.Article{}
+		return
+	}
+
+	// 获取文章ID列表，保持排序顺序
+	articleIDs := make([]uint, len(articleCategories))
+	for i, ac := range articleCategories {
+		articleIDs[i] = ac.ArticleID
+	}
+
+	// 查询文章详情
+	var articles []models.Article
+	database.DB.Where("id IN ?", articleIDs).
+		Preload("Author").
+		Preload("Category").
+		Preload("Tags").
+		Find(&articles)
+
+	// 按 articleIDs 顺序排序
+	articleMap := make(map[uint]models.Article)
+	for _, a := range articles {
+		articleMap[a.ID] = a
+	}
+
+	sortedArticles := make([]models.Article, 0, len(articleIDs))
+	for _, id := range articleIDs {
+		if a, ok := articleMap[id]; ok {
+			sortedArticles = append(sortedArticles, a)
+		}
+	}
+
+	category.Articles = sortedArticles
 }
 
 // GetCategory 获取单个分类
@@ -734,5 +795,224 @@ func GetArticlesByCategory(c *gin.Context) {
 				"total_pages": totalPages,
 			},
 		},
+	})
+}
+
+// AddArticlesToCategoryRequest 添加文章到分类请求结构
+type AddArticlesToCategoryRequest struct {
+	ArticleIDs []uint `json:"article_ids" binding:"required"`
+}
+
+// AddArticlesToCategory 添加文章到分类
+func AddArticlesToCategory(c *gin.Context) {
+	// 权限检查：只有管理员可以操作
+	isAdmin, exists := middleware.GetCurrentUserIsAdmin(c)
+	if !exists || !isAdmin {
+		c.JSON(http.StatusForbidden, gin.H{
+			"success": false,
+			"error":   "需要管理员权限",
+		})
+		return
+	}
+
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "分类ID无效",
+		})
+		return
+	}
+
+	var req AddArticlesToCategoryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "请求参数无效",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// 检查分类是否存在
+	var category models.Category
+	err = database.DB.First(&category, uint(id)).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"error":   "分类不存在",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "查询分类失败",
+		})
+		return
+	}
+
+	// 获取当前最大排序值
+	var maxSortOrder int
+	database.DB.Model(&models.ArticleCategory{}).
+		Where("category_id = ?", category.ID).
+		Select("COALESCE(MAX(sort_order), 0)").
+		Scan(&maxSortOrder)
+
+	// 批量添加文章到分类
+	addedCount := 0
+	for i, articleID := range req.ArticleIDs {
+		// 检查文章是否存在
+		var article models.Article
+		if database.DB.First(&article, articleID).Error != nil {
+			continue
+		}
+
+		// 检查是否已存在关联
+		var existing models.ArticleCategory
+		if database.DB.Where("article_id = ? AND category_id = ?", articleID, category.ID).First(&existing).Error == nil {
+			continue // 已存在，跳过
+		}
+
+		// 创建关联
+		ac := models.ArticleCategory{
+			ArticleID:  articleID,
+			CategoryID: category.ID,
+			SortOrder:  maxSortOrder + i + 1,
+		}
+		if err := database.DB.Create(&ac).Error; err == nil {
+			addedCount++
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "文章添加成功",
+		"data": gin.H{
+			"added_count": addedCount,
+		},
+	})
+}
+
+// RemoveArticleFromCategory 从分类移除文章
+func RemoveArticleFromCategory(c *gin.Context) {
+	// 权限检查：只有管理员可以操作
+	isAdmin, exists := middleware.GetCurrentUserIsAdmin(c)
+	if !exists || !isAdmin {
+		c.JSON(http.StatusForbidden, gin.H{
+			"success": false,
+			"error":   "需要管理员权限",
+		})
+		return
+	}
+
+	categoryID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "分类ID无效",
+		})
+		return
+	}
+
+	articleID, err := strconv.ParseUint(c.Param("article_id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "文章ID无效",
+		})
+		return
+	}
+
+	// 删除关联
+	result := database.DB.Where("article_id = ? AND category_id = ?", articleID, categoryID).
+		Delete(&models.ArticleCategory{})
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "移除文章失败",
+		})
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"error":   "文章不在该分类中",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "文章移除成功",
+	})
+}
+
+// UpdateCategoryArticlesOrderRequest 更新分类内文章排序请求结构
+type UpdateCategoryArticlesOrderRequest struct {
+	ArticleIDs []uint `json:"article_ids" binding:"required"`
+}
+
+// UpdateCategoryArticlesOrder 更新分类内文章排序
+func UpdateCategoryArticlesOrder(c *gin.Context) {
+	// 权限检查：只有管理员可以操作
+	isAdmin, exists := middleware.GetCurrentUserIsAdmin(c)
+	if !exists || !isAdmin {
+		c.JSON(http.StatusForbidden, gin.H{
+			"success": false,
+			"error":   "需要管理员权限",
+		})
+		return
+	}
+
+	categoryID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "分类ID无效",
+		})
+		return
+	}
+
+	var req UpdateCategoryArticlesOrderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "请求参数无效",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// 检查分类是否存在
+	var category models.Category
+	err = database.DB.First(&category, uint(categoryID)).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"error":   "分类不存在",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "查询分类失败",
+		})
+		return
+	}
+
+	// 更新排序
+	for i, articleID := range req.ArticleIDs {
+		database.DB.Model(&models.ArticleCategory{}).
+			Where("article_id = ? AND category_id = ?", articleID, categoryID).
+			Update("sort_order", i)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "排序更新成功",
 	})
 }

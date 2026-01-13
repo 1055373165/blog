@@ -22,9 +22,9 @@ type User struct {
 	Password  string `json:"-" gorm:"not null;size:255"` // 不在JSON中显示密码
 	Avatar    string `json:"avatar"`
 	IsAdmin   bool   `json:"is_admin" gorm:"default:false"`
-	GitHubURL string `json:"github_url" gorm:"size:500"`     // GitHub链接
-	Bio       string `json:"bio" gorm:"type:text"`           // 个人简介
-	IsActive  bool   `json:"is_active" gorm:"default:true"`  // 用户状态
+	GitHubURL string `json:"github_url" gorm:"size:500"`    // GitHub链接
+	Bio       string `json:"bio" gorm:"type:text"`          // 个人简介
+	IsActive  bool   `json:"is_active" gorm:"default:true"` // 用户状态
 
 	// 关联关系
 	Articles    []Article    `json:"articles,omitempty" gorm:"foreignKey:AuthorID"`
@@ -93,7 +93,7 @@ type Blog struct {
 
 	// 音频文件信息（新增）
 	AudioURL      string  `json:"audio_url" gorm:"size:500"`        // 音频文件URL
-	AudioDuration float64 `json:"audio_duration" gorm:"default:0"` // 音频时长（秒）
+	AudioDuration float64 `json:"audio_duration" gorm:"default:0"`  // 音频时长（秒）
 	AudioFileSize int64   `json:"audio_file_size" gorm:"default:0"` // 音频文件大小（字节）
 	AudioMimeType string  `json:"audio_mime_type" gorm:"size:100"`  // 音频MIME类型
 
@@ -178,6 +178,7 @@ type Article struct {
 	// 关联关系
 	Author     User        `json:"author" gorm:"foreignKey:AuthorID"`
 	Category   *Category   `json:"category,omitempty" gorm:"foreignKey:CategoryID"`
+	Categories []Category  `json:"categories,omitempty" gorm:"many2many:article_categories;"`
 	Series     *Series     `json:"series,omitempty" gorm:"foreignKey:SeriesID"`
 	Submission *Submission `json:"submission,omitempty" gorm:"foreignKey:SubmissionID"`
 	Tags       []Tag       `json:"tags,omitempty" gorm:"many2many:article_tags;"`
@@ -207,6 +208,14 @@ type ArticleLike struct {
 
 	// 复合唯一索引，防止重复点赞
 	// gorm:"uniqueIndex:idx_article_ip"
+}
+
+// ArticleCategory 文章-分类关联表（支持排序）
+type ArticleCategory struct {
+	ArticleID  uint      `json:"article_id" gorm:"primaryKey"`
+	CategoryID uint      `json:"category_id" gorm:"primaryKey"`
+	SortOrder  int       `json:"sort_order" gorm:"default:0;index"`
+	CreatedAt  time.Time `json:"created_at" gorm:"autoCreateTime"`
 }
 
 // SearchIndex 搜索索引模型
@@ -268,12 +277,12 @@ type Submission struct {
 // Comment 评论模型
 type Comment struct {
 	BaseModel
-	Content       string     `json:"content" gorm:"type:text;not null"`
-	IsApproved    bool       `json:"is_approved" gorm:"default:false"`
-	LikesCount    int        `json:"likes_count" gorm:"default:0"`
-	RepliesCount  int        `json:"replies_count" gorm:"default:0"`
-	IsReported    bool       `json:"is_reported" gorm:"default:false"`
-	ReportReason  string     `json:"report_reason"`
+	Content      string `json:"content" gorm:"type:text;not null"`
+	IsApproved   bool   `json:"is_approved" gorm:"default:false"`
+	LikesCount   int    `json:"likes_count" gorm:"default:0"`
+	RepliesCount int    `json:"replies_count" gorm:"default:0"`
+	IsReported   bool   `json:"is_reported" gorm:"default:false"`
+	ReportReason string `json:"report_reason"`
 
 	// 外键
 	ArticleID uint  `json:"article_id" gorm:"not null;index"`
@@ -281,11 +290,11 @@ type Comment struct {
 	ParentID  *uint `json:"parent_id" gorm:"index"` // 父评论ID，用于回复
 
 	// 关联关系
-	Article  Article    `json:"article" gorm:"foreignKey:ArticleID"`
-	Author   User       `json:"author" gorm:"foreignKey:AuthorID"`
-	Parent   *Comment   `json:"parent,omitempty" gorm:"foreignKey:ParentID"`
-	Replies  []Comment  `json:"replies,omitempty" gorm:"foreignKey:ParentID"`
-	Likes    []CommentLike `json:"-" gorm:"foreignKey:CommentID"`
+	Article Article       `json:"article" gorm:"foreignKey:ArticleID"`
+	Author  User          `json:"author" gorm:"foreignKey:AuthorID"`
+	Parent  *Comment      `json:"parent,omitempty" gorm:"foreignKey:ParentID"`
+	Replies []Comment     `json:"replies,omitempty" gorm:"foreignKey:ParentID"`
+	Likes   []CommentLike `json:"-" gorm:"foreignKey:CommentID"`
 }
 
 // CommentLike 评论点赞记录
@@ -324,8 +333,8 @@ type StudyPlan struct {
 	DifficultyLevel  int    `json:"difficulty_level" gorm:"default:3;check:difficulty_level >= 1 AND difficulty_level <= 5"`
 
 	// 目标设置
-	DailyGoal   int `json:"daily_goal" gorm:"default:5"`   // 每日学习目标数量
-	WeeklyGoal  int `json:"weekly_goal" gorm:"default:30"` // 每周学习目标数量
+	DailyGoal   int `json:"daily_goal" gorm:"default:5"`     // 每日学习目标数量
+	WeeklyGoal  int `json:"weekly_goal" gorm:"default:30"`   // 每周学习目标数量
 	MonthlyGoal int `json:"monthly_goal" gorm:"default:120"` // 每月学习目标数量
 
 	// 统计字段
@@ -366,11 +375,11 @@ type StudyItem struct {
 	AverageRating  float64 `json:"average_rating" gorm:"default:0"`   // 平均难度评分
 
 	// 刻意练习数据
-	WeakPoints       string `json:"weak_points" gorm:"type:text"`         // 薄弱知识点
-	StudyNotes       string `json:"study_notes" gorm:"type:text"`         // 学习笔记
-	PersonalRating   int    `json:"personal_rating" gorm:"default:0"`     // 个人掌握度评分 1-10
-	ImportanceLevel  int    `json:"importance_level" gorm:"default:3"`    // 重要程度 1-5
-	DifficultyLevel  int    `json:"difficulty_level" gorm:"default:3"`    // 难度等级 1-5
+	WeakPoints      string `json:"weak_points" gorm:"type:text"`      // 薄弱知识点
+	StudyNotes      string `json:"study_notes" gorm:"type:text"`      // 学习笔记
+	PersonalRating  int    `json:"personal_rating" gorm:"default:0"`  // 个人掌握度评分 1-10
+	ImportanceLevel int    `json:"importance_level" gorm:"default:3"` // 重要程度 1-5
+	DifficultyLevel int    `json:"difficulty_level" gorm:"default:3"` // 难度等级 1-5
 
 	// 关联关系
 	StudyPlan StudyPlan  `json:"study_plan" gorm:"foreignKey:StudyPlanID"`
@@ -384,22 +393,22 @@ type StudyLog struct {
 	StudyItemID uint `json:"study_item_id" gorm:"not null;index"`
 
 	// 本次学习信息
-	ReviewType  string `json:"review_type" gorm:"not null;size:20"` // initial, review, practice, test, summary
-	Rating      int    `json:"rating" gorm:"not null;check:rating >= 1 AND rating <= 5"` // 1-5 难度评级
-	StudyTime   int    `json:"study_time" gorm:"not null"` // 本次学习时间（秒）
-	Completion  bool   `json:"completion" gorm:"default:true"` // 是否完成学习
+	ReviewType string `json:"review_type" gorm:"not null;size:20"`                      // initial, review, practice, test, summary
+	Rating     int    `json:"rating" gorm:"not null;check:rating >= 1 AND rating <= 5"` // 1-5 难度评级
+	StudyTime  int    `json:"study_time" gorm:"not null"`                               // 本次学习时间（秒）
+	Completion bool   `json:"completion" gorm:"default:true"`                           // 是否完成学习
 
 	// 学习方式和内容
-	StudyMethod    string `json:"study_method" gorm:"size:50"`  // read, quiz, summary, explanation, practice
+	StudyMethod    string `json:"study_method" gorm:"size:50"`      // read, quiz, summary, explanation, practice
 	StudyMaterials string `json:"study_materials" gorm:"type:text"` // 学习材料记录
-	Notes          string `json:"notes" gorm:"type:text"`       // 本次学习笔记
-	KeyPoints      string `json:"key_points" gorm:"type:text"`  // 关键知识点
+	Notes          string `json:"notes" gorm:"type:text"`           // 本次学习笔记
+	KeyPoints      string `json:"key_points" gorm:"type:text"`      // 关键知识点
 
 	// 学习效果评估
-	Understanding   int    `json:"understanding" gorm:"default:0;check:understanding >= 0 AND understanding <= 10"`   // 理解程度 0-10
-	Retention      int    `json:"retention" gorm:"default:0;check:retention >= 0 AND retention <= 10"`         // 记忆保持度 0-10
-	Application    int    `json:"application" gorm:"default:0;check:application >= 0 AND application <= 10"`   // 应用能力 0-10
-	Confidence     int    `json:"confidence" gorm:"default:0;check:confidence >= 0 AND confidence <= 10"`      // 信心程度 0-10
+	Understanding int `json:"understanding" gorm:"default:0;check:understanding >= 0 AND understanding <= 10"` // 理解程度 0-10
+	Retention     int `json:"retention" gorm:"default:0;check:retention >= 0 AND retention <= 10"`             // 记忆保持度 0-10
+	Application   int `json:"application" gorm:"default:0;check:application >= 0 AND application <= 10"`       // 应用能力 0-10
+	Confidence    int `json:"confidence" gorm:"default:0;check:confidence >= 0 AND confidence <= 10"`          // 信心程度 0-10
 
 	// 间隔重复算法数据
 	PreviousInterval int     `json:"previous_interval"`
@@ -408,9 +417,9 @@ type StudyLog struct {
 	NewEase          float64 `json:"new_ease"`
 
 	// 环境和设备信息
-	DeviceType  string `json:"device_type" gorm:"size:50"`   // desktop, mobile, tablet
-	Location    string `json:"location" gorm:"size:100"`     // 学习地点
-	TimeOfDay   string `json:"time_of_day" gorm:"size:20"`   // morning, afternoon, evening, night
+	DeviceType string `json:"device_type" gorm:"size:50"` // desktop, mobile, tablet
+	Location   string `json:"location" gorm:"size:100"`   // 学习地点
+	TimeOfDay  string `json:"time_of_day" gorm:"size:20"` // morning, afternoon, evening, night
 
 	// 关联关系
 	StudyItem StudyItem `json:"study_item" gorm:"foreignKey:StudyItemID"`
@@ -424,15 +433,15 @@ type StudyReminder struct {
 	Status      string    `json:"status" gorm:"default:'pending';size:20"` // pending, read, completed
 
 	// 提醒类型和内容
-	ReminderType string `json:"type" gorm:"default:'review';size:20"` // review, goal, overdue, achievement, manual
+	ReminderType string `json:"type" gorm:"default:'review';size:20"`                            // review, goal, overdue, achievement, manual
 	Priority     int    `json:"priority" gorm:"default:3;check:priority >= 1 AND priority <= 5"` // 提醒优先级
 	Title        string `json:"title" gorm:"size:255"`
 	Message      string `json:"message" gorm:"type:text"`
 
 	// 提醒方式
 	NotificationMethod string `json:"notification_method" gorm:"default:'system';size:50"` // system, email, sms, webhook
-	IsRecurring       bool   `json:"is_recurring" gorm:"default:false"`
-	RecurrencePattern string `json:"recurrence_pattern" gorm:"size:100"` // daily, weekly, custom
+	IsRecurring        bool   `json:"is_recurring" gorm:"default:false"`
+	RecurrencePattern  string `json:"recurrence_pattern" gorm:"size:100"` // daily, weekly, custom
 
 	// 执行信息
 	SentAt       *time.Time `json:"sent_at"`
@@ -448,12 +457,12 @@ type StudyReminder struct {
 type StudyAnalytics struct {
 	BaseModel
 	StudyPlanID uint   `json:"study_plan_id" gorm:"not null;index"`
-	Date        string `json:"date" gorm:"not null;index;size:10"` // YYYY-MM-DD
+	Date        string `json:"date" gorm:"not null;index;size:10"`  // YYYY-MM-DD
 	PeriodType  string `json:"period_type" gorm:"not null;size:10"` // daily, weekly, monthly
 
 	// 基础学习统计
 	ItemsReviewed  int     `json:"items_reviewed" gorm:"default:0"`
-	StudyTime      int     `json:"study_time" gorm:"default:0"` // 总学习时间（秒）
+	StudyTime      int     `json:"study_time" gorm:"default:0"`    // 总学习时间（秒）
 	SessionCount   int     `json:"session_count" gorm:"default:0"` // 学习会话数
 	AverageRating  float64 `json:"average_rating" gorm:"default:0"`
 	CompletionRate float64 `json:"completion_rate" gorm:"default:0"` // 完成率
@@ -465,10 +474,10 @@ type StudyAnalytics struct {
 	FailedItems   int `json:"failed_items" gorm:"default:0"`   // 失败项目
 
 	// 效率和质量指标
-	EfficiencyScore   float64 `json:"efficiency_score" gorm:"default:0"`   // 学习效率分数
-	RetentionRate     float64 `json:"retention_rate" gorm:"default:0"`     // 知识保持率
-	ProgressVelocity  float64 `json:"progress_velocity" gorm:"default:0"`  // 进步速度
-	ConsistencyScore  float64 `json:"consistency_score" gorm:"default:0"`  // 学习一致性
+	EfficiencyScore  float64 `json:"efficiency_score" gorm:"default:0"`  // 学习效率分数
+	RetentionRate    float64 `json:"retention_rate" gorm:"default:0"`    // 知识保持率
+	ProgressVelocity float64 `json:"progress_velocity" gorm:"default:0"` // 进步速度
+	ConsistencyScore float64 `json:"consistency_score" gorm:"default:0"` // 学习一致性
 
 	// 目标达成情况
 	DailyGoalAchieved   bool    `json:"daily_goal_achieved" gorm:"default:false"`
@@ -476,9 +485,9 @@ type StudyAnalytics struct {
 	MonthlyGoalProgress float64 `json:"monthly_goal_progress" gorm:"default:0"` // 月目标进度百分比
 
 	// 学习模式分析
-	PreferredStudyTime string `json:"preferred_study_time" gorm:"size:20"` // 偏好学习时间
+	PreferredStudyTime string `json:"preferred_study_time" gorm:"size:20"`   // 偏好学习时间
 	AvgSessionDuration int    `json:"avg_session_duration" gorm:"default:0"` // 平均学习时长
-	MostUsedMethod     string `json:"most_used_method" gorm:"size:50"`     // 最常用学习方法
+	MostUsedMethod     string `json:"most_used_method" gorm:"size:50"`       // 最常用学习方法
 
 	// 关联关系
 	StudyPlan StudyPlan `json:"study_plan" gorm:"foreignKey:StudyPlanID"`
@@ -495,6 +504,7 @@ func (BlogLike) TableName() string         { return "blog_likes" }
 func (Article) TableName() string          { return "articles" }
 func (ArticleView) TableName() string      { return "article_views" }
 func (ArticleLike) TableName() string      { return "article_likes" }
+func (ArticleCategory) TableName() string  { return "article_categories" }
 func (Comment) TableName() string          { return "comments" }
 func (CommentLike) TableName() string      { return "comment_likes" }
 func (Submission) TableName() string       { return "submissions" }

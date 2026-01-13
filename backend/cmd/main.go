@@ -155,6 +155,10 @@ func main() {
 			categories.PUT("/:id", middleware.AuthRequired(), handlers.UpdateCategory)
 			categories.DELETE("/:id", middleware.AuthRequired(), handlers.DeleteCategory)
 			categories.GET("/:id/articles", handlers.GetArticlesByCategory)
+			// 分类-文章关联管理
+			categories.POST("/:id/articles", middleware.AuthRequired(), handlers.AddArticlesToCategory)
+			categories.DELETE("/:id/articles/:article_id", middleware.AuthRequired(), handlers.RemoveArticleFromCategory)
+			categories.PUT("/:id/articles/sort", middleware.AuthRequired(), handlers.UpdateCategoryArticlesOrder)
 		}
 
 		// 标签相关路由
@@ -310,13 +314,13 @@ func main() {
 		reminders := api.Group("/reminders")
 		// 移除认证中间件，管理员功能暂时开放访问
 		{
-			reminders.GET("", reminderHandler.GetReminders)                    // 获取提醒列表
-			reminders.GET("/unread-count", reminderHandler.GetUnreadCount)     // 获取未读数量
-			reminders.GET("/stats", reminderHandler.GetReminderStats)          // 获取统计信息
-			reminders.POST("/:id/read", reminderHandler.MarkAsRead)            // 标记为已读
-			reminders.POST("/:id/complete", reminderHandler.MarkAsCompleted)   // 标记为完成
-			reminders.POST("/batch-read", reminderHandler.BatchMarkAsRead)     // 批量标记为已读
-			reminders.POST("", reminderHandler.CreateManualReminder)           // 创建手动提醒
+			reminders.GET("", reminderHandler.GetReminders)                  // 获取提醒列表
+			reminders.GET("/unread-count", reminderHandler.GetUnreadCount)   // 获取未读数量
+			reminders.GET("/stats", reminderHandler.GetReminderStats)        // 获取统计信息
+			reminders.POST("/:id/read", reminderHandler.MarkAsRead)          // 标记为已读
+			reminders.POST("/:id/complete", reminderHandler.MarkAsCompleted) // 标记为完成
+			reminders.POST("/batch-read", reminderHandler.BatchMarkAsRead)   // 批量标记为已读
+			reminders.POST("", reminderHandler.CreateManualReminder)         // 创建手动提醒
 		}
 	}
 
