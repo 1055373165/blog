@@ -151,7 +151,7 @@ export interface CreateArticleInput {
   content: string;
   excerpt?: string;
   cover_image?: string;
-  category_ids?: number[]; // 文章可以属于多个分类
+  category_id?: number; // 文章分类ID
   tag_ids?: number[];
   series_id?: number;
   series_order?: number;

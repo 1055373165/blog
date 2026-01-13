@@ -23,7 +23,7 @@ export default function ArticleEditor() {
     content: '',
     excerpt: '',
     cover_image: '',
-    category_ids: [],
+    category_id: undefined,
     tag_ids: [],
     series_id: undefined,
     series_order: undefined,
@@ -126,7 +126,7 @@ export default function ArticleEditor() {
           content: article.content,
           excerpt: article.excerpt,
           cover_image: article.cover_image || '',
-          category_ids: (article.categories || []).map(category => category.id),
+          category_id: article.category?.id,
           tag_ids: (article.tags || []).map(tag => tag.id),
           series_id: article.series_id,
           series_order: article.series_order,
@@ -137,7 +137,7 @@ export default function ArticleEditor() {
           author_display_name: article.author_display_name || article.author?.name || '',
         });
         setSelectedTags((article.tags || []).map(tag => tag.id.toString()));
-        setSelectedCategories((article.categories || []).map(category => category.id.toString()));
+        setSelectedCategories(article.category ? [article.category.id.toString()] : []);
       } else {
         throw new Error('加载文章失败');
       }
@@ -186,14 +186,10 @@ export default function ArticleEditor() {
     handleInputChange('tag_ids', newSelectedTags);
   };
 
-  const handleCategoryToggle = (categoryId: string) => {
-    const currentCategories = selectedCategories || [];
-    const newSelectedCategories = currentCategories.includes(categoryId)
-      ? currentCategories.filter(id => id !== categoryId)
-      : [...currentCategories, categoryId];
-    
-    setSelectedCategories(newSelectedCategories);
-    handleInputChange('category_ids', newSelectedCategories);
+  const handleCategorySelect = (categoryId: string) => {
+    const newCategoryId = categoryId ? parseInt(categoryId) : undefined;
+    setSelectedCategories(categoryId ? [categoryId] : []);
+    handleInputChange('category_id', newCategoryId);
   };
 
   const generateExcerpt = () => {
@@ -236,7 +232,7 @@ export default function ArticleEditor() {
       const payload = {
         ...formData,
         tag_ids: (selectedTags || []).map(id => parseInt(id)),
-        category_ids: (selectedCategories || []).map(id => parseInt(id)),
+        category_id: selectedCategories?.length ? parseInt(selectedCategories[0]) : undefined,
       };
 
       let response;
@@ -285,7 +281,7 @@ export default function ArticleEditor() {
       ...formData,
       is_published: newPublishedState,
       tag_ids: (selectedTags || []).map(id => parseInt(id)),
-      category_ids: (selectedCategories || []).map(id => parseInt(id)),
+      category_id: selectedCategories?.length ? parseInt(selectedCategories[0]) : undefined,
     };
 
     try {
@@ -396,7 +392,7 @@ export default function ArticleEditor() {
       issues.push('建议添加文章摘要');
     }
     
-    if (!formData.category_ids || formData.category_ids.length === 0) {
+    if (!formData.category_id) {
       issues.push('建议选择文章分类');
     }
     
@@ -656,24 +652,18 @@ export default function ArticleEditor() {
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                       文章分类
                     </h3>
-                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                    <select
+                      value={formData.category_id || ''}
+                      onChange={(e) => handleCategorySelect(e.target.value)}
+                      className="input w-full"
+                    >
+                      <option value="">选择分类</option>
                       {(categories || []).map((category) => (
-                        <label key={category.id} className="flex items-center group cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={(selectedCategories || []).includes(category.id.toString())}
-                            onChange={() => handleCategoryToggle(category.id.toString())}
-                            className="rounded border-gray-300 dark:border-gray-600 text-go-600 focus:ring-go-500 dark:bg-gray-700"
-                          />
-                          <span className="ml-3 text-sm text-gray-700 dark:text-gray-300 group-hover:text-go-600 dark:group-hover:text-go-400 transition-colors">
-                            {category.name}
-                          </span>
-                          <span className="ml-auto text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
-                            {category.articles_count}
-                          </span>
-                        </label>
+                        <option key={category.id} value={category.id}>
+                          {category.name} ({category.articles_count})
+                        </option>
                       ))}
-                    </div>
+                    </select>
                   </div>
 
                   {/* Series */}
