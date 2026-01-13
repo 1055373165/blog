@@ -278,7 +278,7 @@ export default function ArticleList() {
     try {
       await categoriesApi.createCategory({
         name: subCategoryName.trim(),
-        parent_id: subCategoryParentId.toString(),
+        parent_id: subCategoryParentId,
       });
       setShowSubCategoryModal(false);
       setSubCategoryName('');

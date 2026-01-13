@@ -44,7 +44,7 @@ export const categoriesApi = {
     name: string;
     slug?: string;
     description?: string;
-    parent_id?: string;
+    parent_id?: number;
   }) {
     return apiClient.post<Category>('/api/categories', data);
   },
