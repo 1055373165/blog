@@ -8,6 +8,8 @@
 
 A feature-rich, modern blog platform with advanced content management, multimedia support, intelligent study system, and powerful search capabilities. Built with Go and React for optimal performance and developer experience.
 
+Project Effect Display：https://www.godepth.top.
+
 ## ✨ Features
 
 ### 🎯 Core Content Management
