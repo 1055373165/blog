@@ -1007,6 +1007,10 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                 <video
                   {...props}
                   controls={props.controls ?? true}
+                  autoPlay={props.autoPlay ?? true}
+                  loop={props.loop ?? true}
+                  muted={props.muted ?? true}
+                  playsInline={props.playsInline ?? true}
                   preload={typeof props.preload === 'string' ? props.preload : 'metadata'}
                 />
               );
