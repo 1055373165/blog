@@ -3,6 +3,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
+import type { Root, Image } from 'mdast';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
@@ -70,8 +71,8 @@ interface MarkdownRendererProps {
 
 // 自定义插件：解析图片尺寸语法 {width=200 height=200}
 const remarkImageSize = () => {
-  return (tree: any) => {
-    visit(tree, 'image', (node: any) => {
+  return (tree: Root) => {
+    visit(tree, 'image', (node: Image) => {
       if (node.alt) {
         // 查找 alt 文本后面的 {width=xxx height=xxx} 模式
         const match = node.alt.match(/^(.*?)\s*\{([^}]+)\}$/);
@@ -266,12 +267,18 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
     // 安全策略配置 - 扩展白名单允许图片相关属性和代码块属性
   const sanitizeSchema = {
     ...defaultSchema,
+    tagNames: [...(defaultSchema.tagNames || []), 'video', 'source'],
     attributes: {
       ...defaultSchema.attributes,
       img: [
         'src', 'alt', 'title', 'width', 'height', 'className', 'style',
         'loading', 'decoding', 'data-*'
       ],
+      video: [
+        'src', 'controls', 'preload', 'style', 'className', 'width', 'height',
+        'poster', 'muted', 'loop', 'autoplay', 'playsInline'
+      ],
+      source: ['src', 'type'],
       // 确保代码块渲染不受影响
       code: [...(defaultSchema.attributes?.code || []), 'className', 'style'],
       pre: [...(defaultSchema.attributes?.pre || []), 'className', 'style'],
@@ -893,12 +900,12 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       {/* 注入折叠块的自定义样式 */}
       <div dangerouslySetInnerHTML={{ __html: foldableStyles }} />
 
-      <div className={`prose dark:prose-invert max-w-none prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 ${className}`}>
+      <div className={`prose dark:prose-invert max-w-none prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 [&_video]:w-full [&_video]:max-w-full [&_video]:rounded-xl [&_video]:shadow-medium [&_video]:border [&_video]:border-gray-200 dark:[&_video]:border-gray-700 [&_video]:bg-black [&_video]:my-6 ${className}`}>
           <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
+          remarkPlugins={[remarkGfm, remarkImageSize]}
           rehypePlugins={[
             rehypeRaw,
-            [rehypeSanitize as any, sanitizeSchema],
+            [rehypeSanitize as unknown as never, sanitizeSchema],
             rehypeSlug
           ]}
           components={{
@@ -995,16 +1002,27 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                 </p>
               );
             },
-            a: ({ href, children }) => (
-              <a
-                href={href}
-                className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline"
-                target={href?.startsWith('http') ? '_blank' : undefined}
-                rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
-              >
-                {children}
-              </a>
-            ),
+            video: ({ ...props }) => {
+              return (
+                <video
+                  {...props}
+                  controls={props.controls ?? true}
+                  preload={typeof props.preload === 'string' ? props.preload : 'metadata'}
+                />
+              );
+            },
+            a: ({ href, children }) => {
+              return (
+                <a
+                  href={href}
+                  className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline"
+                  target={href?.startsWith('http') ? '_blank' : undefined}
+                  rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+                >
+                  {children}
+                </a>
+              );
+            },
             blockquote: ({ children }) => {
               const textStyles = getUnifiedTextStyles();
               return (
@@ -1081,7 +1099,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                 {children}
               </td>
             ),
-            img: ({ src, alt, node, ...props }) => {
+            img: ({ node, alt, src, ...props }) => {
               // Fallback 语法解析：![封面 | w=480 h=320 .mx-auto .rounded](url)
               const parseFallbackAttributes = (altText: string) => {
                 const pipeIndex = altText?.indexOf(' | ');
@@ -1089,7 +1107,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
                 
                 const cleanAlt = altText.substring(0, pipeIndex);
                 const attributeString = altText.substring(pipeIndex + 3);
-                const attributes: any = {};
+                const attributes: Record<string, string> = {};
                 const classes: string[] = [];
                 
                 const parts = attributeString.split(/\s+/);
@@ -1116,7 +1134,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               };
               
               // 从 node.properties 获取 remark-attr 解析的属性
-              const nodeAttributes = node?.properties || {};
+              const nodeAttributes = (node?.properties || {}) as Record<string, string>;
               
               // 解析 Fallback 语法
               const { cleanAlt, attributes: fallbackAttributes } = parseFallbackAttributes(alt || '');

@@ -272,6 +272,10 @@ function ByteMDEditor({
     return file.type.startsWith('image/')
   }
 
+  const isVideoFile = (file: File): boolean => {
+    return file.type === 'video/mp4' || file.name.toLowerCase().endsWith('.mp4')
+  }
+
   // 获取文件图标
   const getFileIcon = (fileName: string): string => {
     const ext = fileName.toLowerCase().split('.').pop()
@@ -335,6 +339,9 @@ function ByteMDEditor({
               const response = await uploadApi.uploadFile(file, undefined, 240000) // 240秒超时
               console.log('File upload response:', response)
               if (response.success && response.data) {
+                if (isVideoFile(file)) {
+                  return `<video controls preload="metadata" style="max-width: 100%;"><source src="${response.data.url}" type="video/mp4" />${file.name}</video>`
+                }
                 const icon = getFileIcon(file.name)
                 const fileSize = (file.size / 1024).toFixed(1) + 'KB'
                 if (file.size > 1024 * 1024) {

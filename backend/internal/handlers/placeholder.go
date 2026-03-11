@@ -355,6 +355,7 @@ func UploadFile(c *gin.Context) {
 		"application/json":             true,
 		"text/csv":                     true,
 		"application/epub+zip":         true,
+		"video/mp4":                    true,
 	}
 
 	contentType := header.Header.Get("Content-Type")
@@ -376,6 +377,7 @@ func UploadFile(c *gin.Context) {
 			".json": "application/json",
 			".csv":  "text/csv",
 			".epub": "application/epub+zip",
+			".mp4":  "video/mp4",
 		}
 
 		if inferredType, ok := allowedExts[ext]; ok {
@@ -384,7 +386,7 @@ func UploadFile(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"success": false,
 				"message": "不支持的文件类型",
-				"allowed": []string{"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "zip", "rar", "json", "csv", "epub"},
+				"allowed": []string{"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "zip", "rar", "json", "csv", "epub", "mp4"},
 			})
 			return
 		}
@@ -432,6 +434,8 @@ func UploadFile(c *gin.Context) {
 			ext = ".csv"
 		case "application/epub+zip":
 			ext = ".epub"
+		case "video/mp4":
+			ext = ".mp4"
 		default:
 			ext = ".file"
 		}
