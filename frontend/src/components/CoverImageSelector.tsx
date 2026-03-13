@@ -25,6 +25,8 @@ export const CoverImageSelector: React.FC<CoverImageSelectorProps> = ({
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [batchUploading, setBatchUploading] = useState(false)
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, currentFile: '', failed: [] as string[] })
   const [showSelector, setShowSelector] = useState(false)
   const [customUrl, setCustomUrl] = useState(value || '')
   const [activeTab, setActiveTab] = useState<'url' | 'local' | 'upload'>('url')
@@ -77,6 +79,59 @@ export const CoverImageSelector: React.FC<CoverImageSelectorProps> = ({
     }
   }, [onChange, loadCoverImages])
 
+  // 支持的图片格式
+  const isImageFile = useCallback((file: File) => {
+    if (file.type.startsWith('image/')) return true
+    const supported = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.tiff', '.ico']
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+    return supported.includes(ext)
+  }, [])
+
+  // 批量上传多个文件
+  const handleBatchUpload = useCallback(async (files: File[]) => {
+    const imageFiles = files.filter(f => isImageFile(f) && f.size <= 10 * 1024 * 1024)
+    if (imageFiles.length === 0) {
+      alert('未找到支持的图片文件（JPG、PNG、GIF、WebP 等，最大 10MB）')
+      return
+    }
+
+    setBatchUploading(true)
+    const failed: string[] = []
+    let lastUrl = ''
+
+    for (let i = 0; i < imageFiles.length; i++) {
+      const file = imageFiles[i]
+      setBatchProgress({ current: i + 1, total: imageFiles.length, currentFile: file.name, failed })
+      try {
+        const response = await coverApi.uploadCoverImage(file, (progress) => {
+          setUploadProgress(progress)
+        })
+        if (response.data) {
+          lastUrl = response.data.url
+        }
+      } catch (error) {
+        console.error(`上传失败: ${file.name}`, error)
+        failed.push(file.name)
+      }
+    }
+
+    // 上传完成后选中最后一张成功的图片
+    if (lastUrl) {
+      onChange(lastUrl)
+      setCustomUrl(lastUrl)
+    }
+    await loadCoverImages()
+    setBatchUploading(false)
+    setUploadProgress(0)
+    setBatchProgress({ current: 0, total: 0, currentFile: '', failed: [] })
+
+    if (failed.length > 0) {
+      alert(`${imageFiles.length - failed.length} 张上传成功，${failed.length} 张上传失败：\n${failed.join('\n')}`)
+    } else {
+      alert(`全部 ${imageFiles.length} 张图片上传成功！`)
+    }
+  }, [onChange, loadCoverImages, isImageFile])
+
   // 处理拖拽上传
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -88,12 +143,14 @@ export const CoverImageSelector: React.FC<CoverImageSelectorProps> = ({
     e.stopPropagation()
 
     const files = Array.from(e.dataTransfer.files)
-    const imageFile = files.find(file => file.type.startsWith('image/'))
+    const imageFiles = files.filter(file => isImageFile(file))
     
-    if (imageFile) {
-      handleFileUpload(imageFile)
+    if (imageFiles.length > 1) {
+      handleBatchUpload(imageFiles)
+    } else if (imageFiles.length === 1) {
+      handleFileUpload(imageFiles[0])
     }
-  }, [handleFileUpload])
+  }, [handleFileUpload, handleBatchUpload, isImageFile])
 
   // 格式化文件大小
   const formatFileSize = (bytes: number) => {
@@ -307,13 +364,14 @@ export const CoverImageSelector: React.FC<CoverImageSelectorProps> = ({
                   <div className="text-4xl text-gray-400">📸</div>
                   <div>
                     <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
-                      拖拽图片到这里上传
+                      拖拽图片或文件夹到这里上传
                     </p>
                     <p className="text-sm text-gray-500 mt-1">
-                      或者点击下方按钮选择文件
+                      支持单张、多张图片或整个文件夹批量上传
                     </p>
                   </div>
                   
+                  {/* 单文件选择 */}
                   <input
                     type="file"
                     accept="image/*"
@@ -326,22 +384,71 @@ export const CoverImageSelector: React.FC<CoverImageSelectorProps> = ({
                     className="hidden"
                     id="cover-upload-input"
                   />
+
+                  {/* 多文件选择 */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || [])
+                      if (files.length > 1) {
+                        handleBatchUpload(files)
+                      } else if (files.length === 1) {
+                        handleFileUpload(files[0])
+                      }
+                      e.target.value = ''
+                    }}
+                    className="hidden"
+                    id="cover-upload-multi-input"
+                  />
+
+                  {/* 文件夹选择 */}
+                  <input
+                    type="file"
+                    // @ts-expect-error webkitdirectory is non-standard
+                    webkitdirectory=""
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || [])
+                      if (files.length > 0) {
+                        handleBatchUpload(files)
+                      }
+                      e.target.value = ''
+                    }}
+                    className="hidden"
+                    id="cover-upload-folder-input"
+                  />
                   
-                  <label
-                    htmlFor="cover-upload-input"
-                    className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors font-medium"
-                  >
-                    选择图片文件
-                  </label>
+                  <div className="flex flex-wrap justify-center gap-3">
+                    <label
+                      htmlFor="cover-upload-input"
+                      className="inline-block px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors font-medium text-sm"
+                    >
+                      选择单张图片
+                    </label>
+                    <label
+                      htmlFor="cover-upload-multi-input"
+                      className="inline-block px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 cursor-pointer transition-colors font-medium text-sm"
+                    >
+                      选择多张图片
+                    </label>
+                    <label
+                      htmlFor="cover-upload-folder-input"
+                      className="inline-block px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 cursor-pointer transition-colors font-medium text-sm"
+                    >
+                      选择文件夹
+                    </label>
+                  </div>
                   
                   <p className="text-xs text-gray-500">
-                    支持 JPG、PNG、GIF、WebP 格式，最大 10MB
+                    支持 JPG、PNG、GIF、WebP 等常用图片格式，单文件最大 10MB
                   </p>
                 </div>
               </div>
 
-              {/* 上传进度 */}
-              {uploading && (
+              {/* 单文件上传进度 */}
+              {uploading && !batchUploading && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>上传进度</span>
@@ -353,6 +460,40 @@ export const CoverImageSelector: React.FC<CoverImageSelectorProps> = ({
                       style={{ width: `${uploadProgress}%` }}
                     ></div>
                   </div>
+                </div>
+              )}
+
+              {/* 批量上传进度 */}
+              {batchUploading && (
+                <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="flex justify-between text-sm font-medium">
+                    <span>批量上传中...</span>
+                    <span>{batchProgress.current} / {batchProgress.total}</span>
+                  </div>
+                  {/* 总体进度 */}
+                  <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5">
+                    <div
+                      className="bg-purple-600 h-2.5 rounded-full transition-all duration-300"
+                      style={{ width: `${batchProgress.total > 0 ? (batchProgress.current / batchProgress.total) * 100 : 0}%` }}
+                    ></div>
+                  </div>
+                  {/* 当前文件 */}
+                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
+                    <span className="truncate">正在上传: {batchProgress.currentFile}</span>
+                  </div>
+                  {/* 当前文件进度 */}
+                  <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
+                    <div
+                      className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                  {batchProgress.failed.length > 0 && (
+                    <p className="text-xs text-red-500">
+                      已失败 {batchProgress.failed.length} 张
+                    </p>
+                  )}
                 </div>
               )}
             </div>
