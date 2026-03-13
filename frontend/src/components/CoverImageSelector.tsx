@@ -321,7 +321,7 @@ export const CoverImageSelector: React.FC<CoverImageSelectorProps> = ({
                         alt={image.name}
                         className="w-full h-24 object-cover"
                         onError={(e) => {
-                          e.currentTarget.src = '/api/placeholder/150/100'
+                          e.currentTarget.style.display = 'none'
                         }}
                       />
                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">

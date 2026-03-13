@@ -30,10 +30,10 @@ func GetCoverImages(c *gin.Context) {
 	// 获取前端静态文件目录中的 cover 文件夹
 	// 在生产环境中，这个路径应该指向前端构建后的静态文件目录
 	cfg := config.GlobalConfig
-	
+
 	// 使用与现有图片上传相同的目录结构
 	coverDir := filepath.Join(cfg.Upload.Path, "cover")
-	
+
 	// 确保目录存在
 	if err := os.MkdirAll(coverDir, 0755); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -73,7 +73,7 @@ func GetCoverImages(c *gin.Context) {
 
 		filename := file.Name()
 		ext := strings.ToLower(filepath.Ext(filename))
-		
+
 		// 只处理支持的图片格式
 		if !supportedExts[ext] {
 			continue
@@ -84,7 +84,6 @@ func GetCoverImages(c *gin.Context) {
 		if err != nil {
 			continue
 		}
-
 
 		// 生成URL路径，使用与现有图片上传相同的模式
 		var imageURL string
@@ -205,7 +204,7 @@ func UploadCoverImage(c *gin.Context) {
 		}
 	}
 
-	filename := fmt.Sprintf("cover_%d%s", time.Now().Unix(), ext)
+	filename := fmt.Sprintf("cover_%d%s", time.Now().UnixNano(), ext)
 	fullPath := filepath.Join(coverDir, filename)
 
 	// 读取文件内容
@@ -281,7 +280,7 @@ func GetCoverImage(c *gin.Context) {
 	cfg := config.GlobalConfig
 	// 构建完整的文件路径
 	fullPath := filepath.Join(cfg.Upload.Path, "cover", imagePath)
-	
+
 	// 安全检查：确保路径在上传目录内
 	uploadDir, err := filepath.Abs(cfg.Upload.Path)
 	if err != nil {
