@@ -326,3 +326,81 @@ func GetCoverImage(c *gin.Context) {
 	// 返回文件
 	c.File(fullPath)
 }
+
+// DeleteCoverImage 删除封面图片
+func DeleteCoverImage(c *gin.Context) {
+	filename := c.Param("filename")
+	if filename == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "文件名不能为空",
+		})
+		return
+	}
+
+	// 安全检查：防止路径遍历
+	if strings.Contains(filename, "..") || strings.Contains(filename, "/") || strings.Contains(filename, "\\") {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "无效的文件名",
+		})
+		return
+	}
+
+	cfg := config.GlobalConfig
+	fullPath := filepath.Join(cfg.Upload.Path, "cover", filename)
+
+	// 安全检查：确保路径在上传目录内
+	uploadDir, err := filepath.Abs(cfg.Upload.Path)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "服务器错误",
+		})
+		return
+	}
+
+	absPath, err := filepath.Abs(fullPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "服务器错误",
+		})
+		return
+	}
+
+	if !strings.HasPrefix(absPath, uploadDir) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"success": false,
+			"message": "访问被拒绝",
+		})
+		return
+	}
+
+	// 检查文件是否存在
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"message": "图片不存在",
+		})
+		return
+	}
+
+	// 删除文件
+	if err := os.Remove(fullPath); err != nil {
+		fmt.Printf("❌ [ERROR] 删除封面图片失败: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "删除文件失败",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	fmt.Printf("🗑️ [SUCCESS] 封面图片已删除: %s\n", filename)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "封面图片删除成功",
+	})
+}

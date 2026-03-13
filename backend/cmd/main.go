@@ -236,6 +236,7 @@ func main() {
 		{
 			cover.GET("", handlers.GetCoverImages)
 			cover.POST("/upload", middleware.AuthRequired(), handlers.UploadCoverImage)
+			cover.DELETE("/:filename", middleware.AuthRequired(), handlers.DeleteCoverImage)
 		}
 
 		// 封面图片文件服务路由（类似现有的图片上传）

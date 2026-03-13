@@ -79,6 +79,23 @@ export const CoverImageSelector: React.FC<CoverImageSelectorProps> = ({
     }
   }, [onChange, loadCoverImages])
 
+  // 删除封面图片
+  const handleDeleteImage = useCallback(async (filename: string) => {
+    if (!confirm(`确认删除图片 ${filename}？此操作不可恢复。`)) return
+    try {
+      await coverApi.deleteCoverImage(filename)
+      // 如果删除的是当前选中的封面，清空选择
+      if (value && value.includes(filename)) {
+        onChange('')
+        setCustomUrl('')
+      }
+      await loadCoverImages()
+    } catch (error) {
+      console.error('删除封面图片失败:', error)
+      alert('删除失败，请重试')
+    }
+  }, [value, onChange, loadCoverImages])
+
   // 支持的图片格式
   const isImageFile = useCallback((file: File) => {
     if (file.type.startsWith('image/')) return true
@@ -331,8 +348,20 @@ export const CoverImageSelector: React.FC<CoverImageSelectorProps> = ({
                           <p>{formatTime(image.mod_time)}</p>
                         </div>
                       </div>
+                      {/* 删除按钮 */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteImage(image.name)
+                        }}
+                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs font-bold shadow-md z-10"
+                        title="删除图片"
+                      >
+                        ✕
+                      </button>
                       {image.is_default && (
-                        <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-1 py-0.5 rounded">
+                        <div className="absolute top-1 left-1 bg-green-500 text-white text-xs px-1 py-0.5 rounded">
                           默认
                         </div>
                       )}

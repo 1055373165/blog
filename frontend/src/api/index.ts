@@ -141,6 +141,10 @@ export const coverApi = {
       type: string;
     }>('/api/cover/upload', file, onProgress);
   },
+
+  async deleteCoverImage(filename: string) {
+    return apiClient.delete<null>(`/api/cover/${encodeURIComponent(filename)}`);
+  },
 };
 
 // 投稿相关API
