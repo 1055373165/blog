@@ -501,25 +501,6 @@ export default function BlogPage() {
             </div>
 
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-1 text-sm text-blog-500 dark:text-blog-400">
-                <EyeIcon className="w-4 h-4" />
-                <span>{viewsCount.toLocaleString()}</span>
-              </div>
-
-              <button
-                onClick={toggleLike}
-                className="flex items-center space-x-1 text-sm transition-colors duration-200 hover:scale-105"
-              >
-                {isLiked ? (
-                  <HeartSolidIcon className="w-4 h-4 text-red-500" />
-                ) : (
-                  <HeartIcon className="w-4 h-4 text-blog-500 dark:text-blog-400 hover:text-red-500" />
-                )}
-                <span className={isLiked ? 'text-red-500' : 'text-blog-500 dark:text-blog-400'}>
-                  {likesCount}
-                </span>
-              </button>
-
               <button
                 onClick={handleShare}
                 className="flex items-center space-x-1 text-sm text-blog-500 dark:text-blog-400 hover:text-blog-600 dark:hover:text-blog-300 transition-colors duration-200"

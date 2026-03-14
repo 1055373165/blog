@@ -4,6 +4,7 @@ import { coverApi, uploadApi } from '../api'
 interface CoverImage {
   name: string
   url: string
+  thumbnail_url: string
   relative_path: string
   size: number
   mod_time: string
@@ -334,8 +335,9 @@ export const CoverImageSelector: React.FC<CoverImageSelectorProps> = ({
                       }}
                     >
                       <img
-                        src={image.url}
+                        src={image.thumbnail_url || image.url}
                         alt={image.name}
+                        loading="lazy"
                         className="w-full h-24 object-cover"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none'

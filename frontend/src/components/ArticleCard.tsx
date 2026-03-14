@@ -86,24 +86,6 @@ export default function ArticleCard({
             </Link>
           )}
           
-          {/* Quick Stats */}
-          {showStats && (
-            <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
-              <span className="flex items-center">
-                <svg className="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                  <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                </svg>
-                {article.views_count || 0}
-              </span>
-              <span className="flex items-center">
-                <svg className="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                </svg>
-                {article.likes_count || 0}
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Title - Main Content */}

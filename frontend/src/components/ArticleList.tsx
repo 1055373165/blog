@@ -181,12 +181,6 @@ export default function ArticleList({
                       ))}
                     </div>
                   )}
-                  {showStats && (
-                    <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-                      <span>👁 {article.views_count || 0}</span>
-                      <span>❤ {article.likes_count || 0}</span>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -226,11 +220,6 @@ export default function ArticleList({
               ) : (
                 <span className="text-gray-500 dark:text-gray-400">
                   {formatDate(article.published_at || article.created_at)}
-                </span>
-              )}
-              {showStats && (
-                <span className="text-gray-500 dark:text-gray-400">
-                  👁 {article.views_count || 0}
                 </span>
               )}
             </div>
