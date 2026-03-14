@@ -84,7 +84,11 @@
       "Bash(SHELL=/bin/bash PWD=/Users/smy/projects/blog/frontend bash -c \"cd /Users/smy/projects/blog/frontend && npm run\")",
       "WebFetch(domain:yet-another-react-lightbox.com)",
       "Bash(./node_modules/.bin/tsc --noEmit 2>&1 | head -20)",
-      "Bash(ls node_modules/.bin/tsc* 2>/dev/null; cat package.json | grep -E '\"\\(build|typescript\\)\"' 2>/dev/null)"
+      "Bash(ls node_modules/.bin/tsc* 2>/dev/null; cat package.json | grep -E '\"\\(build|typescript\\)\"' 2>/dev/null)",
+      "Bash(go list -m -versions golang.org/x/image 2>&1 | tr ' ' '\\\\n' | tail -20)",
+      "Bash(GOTOOLCHAIN=local go get golang.org/x/image@v0.23.0 2>&1)",
+      "Bash(GOTOOLCHAIN=local go mod tidy 2>&1)",
+      "Bash(GOTOOLCHAIN=local go build ./... 2>&1)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
