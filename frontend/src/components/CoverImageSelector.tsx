@@ -357,7 +357,7 @@ export const CoverImageSelector: React.FC<CoverImageSelectorProps> = ({
                           e.stopPropagation()
                           handleDeleteImage(image.name)
                         }}
-                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs font-bold shadow-md z-10"
+                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md z-10"
                         title="删除图片"
                       >
                         ✕
