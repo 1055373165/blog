@@ -2,6 +2,9 @@ package handlers
 
 import (
 	"fmt"
+	"image"
+	"image/jpeg"
+	_ "image/png"
 	"io"
 	"net/http"
 	"os"
@@ -13,16 +16,87 @@ import (
 	"blog-backend/internal/config"
 
 	"github.com/gin-gonic/gin"
+	_ "golang.org/x/image/webp"
+	"golang.org/x/image/draw"
 )
+
+const thumbnailMaxWidth = 400
+const thumbnailDir = "thumbnails"
 
 // CoverImage 封面图片信息
 type CoverImage struct {
 	Name         string    `json:"name"`
 	URL          string    `json:"url"`
+	ThumbnailURL string    `json:"thumbnail_url"`
 	RelativePath string    `json:"relative_path"`
 	Size         int64     `json:"size"`
 	ModTime      time.Time `json:"mod_time"`
 	IsDefault    bool      `json:"is_default"`
+}
+
+// generateThumbnail creates a thumbnail for the given image file.
+// Returns the thumbnail filename or error.
+func generateThumbnail(srcPath, thumbDir, filename string) error {
+	if err := os.MkdirAll(thumbDir, 0755); err != nil {
+		return fmt.Errorf("create thumbnail dir: %w", err)
+	}
+
+	thumbPath := filepath.Join(thumbDir, filename+".jpg")
+
+	// Skip if thumbnail already exists and is newer than source
+	srcInfo, err := os.Stat(srcPath)
+	if err != nil {
+		return err
+	}
+	if thumbInfo, err := os.Stat(thumbPath); err == nil {
+		if thumbInfo.ModTime().After(srcInfo.ModTime()) {
+			return nil // thumbnail is up to date
+		}
+	}
+
+	srcFile, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	srcImg, _, err := image.Decode(srcFile)
+	if err != nil {
+		return fmt.Errorf("decode image: %w", err)
+	}
+
+	bounds := srcImg.Bounds()
+	origW := bounds.Dx()
+	origH := bounds.Dy()
+
+	// Calculate new dimensions maintaining aspect ratio
+	newW := thumbnailMaxWidth
+	newH := origH * newW / origW
+	if origW <= thumbnailMaxWidth {
+		// Image is already small enough
+		newW = origW
+		newH = origH
+	}
+
+	dst := image.NewRGBA(image.Rect(0, 0, newW, newH))
+	draw.ApproxBiLinear.Scale(dst, dst.Bounds(), srcImg, srcImg.Bounds(), draw.Over, nil)
+
+	thumbFile, err := os.Create(thumbPath)
+	if err != nil {
+		return err
+	}
+	defer thumbFile.Close()
+
+	return jpeg.Encode(thumbFile, dst, &jpeg.Options{Quality: 75})
+}
+
+// getThumbnailURL returns the thumbnail URL for a given cover image filename.
+func getThumbnailURL(cfg *config.Config, filename string) string {
+	thumbFilename := filename + ".jpg"
+	if cfg.App.Environment == "development" {
+		return fmt.Sprintf("http://localhost:%s/api/upload/cover/%s/%s", cfg.Server.Port, thumbnailDir, thumbFilename)
+	}
+	return fmt.Sprintf("https://www.godepth.top/uploads/cover/%s/%s", thumbnailDir, thumbFilename)
 }
 
 // GetCoverImages 获取所有封面图片列表
@@ -95,9 +169,16 @@ func GetCoverImages(c *gin.Context) {
 			imageURL = fmt.Sprintf("https://www.godepth.top/uploads/cover/%s", filename)
 		}
 
+		// Generate thumbnail if needed
+		thumbDir := filepath.Join(coverDir, thumbnailDir)
+		if err := generateThumbnail(filepath.Join(coverDir, filename), thumbDir, filename); err != nil {
+			fmt.Printf("WARNING: failed to generate thumbnail for %s: %v\n", filename, err)
+		}
+
 		coverImage := CoverImage{
 			Name:         filename,
 			URL:          imageURL,
+			ThumbnailURL: getThumbnailURL(cfg, filename),
 			RelativePath: fmt.Sprintf("/cover/%s", filename),
 			Size:         fileInfo.Size(),
 			ModTime:      fileInfo.ModTime(),
@@ -247,6 +328,12 @@ func UploadCoverImage(c *gin.Context) {
 		imageURL = fmt.Sprintf("https://www.godepth.top/uploads/cover/%s", filename)
 	}
 
+	// Generate thumbnail
+	thumbDir := filepath.Join(coverDir, thumbnailDir)
+	if err := generateThumbnail(fullPath, thumbDir, filename); err != nil {
+		fmt.Printf("WARNING: failed to generate thumbnail for %s: %v\n", filename, err)
+	}
+
 	fmt.Printf("✅ [SUCCESS] 封面图片上传成功 - 文件: %s, URL: %s\n", filename, imageURL)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -254,6 +341,7 @@ func UploadCoverImage(c *gin.Context) {
 		"message": "封面图片上传成功",
 		"data": gin.H{
 			"url":           imageURL,
+			"thumbnail_url": getThumbnailURL(cfg, filename),
 			"filename":      filename,
 			"relative_path": fmt.Sprintf("/uploads/cover/%s", filename),
 			"size":          header.Size,
@@ -396,6 +484,10 @@ func DeleteCoverImage(c *gin.Context) {
 		})
 		return
 	}
+
+	// 删除对应缩略图
+	thumbPath := filepath.Join(cfg.Upload.Path, "cover", thumbnailDir, filename+".jpg")
+	os.Remove(thumbPath) // ignore error, thumbnail may not exist
 
 	fmt.Printf("🗑️ [SUCCESS] 封面图片已删除: %s\n", filename)
 

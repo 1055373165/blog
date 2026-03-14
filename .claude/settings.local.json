@@ -82,7 +82,9 @@
       "Bash(../start-dev.sh)",
       "Bash(open http://localhost:5173/admin/study-plans)",
       "Bash(SHELL=/bin/bash PWD=/Users/smy/projects/blog/frontend bash -c \"cd /Users/smy/projects/blog/frontend && npm run\")",
-      "WebFetch(domain:yet-another-react-lightbox.com)"
+      "WebFetch(domain:yet-another-react-lightbox.com)",
+      "Bash(./node_modules/.bin/tsc --noEmit 2>&1 | head -20)",
+      "Bash(ls node_modules/.bin/tsc* 2>/dev/null; cat package.json | grep -E '\"\\(build|typescript\\)\"' 2>/dev/null)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
