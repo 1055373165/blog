@@ -323,7 +323,7 @@ func CreateBlog(c *gin.Context) {
 	err := database.DB.Where("slug = ?", slug).First(&existingBlog).Error
 	if err == nil {
 		// slug已存在，添加后缀
-		slug = utils.GenerateUniqueSlug(slug)
+		slug = utils.GenerateUniqueBlogSlug(slug)
 	}
 
 	// 创建博客
@@ -488,7 +488,7 @@ func UpdateBlog(c *gin.Context) {
 			var existingBlog models.Blog
 			err := database.DB.Where("slug = ? AND id != ?", newSlug, blog.ID).First(&existingBlog).Error
 			if err == nil {
-				newSlug = utils.GenerateUniqueSlug(newSlug)
+				newSlug = utils.GenerateUniqueBlogSlug(newSlug, blog.ID)
 			}
 			updates["slug"] = newSlug
 		}

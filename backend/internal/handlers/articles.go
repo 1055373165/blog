@@ -304,7 +304,7 @@ func CreateArticle(c *gin.Context) {
 	err := database.DB.Where("slug = ?", slug).First(&existingArticle).Error
 	if err == nil {
 		// slug已存在，添加后缀
-		slug = utils.GenerateUniqueSlug(slug)
+		slug = utils.GenerateUniqueArticleSlug(slug)
 	}
 
 	// 计算阅读时间
@@ -468,17 +468,7 @@ func UpdateArticle(c *gin.Context) {
 
 	if req.Title != nil {
 		updates["title"] = *req.Title
-		// 如果标题改变，重新生成slug
-		newSlug := utils.GenerateSlug(*req.Title)
-		if newSlug != article.Slug {
-			// 检查新slug是否已存在
-			var existingArticle models.Article
-			err := database.DB.Where("slug = ? AND id != ?", newSlug, article.ID).First(&existingArticle).Error
-			if err == nil {
-				newSlug = utils.GenerateUniqueSlug(newSlug)
-			}
-			updates["slug"] = newSlug
-		}
+		// 编辑标题时保持既有 slug 不变，避免文章链接漂移
 	}
 
 	if req.Content != nil {

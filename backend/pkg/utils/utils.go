@@ -9,87 +9,109 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"blog-backend/internal/database"
 	"blog-backend/internal/models"
+	"github.com/gin-gonic/gin"
 )
 
 // GenerateSlug 生成URL友好的slug
 func GenerateSlug(text string) string {
+	const maxSlugRunes = 100
+	const dashTrimThreshold = 80
+
 	// 转换为小写
 	slug := strings.ToLower(text)
-	
+
 	// 替换中文和特殊字符为连字符
 	reg := regexp.MustCompile(`[^\p{L}\p{N}\s-_]+`)
 	slug = reg.ReplaceAllString(slug, "")
-	
+
 	// 替换空格和下划线为连字符
 	reg = regexp.MustCompile(`[\s_-]+`)
 	slug = reg.ReplaceAllString(slug, "-")
-	
+
 	// 移除开头和结尾的连字符
 	slug = strings.Trim(slug, "-")
-	
+
 	// 如果slug为空或太短，使用当前时间戳
 	if len(slug) < 3 {
 		slug = fmt.Sprintf("article-%d", time.Now().Unix())
 	}
-	
-	// 限制长度
-	if len(slug) > 100 {
-		slug = slug[:100]
-		// 确保不在单词中间截断
-		if lastDash := strings.LastIndex(slug, "-"); lastDash > 80 {
-			slug = slug[:lastDash]
+
+	// 按 rune 截断，避免中文等多字节字符被切坏
+	runes := []rune(slug)
+	if len(runes) > maxSlugRunes {
+		runes = runes[:maxSlugRunes]
+		// 优先在连字符处分割，保留更自然的 slug
+		for i := len(runes) - 1; i >= 0; i-- {
+			if runes[i] == '-' && i > dashTrimThreshold {
+				runes = runes[:i]
+				break
+			}
 		}
+		slug = strings.Trim(string(runes), "-")
 	}
-	
+
 	return slug
 }
 
-// GenerateUniqueSlug 生成唯一的slug
-func GenerateUniqueSlug(baseSlug string) string {
+func generateUniqueSlug(model interface{}, baseSlug string, excludeID ...uint) string {
 	slug := baseSlug
 	counter := 1
-	
+
 	for {
-		var blog models.Blog
-		err := database.DB.Where("slug = ?", slug).First(&blog).Error
-		if err != nil {
+		query := database.DB.Model(model).Where("slug = ?", slug)
+		if len(excludeID) > 0 && excludeID[0] != 0 {
+			query = query.Where("id != ?", excludeID[0])
+		}
+
+		var count int64
+		err := query.Count(&count).Error
+		if err != nil || count == 0 {
 			// slug不存在，可以使用
 			break
 		}
-		
+
 		// slug已存在，添加数字后缀
 		slug = fmt.Sprintf("%s-%d", baseSlug, counter)
 		counter++
-		
+
 		// 防止无限循环
 		if counter > 1000 {
 			slug = fmt.Sprintf("%s-%d", baseSlug, time.Now().Unix())
 			break
 		}
 	}
-	
+
 	return slug
+}
+
+// GenerateUniqueArticleSlug 生成文章唯一 slug
+func GenerateUniqueArticleSlug(baseSlug string, excludeID ...uint) string {
+	return generateUniqueSlug(&models.Article{}, baseSlug, excludeID...)
+}
+
+// GenerateUniqueBlogSlug 生成博客唯一 slug
+func GenerateUniqueBlogSlug(baseSlug string, excludeID ...uint) string {
+	return generateUniqueSlug(&models.Blog{}, baseSlug, excludeID...)
 }
 
 // CalculateReadingTime 计算阅读时间（分钟）
 func CalculateReadingTime(content string) int {
 	// 移除HTML标签
 	plainText := StripHTML(content)
-	
+
 	// 计算单词数（中英文混合）
 	words := countWords(plainText)
-	
+
 	// 平均阅读速度：中文250字/分钟，英文200词/分钟
 	// 这里简化处理，按照220字词/分钟计算
 	minutes := int(math.Ceil(float64(words) / 220.0))
-	
+
 	if minutes < 1 {
 		minutes = 1
 	}
-	
+
 	return minutes
 }
 
@@ -105,15 +127,15 @@ func countWords(text string) int {
 	if text == "" {
 		return 0
 	}
-	
+
 	// 统计中文字符
 	chineseReg := regexp.MustCompile(`[\p{Han}]`)
 	chineseChars := len(chineseReg.FindAllString(text, -1))
-	
+
 	// 移除中文字符后统计英文单词
 	textWithoutChinese := chineseReg.ReplaceAllString(text, " ")
 	englishWords := len(strings.Fields(textWithoutChinese))
-	
+
 	// 中文字符按字计算，英文按词计算
 	return chineseChars + englishWords
 }
@@ -122,15 +144,15 @@ func countWords(text string) int {
 func StripHTML(htmlContent string) string {
 	// 解码HTML实体
 	content := html.UnescapeString(htmlContent)
-	
+
 	// 移除HTML标签
 	reg := regexp.MustCompile(`<[^>]*>`)
 	content = reg.ReplaceAllString(content, "")
-	
+
 	// 移除多余的空白字符
 	reg = regexp.MustCompile(`\s+`)
 	content = reg.ReplaceAllString(content, " ")
-	
+
 	return strings.TrimSpace(content)
 }
 
@@ -139,7 +161,7 @@ func TruncateText(text string, maxLength int) string {
 	if len(text) <= maxLength {
 		return text
 	}
-	
+
 	// 尝试在单词边界截取
 	if maxLength > 3 {
 		truncated := text[:maxLength-3]
@@ -147,7 +169,7 @@ func TruncateText(text string, maxLength int) string {
 			return truncated[:lastSpace] + "..."
 		}
 	}
-	
+
 	return text[:maxLength-3] + "..."
 }
 
@@ -160,7 +182,7 @@ func FormatDate(t time.Time) string {
 func FormatRelativeTime(t time.Time) string {
 	now := time.Now()
 	diff := now.Sub(t)
-	
+
 	if diff < time.Minute {
 		return "刚刚"
 	} else if diff < time.Hour {
@@ -181,7 +203,7 @@ func ValidateSlug(slug string) bool {
 	if len(slug) < 1 || len(slug) > 100 {
 		return false
 	}
-	
+
 	// slug只能包含字母、数字和连字符
 	reg := regexp.MustCompile(`^[a-z0-9-]+$`)
 	return reg.MatchString(slug)
@@ -191,15 +213,15 @@ func ValidateSlug(slug string) bool {
 func SanitizeHTML(htmlContent string) string {
 	// 这里可以使用更专业的HTML清理库，如bluemonday
 	// 暂时简单处理：移除不安全的标签和属性
-	
+
 	// 移除不安全的标签和属性
 	reg := regexp.MustCompile(`<(\/?)(script|style|iframe|object|embed)[^>]*>`)
 	content := reg.ReplaceAllString(htmlContent, "")
-	
+
 	// 移除危险的属性
 	reg = regexp.MustCompile(`(?i)(on\w+|javascript:|data:)`)
 	content = reg.ReplaceAllString(content, "")
-	
+
 	return content
 }
 

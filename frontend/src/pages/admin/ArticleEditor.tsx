@@ -256,7 +256,7 @@ export default function ArticleEditor() {
       }
     } catch (err: any) {
       if (!silent) {
-        setError(err.message || '保存时出错');
+        setError(err?.error || err?.message || '保存时出错');
       }
     } finally {
       setSaving(false);
