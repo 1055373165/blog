@@ -1,0 +1,25 @@
+-- 创建提示词表
+CREATE TABLE IF NOT EXISTS prompts (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT,
+    content LONGTEXT,
+    notes TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'draft',
+    tags LONGTEXT,
+    applicable_models LONGTEXT,
+    parent_id BIGINT UNSIGNED NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    author_id BIGINT UNSIGNED NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME NULL,
+    INDEX idx_prompts_slug (slug),
+    INDEX idx_prompts_status (status),
+    INDEX idx_prompts_parent (parent_id),
+    INDEX idx_prompts_author (author_id),
+    INDEX idx_prompts_sort (parent_id, sort_order, updated_at),
+    CONSTRAINT fk_prompts_parent FOREIGN KEY (parent_id) REFERENCES prompts(id) ON DELETE SET NULL,
+    CONSTRAINT fk_prompts_author FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+);

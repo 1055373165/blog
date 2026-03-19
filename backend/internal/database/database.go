@@ -78,6 +78,7 @@ func AutoMigrate() error {
 		&models.Category{},
 		&models.Tag{},
 		&models.Series{},
+		&models.Prompt{},
 		&models.Article{},
 		&models.ArticleView{},
 		&models.ArticleLike{},
@@ -119,32 +120,32 @@ func AutoMigrate() error {
 // createIndexes 创建数据库索引 (MySQL兼容)
 func createIndexes() error {
 	// MySQL不支持CREATE INDEX IF NOT EXISTS，需要先检查索引是否存在
-	
+
 	// 检查并创建文章表复合索引
 	createIndexIfNotExists("idx_articles_published", "articles", "is_published, published_at DESC")
 	createIndexIfNotExists("idx_articles_category", "articles", "category_id, is_published, published_at DESC")
 	createIndexIfNotExists("idx_articles_series", "articles", "series_id, series_order")
-	
+
 	// 检查并创建文章点赞表唯一复合索引
 	createUniqueIndexIfNotExists("idx_article_likes_unique", "article_likes", "article_id, ip")
-	
+
 	// 检查并创建文章浏览表索引
 	createIndexIfNotExists("idx_article_views_article_date", "article_views", "article_id, viewed_at")
-	
+
 	// 检查并创建博客表复合索引
 	createIndexIfNotExists("idx_blogs_published", "blogs", "is_published, published_at DESC")
 	createIndexIfNotExists("idx_blogs_category", "blogs", "category_id, is_published, published_at DESC")
 	createIndexIfNotExists("idx_blogs_type", "blogs", "type, is_published, published_at DESC")
-	
+
 	// 检查并创建博客点赞表唯一复合索引
 	createUniqueIndexIfNotExists("idx_blog_likes_unique", "blog_likes", "blog_id, ip")
-	
+
 	// 检查并创建博客浏览表索引
 	createIndexIfNotExists("idx_blog_views_blog_date", "blog_views", "blog_id, viewed_at")
-	
+
 	// 检查并创建全文搜索索引
 	createFulltextIndexIfNotExists("idx_articles_search", "articles", "title, content")
-	
+
 	// 检查并创建搜索统计表索引
 	createIndexIfNotExists("idx_search_statistics_query", "search_statistics", "query")
 	createIndexIfNotExists("idx_search_statistics_searched_at", "search_statistics", "searched_at")
@@ -156,7 +157,7 @@ func createIndexes() error {
 func createIndexIfNotExists(indexName, tableName, columns string) {
 	var count int64
 	DB.Raw("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?", tableName, indexName).Scan(&count)
-	
+
 	if count == 0 {
 		sql := fmt.Sprintf("CREATE INDEX %s ON %s(%s)", indexName, tableName, columns)
 		if err := DB.Exec(sql).Error; err != nil {
@@ -169,7 +170,7 @@ func createIndexIfNotExists(indexName, tableName, columns string) {
 func createUniqueIndexIfNotExists(indexName, tableName, columns string) {
 	var count int64
 	DB.Raw("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?", tableName, indexName).Scan(&count)
-	
+
 	if count == 0 {
 		sql := fmt.Sprintf("CREATE UNIQUE INDEX %s ON %s(%s)", indexName, tableName, columns)
 		if err := DB.Exec(sql).Error; err != nil {
@@ -182,7 +183,7 @@ func createUniqueIndexIfNotExists(indexName, tableName, columns string) {
 func createFulltextIndexIfNotExists(indexName, tableName, columns string) {
 	var count int64
 	DB.Raw("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?", tableName, indexName).Scan(&count)
-	
+
 	if count == 0 {
 		sql := fmt.Sprintf("CREATE FULLTEXT INDEX %s ON %s(%s)", indexName, tableName, columns)
 		if err := DB.Exec(sql).Error; err != nil {

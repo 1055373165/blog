@@ -18,6 +18,7 @@ export interface PaginatedResponse<T> {
   articles?: T[];
   categories?: T[];
   tags?: T[];
+  prompts?: T[];
   submissions?: T[];
 
   // Compatibility aliases
@@ -170,6 +171,44 @@ export interface CreateArticleInput {
 }
 
 export interface UpdateArticleInput extends Partial<CreateArticleInput> {
+  id: number;
+}
+
+export type PromptStatus = 'draft' | 'active' | 'archived';
+
+export interface Prompt {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  content: string;
+  notes?: string;
+  status: PromptStatus;
+  tags: string[];
+  applicable_models: string[];
+  parent_id?: number;
+  parent?: Prompt;
+  children?: Prompt[];
+  child_count: number;
+  author_id: number;
+  author?: User;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreatePromptInput {
+  name: string;
+  slug?: string;
+  description?: string;
+  content: string;
+  notes?: string;
+  status: PromptStatus;
+  tags: string[];
+  applicable_models: string[];
+  parent_id?: number;
+}
+
+export interface UpdatePromptInput extends CreatePromptInput {
   id: number;
 }
 

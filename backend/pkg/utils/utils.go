@@ -96,6 +96,11 @@ func GenerateUniqueBlogSlug(baseSlug string, excludeID ...uint) string {
 	return generateUniqueSlug(&models.Blog{}, baseSlug, excludeID...)
 }
 
+// GenerateUniquePromptSlug 生成提示词唯一 slug
+func GenerateUniquePromptSlug(baseSlug string, excludeID ...uint) string {
+	return generateUniqueSlug(&models.Prompt{}, baseSlug, excludeID...)
+}
+
 // CalculateReadingTime 计算阅读时间（分钟）
 func CalculateReadingTime(content string) int {
 	// 移除HTML标签

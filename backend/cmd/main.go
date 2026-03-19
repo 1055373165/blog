@@ -135,6 +135,17 @@ func main() {
 			articles.POST("/:id/comments", handlers.CreateComment)
 		}
 
+		// 提示词管理路由（管理员）
+		prompts := api.Group("/prompts")
+		prompts.Use(middleware.AdminRequired())
+		{
+			prompts.GET("/tree", handlers.GetPromptTree)
+			prompts.GET("/:id", handlers.GetPrompt)
+			prompts.POST("", handlers.CreatePrompt)
+			prompts.PUT("/:id", handlers.UpdatePrompt)
+			prompts.DELETE("/:id", handlers.DeletePrompt)
+		}
+
 		// 评论相关路由
 		comments := api.Group("/comments")
 		{
