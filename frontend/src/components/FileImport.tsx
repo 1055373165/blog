@@ -16,6 +16,13 @@ interface LocalImageReference {
   resolvedPath: string | null;
 }
 
+interface MarkdownImageMatch {
+  fullMatch: string;
+  rawDestination: string;
+  start: number;
+  end: number;
+}
+
 type ImportMetadataValue =
   | string
   | number
@@ -109,6 +116,186 @@ const isMarkdownFile = (file: DirectoryFile): boolean => file.name.toLowerCase()
 
 const isImportMetadataRecord = (value: unknown): value is ImportMetadata =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const findClosingBracket = (
+  content: string,
+  openIndex: number,
+  openChar: string,
+  closeChar: string
+): number => {
+  let depth = 0;
+
+  for (let index = openIndex; index < content.length; index += 1) {
+    const currentChar = content[index];
+
+    if (currentChar === '\\') {
+      index += 1;
+      continue;
+    }
+
+    if (currentChar === openChar) {
+      depth += 1;
+      continue;
+    }
+
+    if (currentChar === closeChar) {
+      depth -= 1;
+      if (depth === 0) {
+        return index;
+      }
+    }
+  }
+
+  return -1;
+};
+
+const skipInlineWhitespace = (content: string, startIndex: number): number => {
+  let nextIndex = startIndex;
+
+  while (nextIndex < content.length && /[ \t]/.test(content[nextIndex])) {
+    nextIndex += 1;
+  }
+
+  return nextIndex;
+};
+
+const findMarkdownDestinationEnd = (content: string, openParenIndex: number): number => {
+  let depth = 0;
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let inAngleBrackets = false;
+
+  for (let index = openParenIndex; index < content.length; index += 1) {
+    const currentChar = content[index];
+
+    if (currentChar === '\\') {
+      index += 1;
+      continue;
+    }
+
+    if (currentChar === '\n') {
+      return -1;
+    }
+
+    if (inSingleQuote) {
+      if (currentChar === '\'') {
+        inSingleQuote = false;
+      }
+      continue;
+    }
+
+    if (inDoubleQuote) {
+      if (currentChar === '"') {
+        inDoubleQuote = false;
+      }
+      continue;
+    }
+
+    if (inAngleBrackets) {
+      if (currentChar === '>') {
+        inAngleBrackets = false;
+      }
+      continue;
+    }
+
+    if (currentChar === '\'') {
+      inSingleQuote = true;
+      continue;
+    }
+
+    if (currentChar === '"') {
+      inDoubleQuote = true;
+      continue;
+    }
+
+    if (currentChar === '<') {
+      inAngleBrackets = true;
+      continue;
+    }
+
+    if (currentChar === '(') {
+      depth += 1;
+      continue;
+    }
+
+    if (currentChar === ')') {
+      depth -= 1;
+      if (depth === 0) {
+        return index;
+      }
+    }
+  }
+
+  return -1;
+};
+
+const findMarkdownImageMatches = (content: string): MarkdownImageMatch[] => {
+  const matches: MarkdownImageMatch[] = [];
+  let searchIndex = 0;
+
+  while (searchIndex < content.length) {
+    const imageStart = content.indexOf('![', searchIndex);
+
+    if (imageStart === -1) {
+      break;
+    }
+
+    const altOpenIndex = imageStart + 1;
+    const altCloseIndex = findClosingBracket(content, altOpenIndex, '[', ']');
+
+    if (altCloseIndex === -1) {
+      searchIndex = imageStart + 2;
+      continue;
+    }
+
+    const parenOpenIndex = skipInlineWhitespace(content, altCloseIndex + 1);
+    if (content[parenOpenIndex] !== '(') {
+      searchIndex = altCloseIndex + 1;
+      continue;
+    }
+
+    const parenCloseIndex = findMarkdownDestinationEnd(content, parenOpenIndex);
+    if (parenCloseIndex === -1) {
+      searchIndex = parenOpenIndex + 1;
+      continue;
+    }
+
+    matches.push({
+      fullMatch: content.slice(imageStart, parenCloseIndex + 1),
+      rawDestination: content.slice(parenOpenIndex + 1, parenCloseIndex),
+      start: imageStart,
+      end: parenCloseIndex + 1,
+    });
+
+    searchIndex = parenCloseIndex + 1;
+  }
+
+  return matches;
+};
+
+const replaceMarkdownImageMatches = (
+  content: string,
+  replacer: (match: MarkdownImageMatch) => string
+): string => {
+  const matches = findMarkdownImageMatches(content);
+
+  if (matches.length === 0) {
+    return content;
+  }
+
+  let updatedContent = '';
+  let lastIndex = 0;
+
+  matches.forEach(match => {
+    updatedContent += content.slice(lastIndex, match.start);
+    updatedContent += replacer(match);
+    lastIndex = match.end;
+  });
+
+  updatedContent += content.slice(lastIndex);
+
+  return updatedContent;
+};
 
 const parseMarkdownImageDestination = (rawDestination: string): { path: string; start: number; end: number } | null => {
   const leadingWhitespaceLength = rawDestination.match(/^\s*/)?.[0].length ?? 0;
@@ -222,21 +409,19 @@ const collectLocalImageReferences = (
 ): LocalImageReference[] => {
   const { maskedContent } = maskMarkdownCodeSections(markdown);
   const references: LocalImageReference[] = [];
-  const markdownImagePattern = /!\[[^\]]*]\(([^)\n]+)\)/g;
   const htmlImagePattern = /<img\b[^>]*\bsrc=(["'])(.*?)\1[^>]*>/gi;
 
-  let markdownMatch: RegExpExecArray | null;
-  while ((markdownMatch = markdownImagePattern.exec(maskedContent)) !== null) {
-    const parsedDestination = parseMarkdownImageDestination(markdownMatch[1]);
+  findMarkdownImageMatches(maskedContent).forEach(markdownMatch => {
+    const parsedDestination = parseMarkdownImageDestination(markdownMatch.rawDestination);
     if (!parsedDestination || isSkippableImageSource(parsedDestination.path)) {
-      continue;
+      return;
     }
 
     references.push({
       originalPath: parsedDestination.path,
       resolvedPath: resolveLocalImagePath(markdownDirectory, folderRoot, parsedDestination.path),
     });
-  }
+  });
 
   let htmlMatch: RegExpExecArray | null;
   while ((htmlMatch = htmlImagePattern.exec(maskedContent)) !== null) {
@@ -260,31 +445,30 @@ const rewriteMarkdownImagePaths = (
   uploadedAssets: Map<string, string>
 ): string => {
   const { maskedContent, placeholders } = maskMarkdownCodeSections(markdown);
-  const markdownImagePattern = /!\[[^\]]*]\(([^)\n]+)\)/g;
   const htmlImagePattern = /<img\b[^>]*\bsrc=(["'])(.*?)\1[^>]*>/gi;
 
-  const updatedMarkdown = maskedContent.replace(markdownImagePattern, (fullMatch, rawDestination: string) => {
-    const parsedDestination = parseMarkdownImageDestination(rawDestination);
+  const updatedMarkdown = replaceMarkdownImageMatches(maskedContent, (match) => {
+    const parsedDestination = parseMarkdownImageDestination(match.rawDestination);
     if (!parsedDestination || isSkippableImageSource(parsedDestination.path)) {
-      return fullMatch;
+      return match.fullMatch;
     }
 
     const resolvedPath = resolveLocalImagePath(markdownDirectory, folderRoot, parsedDestination.path);
     if (!resolvedPath) {
-      return fullMatch;
+      return match.fullMatch;
     }
 
     const uploadedUrl = uploadedAssets.get(resolvedPath);
     if (!uploadedUrl) {
-      return fullMatch;
+      return match.fullMatch;
     }
 
     const nextDestination =
-      rawDestination.slice(0, parsedDestination.start) +
+      match.rawDestination.slice(0, parsedDestination.start) +
       uploadedUrl +
-      rawDestination.slice(parsedDestination.end);
+      match.rawDestination.slice(parsedDestination.end);
 
-    return fullMatch.replace(rawDestination, nextDestination);
+    return match.fullMatch.replace(match.rawDestination, nextDestination);
   });
 
   const updatedHtml = updatedMarkdown.replace(htmlImagePattern, (fullMatch, quote: string, src: string) => {
