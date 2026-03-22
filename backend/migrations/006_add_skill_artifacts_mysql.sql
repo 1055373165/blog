@@ -1,0 +1,3 @@
+ALTER TABLE skills
+    ADD COLUMN IF NOT EXISTS anthropic_config LONGTEXT NULL,
+    ADD COLUMN IF NOT EXISTS supporting_files LONGTEXT NULL;

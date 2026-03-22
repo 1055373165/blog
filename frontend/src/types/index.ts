@@ -205,8 +205,15 @@ export interface Prompt extends AiAssetBase {
   children?: Prompt[];
 }
 
+export interface SkillSupportingFile {
+  path: string;
+  content: string;
+}
+
 export interface Skill extends AiAssetBase {
   status: SkillStatus;
+  anthropic_config: Record<string, unknown>;
+  supporting_files: SkillSupportingFile[];
   parent?: Skill;
   children?: Skill[];
 }
@@ -230,7 +237,10 @@ export interface UpdatePromptInput extends CreatePromptInput {
   id: number;
 }
 
-export interface CreateSkillInput extends CreateAiAssetInput {}
+export interface CreateSkillInput extends CreateAiAssetInput {
+  anthropic_config: Record<string, unknown>;
+  supporting_files: SkillSupportingFile[];
+}
 
 export interface UpdateSkillInput extends CreateSkillInput {
   id: number;

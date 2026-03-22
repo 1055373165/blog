@@ -5,6 +5,8 @@ function normalizeSkill(skill: Skill): Skill {
   return {
     ...skill,
     tags: skill.tags || [],
+    anthropic_config: skill.anthropic_config || {},
+    supporting_files: skill.supporting_files || [],
     children: (skill.children || []).map(normalizeSkill),
   };
 }

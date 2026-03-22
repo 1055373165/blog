@@ -16,14 +16,16 @@ import (
 )
 
 type SaveSkillRequest struct {
-	Name        string   `json:"name" binding:"required"`
-	Slug        string   `json:"slug"`
-	Description string   `json:"description"`
-	Content     string   `json:"content"`
-	Notes       string   `json:"notes"`
-	Status      string   `json:"status"`
-	Tags        []string `json:"tags"`
-	ParentID    *uint    `json:"parent_id"`
+	Name            string                       `json:"name" binding:"required"`
+	Slug            string                       `json:"slug"`
+	Description     string                       `json:"description"`
+	Content         string                       `json:"content"`
+	Notes           string                       `json:"notes"`
+	Status          string                       `json:"status"`
+	Tags            []string                     `json:"tags"`
+	AnthropicConfig map[string]interface{}       `json:"anthropic_config"`
+	SupportingFiles []models.SkillSupportingFile `json:"supporting_files"`
+	ParentID        *uint                        `json:"parent_id"`
 }
 
 func GetSkillTree(c *gin.Context) {
@@ -141,15 +143,17 @@ func CreateSkill(c *gin.Context) {
 	}
 
 	skill := models.Skill{
-		Name:        name,
-		Slug:        resolveSkillSlug(req.Slug, name, 0),
-		Description: strings.TrimSpace(req.Description),
-		Content:     req.Content,
-		Notes:       strings.TrimSpace(req.Notes),
-		Status:      status,
-		Tags:        normalizeStringList(req.Tags),
-		ParentID:    req.ParentID,
-		AuthorID:    userID,
+		Name:            name,
+		Slug:            resolveSkillSlug(req.Slug, name, 0),
+		Description:     strings.TrimSpace(req.Description),
+		Content:         req.Content,
+		Notes:           strings.TrimSpace(req.Notes),
+		Status:          status,
+		Tags:            normalizeStringList(req.Tags),
+		AnthropicConfig: normalizeSkillConfig(req.AnthropicConfig),
+		SupportingFiles: normalizeSkillSupportingFiles(req.SupportingFiles),
+		ParentID:        req.ParentID,
+		AuthorID:        userID,
 	}
 
 	if err := database.DB.Create(&skill).Error; err != nil {
@@ -244,6 +248,8 @@ func UpdateSkill(c *gin.Context) {
 	skill.Notes = strings.TrimSpace(req.Notes)
 	skill.Status = status
 	skill.Tags = normalizeStringList(req.Tags)
+	skill.AnthropicConfig = normalizeSkillConfig(req.AnthropicConfig)
+	skill.SupportingFiles = normalizeSkillSupportingFiles(req.SupportingFiles)
 	skill.ParentID = req.ParentID
 	skill.Slug = resolveSkillSlug(req.Slug, name, skill.ID)
 
@@ -476,4 +482,65 @@ func skillMatchesFilters(skill models.Skill, search, status string, selectedTags
 	}
 
 	return false
+}
+
+func normalizeSkillConfig(config map[string]interface{}) map[string]interface{} {
+	if len(config) == 0 {
+		return map[string]interface{}{}
+	}
+
+	normalized := make(map[string]interface{}, len(config))
+	for key, value := range config {
+		trimmedKey := strings.TrimSpace(key)
+		loweredKey := strings.ToLower(trimmedKey)
+		if trimmedKey == "" || loweredKey == "name" || loweredKey == "description" {
+			continue
+		}
+		normalized[trimmedKey] = value
+	}
+	return normalized
+}
+
+func normalizeSkillSupportingFiles(files []models.SkillSupportingFile) []models.SkillSupportingFile {
+	if len(files) == 0 {
+		return []models.SkillSupportingFile{}
+	}
+
+	seen := make(map[string]bool, len(files))
+	normalized := make([]models.SkillSupportingFile, 0, len(files))
+	for _, file := range files {
+		path := normalizeSkillFilePath(file.Path)
+		if path == "" || seen[strings.ToLower(path)] {
+			continue
+		}
+		seen[strings.ToLower(path)] = true
+		normalized = append(normalized, models.SkillSupportingFile{
+			Path:    path,
+			Content: file.Content,
+		})
+	}
+
+	return normalized
+}
+
+func normalizeSkillFilePath(path string) string {
+	path = strings.TrimSpace(path)
+	path = strings.ReplaceAll(path, "\\", "/")
+	path = strings.TrimPrefix(path, "./")
+	path = strings.Trim(path, "/")
+
+	parts := strings.Split(path, "/")
+	normalizedParts := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" || part == "." {
+			continue
+		}
+		if part == ".." {
+			return ""
+		}
+		normalizedParts = append(normalizedParts, part)
+	}
+
+	return strings.Join(normalizedParts, "/")
 }

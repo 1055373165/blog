@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { parse, stringify } from 'yaml';
 import ByteMDEditor from '../../components/ByteMDEditor';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import TokenInput from '../../components/admin/TokenInput';
@@ -14,6 +15,7 @@ import type {
   CreateSkillInput,
   Prompt,
   Skill,
+  SkillSupportingFile,
   UpdatePromptInput,
   UpdateSkillInput,
 } from '../../types';
@@ -30,6 +32,25 @@ interface AssetOption extends AiAssetBase {
 
 type AssetRecord = Prompt | Skill;
 type AssetFormData = CreateSkillInput & { applicable_models: string[] };
+type AnthropicSkillMetadata = Record<string, unknown>;
+
+interface DirectoryFile extends File {
+  webkitRelativePath?: string;
+}
+
+interface DirectoryHandleLike {
+  getDirectoryHandle(name: string, options?: { create?: boolean }): Promise<DirectoryHandleLike>;
+  getFileHandle(name: string, options?: { create?: boolean }): Promise<FileHandleLike>;
+}
+
+interface FileHandleLike {
+  createWritable(): Promise<{
+    write(data: string): Promise<void>;
+    close(): Promise<void>;
+  }>;
+}
+
+const ANTHROPIC_RESERVED_KEYS = new Set(['name', 'description']);
 
 const statusOptions: { value: AiAssetStatus; label: string; description: string }[] = [
   { value: 'active', label: '启用', description: '当前可直接使用的正式资产' },
@@ -138,12 +159,145 @@ function collectDescendantIds(asset: AssetOption): number[] {
   return (asset.children || []).flatMap((child) => [child.id, ...collectDescendantIds(child)]);
 }
 
+function sanitizeAnthropicSkillName(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64);
+}
+
+function splitImportedSkillPath(path: string) {
+  const normalizedPath = path.replace(/\\/g, '/').replace(/^\/+/, '');
+  const parts = normalizedPath.split('/').filter(Boolean);
+  const relativePath = parts.length <= 1 ? parts[0] || '' : parts.slice(1).join('/');
+  return normalizeSupportingFilePath(relativePath);
+}
+
+function normalizeSupportingFilePath(path: string) {
+  const parts = path
+    .replace(/\\/g, '/')
+    .split('/')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.some((part) => part === '..')) {
+    return '';
+  }
+
+  return parts.filter((part) => part !== '.').join('/');
+}
+
+function parseAnthropicSkillMarkdown(markdown: string) {
+  const normalized = markdown.replace(/\r\n/g, '\n');
+  if (!normalized.startsWith('---\n')) {
+    return {
+      name: '',
+      description: '',
+      anthropicConfig: {} as AnthropicSkillMetadata,
+      content: normalized.trim(),
+    };
+  }
+
+  const closingIndex = normalized.indexOf('\n---\n', 4);
+  if (closingIndex === -1) {
+    throw new Error('SKILL.md 的 frontmatter 缺少结束分隔符 ---');
+  }
+
+  const yamlSource = normalized.slice(4, closingIndex).trim();
+  const content = normalized.slice(closingIndex + 5).replace(/^\n+/, '');
+  const parsed = yamlSource ? parse(yamlSource) : {};
+
+  if (parsed !== null && (typeof parsed !== 'object' || Array.isArray(parsed))) {
+    throw new Error('SKILL.md 的 frontmatter 必须是 YAML 对象');
+  }
+
+  const frontmatter = (parsed || {}) as AnthropicSkillMetadata;
+  const anthropicConfig = Object.fromEntries(
+    Object.entries(frontmatter).filter(([key]) => !ANTHROPIC_RESERVED_KEYS.has(key))
+  );
+
+  return {
+    name: typeof frontmatter.name === 'string' ? frontmatter.name.trim() : '',
+    description: typeof frontmatter.description === 'string' ? frontmatter.description.trim() : '',
+    anthropicConfig,
+    content,
+  };
+}
+
+function stringifyAnthropicConfig(config: AnthropicSkillMetadata) {
+  if (Object.keys(config).length === 0) {
+    return '';
+  }
+
+  return stringify(config).trim();
+}
+
+function parseAnthropicConfigYaml(yamlSource: string) {
+  const trimmed = yamlSource.trim();
+  if (!trimmed) {
+    return {} as AnthropicSkillMetadata;
+  }
+
+  const parsed = parse(trimmed);
+  if (parsed !== null && (typeof parsed !== 'object' || Array.isArray(parsed))) {
+    throw new Error('Anthropic frontmatter 必须是 YAML 对象');
+  }
+
+  const config = (parsed || {}) as AnthropicSkillMetadata;
+  return Object.fromEntries(Object.entries(config).filter(([key]) => !ANTHROPIC_RESERVED_KEYS.has(key)));
+}
+
+function buildAnthropicSkillMarkdown(skillName: string, description: string, anthropicConfig: AnthropicSkillMetadata, content: string) {
+  const frontmatter: AnthropicSkillMetadata = {
+    name: skillName,
+  };
+
+  if (description.trim()) {
+    frontmatter.description = description.trim();
+  }
+
+  for (const [key, value] of Object.entries(anthropicConfig)) {
+    if (ANTHROPIC_RESERVED_KEYS.has(key)) {
+      continue;
+    }
+    frontmatter[key] = value;
+  }
+
+  const yamlText = stringify(frontmatter).trim();
+  const body = content.trim();
+  return `---\n${yamlText}\n---\n\n${body}`;
+}
+
+async function writeExportedSkillFile(
+  directoryHandle: DirectoryHandleLike,
+  path: string,
+  content: string
+) {
+  const segments = path.split('/').filter(Boolean);
+  if (segments.length === 0) {
+    return;
+  }
+
+  let currentDirectory = directoryHandle;
+  for (const segment of segments.slice(0, -1)) {
+    currentDirectory = await currentDirectory.getDirectoryHandle(segment, { create: true });
+  }
+
+  const fileHandle = await currentDirectory.getFileHandle(segments[segments.length - 1], { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(content);
+  await writable.close();
+}
+
 export default function AssetEditor({ assetType }: AssetEditorProps) {
   const { id } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isEditing = !!id;
   const config = assetConfig[assetType];
+  const skillImportInputRef = useRef<HTMLInputElement | null>(null);
+  const isSkillEditor = assetType === 'skill';
 
   const [formData, setFormData] = useState<AssetFormData>({
     name: '',
@@ -154,10 +308,15 @@ export default function AssetEditor({ assetType }: AssetEditorProps) {
     status: 'draft',
     tags: [],
     applicable_models: [],
+    anthropic_config: {},
+    supporting_files: [],
     parent_id: undefined,
   });
+  const [anthropicConfigYaml, setAnthropicConfigYaml] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [importingSkillFolder, setImportingSkillFolder] = useState(false);
+  const [exportingSkillFolder, setExportingSkillFolder] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [assets, setAssets] = useState<AssetRecord[]>([]);
   const [toast, setToast] = useState<{ message: string; type: ToastType; isVisible: boolean }>({
@@ -176,6 +335,10 @@ export default function AssetEditor({ assetType }: AssetEditorProps) {
       return;
     }
 
+    if (isSkillEditor) {
+      setAnthropicConfigYaml('');
+    }
+
     const parentId = searchParams.get('parent');
     if (!parentId) {
       setFormData((current) => ({ ...current, parent_id: undefined }));
@@ -191,7 +354,7 @@ export default function AssetEditor({ assetType }: AssetEditorProps) {
       ...current,
       parent_id: parsedParentId,
     }));
-  }, [assetType, id, isEditing, searchParams]);
+  }, [assetType, id, isEditing, isSkillEditor, searchParams]);
 
   const loadAssetTree = async () => {
     try {
@@ -225,8 +388,15 @@ export default function AssetEditor({ assetType }: AssetEditorProps) {
         status: asset.status,
         tags: asset.tags || [],
         applicable_models: getApplicableModels(asset),
+        anthropic_config: 'anthropic_config' in asset ? asset.anthropic_config || {} : {},
+        supporting_files: 'supporting_files' in asset ? asset.supporting_files || [] : [],
         parent_id: asset.parent_id,
       });
+      if ('anthropic_config' in asset) {
+        setAnthropicConfigYaml(stringifyAnthropicConfig(asset.anthropic_config || {}));
+      } else {
+        setAnthropicConfigYaml('');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : `加载${config.name}失败`);
     } finally {
@@ -276,6 +446,128 @@ export default function AssetEditor({ assetType }: AssetEditorProps) {
     }));
   };
 
+  const handleImportSkillFolder = async (files: DirectoryFile[]) => {
+    if (!isSkillEditor || files.length === 0) {
+      return;
+    }
+
+    try {
+      setImportingSkillFolder(true);
+      setError(null);
+
+      const normalizedFiles = files
+        .map((file) => ({
+          path: splitImportedSkillPath(file.webkitRelativePath || file.name),
+          file,
+        }))
+        .filter((item) => item.path && !item.path.startsWith('.DS_Store'));
+
+      const entryFile = normalizedFiles.find((item) => item.path === 'SKILL.md');
+      if (!entryFile) {
+        throw new Error('导入失败：未找到根目录下的 SKILL.md');
+      }
+
+      const parsedSkill = parseAnthropicSkillMarkdown(await entryFile.file.text());
+      const supportingFiles = (
+        await Promise.all(
+          normalizedFiles
+            .filter((item) => item.path !== 'SKILL.md')
+            .map(async (item) => ({
+              path: item.path,
+              content: await item.file.text(),
+            }))
+        )
+      ).sort((a, b) => a.path.localeCompare(b.path, 'zh-CN'));
+
+      const importedSlug =
+        parsedSkill.name ||
+        sanitizeAnthropicSkillName(formData.slug || formData.name || entryFile.file.name.replace(/\.md$/i, '')) ||
+        'imported-skill';
+
+      setFormData((current) => ({
+        ...current,
+        name: parsedSkill.name || current.name || importedSlug,
+        slug: importedSlug,
+        description: parsedSkill.description || current.description,
+        content: parsedSkill.content,
+        anthropic_config: parsedSkill.anthropicConfig,
+        supporting_files: supportingFiles,
+      }));
+      setAnthropicConfigYaml(stringifyAnthropicConfig(parsedSkill.anthropicConfig));
+      setToast({
+        message: `已导入 Anthropic Skill 文件夹，共 ${supportingFiles.length + 1} 个文件`,
+        type: 'success',
+        isVisible: true,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '导入 Skill 文件夹失败';
+      setError(message);
+      setToast({ message, type: 'error', isVisible: true });
+    } finally {
+      setImportingSkillFolder(false);
+    }
+  };
+
+  const handleExportSkillFolder = async () => {
+    if (!isSkillEditor) {
+      return;
+    }
+
+    try {
+      setExportingSkillFolder(true);
+      setError(null);
+
+      const anthropicConfig = parseAnthropicConfigYaml(anthropicConfigYaml);
+      const anthropicSkillName = sanitizeAnthropicSkillName(formData.slug || formData.name);
+      if (!anthropicSkillName) {
+        throw new Error('请先填写一个符合 Anthropic 标准的 slug，建议只用小写字母、数字和连字符');
+      }
+
+      const skillMarkdown = buildAnthropicSkillMarkdown(
+        anthropicSkillName,
+        formData.description || '',
+        anthropicConfig,
+        formData.content || ''
+      );
+
+      const fileAccessWindow = window as Window & {
+        showDirectoryPicker?: () => Promise<DirectoryHandleLike>;
+      };
+
+      if (!fileAccessWindow.showDirectoryPicker) {
+        throw new Error('当前浏览器不支持目录导出，请使用支持 File System Access API 的 Chromium 浏览器');
+      }
+
+      const targetDirectory = await fileAccessWindow.showDirectoryPicker();
+      const skillDirectory = await targetDirectory.getDirectoryHandle(anthropicSkillName, { create: true });
+      await writeExportedSkillFile(skillDirectory, 'SKILL.md', skillMarkdown);
+
+      for (const file of formData.supporting_files) {
+        const path = normalizeSupportingFilePath(file.path);
+        if (!path) {
+          continue;
+        }
+        await writeExportedSkillFile(skillDirectory, path, file.content);
+      }
+
+      setToast({
+        message: `已导出 Anthropic Skill 文件夹：${anthropicSkillName}`,
+        type: 'success',
+        isVisible: true,
+      });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return;
+      }
+
+      const message = err instanceof Error ? err.message : '导出 Skill 文件夹失败';
+      setError(message);
+      setToast({ message, type: 'error', isVisible: true });
+    } finally {
+      setExportingSkillFolder(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!formData.name.trim()) {
       setError(`请填写${config.name}名称`);
@@ -319,6 +611,7 @@ export default function AssetEditor({ assetType }: AssetEditorProps) {
         return;
       }
 
+      const anthropicConfig = parseAnthropicConfigYaml(anthropicConfigYaml);
       const payload: CreateSkillInput = {
         name: formData.name.trim(),
         slug: formData.slug?.trim(),
@@ -327,6 +620,8 @@ export default function AssetEditor({ assetType }: AssetEditorProps) {
         notes: formData.notes?.trim(),
         status: formData.status,
         tags: formData.tags,
+        anthropic_config: anthropicConfig,
+        supporting_files: formData.supporting_files,
         parent_id: formData.parent_id,
       };
 
@@ -388,6 +683,43 @@ export default function AssetEditor({ assetType }: AssetEditorProps) {
             </div>
 
             <div className="flex items-center gap-3">
+              {isSkillEditor && (
+                <>
+                  <input
+                    ref={skillImportInputRef}
+                    type="file"
+                    // @ts-expect-error webkitdirectory is non-standard
+                    webkitdirectory=""
+                    multiple
+                    className="hidden"
+                    onChange={(event) => {
+                      const files = Array.from(event.target.files || []) as DirectoryFile[];
+                      if (files.length > 0) {
+                        void handleImportSkillFolder(files);
+                      }
+                      event.target.value = '';
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => skillImportInputRef.current?.click()}
+                    disabled={importingSkillFolder || saving}
+                    className="btn btn-secondary flex items-center gap-2"
+                  >
+                    {importingSkillFolder && <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
+                    {importingSkillFolder ? '导入中...' : '导入 Anthropic Skill'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleExportSkillFolder()}
+                    disabled={exportingSkillFolder || saving}
+                    className="btn btn-secondary flex items-center gap-2"
+                  >
+                    {exportingSkillFolder && <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
+                    {exportingSkillFolder ? '导出中...' : '导出 Skill 文件夹'}
+                  </button>
+                </>
+              )}
               <span className="hidden md:inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
                 {statusOptions.find((option) => option.value === formData.status)?.label}
               </span>
@@ -442,6 +774,11 @@ export default function AssetEditor({ assetType }: AssetEditorProps) {
                     placeholder="留空则根据名称自动生成"
                     className="input"
                   />
+                  {isSkillEditor && (
+                    <p className="mt-2 text-xs leading-5 text-gray-500 dark:text-gray-400">
+                      Anthropic 导出会把 `slug` 用作目录名和 `SKILL.md` frontmatter 里的 `name`。建议使用小写字母、数字和连字符。
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -570,6 +907,83 @@ export default function AssetEditor({ assetType }: AssetEditorProps) {
               )}
             </div>
 
+            {isSkillEditor && (
+              <div className="card p-6 space-y-5">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Anthropic 兼容</h2>
+                  <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">
+                    导入时会解析标准 Skill 文件夹中的 `SKILL.md`、YAML frontmatter 和 supporting files；导出时会按同样结构重新写出。
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    附加 frontmatter（YAML）
+                  </label>
+                  <textarea
+                    value={anthropicConfigYaml}
+                    onChange={(event) => setAnthropicConfigYaml(event.target.value)}
+                    rows={10}
+                    placeholder={'allowed-tools: Read, Grep\nuser-invocable: false\ncontext: fork'}
+                    className="input font-mono text-sm resize-y min-h-[220px]"
+                  />
+                  <p className="mt-2 text-xs leading-5 text-gray-500 dark:text-gray-400">
+                    这里填写除 `name` 和 `description` 之外的 Anthropic frontmatter。导出时系统会自动补回这两个字段。
+                  </p>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Supporting Files
+                    </label>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {formData.supporting_files.length} 个文件
+                    </span>
+                  </div>
+
+                  {formData.supporting_files.length === 0 ? (
+                    <div className="mt-3 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 px-4 py-5 text-sm text-gray-500 dark:text-gray-400">
+                      还没有 supporting files。导入 Anthropic Skill 文件夹后，这里会显示除 `SKILL.md` 外的其他文件。
+                    </div>
+                  ) : (
+                    <div className="mt-3 space-y-2">
+                      {formData.supporting_files.map((file) => (
+                        <div
+                          key={file.path}
+                          className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 px-4 py-3"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="truncate font-mono text-sm text-gray-800 dark:text-gray-100">{file.path}</div>
+                              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                {file.content.length} 字符
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleInputChange(
+                                  'supporting_files',
+                                  formData.supporting_files.filter((item) => item.path !== file.path)
+                                )
+                              }
+                              className="rounded-full px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                            >
+                              移除
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <p className="mt-2 text-xs leading-5 text-gray-500 dark:text-gray-400">
+                    当前 supporting files 按文本文件导入和导出，适合 Markdown、脚本、模板和说明文档。
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="card p-6 space-y-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">结构信息</h2>
               <div className="rounded-2xl bg-gray-50 dark:bg-gray-800/70 p-4">
@@ -588,6 +1002,14 @@ export default function AssetEditor({ assetType }: AssetEditorProps) {
                       {formData.applicable_models.length > 0
                         ? `${formData.applicable_models.length}${config.summaryModelText}`
                         : config.emptyModelText}
+                    </>
+                  )}
+                  {isSkillEditor && (
+                    <>
+                      <span className="mx-2 text-gray-300 dark:text-gray-600">/</span>
+                      {formData.supporting_files.length > 0
+                        ? `${formData.supporting_files.length} 个 supporting files`
+                        : '无 supporting files'}
                     </>
                   )}
                 </div>
