@@ -146,6 +146,17 @@ func main() {
 			prompts.DELETE("/:id", handlers.DeletePrompt)
 		}
 
+		// Skill 管理路由（管理员）
+		skills := api.Group("/skills")
+		skills.Use(middleware.AdminRequired())
+		{
+			skills.GET("/tree", handlers.GetSkillTree)
+			skills.GET("/:id", handlers.GetSkill)
+			skills.POST("", handlers.CreateSkill)
+			skills.PUT("/:id", handlers.UpdateSkill)
+			skills.DELETE("/:id", handlers.DeleteSkill)
+		}
+
 		// 评论相关路由
 		comments := api.Group("/comments")
 		{

@@ -26,7 +26,7 @@ export default function AdminLayout() {
   const navigation = [
     { name: '仪表板', href: '/admin', icon: 'dashboard' },
     { name: '文章管理', href: '/admin/articles', icon: 'document' },
-    { name: '提示词管理', href: '/admin/prompts', icon: 'prompt' },
+    { name: 'AI资产管理', href: '/admin/prompts', icon: 'prompt' },
     { name: '博客管理', href: '/admin/blogs', icon: 'video' },
     { name: '投稿管理', href: '/admin/submissions', icon: 'submissions' },
     { name: '学习计划', href: '/admin/study-plans', icon: 'study' },
@@ -40,6 +40,9 @@ export default function AdminLayout() {
   const isActive = (href: string) => {
     if (href === '/admin') {
       return location.pathname === '/admin';
+    }
+    if (href === '/admin/prompts') {
+      return location.pathname.startsWith('/admin/prompts') || location.pathname.startsWith('/admin/skills');
     }
     return location.pathname.startsWith(href);
   };

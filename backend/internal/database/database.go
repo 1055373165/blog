@@ -79,6 +79,7 @@ func AutoMigrate() error {
 		&models.Tag{},
 		&models.Series{},
 		&models.Prompt{},
+		&models.Skill{},
 		&models.Article{},
 		&models.ArticleView{},
 		&models.ArticleLike{},

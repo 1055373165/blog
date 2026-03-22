@@ -19,6 +19,7 @@ export interface PaginatedResponse<T> {
   categories?: T[];
   tags?: T[];
   prompts?: T[];
+  skills?: T[];
   submissions?: T[];
 
   // Compatibility aliases
@@ -174,21 +175,21 @@ export interface UpdateArticleInput extends Partial<CreateArticleInput> {
   id: number;
 }
 
-export type PromptStatus = 'draft' | 'active' | 'archived';
+export type AiAssetType = 'prompt' | 'skill';
+export type AiAssetStatus = 'draft' | 'active' | 'archived';
+export type PromptStatus = AiAssetStatus;
+export type SkillStatus = AiAssetStatus;
 
-export interface Prompt {
+export interface AiAssetBase {
   id: number;
   name: string;
   slug: string;
   description?: string;
   content: string;
   notes?: string;
-  status: PromptStatus;
+  status: AiAssetStatus;
   tags: string[];
-  applicable_models: string[];
   parent_id?: number;
-  parent?: Prompt;
-  children?: Prompt[];
   child_count: number;
   author_id: number;
   author?: User;
@@ -196,19 +197,42 @@ export interface Prompt {
   updated_at: string;
 }
 
-export interface CreatePromptInput {
+export interface Prompt extends AiAssetBase {
+  status: PromptStatus;
+  applicable_models: string[];
+  parent_id?: number;
+  parent?: Prompt;
+  children?: Prompt[];
+}
+
+export interface Skill extends AiAssetBase {
+  status: SkillStatus;
+  parent?: Skill;
+  children?: Skill[];
+}
+
+export interface CreateAiAssetInput {
   name: string;
   slug?: string;
   description?: string;
   content: string;
   notes?: string;
-  status: PromptStatus;
+  status: AiAssetStatus;
   tags: string[];
-  applicable_models: string[];
   parent_id?: number;
 }
 
+export interface CreatePromptInput extends CreateAiAssetInput {
+  applicable_models: string[];
+}
+
 export interface UpdatePromptInput extends CreatePromptInput {
+  id: number;
+}
+
+export interface CreateSkillInput extends CreateAiAssetInput {}
+
+export interface UpdateSkillInput extends CreateSkillInput {
   id: number;
 }
 

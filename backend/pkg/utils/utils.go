@@ -101,6 +101,11 @@ func GenerateUniquePromptSlug(baseSlug string, excludeID ...uint) string {
 	return generateUniqueSlug(&models.Prompt{}, baseSlug, excludeID...)
 }
 
+// GenerateUniqueSkillSlug 生成技能唯一 slug
+func GenerateUniqueSkillSlug(baseSlug string, excludeID ...uint) string {
+	return generateUniqueSlug(&models.Skill{}, baseSlug, excludeID...)
+}
+
 // CalculateReadingTime 计算阅读时间（分钟）
 func CalculateReadingTime(content string) int {
 	// 移除HTML标签
