@@ -12,6 +12,10 @@ interface AssetTreeViewProps {
   assets: TreeAsset[];
   childLabel: string;
   autoExpandAll?: boolean;
+  expandAction?: {
+    type: 'expandAll' | 'collapseAll';
+    token: number;
+  } | null;
   onAddChild: (asset: TreeAsset) => void;
   onDelete: (asset: TreeAsset) => void;
   getEditPath: (asset: TreeAsset) => string;
@@ -197,6 +201,7 @@ export default function AssetTreeView({
   assets,
   childLabel,
   autoExpandAll = false,
+  expandAction = null,
   onAddChild,
   onDelete,
   getEditPath,
@@ -208,6 +213,14 @@ export default function AssetTreeView({
   useEffect(() => {
     setExpandedIds(new Set(autoExpandAll ? allIds : rootIds));
   }, [allIds, autoExpandAll, rootIds]);
+
+  useEffect(() => {
+    if (!expandAction) {
+      return;
+    }
+
+    setExpandedIds(new Set(expandAction.type === 'expandAll' ? allIds : []));
+  }, [allIds, expandAction]);
 
   const handleToggleExpand = (id: number) => {
     setExpandedIds((current) => {

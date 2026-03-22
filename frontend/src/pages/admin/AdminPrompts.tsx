@@ -156,6 +156,10 @@ export default function AdminPrompts({ defaultAssetType = 'prompt' }: AdminPromp
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [treeExpandAction, setTreeExpandAction] = useState<{
+    type: 'expandAll' | 'collapseAll';
+    token: number;
+  } | null>(null);
   const [toast, setToast] = useState<{ message: string; type: ToastType; isVisible: boolean }>({
     message: '',
     type: 'success',
@@ -470,6 +474,34 @@ export default function AdminPrompts({ defaultAssetType = 'prompt' }: AdminPromp
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            {filteredAssets.length > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTreeExpandAction({
+                      type: 'expandAll',
+                      token: Date.now(),
+                    })
+                  }
+                  className="px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 hover:text-go-600 dark:hover:text-go-300 transition-colors"
+                >
+                  全部展开
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTreeExpandAction({
+                      type: 'collapseAll',
+                      token: Date.now(),
+                    })
+                  }
+                  className="px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 hover:text-go-600 dark:hover:text-go-300 transition-colors"
+                >
+                  全部折叠
+                </button>
+              </>
+            )}
             {activeFilters && (
               <button
                 type="button"
@@ -515,6 +547,7 @@ export default function AdminPrompts({ defaultAssetType = 'prompt' }: AdminPromp
           assets={filteredAssets as AssetRecord[]}
           childLabel={config.childLabel}
           autoExpandAll={activeFilters}
+          expandAction={treeExpandAction}
           onAddChild={(asset) => navigate(`${config.newPath}?parent=${asset.id}`)}
           onDelete={handleDeleteAsset}
           getEditPath={(asset) => config.getEditPath(asset.id)}
