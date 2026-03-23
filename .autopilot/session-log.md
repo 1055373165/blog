@@ -246,3 +246,38 @@
 - Blockers or risks discovered:
   - This remains a convenience import, not true snapshot/history sync; repeated imports overwrite same-name files but do not preserve historical revisions.
   - Repository-wide `frontend npm run build:check` is still blocked by unrelated pre-existing TypeScript issues, so verification continues to rely on focused bundle checks for the touched surfaces.
+
+## 2026-03-23T12:29:18+08:00
+- What was investigated/built:
+  - Investigated a user-reported screenshot that still showed the old “文件管理即将接入” placeholder on the algorithm detail page.
+  - Confirmed the real `AlgorithmFilesPanel` was already mounted lower on the page and that the issue was stale placeholder copy in the right sidebar, not a routing failure.
+  - Replaced the placeholder card with a real file-workspace guide plus a jump action that scrolls directly to the live file panel.
+  - Verified the updated detail page with a focused esbuild bundle smoke check.
+- Current state and next MDU:
+  - Current state: `COMPLETED`
+  - Current task: `delivery`
+  - Next step: user can re-open algorithm detail pages and confirm the sidebar now matches the real file-management capability.
+- Key decisions made:
+  - The fix kept the existing full-width file workspace in place and corrected the misleading affordance instead of duplicating file management into the sidebar.
+  - For create mode, the sidebar now explains the unlock condition rather than pretending the feature is not implemented.
+- Blockers or risks discovered:
+  - This is still a UI copy/flow correction only; no browser-level dogfooding was run in this pass.
+
+## 2026-03-23T12:36:00+08:00
+- What was investigated/built:
+  - Investigated a user complaint that the create/edit form still exposed an editable “本地目录名” field.
+  - Extracted the folder-import implementation into shared logic under `frontend/src/components/admin/algorithmFolderImport.ts`.
+  - Reworked `frontend/src/pages/admin/AlgorithmAssetDetail.tsx` so `/admin/algorithms/new` is now a folder-upload-first creation flow rather than a manual metadata form.
+  - Converted the directory field on the edit page into a read-only “来源目录” identity display and removed the manual-edit affordance.
+  - Re-verified the shared import module, list-page import card, and updated detail page with focused esbuild bundle smoke checks.
+- Current state and next MDU:
+  - Current state: `COMPLETED`
+  - Current task: `delivery`
+  - Next step: user can create algorithm assets directly from a local folder in the create page, then continue metadata edits in the detail page.
+- Key decisions made:
+  - Folder upload is now the canonical asset-creation path in admin; manual entry of `source_dir_name` is no longer presented to the user.
+  - The source directory remains in state and API payloads as a backend identity field, but the UI now treats it as system-owned metadata.
+  - Shared folder-import logic was extracted so the create page and the list-page import card cannot drift into two incompatible behaviors.
+- Blockers or risks discovered:
+  - This still relies on Chromium-style `webkitdirectory` support for folder selection in the browser.
+  - No browser-level end-to-end dogfooding was run in this pass; verification remains focused bundle checks only.

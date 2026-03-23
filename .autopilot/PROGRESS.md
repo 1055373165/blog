@@ -11,7 +11,7 @@
 - total_mdu: 11
 - completed_mdu: 11
 - completion_pct: 100
-- last_updated: 2026-03-23T10:45:30+08:00
+- last_updated: 2026-03-23T12:36:00+08:00
 
 ## Project Info
 - Name: Algorithm Asset Management
@@ -340,3 +340,5 @@ Phase-1 non-functional contract:
 | 2026-03-23T07:39:08+08:00 | update | Completed MDU-5.3.4 with video upload, video record management, and targeted bundling verification | .autopilot/PROGRESS.md |
 | 2026-03-23T07:40:39+08:00 | update | Completed MDU-5.4.1 by mounting the real algorithm pages into admin routes and finishing feature delivery | .autopilot/PROGRESS.md |
 | 2026-03-23T10:45:30+08:00 | update | Added post-delivery folder import capability in admin by reusing existing algorithm asset/file APIs and targeted frontend bundle verification | .autopilot/PROGRESS.md |
+| 2026-03-23T12:29:18+08:00 | update | Replaced stale file-management placeholder copy in the algorithm detail sidebar with a real workspace guide and jump link to the live file panel | .autopilot/PROGRESS.md |
+| 2026-03-23T12:36:00+08:00 | update | Switched algorithm creation to a folder-upload-first flow, removed editable source-dir input from the detail form, and extracted shared folder-import logic for reuse | .autopilot/PROGRESS.md |
