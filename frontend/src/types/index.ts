@@ -21,6 +21,7 @@ export interface PaginatedResponse<T> {
   prompts?: T[];
   skills?: T[];
   submissions?: T[];
+  assets?: T[];
 
   // Compatibility aliases
   page?: number;
@@ -626,4 +627,143 @@ export interface CommentActionResult {
   success: boolean;
   comment?: Comment;
   error?: string;
+}
+
+export type AlgorithmAssetStatus = 'draft' | 'ready' | 'archived';
+export type AlgorithmReviewStatus =
+  | 'new'
+  | 'read'
+  | 'failed_recall'
+  | 'passed_recall'
+  | 'needs_review';
+export type AlgorithmDifficulty = '' | 'easy' | 'medium' | 'hard';
+export type AlgorithmAssetFileKind = 'markdown' | 'video';
+export type AlgorithmAssetFileRole =
+  | 'primary_analysis'
+  | 'supplement'
+  | 'animation'
+  | 'alternate_animation';
+
+export interface AlgorithmAssetFile {
+  id: number;
+  asset_id: number;
+  file_kind: AlgorithmAssetFileKind;
+  role: AlgorithmAssetFileRole;
+  display_name: string;
+  original_name: string;
+  sort_order: number;
+  is_primary: boolean;
+  markdown_content?: string;
+  storage_url?: string;
+  mime_type?: string;
+  size_bytes: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AlgorithmAsset {
+  id: number;
+  title: string;
+  slug: string;
+  leetcode_id?: number | null;
+  source_url?: string;
+  source_dir_name: string;
+  description?: string;
+  difficulty: AlgorithmDifficulty;
+  tags: string[];
+  status: AlgorithmAssetStatus;
+  summary_note?: string;
+  weak_points?: string;
+  review_status: AlgorithmReviewStatus;
+  next_review_at?: string | null;
+  primary_markdown_file_id?: number | null;
+  primary_video_file_id?: number | null;
+  markdown_count: number;
+  video_count: number;
+  author_id: number;
+  author?: User;
+  files: AlgorithmAssetFile[];
+  primary_markdown_file?: AlgorithmAssetFile;
+  primary_video_file?: AlgorithmAssetFile;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AlgorithmAssetListResponse {
+  assets: AlgorithmAsset[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+export interface SaveAlgorithmAssetInput {
+  title: string;
+  slug?: string;
+  leetcode_id?: number | null;
+  source_url?: string;
+  source_dir_name: string;
+  description?: string;
+  difficulty?: AlgorithmDifficulty;
+  tags?: string[];
+  status?: AlgorithmAssetStatus;
+  summary_note?: string;
+  weak_points?: string;
+  review_status?: AlgorithmReviewStatus;
+  next_review_at?: string | null;
+  primary_markdown_file_id?: number | null;
+  primary_video_file_id?: number | null;
+}
+
+export interface SaveAlgorithmAssetMarkdownFileInput {
+  display_name: string;
+  original_name?: string;
+  role?: Extract<AlgorithmAssetFileRole, 'primary_analysis' | 'supplement'>;
+  sort_order?: number;
+  is_primary?: boolean;
+  markdown_content?: string;
+}
+
+export interface SaveAlgorithmAssetVideoFileInput {
+  display_name: string;
+  original_name?: string;
+  role?: Extract<AlgorithmAssetFileRole, 'animation' | 'alternate_animation' | 'supplement'>;
+  sort_order?: number;
+  is_primary?: boolean;
+  storage_url: string;
+  mime_type?: string;
+  size_bytes?: number;
+}
+
+export interface UpdateAlgorithmAssetFileInput {
+  display_name: string;
+  original_name?: string;
+  role?: AlgorithmAssetFileRole;
+  sort_order?: number;
+  is_primary?: boolean;
+  markdown_content?: string;
+  storage_url?: string;
+  mime_type?: string;
+  size_bytes?: number;
+}
+
+export interface UpdateAlgorithmAssetPrimaryFilesInput {
+  primary_markdown_file_id?: number | null;
+  primary_video_file_id?: number | null;
+}
+
+export interface UpdateAlgorithmAssetLearningInput {
+  summary_note?: string;
+  weak_points?: string;
+  review_status?: AlgorithmReviewStatus;
+  next_review_at?: string | null;
+}
+
+export interface UploadMediaResponse {
+  url: string;
+  filename: string;
+  size: number;
+  mime_type: string;
 }

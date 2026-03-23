@@ -157,6 +157,22 @@ func main() {
 			skills.DELETE("/:id", handlers.DeleteSkill)
 		}
 
+		// 算法资产管理路由（管理员）
+		algorithmAssets := api.Group("/algorithm-assets")
+		algorithmAssets.Use(middleware.AdminRequired())
+		{
+			algorithmAssets.GET("", handlers.ListAlgorithmAssets)
+			algorithmAssets.GET("/:id", handlers.GetAlgorithmAsset)
+			algorithmAssets.POST("", handlers.CreateAlgorithmAsset)
+			algorithmAssets.PUT("/:id", handlers.UpdateAlgorithmAsset)
+			algorithmAssets.POST("/:id/files/markdown", handlers.CreateAlgorithmAssetMarkdownFile)
+			algorithmAssets.POST("/:id/files/video", handlers.CreateAlgorithmAssetVideoFile)
+			algorithmAssets.PUT("/:id/files/:fileId", handlers.UpdateAlgorithmAssetFile)
+			algorithmAssets.DELETE("/:id/files/:fileId", handlers.DeleteAlgorithmAssetFile)
+			algorithmAssets.PATCH("/:id/primary-files", handlers.UpdateAlgorithmAssetPrimaryFiles)
+			algorithmAssets.PATCH("/:id/learning", handlers.UpdateAlgorithmAssetLearning)
+		}
+
 		// 评论相关路由
 		comments := api.Group("/comments")
 		{

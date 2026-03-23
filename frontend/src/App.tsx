@@ -44,6 +44,8 @@ import AdminReminders from './pages/admin/AdminReminders';
 import AdminPrompts from './pages/admin/AdminPrompts';
 import PromptEditor from './pages/admin/PromptEditor';
 import SkillEditor from './pages/admin/SkillEditor';
+import AdminAlgorithms from './pages/admin/AdminAlgorithms';
+import AlgorithmAssetDetail from './pages/admin/AlgorithmAssetDetail';
 
 // 布局组件
 import Layout from './components/Layout';
@@ -133,6 +135,9 @@ function RouterContent() {
               <Route path="skills" element={<AdminPrompts defaultAssetType="skill" />} />
               <Route path="skills/new" element={<SkillEditor />} />
               <Route path="skills/:id/edit" element={<SkillEditor />} />
+              <Route path="algorithms" element={<AdminAlgorithms />} />
+              <Route path="algorithms/new" element={<AlgorithmAssetDetail />} />
+              <Route path="algorithms/:id" element={<AlgorithmAssetDetail />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="tags" element={<AdminTags />} />
               <Route path="series" element={<AdminSeries />} />

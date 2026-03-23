@@ -27,6 +27,7 @@ export default function AdminLayout() {
     { name: '仪表板', href: '/admin', icon: 'dashboard' },
     { name: '文章管理', href: '/admin/articles', icon: 'document' },
     { name: 'AI资产管理', href: '/admin/prompts', icon: 'prompt' },
+    { name: '算法学习', href: '/admin/algorithms', icon: 'algorithm' },
     { name: '博客管理', href: '/admin/blogs', icon: 'video' },
     { name: '投稿管理', href: '/admin/submissions', icon: 'submissions' },
     { name: '学习计划', href: '/admin/study-plans', icon: 'study' },
@@ -62,6 +63,11 @@ export default function AdminLayout() {
       prompt: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path d="M10 2a1 1 0 01.894.553l1.266 2.533 2.8.406a1 1 0 01.554 1.706l-2.027 1.976.478 2.79a1 1 0 01-1.451 1.054L10 11.347l-2.514 1.321a1 1 0 01-1.45-1.054l.478-2.79-2.027-1.976a1 1 0 01.554-1.706l2.8-.406 1.266-2.533A1 1 0 0110 2zm-4 12a1 1 0 011 1v1h1a1 1 0 110 2H6a1 1 0 01-1-1v-2a1 1 0 011-1zm8 0a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 110-2h1v-1a1 1 0 011-1z" />
+        </svg>
+      ),
+      algorithm: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M6 3a2 2 0 11-1.732 3H3a1 1 0 000 2h1.268A2 2 0 116 11a1 1 0 100-2 1 1 0 100 2h3v2.268A2 2 0 1011 15v-3.268A2 2 0 009 9H6a2 2 0 010-4h5.268A2 2 0 1013 3H6z" />
         </svg>
       ),
       folder: (

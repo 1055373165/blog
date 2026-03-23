@@ -80,6 +80,8 @@ func AutoMigrate() error {
 		&models.Series{},
 		&models.Prompt{},
 		&models.Skill{},
+		&models.AlgorithmAsset{},
+		&models.AlgorithmAssetFile{},
 		&models.Article{},
 		&models.ArticleView{},
 		&models.ArticleLike{},
@@ -150,6 +152,12 @@ func createIndexes() error {
 	// 检查并创建搜索统计表索引
 	createIndexIfNotExists("idx_search_statistics_query", "search_statistics", "query")
 	createIndexIfNotExists("idx_search_statistics_searched_at", "search_statistics", "searched_at")
+
+	// 检查并创建算法资产表索引
+	createIndexIfNotExists("idx_algorithm_assets_status_updated", "algorithm_assets", "status, updated_at DESC")
+	createIndexIfNotExists("idx_algorithm_assets_review_next", "algorithm_assets", "review_status, next_review_at")
+	createIndexIfNotExists("idx_algorithm_assets_author_updated", "algorithm_assets", "author_id, updated_at DESC")
+	createIndexIfNotExists("idx_algorithm_asset_files_asset_sort", "algorithm_asset_files", "asset_id, file_kind, sort_order")
 
 	return nil
 }
