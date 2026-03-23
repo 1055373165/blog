@@ -11,7 +11,7 @@
 - total_mdu: 11
 - completed_mdu: 11
 - completion_pct: 100
-- last_updated: 2026-03-23T07:40:39+08:00
+- last_updated: 2026-03-23T10:45:30+08:00
 
 ## Project Info
 - Name: Algorithm Asset Management
@@ -42,6 +42,11 @@ Phase 1 explicit non-goals:
 - No CLI sync in phase 1.
 - No direct generalization of current study-plan data model.
 - No forced projection into the article system.
+
+Post-delivery extension completed on 2026-03-23:
+- Added admin-side folder upload/import capability for algorithm assets.
+- Import stays inside Route A boundaries by reusing the existing asset/file APIs rather than introducing a backend sync job.
+- Browser-side import now parses one selected folder, extracts `README*.md` and `*.mp4`, infers lightweight metadata, creates or reuses the matching asset by `source_dir_name`, and upserts same-name files.
 
 Future-intended direction already reserved:
 - When CLI sync is introduced in a later phase, its preferred location is `/Users/smy/project/algorithm`.
@@ -334,3 +339,4 @@ Phase-1 non-functional contract:
 | 2026-03-23T07:36:13+08:00 | update | Completed MDU-5.3.3 with Markdown file management, preview integration, and targeted bundling verification | .autopilot/PROGRESS.md |
 | 2026-03-23T07:39:08+08:00 | update | Completed MDU-5.3.4 with video upload, video record management, and targeted bundling verification | .autopilot/PROGRESS.md |
 | 2026-03-23T07:40:39+08:00 | update | Completed MDU-5.4.1 by mounting the real algorithm pages into admin routes and finishing feature delivery | .autopilot/PROGRESS.md |
+| 2026-03-23T10:45:30+08:00 | update | Added post-delivery folder import capability in admin by reusing existing algorithm asset/file APIs and targeted frontend bundle verification | .autopilot/PROGRESS.md |

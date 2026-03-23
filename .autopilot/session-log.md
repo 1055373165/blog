@@ -228,3 +228,21 @@
   - Delivery evidence relies on passing backend tests plus focused frontend bundle checks, while explicitly acknowledging the repository's unrelated pre-existing TypeScript debt.
 - Blockers or risks discovered:
   - `frontend` still cannot pass repository-wide `npm run build:check` due pre-existing unrelated TypeScript errors outside this feature scope.
+
+## 2026-03-23T10:45:30+08:00
+- What was investigated/built:
+  - Reopened the delivered algorithm asset workflow for a follow-up UX increment focused on folder upload/import.
+  - Added `frontend/src/components/admin/AlgorithmFolderImportCard.tsx` and mounted it into `frontend/src/pages/admin/AdminAlgorithms.tsx`.
+  - Implemented browser-side folder parsing via `webkitdirectory`, automatic detection of markdown/mp4 files, lightweight metadata inference, create-or-reuse asset resolution by `source_dir_name`, same-name file upsert behavior, progress feedback, and success navigation into asset detail.
+  - Verified the new import flow with focused esbuild bundle smoke checks for both the new component and the updated list page.
+- Current state and next MDU:
+  - Current state: `COMPLETED`
+  - Current task: `delivery`
+  - Next step: user can now dogfood folder import in admin; future rounds can focus on true sync/history or study-plan integration.
+- Key decisions made:
+  - The new import flow stays inside Route A by reusing existing REST endpoints instead of inventing a server-side import job.
+  - Duplicate folder imports resolve to the existing asset when `source_dir_name` matches, then upsert file records by `display_name` to avoid obvious duplication in the manual-import phase.
+  - Metadata inference is intentionally lightweight: use folder name plus primary markdown heading/URL when available, but leave deeper curation to the detail page.
+- Blockers or risks discovered:
+  - This remains a convenience import, not true snapshot/history sync; repeated imports overwrite same-name files but do not preserve historical revisions.
+  - Repository-wide `frontend npm run build:check` is still blocked by unrelated pre-existing TypeScript issues, so verification continues to rely on focused bundle checks for the touched surfaces.

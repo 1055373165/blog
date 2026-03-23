@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import Pagination from '../../components/Pagination';
+import AlgorithmFolderImportCard from '../../components/admin/AlgorithmFolderImportCard';
 import { algorithmsApi } from '../../api/algorithms';
 import type {
   AlgorithmAsset,
@@ -256,6 +257,8 @@ export default function AdminAlgorithms() {
           </div>
         </div>
       </div>
+
+      <AlgorithmFolderImportCard onImported={() => void loadAssets(true)} />
 
       <div className="mb-6 rounded-[1.75rem] border border-gray-200 bg-white p-5 shadow-soft dark:border-gray-800 dark:bg-gray-900">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_repeat(4,minmax(0,1fr))]">
