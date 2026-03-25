@@ -330,7 +330,7 @@ export default function StripTOC({
       <div 
         className={clsx(
           'transition-all duration-300 ease-in-out overflow-hidden',
-          isExpanded ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+          isExpanded ? 'max-h-[9999px] opacity-100' : 'max-h-0 opacity-0'
         )}
       >
         <div className="space-y-0">
