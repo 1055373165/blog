@@ -492,8 +492,15 @@ const rewriteMarkdownImagePaths = (
   return restoreMaskedMarkdown(updatedHtml, placeholders);
 };
 
+export interface BatchImportFile {
+  content: string;
+  fileName: string;
+  metadata?: ImportMetadata;
+}
+
 interface FileImportProps {
   onFileImport: (content: string, metadata?: ImportMetadata) => void;
+  onBatchImport?: (files: BatchImportFile[]) => void;
   onError?: (error: string) => void;
   accept?: string;
   className?: string;
@@ -509,6 +516,7 @@ interface ImportedFile {
 
 export default function FileImport({
   onFileImport,
+  onBatchImport,
   onError,
   accept = '.md,.txt,.json,.csv',
   className = '',
@@ -721,8 +729,14 @@ export default function FileImport({
     return uploadedAssets;
   }, []);
 
-  const processFolderImport = useCallback(async (files: DirectoryFile[]): Promise<ImportedFile> => {
-    const visibleFiles = files.filter(file => !isHiddenOrSystemPath(getFileRelativePath(file)));
+  const processFolderImport = useCallback(async (files: DirectoryFile[]): Promise<ImportedFile[]> => {
+    const visibleFiles = files.filter(file => {
+      const relPath = getFileRelativePath(file);
+      if (isHiddenOrSystemPath(relPath)) return false;
+      // Skip metadata.json files
+      if (file.name.toLowerCase() === 'metadata.json') return false;
+      return true;
+    });
 
     if (visibleFiles.length === 0) {
       throw new Error('所选文件夹中没有可导入的文件');
@@ -734,74 +748,99 @@ export default function FileImport({
       throw new Error('所选文件夹中未找到 markdown 文件');
     }
 
-    if (markdownFiles.length > 1) {
-      throw new Error('所选文件夹中存在多个 markdown 文件，请保留且仅保留一个');
+    // Validate all markdown files
+    for (const mdFile of markdownFiles) {
+      if (mdFile.size > MAX_TEXT_FILE_SIZE) {
+        throw new Error(`Markdown 文件 ${mdFile.name} 大小必须小于 5MB`);
+      }
     }
 
-    const markdownFile = markdownFiles[0];
-    const markdownPath = getFileRelativePath(markdownFile);
-    const folderRoot = splitPathSegments(markdownPath)[0];
+    // Determine folder root from the first markdown file
+    const firstMarkdownPath = getFileRelativePath(markdownFiles[0]);
+    const folderRoot = splitPathSegments(firstMarkdownPath)[0];
 
     if (!folderRoot) {
-      throw new Error('无法识别文件夹结构，请使用“选择文件夹”功能导入');
+      throw new Error('无法识别文件夹结构，请使用"选择文件夹"功能导入');
     }
 
-    if (markdownFile.size > MAX_TEXT_FILE_SIZE) {
-      throw new Error('Markdown 文件大小必须小于 5MB');
-    }
+    setUploadProgress(10);
 
-    setUploadProgress(15);
-
-    const importedMarkdown = await processFile(markdownFile);
-    const markdownDirectory = getDirectoryName(markdownPath);
-    const localImageReferences = collectLocalImageReferences(
-      importedMarkdown.content,
-      markdownDirectory,
-      folderRoot
-    );
-
-    const invalidReference = localImageReferences.find(reference => !reference.resolvedPath);
-    if (invalidReference) {
-      throw new Error(`图片引用超出了所选文件夹范围: ${invalidReference.originalPath}`);
-    }
-
-    const referencedAssetPaths = Array.from(
-      new Set(localImageReferences.map(reference => reference.resolvedPath).filter(Boolean))
-    ) as string[];
-
+    // Build file map for asset lookup
     const fileMap = new Map<string, DirectoryFile>();
     visibleFiles.forEach(file => {
       fileMap.set(getFileRelativePath(file), file);
     });
 
-    const missingAssetPath = referencedAssetPaths.find(assetPath => !fileMap.has(assetPath));
+    // Collect image references from ALL markdown files to upload shared assets once
+    const allReferencedAssetPaths = new Set<string>();
+
+    const parsedMarkdowns: Array<{
+      file: DirectoryFile;
+      imported: ImportedFile;
+      markdownDirectory: string;
+    }> = [];
+
+    for (const mdFile of markdownFiles) {
+      const mdPath = getFileRelativePath(mdFile);
+      const imported = await processFile(mdFile);
+      const markdownDirectory = getDirectoryName(mdPath);
+
+      const localRefs = collectLocalImageReferences(
+        imported.content,
+        markdownDirectory,
+        folderRoot
+      );
+
+      const invalidRef = localRefs.find(ref => !ref.resolvedPath);
+      if (invalidRef) {
+        throw new Error(`${mdFile.name} 中图片引用超出了所选文件夹范围: ${invalidRef.originalPath}`);
+      }
+
+      localRefs.forEach(ref => {
+        if (ref.resolvedPath) allReferencedAssetPaths.add(ref.resolvedPath);
+      });
+
+      parsedMarkdowns.push({ file: mdFile, imported, markdownDirectory });
+    }
+
+    const assetPaths = Array.from(allReferencedAssetPaths);
+
+    // Check all referenced assets exist
+    const missingAssetPath = assetPaths.find(p => !fileMap.has(p));
     if (missingAssetPath) {
       throw new Error(`Markdown 引用了缺失的资源文件: ${missingAssetPath}`);
     }
 
-    setUploadProgress(referencedAssetPaths.length > 0 ? 30 : 85);
+    setUploadProgress(assetPaths.length > 0 ? 25 : 80);
 
-    const uploadedAssets = await uploadReferencedImages(referencedAssetPaths, fileMap);
-    const rewrittenContent = rewriteMarkdownImagePaths(
-      importedMarkdown.content,
-      markdownDirectory,
-      folderRoot,
-      uploadedAssets
-    );
+    // Upload shared assets once
+    const uploadedAssets = await uploadReferencedImages(assetPaths, fileMap);
 
-    return {
-      ...importedMarkdown,
-      name: markdownFile.name,
-      size: markdownFile.size,
-      type: markdownFile.type,
-      content: rewrittenContent,
-      metadata: {
-        ...importedMarkdown.metadata,
-        importType: 'folder',
-        assetCount: referencedAssetPaths.length,
-        markdownFileName: markdownFile.name,
-      },
-    };
+    // Rewrite image paths in each markdown file
+    const results: ImportedFile[] = parsedMarkdowns.map(({ file: mdFile, imported, markdownDirectory }) => {
+      const rewrittenContent = rewriteMarkdownImagePaths(
+        imported.content,
+        markdownDirectory,
+        folderRoot,
+        uploadedAssets
+      );
+
+      return {
+        ...imported,
+        name: mdFile.name,
+        size: mdFile.size,
+        type: mdFile.type,
+        content: rewrittenContent,
+        metadata: {
+          ...imported.metadata,
+          importType: 'folder',
+          assetCount: assetPaths.length,
+          markdownFileName: mdFile.name,
+        },
+      };
+    });
+
+    return results;
   }, [processFile, uploadReferencedImages]);
 
   const handleFiles = useCallback(async (files: DirectoryFile[]) => {
@@ -812,13 +851,39 @@ export default function FileImport({
     
     try {
       const hasDirectoryStructure = files.some(file => getFileRelativePath(file).includes('/'));
-      let importedFile: ImportedFile;
 
       if (hasDirectoryStructure) {
-        importedFile = await processFolderImport(files);
+        const importedFiles = await processFolderImport(files);
+
+        setUploadProgress(95);
+
+        if (importedFiles.length > 1 && onBatchImport) {
+          // Multiple markdown files — use batch import callback
+          onBatchImport(
+            importedFiles.map(f => ({
+              content: f.content,
+              fileName: f.name,
+              metadata: {
+                fileName: f.name,
+                fileSize: f.size,
+                fileType: f.type,
+                ...f.metadata,
+              },
+            }))
+          );
+        } else {
+          // Single markdown file or no batch handler — use primary import
+          const primary = importedFiles[0];
+          onFileImport(primary.content, {
+            fileName: primary.name,
+            fileSize: primary.size,
+            fileType: primary.type,
+            ...primary.metadata,
+          });
+        }
       } else {
         if (files.length > 1) {
-          throw new Error('请选择单个文件，或使用“选择文件夹”导入目录内容');
+          throw new Error('请选择单个文件，或使用"选择文件夹"导入目录内容');
         }
 
         const file = files[0];
@@ -832,17 +897,16 @@ export default function FileImport({
         }
 
         setUploadProgress(30);
-        importedFile = await processFile(file);
-      }
+        const importedFile = await processFile(file);
 
-      setUploadProgress(95);
-      
-      onFileImport(importedFile.content, {
-        fileName: importedFile.name,
-        fileSize: importedFile.size,
-        fileType: importedFile.type,
-        ...importedFile.metadata,
-      });
+        setUploadProgress(95);
+        onFileImport(importedFile.content, {
+          fileName: importedFile.name,
+          fileSize: importedFile.size,
+          fileType: importedFile.type,
+          ...importedFile.metadata,
+        });
+      }
       
       setUploadProgress(100);
       setTimeout(() => {
@@ -856,7 +920,7 @@ export default function FileImport({
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       onError?.(errorMessage);
     }
-  }, [accept, isAllowedSingleFile, onFileImport, onError, processFile, processFolderImport]);
+  }, [accept, isAllowedSingleFile, onFileImport, onBatchImport, onError, processFile, processFolderImport]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -995,7 +1059,7 @@ export default function FileImport({
                   .csv
                 </span>
               </div>
-              <p className="mt-2">文件夹导入需包含 1 个 markdown 文件，可选 assets 资源目录</p>
+              <p className="mt-2">文件夹导入支持 1 个或多个 markdown 文件 + 共享 assets 资源目录</p>
               <p>单个导入文档最大 5MB，资源文件按上传接口限制处理</p>
             </div>
           </div>

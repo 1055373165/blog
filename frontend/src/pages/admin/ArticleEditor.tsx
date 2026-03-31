@@ -6,6 +6,7 @@ import seriesApi from '../../services/seriesApi';
 import ByteMDEditor from '../../components/ByteMDEditor';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import FileImport from '../../components/FileImport';
+import type { BatchImportFile } from '../../components/FileImport';
 import RSSImport from '../../components/RSSImport';
 import CoverImageSelector from '../../components/CoverImageSelector';
 import ArticlePreview from '../../components/ArticlePreview';
@@ -330,10 +331,66 @@ export default function ArticleEditor() {
     
     setShowImportModal(false);
     setError(null);
-    
-    // Could add a success toast notification here
-    // const successMsg = `成功导入 ${metadata?.fileName || '文件'}`;
-    // toast.success(successMsg);
+  };
+
+  const handleBatchFileImport = async (files: BatchImportFile[]) => {
+    if (files.length === 0) return;
+
+    // First file → fill current editor
+    const primary = files[0];
+    setFormData(prev => ({
+      ...prev,
+      content: primary.content,
+      title: primary.metadata?.title as string || primary.fileName.replace(/\.md$/i, '') || prev.title,
+      excerpt: primary.metadata?.excerpt as string || prev.excerpt,
+    }));
+
+    // Remaining files → create as draft articles via API
+    const additionalFiles = files.slice(1);
+    const createdDrafts: string[] = [];
+    const failedDrafts: string[] = [];
+
+    for (const file of additionalFiles) {
+      try {
+        const draftTitle = (file.metadata?.title as string) || file.fileName.replace(/\.md$/i, '');
+        const draftPayload: CreateArticleInput = {
+          title: draftTitle,
+          content: file.content,
+          excerpt: (file.metadata?.excerpt as string) || '',
+          cover_image: '',
+          tag_ids: [],
+          is_published: false,
+          meta_title: '',
+          meta_description: '',
+          meta_keywords: '',
+          author_display_name: '',
+        };
+
+        const response = await articlesApi.createArticle(draftPayload);
+        if (response.success) {
+          createdDrafts.push(draftTitle);
+        } else {
+          failedDrafts.push(file.fileName);
+        }
+      } catch {
+        failedDrafts.push(file.fileName);
+      }
+    }
+
+    setShowImportModal(false);
+    setError(null);
+
+    // Show summary
+    const messages: string[] = [
+      `已将 ${primary.fileName} 导入当前编辑器`,
+    ];
+    if (createdDrafts.length > 0) {
+      messages.push(`已为 ${createdDrafts.join('、')} 创建草稿文章`);
+    }
+    if (failedDrafts.length > 0) {
+      messages.push(`创建失败: ${failedDrafts.join('、')}`);
+    }
+    alert(messages.join('\n'));
   };
 
   const handleBulkImport = (articles: Array<{
@@ -1012,6 +1069,7 @@ export default function ArticleEditor() {
               {importType === 'file' && (
                 <FileImport
                   onFileImport={handleFileImport}
+                  onBatchImport={handleBatchFileImport}
                   onError={handleImportError}
                   className="mb-4"
                 />
