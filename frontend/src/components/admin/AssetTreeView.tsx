@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { AiAssetBase, Prompt } from '../../types';
+import type { AiAssetBase, AiAssetType, Prompt } from '../../types';
 
 type TreeAsset = AiAssetBase & {
   children?: TreeAsset[];
@@ -10,6 +10,7 @@ type TreeAsset = AiAssetBase & {
 
 interface AssetTreeViewProps {
   assets: TreeAsset[];
+  assetType?: AiAssetType;
   childLabel: string;
   autoExpandAll?: boolean;
   expandAction?: {
@@ -49,6 +50,7 @@ function getStatusLabel(status: TreeAsset['status']) {
 
 interface AssetNodeProps {
   asset: TreeAsset;
+  assetType?: AiAssetType;
   depth: number;
   childLabel: string;
   expandedIds: Set<number>;
@@ -60,6 +62,7 @@ interface AssetNodeProps {
 
 function AssetNode({
   asset,
+  assetType,
   depth,
   childLabel,
   expandedIds,
@@ -70,6 +73,17 @@ function AssetNode({
 }: AssetNodeProps) {
   const hasChildren = !!asset.children?.length;
   const isExpanded = expandedIds.has(asset.id);
+  const [copied, setCopied] = useState(false);
+
+  const skillPath = assetType === 'skill' ? `~/.claude/skills/${asset.slug}/SKILL.md` : null;
+
+  const handleCopyPath = useCallback(() => {
+    if (!skillPath) return;
+    navigator.clipboard.writeText(skillPath).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }, [skillPath]);
 
   return (
     <div className={`${depth > 0 ? 'ml-5 pl-5 border-l border-dashed border-gray-200 dark:border-gray-700' : ''}`}>
@@ -139,6 +153,30 @@ function AssetNode({
                 <span>slug: {asset.slug}</span>
                 <span>更新于 {new Date(asset.updated_at).toLocaleString('zh-CN')}</span>
               </div>
+
+              {skillPath && (
+                <div className="mt-2 flex items-center gap-2">
+                  <code className="text-xs bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-300 px-2.5 py-1 rounded-lg font-mono select-all">
+                    {skillPath}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={handleCopyPath}
+                    className="flex-shrink-0 p-1 text-gray-400 hover:text-go-600 dark:hover:text-go-400 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/40"
+                    title="复制路径"
+                  >
+                    {copied ? (
+                      <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-1 flex-shrink-0">
@@ -182,6 +220,7 @@ function AssetNode({
             <AssetNode
               key={child.id}
               asset={child}
+              assetType={assetType}
               depth={depth + 1}
               childLabel={childLabel}
               expandedIds={expandedIds}
@@ -199,6 +238,7 @@ function AssetNode({
 
 export default function AssetTreeView({
   assets,
+  assetType,
   childLabel,
   autoExpandAll = false,
   expandAction = null,
@@ -240,6 +280,7 @@ export default function AssetTreeView({
         <AssetNode
           key={asset.id}
           asset={asset}
+          assetType={assetType}
           depth={0}
           childLabel={childLabel}
           expandedIds={expandedIds}

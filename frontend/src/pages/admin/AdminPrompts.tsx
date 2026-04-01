@@ -545,6 +545,7 @@ export default function AdminPrompts({ defaultAssetType = 'prompt' }: AdminPromp
       ) : (
         <AssetTreeView
           assets={filteredAssets as AssetRecord[]}
+          assetType={activeType}
           childLabel={config.childLabel}
           autoExpandAll={activeFilters}
           expandAction={treeExpandAction}
