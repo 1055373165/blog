@@ -12,15 +12,16 @@ import (
 
 // Config 应用配置结构
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	JWT      JWTConfig
-	Redis    RedisConfig
-	Upload   UploadConfig
-	Search   SearchConfig
-	CORS     CORSConfig
-	App      AppConfig
-	Claude   ClaudeConfig
+	Server    ServerConfig
+	Database  DatabaseConfig
+	JWT       JWTConfig
+	Redis     RedisConfig
+	Upload    UploadConfig
+	Search    SearchConfig
+	CORS      CORSConfig
+	App       AppConfig
+	Claude    ClaudeConfig
+	AssetSync AssetSyncConfig
 }
 
 // ServerConfig 服务器配置
@@ -96,6 +97,20 @@ type ClaudeConfig struct {
 	BaseURL string
 	Model   string
 	Timeout time.Duration
+}
+
+// AssetSyncConfig AI资产 GitHub 同步配置
+type AssetSyncConfig struct {
+	Enabled        bool
+	APIBaseURL     string
+	Token          string
+	RepoOwner      string
+	RepoName       string
+	RepoBranch     string
+	PromptsDir     string
+	SkillsDir      string
+	CommitterName  string
+	CommitterEmail string
 }
 
 var GlobalConfig *Config
@@ -181,6 +196,18 @@ func LoadConfig() error {
 			BaseURL: getEnv("CLAUDE_BASE_URL", "https://api.anthropic.com"),
 			Model:   getEnv("CLAUDE_MODEL", "claude-3-haiku-20240307"),
 			Timeout: getDurationEnv("CLAUDE_TIMEOUT", "30s"),
+		},
+		AssetSync: AssetSyncConfig{
+			Enabled:        getBoolEnv("AI_ASSET_GITHUB_ENABLED", true),
+			APIBaseURL:     getEnv("AI_ASSET_GITHUB_API_BASE_URL", "https://api.github.com"),
+			Token:          getEnv("AI_ASSET_GITHUB_TOKEN", ""),
+			RepoOwner:      getEnv("AI_ASSET_GITHUB_REPO_OWNER", "1055373165"),
+			RepoName:       getEnv("AI_ASSET_GITHUB_REPO_NAME", "prompt-skills_collect"),
+			RepoBranch:     getEnv("AI_ASSET_GITHUB_REPO_BRANCH", "main"),
+			PromptsDir:     getEnv("AI_ASSET_GITHUB_PROMPTS_DIR", "prompts"),
+			SkillsDir:      getEnv("AI_ASSET_GITHUB_SKILLS_DIR", "skills"),
+			CommitterName:  getEnv("AI_ASSET_GITHUB_COMMITTER_NAME", "Blog AI Asset Sync"),
+			CommitterEmail: getEnv("AI_ASSET_GITHUB_COMMITTER_EMAIL", "ai-assets-sync@local"),
 		},
 	}
 

@@ -9,9 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"blog-backend/internal/config"
 	"blog-backend/internal/database"
 	"blog-backend/internal/middleware"
 	"blog-backend/internal/models"
+	"blog-backend/internal/services"
 	"blog-backend/pkg/utils"
 )
 
@@ -164,18 +166,23 @@ func CreateSkill(c *gin.Context) {
 		return
 	}
 
+	responsePayload := gin.H{
+		"success": true,
+	}
+	if err := services.NewGitHubAssetSyncService(config.GlobalConfig).SyncSkill(c.Request.Context(), skill, nil); err != nil {
+		responsePayload["warning"] = "Skill 已创建，但同步到 GitHub 失败：" + err.Error()
+	} else {
+		responsePayload["message"] = "Skill 已创建，并已同步到 GitHub"
+	}
+
 	if err := database.DB.Preload("Parent").Preload("Author").First(&skill, skill.ID).Error; err != nil {
-		c.JSON(http.StatusCreated, gin.H{
-			"success": true,
-			"data":    skill,
-		})
+		responsePayload["data"] = skill
+		c.JSON(http.StatusCreated, responsePayload)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"success": true,
-		"data":    skill,
-	})
+	responsePayload["data"] = skill
+	c.JSON(http.StatusCreated, responsePayload)
 }
 
 func UpdateSkill(c *gin.Context) {
@@ -242,6 +249,8 @@ func UpdateSkill(c *gin.Context) {
 		return
 	}
 
+	previousSkill := skill
+
 	skill.Name = name
 	skill.Description = strings.TrimSpace(req.Description)
 	skill.Content = req.Content
@@ -261,11 +270,18 @@ func UpdateSkill(c *gin.Context) {
 		return
 	}
 
+	responsePayload := gin.H{
+		"success": true,
+	}
+	if err := services.NewGitHubAssetSyncService(config.GlobalConfig).SyncSkill(c.Request.Context(), skill, &previousSkill); err != nil {
+		responsePayload["warning"] = "Skill 已更新，但同步到 GitHub 失败：" + err.Error()
+	} else {
+		responsePayload["message"] = "Skill 已更新，并已同步到 GitHub"
+	}
+
 	if err := database.DB.Preload("Parent").Preload("Author").First(&skill, skill.ID).Error; err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"data":    skill,
-		})
+		responsePayload["data"] = skill
+		c.JSON(http.StatusOK, responsePayload)
 		return
 	}
 
@@ -273,10 +289,8 @@ func UpdateSkill(c *gin.Context) {
 	database.DB.Model(&models.Skill{}).Where("parent_id = ?", skill.ID).Count(&childCount)
 	skill.ChildCount = int(childCount)
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    skill,
-	})
+	responsePayload["data"] = skill
+	c.JSON(http.StatusOK, responsePayload)
 }
 
 func DeleteSkill(c *gin.Context) {

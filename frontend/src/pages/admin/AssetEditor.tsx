@@ -7,6 +7,7 @@ import TokenInput from '../../components/admin/TokenInput';
 import Toast, { ToastType } from '../../components/ui/Toast';
 import { promptsApi } from '../../api/prompts';
 import { skillsApi } from '../../api/skills';
+import { AI_ASSET_GITHUB_REPO_NAME, AI_ASSET_GITHUB_REPO_URL } from '../../constants/aiAssetSync';
 import type {
   AiAssetBase,
   AiAssetStatus,
@@ -15,7 +16,6 @@ import type {
   CreateSkillInput,
   Prompt,
   Skill,
-  SkillSupportingFile,
   UpdatePromptInput,
   UpdateSkillInput,
 } from '../../types';
@@ -600,8 +600,8 @@ export default function AssetEditor({ assetType }: AssetEditorProps) {
         }
 
         setToast({
-          message: isEditing ? `${config.name}已更新` : `${config.name}已创建`,
-          type: 'success',
+          message: response.warning || response.message || (isEditing ? `${config.name}已更新` : `${config.name}已创建`),
+          type: response.warning ? 'warning' : 'success',
           isVisible: true,
         });
 
@@ -634,8 +634,8 @@ export default function AssetEditor({ assetType }: AssetEditorProps) {
       }
 
       setToast({
-        message: isEditing ? `${config.name}已更新` : `${config.name}已创建`,
-        type: 'success',
+        message: response.warning || response.message || (isEditing ? `${config.name}已更新` : `${config.name}已创建`),
+        type: response.warning ? 'warning' : 'success',
         isVisible: true,
       });
 
@@ -723,6 +723,14 @@ export default function AssetEditor({ assetType }: AssetEditorProps) {
               <span className="hidden md:inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
                 {statusOptions.find((option) => option.value === formData.status)?.label}
               </span>
+              <a
+                href={AI_ASSET_GITHUB_REPO_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="hidden xl:inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+              >
+                保存后自动同步到 {AI_ASSET_GITHUB_REPO_NAME}
+              </a>
               <button type="button" onClick={handleSave} disabled={saving} className="btn btn-primary flex items-center gap-2">
                 {saving && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                 {saving ? '保存中...' : `保存${config.name}`}

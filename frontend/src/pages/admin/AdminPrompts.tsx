@@ -6,6 +6,7 @@ import StringMultiSelect from '../../components/admin/StringMultiSelect';
 import Toast, { ToastType } from '../../components/ui/Toast';
 import { promptsApi } from '../../api/prompts';
 import { skillsApi } from '../../api/skills';
+import { AI_ASSET_GITHUB_REPO_NAME, AI_ASSET_GITHUB_REPO_URL } from '../../constants/aiAssetSync';
 import type { AiAssetBase, AiAssetStatus, AiAssetType, Prompt, Skill } from '../../types';
 
 type StatusFilter = 'all' | AiAssetStatus;
@@ -45,7 +46,7 @@ const assetConfig: Record<
     singular: '提示词',
     plural: '提示词',
     switchLabel: 'Prompt Library',
-    description: '用树形结构整理你的提示词资产。每个父节点本身也可以直接使用，并继续延展出更细的子提示词。',
+    description: '用树形结构整理你的提示词资产。保存后会自动同步到 GitHub 仓库，方便沉淀为可复用的 prompt 文件。',
     childLabel: '提示词',
     newPath: '/admin/prompts/new',
     getEditPath: (id) => `/admin/prompts/${id}/edit`,
@@ -61,7 +62,7 @@ const assetConfig: Record<
     singular: 'Skill',
     plural: 'Skills',
     switchLabel: 'Skill Library',
-    description: '把可复用能力也组织成树。父 Skill 可以直接使用，也可以继续拆成更细的执行单元或领域能力。',
+    description: '把可复用能力也组织成树。保存后会自动同步到 GitHub 仓库，Skill 会以目录形式沉淀下来。',
     childLabel: 'Skill',
     newPath: '/admin/skills/new',
     getEditPath: (id) => `/admin/skills/${id}/edit`,
@@ -293,6 +294,17 @@ export default function AdminPrompts({ defaultAssetType = 'prompt' }: AdminPromp
             </div>
 
             <div className="flex items-center gap-3">
+              <a
+                href={AI_ASSET_GITHUB_REPO_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-secondary hidden md:inline-flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.476 2 2 6.59 2 12.252c0 4.53 2.865 8.373 6.839 9.73.5.095.683-.223.683-.495 0-.244-.009-.89-.014-1.746-2.782.62-3.369-1.37-3.369-1.37-.455-1.183-1.11-1.498-1.11-1.498-.908-.638.069-.626.069-.626 1.004.072 1.532 1.055 1.532 1.055.892 1.565 2.341 1.113 2.91.851.091-.664.349-1.113.635-1.369-2.221-.259-4.555-1.14-4.555-5.076 0-1.121.39-2.038 1.03-2.757-.103-.26-.447-1.307.098-2.724 0 0 .84-.276 2.75 1.053A9.351 9.351 0 0112 6.844c.85.004 1.705.118 2.504.346 1.909-1.33 2.747-1.053 2.747-1.053.547 1.417.203 2.464.1 2.724.64.719 1.028 1.636 1.028 2.757 0 3.947-2.338 4.814-4.566 5.068.359.319.679.947.679 1.91 0 1.378-.012 2.49-.012 2.828 0 .275.18.595.688.494C19.138 20.621 22 16.78 22 12.252 22 6.59 17.523 2 12 2z" />
+                </svg>
+                {AI_ASSET_GITHUB_REPO_NAME}
+              </a>
               <button
                 type="button"
                 onClick={() => void loadAssetTree(activeType, true)}

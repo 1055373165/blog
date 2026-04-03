@@ -10,9 +10,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"blog-backend/internal/config"
 	"blog-backend/internal/database"
 	"blog-backend/internal/middleware"
 	"blog-backend/internal/models"
+	"blog-backend/internal/services"
 	"blog-backend/pkg/utils"
 )
 
@@ -175,18 +177,23 @@ func CreatePrompt(c *gin.Context) {
 		return
 	}
 
+	responsePayload := gin.H{
+		"success": true,
+	}
+	if err := services.NewGitHubAssetSyncService(config.GlobalConfig).SyncPrompt(c.Request.Context(), prompt, nil); err != nil {
+		responsePayload["warning"] = "提示词已创建，但同步到 GitHub 失败：" + err.Error()
+	} else {
+		responsePayload["message"] = "提示词已创建，并已同步到 GitHub"
+	}
+
 	if err := database.DB.Preload("Parent").Preload("Author").First(&prompt, prompt.ID).Error; err != nil {
-		c.JSON(http.StatusCreated, gin.H{
-			"success": true,
-			"data":    prompt,
-		})
+		responsePayload["data"] = prompt
+		c.JSON(http.StatusCreated, responsePayload)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"success": true,
-		"data":    prompt,
-	})
+	responsePayload["data"] = prompt
+	c.JSON(http.StatusCreated, responsePayload)
 }
 
 // UpdatePrompt 更新提示词
@@ -254,6 +261,8 @@ func UpdatePrompt(c *gin.Context) {
 		return
 	}
 
+	previousPrompt := prompt
+
 	prompt.Name = name
 	prompt.Description = strings.TrimSpace(req.Description)
 	prompt.Content = req.Content
@@ -272,11 +281,18 @@ func UpdatePrompt(c *gin.Context) {
 		return
 	}
 
+	responsePayload := gin.H{
+		"success": true,
+	}
+	if err := services.NewGitHubAssetSyncService(config.GlobalConfig).SyncPrompt(c.Request.Context(), prompt, &previousPrompt); err != nil {
+		responsePayload["warning"] = "提示词已更新，但同步到 GitHub 失败：" + err.Error()
+	} else {
+		responsePayload["message"] = "提示词已更新，并已同步到 GitHub"
+	}
+
 	if err := database.DB.Preload("Parent").Preload("Author").First(&prompt, prompt.ID).Error; err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"data":    prompt,
-		})
+		responsePayload["data"] = prompt
+		c.JSON(http.StatusOK, responsePayload)
 		return
 	}
 
@@ -284,10 +300,8 @@ func UpdatePrompt(c *gin.Context) {
 	database.DB.Model(&models.Prompt{}).Where("parent_id = ?", prompt.ID).Count(&childCount)
 	prompt.ChildCount = int(childCount)
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    prompt,
-	})
+	responsePayload["data"] = prompt
+	c.JSON(http.StatusOK, responsePayload)
 }
 
 // DeletePrompt 删除提示词
