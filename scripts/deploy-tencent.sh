@@ -49,7 +49,10 @@ load_existing_env() {
   if [[ -f "${PROJECT_DIR}/.env.prod" ]]; then
     info "Loading existing .env.prod"
     # shellcheck disable=SC1091
-    set -a; source "${PROJECT_DIR}/.env.prod"; set +a
+    set -a
+    # Safely load variables, filtering out comments and invalid lines (like "AI: xxx")
+    source <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "${PROJECT_DIR}/.env.prod")
+    set +a
     # Note: variables from file now populate the environment and will be used as defaults
   fi
 }
@@ -195,8 +198,8 @@ ensure_ssl_files() {
 bring_up_stack() {
   info "Building and starting services with production profile"
   cd "$PROJECT_DIR"
-  # Export env file variables for compose build context
-  set -a; source .env.prod; set +a
+  # Export env file variables for compose build context (safely)
+  set -a; source <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .env.prod); set +a
 
   docker compose --env-file .env.prod -f docker-compose.prod.yml build backend frontend
   docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
