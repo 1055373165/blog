@@ -34,7 +34,7 @@ func main() {
 	}
 
 	var skills []models.Skill
-	if err := database.DB.Preload("SupportingFiles").Find(&skills).Error; err != nil {
+	if err := database.DB.Find(&skills).Error; err != nil {
 		log.Fatalf("读取 Skill 数据失败: %v", err)
 	}
 
