@@ -207,6 +207,24 @@ ensure_ssl_files() {
   fi
 }
 
+prepare_data_dirs() {
+  info "Preparing persistent data directories"
+  local ASSETS_DIR="$HOME/blog_assets"
+  mkdir -p "$ASSETS_DIR/uploads"
+  mkdir -p "$ASSETS_DIR/search_index"
+  
+  if [[ -d "${PROJECT_DIR}/data/uploads" ]] && [[ ! -f "$ASSETS_DIR/.migrated" ]]; then
+    warn "Detected legacy local data directory. Migrating to external asset directory..."
+    cp -r "${PROJECT_DIR}/data/uploads/"* "$ASSETS_DIR/uploads/" 2>/dev/null || true
+    cp -r "${PROJECT_DIR}/data/search_index/"* "$ASSETS_DIR/search_index/" 2>/dev/null || true
+    touch "$ASSETS_DIR/.migrated"
+    success "Data successfully migrated to $ASSETS_DIR"
+  fi
+  
+  chmod -R 777 "$ASSETS_DIR/uploads"
+  chmod -R 777 "$ASSETS_DIR/search_index"
+}
+
 bring_up_stack() {
   info "Building and starting services with production profile"
   cd "$PROJECT_DIR"
@@ -247,6 +265,7 @@ main() {
   check_mysql_connectivity
   ensure_ssl_files
   configure_firewall
+  prepare_data_dirs
   bring_up_stack
 
   success "Deployment completed"
