@@ -51,8 +51,8 @@ services:
     networks:
       - blog_network
     volumes:
-      - ./data/uploads:/app/uploads
-      - ./data/search_index:/app/search_index
+      - ${HOME}/blog_assets/uploads:/app/uploads
+      - ${HOME}/blog_assets/search_index:/app/search_index
       - ./frontend/public/books:/app/books
 
   # 前端服务

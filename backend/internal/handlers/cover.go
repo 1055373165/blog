@@ -37,6 +37,11 @@ type CoverImage struct {
 // generateThumbnail creates a thumbnail for the given image file.
 // Returns the thumbnail filename or error.
 func generateThumbnail(srcPath, thumbDir, filename string) error {
+	// SVG 不支持生成缩略图，直接跳过
+	if strings.ToLower(filepath.Ext(filename)) == ".svg" {
+		return nil
+	}
+
 	if err := os.MkdirAll(thumbDir, 0755); err != nil {
 		return fmt.Errorf("create thumbnail dir: %w", err)
 	}
@@ -138,6 +143,7 @@ func GetCoverImages(c *gin.Context) {
 		".png":  true,
 		".gif":  true,
 		".webp": true,
+		".svg":  true,
 	}
 
 	for _, file := range files {

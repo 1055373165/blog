@@ -63,16 +63,25 @@ fi
 echo "✅ 环境变量配置文件 (.env) 检查通过"
 
 # 3. 创建持久化数据映射目录并设置权限
-echo "⏳ 正在初始化数据挂载目录..."
-mkdir -p data/uploads
-mkdir -p data/search_index
+ASSETS_DIR="$HOME/blog_assets"
+echo "⏳ 正在初始化数据挂载目录 (${ASSETS_DIR})..."
+mkdir -p "$ASSETS_DIR/uploads"
+mkdir -p "$ASSETS_DIR/search_index"
 mkdir -p frontend/public/books
 
-# 因为后端 Dockerfile.prod 切换到了 appuser (1001:1001) 非root用户运行，
 # 前端 Nginx 也可能使用不同的用户，需给数据挂载目录赋予相应的读写权限
-chmod -R 777 data/uploads
-chmod -R 777 data/search_index
+chmod -R 777 "$ASSETS_DIR/uploads"
+chmod -R 777 "$ASSETS_DIR/search_index"
 chmod -R 777 frontend/public/books
+
+if [ -d "data/uploads" ] && [ ! -f "$ASSETS_DIR/.migrated" ]; then
+    echo "⚠️ 检测到旧版本的本地 data 挂载目录，正在为您智能迁移到外部资产目录..."
+    cp -r data/uploads/* "$ASSETS_DIR/uploads/" 2>/dev/null || true
+    cp -r data/search_index/* "$ASSETS_DIR/search_index/" 2>/dev/null || true
+    touch "$ASSETS_DIR/.migrated"
+    echo "✅ 迁移成功！为了安全起见，旧目录仍保留在本地项目 data/ 下，您可以随时手动将其删除。"
+fi
+
 echo "✅ 数据挂载目录初始化并赋权完成"
 
 # 4. 停止旧的容器实例

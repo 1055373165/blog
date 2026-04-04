@@ -43,3 +43,7 @@ logs/
 # Temporary files
 tmp/
 temp/
+
+# User Uploaded Externalized Assets & Local Data
+data/
+source/
