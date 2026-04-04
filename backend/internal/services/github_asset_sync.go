@@ -260,6 +260,43 @@ func (s *GitHubAssetSyncService) BulkSyncSkills(ctx context.Context, skills []mo
 	)
 }
 
+func (s *GitHubAssetSyncService) BulkSyncPrompts(ctx context.Context, prompts []models.Prompt) error {
+	if err := s.validate(); err != nil {
+		return err
+	}
+
+	desiredFiles := make(map[string]string)
+	var cleanupPaths []string
+
+	for _, prompt := range prompts {
+		newPath, err := s.buildPromptRepoPath(prompt)
+		if err != nil {
+			return err
+		}
+
+		content, err := buildPromptMarkdown(prompt)
+		if err != nil {
+			return err
+		}
+
+		desiredFiles[newPath] = content
+		cleanupPaths = append(cleanupPaths, newPath)
+	}
+
+	message := "sync(prompts): bulk export"
+	if len(prompts) == 1 {
+		message = fmt.Sprintf("sync(prompt): %s", prompts[0].Slug)
+	}
+
+	return s.syncFiles(
+		ctx,
+		desiredFiles,
+		cleanupPaths,
+		nil, // note: prompts are single markdown files, so we clean up exact paths
+		message,
+	)
+}
+
 func (s *GitHubAssetSyncService) syncFiles(
 	ctx context.Context,
 	desiredFiles map[string]string,
