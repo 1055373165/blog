@@ -221,6 +221,45 @@ func (s *GitHubAssetSyncService) SyncSkill(ctx context.Context, skill models.Ski
 	)
 }
 
+func (s *GitHubAssetSyncService) BulkSyncSkills(ctx context.Context, skills []models.Skill) error {
+	if err := s.validate(); err != nil {
+		return err
+	}
+
+	desiredFiles := make(map[string]string)
+	var cleanupPrefixes []string
+
+	for _, skill := range skills {
+		newDir, err := s.buildSkillRepoDir(skill)
+		if err != nil {
+			return err
+		}
+
+		files, err := buildSkillRepoFiles(newDir, skill)
+		if err != nil {
+			return err
+		}
+
+		for k, v := range files {
+			desiredFiles[k] = v
+		}
+		cleanupPrefixes = append(cleanupPrefixes, newDir)
+	}
+
+	message := "sync(skills): bulk import"
+	if len(skills) == 1 {
+		message = fmt.Sprintf("sync(skill): %s", skills[0].Slug)
+	}
+
+	return s.syncFiles(
+		ctx,
+		desiredFiles,
+		nil,
+		cleanupPrefixes,
+		message,
+	)
+}
+
 func (s *GitHubAssetSyncService) syncFiles(
 	ctx context.Context,
 	desiredFiles map[string]string,

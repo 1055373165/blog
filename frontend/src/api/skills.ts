@@ -57,4 +57,11 @@ export const skillsApi = {
   async deleteSkill(id: number) {
     return apiClient.delete<void>(`/api/skills/${id}`);
   },
+
+  async importSkillsFromGithub(url: string) {
+    return apiClient.post<{ success: boolean; message: string; count: number; error?: string }>(
+      '/api/skills/import-github',
+      { url }
+    );
+  },
 };

@@ -153,6 +153,7 @@ func main() {
 			skills.GET("/tree", handlers.GetSkillTree)
 			skills.GET("/:id", handlers.GetSkill)
 			skills.POST("", handlers.CreateSkill)
+			skills.POST("/import-github", handlers.ImportSkillsFromGithub)
 			skills.PUT("/:id", handlers.UpdateSkill)
 			skills.DELETE("/:id", handlers.DeleteSkill)
 		}

@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import AssetTreeView from '../../components/admin/AssetTreeView';
 import StringMultiSelect from '../../components/admin/StringMultiSelect';
+import ImportSkillModal from '../../components/admin/ImportSkillModal';
 import Toast, { ToastType } from '../../components/ui/Toast';
 import { promptsApi } from '../../api/prompts';
 import { skillsApi } from '../../api/skills';
@@ -161,6 +162,7 @@ export default function AdminPrompts({ defaultAssetType = 'prompt' }: AdminPromp
     type: 'expandAll' | 'collapseAll';
     token: number;
   } | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType; isVisible: boolean }>({
     message: '',
     type: 'success',
@@ -294,6 +296,18 @@ export default function AdminPrompts({ defaultAssetType = 'prompt' }: AdminPromp
             </div>
 
             <div className="flex items-center gap-3">
+              {activeType === 'skill' && (
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="btn btn-secondary hidden md:inline-flex items-center gap-2 font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  从 Github 导入
+                </button>
+              )}
               <a
                 href={AI_ASSET_GITHUB_REPO_URL}
                 target="_blank"
@@ -572,6 +586,30 @@ export default function AdminPrompts({ defaultAssetType = 'prompt' }: AdminPromp
         type={toast.type}
         isVisible={toast.isVisible}
         onClose={() => setToast((current) => ({ ...current, isVisible: false }))}
+      />
+
+      <ImportSkillModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={async (url) => {
+          try {
+            const res = await skillsApi.importSkillsFromGithub(url);
+            if (res.data.success) {
+              setToast({ message: res.data.message || '导入成功', type: 'success', isVisible: true });
+              await loadAssetTree('skill', false);
+            } else {
+              setToast({ message: res.data.error || '导入失败', type: 'error', isVisible: true });
+              throw new Error(res.data.error || '导入失败');
+            }
+          } catch (e: any) {
+            setToast({
+              message: e.response?.data?.error || e.message || '导入失败',
+              type: 'error',
+              isVisible: true,
+            });
+            throw e;
+          }
+        }}
       />
     </div>
   );
