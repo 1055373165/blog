@@ -296,7 +296,13 @@ func (s *GitHubImporterService) ImportSkills(ctx context.Context, urlStr string,
 		}
 
 		var existing models.Skill
-		result := tx.Where("slug = ?", skill.Slug).First(&existing)
+		query := tx.Where("name = ?", node.SkillName)
+		if node.ParentID == nil {
+			query = query.Where("parent_id IS NULL")
+		} else {
+			query = query.Where("parent_id = ?", *node.ParentID)
+		}
+		result := query.First(&existing)
 		if result.Error == nil {
 			// 更新现有项
 			node.DBID = existing.ID
