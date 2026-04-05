@@ -36,7 +36,8 @@ export default function BookCarousel({
   useLocalImages = true // 默认使用本地优化
 }: BookCarouselProps) {
   // 根据配置选择数据源: 本地优化 vs API
-  const apiBooks = useBooksForCarousel();
+  // Only enable API hook when NOT using local images, to avoid wasted network requests
+  const apiBooks = useBooksForCarousel(!useLocalImages);
   const localBooks = useLocalBooksForCarousel();
   const { books, loading, error, refresh, hasBooks, totalBooks } = useLocalImages ? localBooks : apiBooks;
   const [currentIndex, setCurrentIndex] = useState(0);
