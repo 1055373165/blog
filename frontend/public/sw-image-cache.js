@@ -5,6 +5,10 @@ const IMAGE_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24小时
 // 需要缓存的图片文件扩展名
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
 
+// Singleflight: in-flight fetch promises keyed by URL
+// Prevents duplicate network requests when multiple requestors (preloader + DOM <img>) hit the SW simultaneously
+const inflight = new Map();
+
 // 判断是否为图片请求
 function isImageRequest(url) {
   return IMAGE_EXTENSIONS.some(ext => url.toLowerCase().includes(ext));
@@ -65,8 +69,9 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// 处理图片请求
+// 处理图片请求 — with singleflight dedup
 async function handleImageRequest(request) {
+  const url = request.url;
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(request);
 
@@ -87,36 +92,66 @@ async function handleImageRequest(request) {
     await cache.delete(request);
   }
 
+  // Singleflight: if another fetch for this URL is already in-flight, reuse it
+  if (inflight.has(url)) {
+    console.log('Singleflight 复用:', url);
+    try {
+      const response = await inflight.get(url);
+      return response.clone();
+    } catch (error) {
+      // The original request failed — fall through to create a new one
+    }
+  }
+
+  // Create one network fetch and store its promise for dedup
+  const fetchPromise = fetchAndCache(request, cache);
+  inflight.set(url, fetchPromise);
+
+  try {
+    const response = await fetchPromise;
+    return response;
+  } finally {
+    inflight.delete(url);
+  }
+}
+
+// Actual network fetch + cache write (called once per singleflight group)
+async function fetchAndCache(request, cache) {
   try {
     console.log('网络请求图片:', request.url);
     const response = await fetch(request);
-    
+
     if (response.ok) {
-      // 克隆响应用于缓存
-      const responseClone = response.clone();
-      
-      // 添加缓存时间戳
-      const headers = new Headers(responseClone.headers);
-      headers.set('sw-cache-time', Date.now().toString());
-      
-      const cachedResponse = new Response(await responseClone.arrayBuffer(), {
-        status: responseClone.status,
-        statusText: responseClone.statusText,
-        headers: headers
+      // Read body once, then create responses from the buffer
+      const buffer = await response.arrayBuffer();
+
+      // Build cached response with timestamp
+      const cacheHeaders = new Headers(response.headers);
+      cacheHeaders.set('sw-cache-time', Date.now().toString());
+
+      const cachedResponse = new Response(buffer.slice(0), {
+        status: response.status,
+        statusText: response.statusText,
+        headers: cacheHeaders
       });
-      
-      // 异步缓存，不阻塞响应
+
+      // Async cache write — don't block the response
       cache.put(request, cachedResponse).catch(err => {
         console.error('缓存图片失败:', request.url, err);
       });
-      
-      return response;
+
+      // Return a fresh response from the same buffer
+      return new Response(buffer, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers
+      });
     } else {
       throw new Error(`HTTP ${response.status}`);
     }
   } catch (error) {
     console.error('图片加载失败:', request.url, error);
-    
+
     // 返回默认的错误图片或透明图片
     return new Response(
       '<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="200" fill="#f3f4f6"/><text x="100" y="100" text-anchor="middle" dy=".3em" fill="#9ca3af">图片加载失败</text></svg>',
