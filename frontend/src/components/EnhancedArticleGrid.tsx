@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getAvatarUrl } from '../utils/avatarUtils';
 import { clsx } from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
+import { getThumbnailUrl } from '../utils/imageUtils';
 
 // Format date helper function
 const formatDate = (dateString: string) => {
@@ -65,8 +66,10 @@ const EnhancedArticleCard = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
+  const [fullImageLoaded, setFullImageLoaded] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const thumbnailUrl = article.cover_image ? getThumbnailUrl(article.cover_image) : null;
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -143,22 +146,37 @@ const EnhancedArticleCard = ({
         onMouseLeave={() => setIsHovered(false)}
         onClick={handleClick}
       >
-        {/* 左侧图片 */}
+        {/* 左侧图片 - progressive loading: thumbnail → full image */}
         {article.cover_image && (
           <div className="relative overflow-hidden w-48 h-32 bg-gray-100 dark:bg-gray-700 rounded-lg flex-shrink-0">
-            {!imageLoaded && (
+            {!thumbnailLoaded && !fullImageLoaded && (
               <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-pulse rounded-lg" />
             )}
+            {/* Thumbnail layer - loads fast */}
+            {thumbnailUrl && !fullImageLoaded && (
+              <img
+                src={thumbnailUrl}
+                alt=""
+                loading={index < 3 ? 'eager' : 'lazy'}
+                decoding="async"
+                className={clsx(
+                  'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',
+                  thumbnailLoaded ? 'opacity-100' : 'opacity-0'
+                )}
+                onLoad={() => setThumbnailLoaded(true)}
+              />
+            )}
+            {/* Full image layer - loads in background, fades in over thumbnail */}
             <img
               src={article.cover_image}
               alt={article.title}
               loading={index < 3 ? 'eager' : 'lazy'}
               decoding="async"
               className={clsx(
-                'w-full h-full object-cover transition-all duration-500 group-hover:scale-105',
-                imageLoaded ? 'opacity-100' : 'opacity-0'
+                'absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-105',
+                fullImageLoaded ? 'opacity-100' : 'opacity-0'
               )}
-              onLoad={() => setImageLoaded(true)}
+              onLoad={() => setFullImageLoaded(true)}
             />
 
             {/* 阅读时间 */}
@@ -272,24 +290,39 @@ const EnhancedArticleCard = ({
           isHovered && 'opacity-100'
         )} />
 
-        {/* 图片容器 */}
+        {/* 图片容器 - progressive loading: thumbnail → full image */}
         {article.cover_image && (
           <div className="relative overflow-hidden aspect-video bg-gray-100 dark:bg-gray-700">
-            {!imageLoaded && (
+            {!thumbnailLoaded && !fullImageLoaded && (
               <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-pulse" />
             )}
+            {/* Thumbnail layer - loads fast */}
+            {thumbnailUrl && !fullImageLoaded && (
+              <img
+                src={thumbnailUrl}
+                alt=""
+                loading={index < 3 ? 'eager' : 'lazy'}
+                decoding="async"
+                className={clsx(
+                  'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',
+                  thumbnailLoaded ? 'opacity-100' : 'opacity-0'
+                )}
+                onLoad={() => setThumbnailLoaded(true)}
+              />
+            )}
+            {/* Full image layer - loads in background, fades in over thumbnail */}
             <img
               src={article.cover_image}
               alt={article.title}
               loading={index < 3 ? 'eager' : 'lazy'}
               decoding="async"
               className={clsx(
-                'w-full h-full object-cover transition-all duration-700 group-hover:scale-110',
-                imageLoaded ? 'opacity-100' : 'opacity-0'
+                'absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110',
+                fullImageLoaded ? 'opacity-100' : 'opacity-0'
               )}
-              onLoad={() => setImageLoaded(true)}
+              onLoad={() => setFullImageLoaded(true)}
             />
-            
+
             {/* 图片悬浮遮罩 */}
             <div className={clsx(
               'absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 transition-opacity duration-500',

@@ -6,6 +6,7 @@ import EnhancedArticleGrid from '../components/EnhancedArticleGrid';
 import LoadingSpinner from '../components/LoadingSpinner';
 import BookCarousel from '../components/BookCarousel';
 import Hero from '../components/ui/Hero';
+import { getThumbnailUrl, preloadImages } from '../utils/imageUtils';
 
 export default function HomePage() {
   const [popularArticles, setPopularArticles] = useState<Article[]>([]);
@@ -20,19 +21,32 @@ export default function HomePage() {
         setLoading(true);
         
         
-        // 获取热门文章
-        const popularResponse = await articlesApi.getPopularArticles(6, 7);
-        setPopularArticles(popularResponse.data);
-        
-        // 获取最近文章
-        const recentResponse = await articlesApi.getArticles({
-          page: 1,
-          limit: 12,
-          is_published: true,
-          sort_by: 'published_at',
-          sort_order: 'desc',
-        });
-        setRecentArticles(recentResponse.data.articles || []);
+        // 并行获取热门文章和最近文章
+        const [popularResponse, recentResponse] = await Promise.all([
+          articlesApi.getPopularArticles(6, 7),
+          articlesApi.getArticles({
+            page: 1,
+            limit: 12,
+            is_published: true,
+            sort_by: 'published_at',
+            sort_order: 'desc',
+          }),
+        ]);
+
+        const popular = popularResponse.data;
+        const recent = recentResponse.data.articles || [];
+        setPopularArticles(popular);
+        setRecentArticles(recent);
+
+        // Preload cover thumbnails for first visible articles (parallel, non-blocking)
+        const allArticles = [...popular, ...recent];
+        const thumbnailUrls = allArticles
+          .slice(0, 9)
+          .map((a) => a.cover_image && getThumbnailUrl(a.cover_image))
+          .filter((url): url is string => !!url);
+        if (thumbnailUrls.length > 0) {
+          preloadImages(thumbnailUrls);
+        }
       } catch (error) {
         console.error('Failed to load featured content:', error);
       } finally {
