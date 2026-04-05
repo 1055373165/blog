@@ -135,6 +135,31 @@ class ApiClient {
     return response.data;
   }
 
+  // 文件上传 + 额外字段
+  async uploadWithFields<T>(url: string, file: File, fields?: Record<string, string>, onProgress?: (progress: number) => void): Promise<ApiResponse<T>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (fields) {
+      for (const [key, value] of Object.entries(fields)) {
+        formData.append(key, value);
+      }
+    }
+
+    const response = await this.client.post<ApiResponse<T>>(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: (progressEvent) => {
+        if (onProgress && progressEvent.total) {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress(progress);
+        }
+      },
+    });
+
+    return response.data;
+  }
+
   // 批量请求
   async batch<T>(requests: Promise<any>[]): Promise<T[]> {
     try {

@@ -274,8 +274,11 @@ func main() {
 		cover := api.Group("/cover")
 		{
 			cover.GET("", handlers.GetCoverImages)
+			cover.GET("/categories", handlers.GetCoverCategories)
 			cover.POST("/upload", middleware.AuthRequired(), handlers.UploadCoverImage)
-			cover.DELETE("/:filename", middleware.AuthRequired(), handlers.DeleteCoverImage)
+			cover.PUT("/categories/:name", middleware.AuthRequired(), handlers.RenameCoverCategory)
+			cover.DELETE("/categories/:name", middleware.AuthRequired(), handlers.DeleteCoverCategory)
+			cover.DELETE("/images/*filepath", middleware.AuthRequired(), handlers.DeleteCoverImage)
 		}
 
 		// 封面图片文件服务路由（类似现有的图片上传）

@@ -125,27 +125,58 @@ export const coverApi = {
       images: Array<{
         name: string;
         url: string;
+        thumbnail_url: string;
         relative_path: string;
         size: number;
         mod_time: string;
         is_default: boolean;
+        category: string;
+      }>;
+      categories: Array<{
+        name: string;
+        image_count: number;
       }>;
       total: number;
     }>('/api/cover');
   },
 
-  async uploadCoverImage(file: File, onProgress?: (progress: number) => void) {
-    return apiClient.upload<{
+  async getCoverCategories() {
+    return apiClient.get<{
+      categories: Array<{
+        name: string;
+        image_count: number;
+      }>;
+    }>('/api/cover/categories');
+  },
+
+  async uploadCoverImage(file: File, category?: string, onProgress?: (progress: number) => void) {
+    const fields: Record<string, string> = {};
+    if (category) {
+      fields.category = category;
+    }
+    return apiClient.uploadWithFields<{
       url: string;
+      thumbnail_url: string;
       filename: string;
+      category: string;
       relative_path: string;
       size: number;
       type: string;
-    }>('/api/cover/upload', file, onProgress);
+    }>('/api/cover/upload', file, fields, onProgress);
   },
 
-  async deleteCoverImage(filename: string) {
-    return apiClient.delete<null>(`/api/cover/${encodeURIComponent(filename)}`);
+  async deleteCoverImage(category: string, filename: string) {
+    // For default category, images are at root level
+    const path = category === '默认' ? filename : `${category}/${filename}`;
+    return apiClient.delete<null>(`/api/cover/images/${encodeURIComponent(path)}`);
+  },
+
+  async renameCoverCategory(oldName: string, newName: string) {
+    return apiClient.put<null>(`/api/cover/categories/${encodeURIComponent(oldName)}`, { new_name: newName });
+  },
+
+  async deleteCoverCategory(name: string) {
+    return apiClient.delete<null>(`/api/cover/categories/${encodeURIComponent(name)}`);
   },
 };
 
