@@ -146,9 +146,14 @@ const EnhancedArticleCard = ({
         {/* 左侧图片 */}
         {article.cover_image && (
           <div className="relative overflow-hidden w-48 h-32 bg-gray-100 dark:bg-gray-700 rounded-lg flex-shrink-0">
+            {!imageLoaded && (
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-pulse rounded-lg" />
+            )}
             <img
               src={article.cover_image}
               alt={article.title}
+              loading={index < 3 ? 'eager' : 'lazy'}
+              decoding="async"
               className={clsx(
                 'w-full h-full object-cover transition-all duration-500 group-hover:scale-105',
                 imageLoaded ? 'opacity-100' : 'opacity-0'
@@ -270,9 +275,14 @@ const EnhancedArticleCard = ({
         {/* 图片容器 */}
         {article.cover_image && (
           <div className="relative overflow-hidden aspect-video bg-gray-100 dark:bg-gray-700">
+            {!imageLoaded && (
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-pulse" />
+            )}
             <img
               src={article.cover_image}
               alt={article.title}
+              loading={index < 3 ? 'eager' : 'lazy'}
+              decoding="async"
               className={clsx(
                 'w-full h-full object-cover transition-all duration-700 group-hover:scale-110',
                 imageLoaded ? 'opacity-100' : 'opacity-0'

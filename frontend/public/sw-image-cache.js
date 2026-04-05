@@ -1,5 +1,5 @@
 // 图片缓存 Service Worker
-const CACHE_NAME = 'book-images-v1';
+const CACHE_NAME = 'site-images-v2';
 const IMAGE_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24小时
 
 // 需要缓存的图片文件扩展名
@@ -13,6 +13,16 @@ function isImageRequest(url) {
 // 判断是否为书籍图片
 function isBookImage(url) {
   return url.includes('/books/') && isImageRequest(url);
+}
+
+// 判断是否为封面图片（文章封面等）
+function isCoverImage(url) {
+  return (url.includes('/uploads/cover/') || url.includes('/upload/cover/')) && isImageRequest(url);
+}
+
+// 判断是否为需要缓存的站点图片
+function isCacheableImage(url) {
+  return isBookImage(url) || isCoverImage(url);
 }
 
 // 安装事件
@@ -29,7 +39,7 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           // 清理旧版本的缓存
-          if (cacheName !== CACHE_NAME && cacheName.startsWith('book-images-')) {
+          if (cacheName !== CACHE_NAME && (cacheName.startsWith('book-images-') || cacheName.startsWith('site-images-'))) {
             console.log('清理旧缓存:', cacheName);
             return caches.delete(cacheName);
           }
@@ -45,8 +55,8 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = event.request.url;
   
-  // 只处理书籍图片请求
-  if (!isBookImage(url) || event.request.method !== 'GET') {
+  // 处理书籍图片和封面图片请求
+  if (!isCacheableImage(url) || event.request.method !== 'GET') {
     return;
   }
 
