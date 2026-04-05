@@ -48,3 +48,9 @@ temp/
 # User Uploaded Externalized Assets & Local Data
 data/
 source/
+uploads/
+download/
+backend/uploads/
+backend/download/
+blog_assets/
+blog-assets/
