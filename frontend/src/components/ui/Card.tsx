@@ -1,5 +1,6 @@
 import React, { forwardRef, ReactNode } from 'react';
 import { clsx } from 'clsx';
+import OptimizedImage from './OptimizedImage';
 
 // Card 变体类型
 export type CardVariant = 
@@ -178,21 +179,30 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(({
     return 'block';
   };
 
-  // 渲染图片
+  // 渲染图片 - 使用 OptimizedImage 实现渐进式加载 + 懒加载
   const renderImage = () => {
     if (!image) return null;
 
-    return (
-      <div className={imagePosition === 'background' ? 'absolute inset-0' : ''}>
-        <img
-          src={image}
-          alt={imageAlt || ''}
-          className={getImageContainerStyles()}
-        />
-        {imagePosition === 'background' && (
+    if (imagePosition === 'background') {
+      return (
+        <div className="absolute inset-0">
+          <OptimizedImage
+            src={image}
+            alt={imageAlt || ''}
+            className="w-full h-full"
+          />
           <div className="absolute inset-0 bg-black/20 dark:bg-black/40" />
-        )}
-      </div>
+        </div>
+      );
+    }
+
+    return (
+      <OptimizedImage
+        src={image}
+        alt={imageAlt || ''}
+        className={getImageContainerStyles()}
+        aspectRatio={imagePosition === 'left' || imagePosition === 'right' ? '1/1' : '16/9'}
+      />
     );
   };
 

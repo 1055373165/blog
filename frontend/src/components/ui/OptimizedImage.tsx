@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { clsx } from 'clsx';
+import { getThumbnailUrl } from '../../utils/imageUtils';
 
 interface OptimizedImageProps {
   src: string;
@@ -140,11 +141,18 @@ export default function OptimizedImage({
 }: OptimizedImageProps) {
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  
+  const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
+
   const { inView, imgRef, handleLoad } = useImageLazyLoading(priority);
   const stableDimensions = useLayoutStability(aspectRatio, width, height);
-  
+
   const optimizedSrc = getOptimizedSrc(src);
+
+  // Auto-derive thumbnail URL for cover images
+  const thumbnailSrc = useMemo(() => {
+    if (!src) return null;
+    return getThumbnailUrl(src);
+  }, [src]);
 
   const handleImageLoad = useCallback(() => {
     console.log(`✅ 图片加载成功: ${src}`);
@@ -204,7 +212,22 @@ export default function OptimizedImage({
         <div ref={imgRef} className="absolute inset-0" aria-hidden="true" />
       )}
       
-      {/* 实际图片 */}
+      {/* 缩略图层 - 快速加载，作为占位 */}
+      {inView && !error && thumbnailSrc && !loaded && (
+        <img
+          src={getOptimizedSrc(thumbnailSrc)}
+          alt=""
+          decoding="async"
+          className={clsx(
+            'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',
+            thumbnailLoaded ? 'opacity-100' : 'opacity-0'
+          )}
+          onLoad={() => setThumbnailLoaded(true)}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      )}
+
+      {/* 高清原图层 - 后台加载，加载完成后替换缩略图 */}
       {inView && !error && (
         <img
           ref={imgRef}
@@ -218,15 +241,10 @@ export default function OptimizedImage({
           onLoad={handleImageLoad}
           onError={handleImageError}
           className={clsx(
-            'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',
+            'absolute inset-0 w-full h-full object-cover transition-opacity duration-500',
             loaded ? 'opacity-100' : 'opacity-0'
           )}
-          style={{
-            // 确保图片尺寸稳定
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover'
-          }}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
       )}
       
@@ -259,8 +277,8 @@ export default function OptimizedImage({
         </div>
       )}
       
-      {/* 加载指示器 */}
-      {inView && !loaded && !error && placeholder !== 'empty' && (
+      {/* 加载指示器 - 缩略图加载后不再显示 */}
+      {inView && !loaded && !thumbnailLoaded && !error && placeholder !== 'empty' && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-6 h-6 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
         </div>

@@ -4,6 +4,7 @@ import { Article, PaginatedResponse } from '../types';
 import ArticleCard from './ArticleCard';
 import LoadingSpinner from './LoadingSpinner';
 import Pagination from './Pagination';
+import OptimizedImage from './ui/OptimizedImage';
 import { formatDate } from '../utils';
 
 type ViewMode = 'card' | 'timeline' | 'column';
@@ -147,10 +148,11 @@ export default function ArticleList({
             <div className="flex items-start gap-4">
               {article.cover_image && (
                 <div className="w-16 h-16 flex-shrink-0">
-                  <img
+                  <OptimizedImage
                     src={article.cover_image}
                     alt={article.title}
-                    className="w-full h-full object-cover rounded"
+                    className="w-full h-full rounded"
+                    aspectRatio="1/1"
                   />
                 </div>
               )}
@@ -198,10 +200,10 @@ export default function ArticleList({
         >
           {article.cover_image && (
             <div className="h-32 overflow-hidden">
-              <img
+              <OptimizedImage
                 src={article.cover_image}
                 alt={article.title}
-                className="w-full h-full object-cover"
+                className="w-full h-full"
               />
             </div>
           )}
