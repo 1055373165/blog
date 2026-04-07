@@ -1,0 +1,130 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1775548263768,
+  "projectRoot": "/Users/smy/project/blog",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "scripts"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "backend": {
+      "path": "backend",
+      "purpose": null,
+      "fileCount": 9,
+      "lastAccessed": 1775548263678,
+      "keyFiles": [
+        "Dockerfile",
+        "Makefile",
+        "go.mod",
+        "go.sum",
+        "main"
+      ]
+    },
+    "config": {
+      "path": "config",
+      "purpose": "Configuration files",
+      "fileCount": 0,
+      "lastAccessed": 1775548263719,
+      "keyFiles": []
+    },
+    "data": {
+      "path": "data",
+      "purpose": "Data files",
+      "fileCount": 0,
+      "lastAccessed": 1775548263755,
+      "keyFiles": []
+    },
+    "docker": {
+      "path": "docker",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1775548263759,
+      "keyFiles": []
+    },
+    "frontend": {
+      "path": "frontend",
+      "purpose": null,
+      "fileCount": 23,
+      "lastAccessed": 1775548263759,
+      "keyFiles": [
+        "2025-08-06-this-session-is-being-continued-from-a-previous-co.txt",
+        "Dockerfile",
+        "Dockerfile.prod",
+        "README.md",
+        "eslint.config.js"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 2,
+      "lastAccessed": 1775548263761,
+      "keyFiles": [
+        "audit-asset-storage.sh",
+        "deploy-tencent.sh"
+      ]
+    },
+    "backend/migrations": {
+      "path": "backend/migrations",
+      "purpose": "Database migrations",
+      "fileCount": 12,
+      "lastAccessed": 1775548263764,
+      "keyFiles": [
+        "001_create_tables.sql",
+        "001_create_tables_mysql.sql",
+        "002_create_study_system_tables.sql"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "frontend/src/pages/HomePage.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1775548453893,
+      "type": "directory"
+    },
+    {
+      "path": "frontend/src/components/EnhancedArticleGrid.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1775548471727,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
