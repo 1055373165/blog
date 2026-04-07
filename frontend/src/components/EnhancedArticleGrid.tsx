@@ -490,25 +490,20 @@ export default function EnhancedArticleGrid({
   if (variant === 'masonry') {
     return (
       <div
-        className={clsx('grid gap-6', className)}
-        style={{ gridTemplateColumns: `repeat(${columnCount}, 1fr)` }}
+        className={clsx('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6', className)}
         data-layout="masonry"
       >
-        {masonryColumns.map((column, columnIndex) => (
-          <div key={columnIndex} className="space-y-6">
-            {column.map((article, index) => (
-              <EnhancedArticleCard
-                key={article.id}
-                article={article}
-                index={columnIndex * column.length + index}
-                showStats={shouldShowStats}
-                showCategory={showCategory}
-                showTags={showTags}
-                showExcerpt={showExcerpt}
-                variant="card"
-              />
-            ))}
-          </div>
+        {articles.map((article, index) => (
+          <EnhancedArticleCard
+            key={article.id}
+            article={article}
+            index={index}
+            showStats={shouldShowStats}
+            showCategory={showCategory}
+            showTags={showTags}
+            showExcerpt={showExcerpt}
+            variant="card"
+          />
         ))}
       </div>
     );
