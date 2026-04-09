@@ -768,3 +768,104 @@ export interface UploadMediaResponse {
   size: number;
   mime_type: string;
 }
+
+export type NotebookLMNotebookStatus = 'draft' | 'ready' | 'archived';
+export type NotebookLMSourceType = 'web_url' | 'local_file' | 'local_folder' | 'wechat_channel';
+export type NotebookLMCaptureMode = 'none' | 'desktop_watch' | 'desktop_watch_with_network_assist';
+export type NotebookLMImportJobStatus =
+  | 'created'
+  | 'awaiting_capture'
+  | 'capturing'
+  | 'artifact_received'
+  | 'processing'
+  | 'syncing_to_notebooklm'
+  | 'completed'
+  | 'completed_with_degradation'
+  | 'failed'
+  | 'cancelled';
+
+export interface NotebookLMNotebook {
+  id: number;
+  user_id: number;
+  title: string;
+  description?: string;
+  provider_notebook_id?: string;
+  status: NotebookLMNotebookStatus;
+  last_synced_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NotebookLMImportArtifact {
+  id: number;
+  job_id: number;
+  artifact_kind: string;
+  storage_type: string;
+  storage_path?: string;
+  mime_type?: string;
+  file_size: number;
+  checksum?: string;
+  origin?: string;
+  is_primary: boolean;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NotebookLMCaptureEvent {
+  id: number;
+  job_id: number;
+  event_kind: string;
+  summary?: string;
+  origin?: string;
+  payload?: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NotebookLMImportJob {
+  id: number;
+  user_id: number;
+  notebook_id: number;
+  notebook?: NotebookLMNotebook;
+  source_type: NotebookLMSourceType;
+  source_label: string;
+  source_input: Record<string, unknown>;
+  capture_mode: NotebookLMCaptureMode;
+  status: NotebookLMImportJobStatus;
+  stage: string;
+  progress: number;
+  error_code?: string;
+  error_message?: string;
+  degraded: boolean;
+  degraded_reason?: string;
+  started_at?: string | null;
+  finished_at?: string | null;
+  artifacts?: NotebookLMImportArtifact[];
+  capture_events?: NotebookLMCaptureEvent[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NotebookLMImportJobListResponse {
+  jobs: NotebookLMImportJob[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+export interface CreateNotebookLMNotebookInput {
+  title: string;
+  description?: string;
+}
+
+export interface CreateNotebookLMImportJobInput {
+  notebook_id: number;
+  source_type: NotebookLMSourceType;
+  source_label: string;
+  source_input: Record<string, unknown>;
+  capture_mode?: NotebookLMCaptureMode;
+}

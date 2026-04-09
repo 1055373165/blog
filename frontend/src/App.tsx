@@ -46,6 +46,7 @@ import PromptEditor from './pages/admin/PromptEditor';
 import SkillEditor from './pages/admin/SkillEditor';
 import AdminAlgorithms from './pages/admin/AdminAlgorithms';
 import AlgorithmAssetDetail from './pages/admin/AlgorithmAssetDetail';
+import NotebookLMImportCenter from './pages/admin/NotebookLMImportCenter';
 
 // 布局组件
 import Layout from './components/Layout';
@@ -138,6 +139,7 @@ function RouterContent() {
               <Route path="algorithms" element={<AdminAlgorithms />} />
               <Route path="algorithms/new" element={<AlgorithmAssetDetail />} />
               <Route path="algorithms/:id" element={<AlgorithmAssetDetail />} />
+              <Route path="notebooklm" element={<NotebookLMImportCenter />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="tags" element={<AdminTags />} />
               <Route path="series" element={<AdminSeries />} />

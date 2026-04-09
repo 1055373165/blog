@@ -223,6 +223,25 @@ export default function AdminDashboard() {
             </Link>
 
             <Link
+              to="/admin/notebooklm"
+              className="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-300 dark:hover:border-amber-600 transition-all duration-200 hover:shadow-medium group"
+            >
+              <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center mr-4 group-hover:bg-amber-200 dark:group-hover:bg-amber-800 transition-colors">
+                <svg className="w-5 h-5 text-amber-700 dark:text-amber-300" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h9a2 2 0 002-2V8.414a2 2 0 00-.586-1.414l-3.414-3.414A2 2 0 009.586 3H4zm5 1.5v3A1.5 1.5 0 0010.5 9h3v6a.5.5 0 01-.5.5H4a.5.5 0 01-.5-.5V5A.5.5 0 014 4.5h5z" />
+                  <path d="M6 11.25a.75.75 0 01.75-.75h3.5a.75.75 0 010 1.5h-3.5a.75.75 0 01-.75-.75zm0 3a.75.75 0 01.75-.75h5.5a.75.75 0 010 1.5h-5.5a.75.75 0 01-.75-.75z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">NotebookLM 导入</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">整理链接、文件和视频号导入任务</p>
+              </div>
+              <svg className="w-4 h-4 text-gray-400 group-hover:text-amber-500 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            </Link>
+
+            <Link
               to="/admin/articles"
               className="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200 hover:shadow-medium group"
             >

@@ -82,6 +82,10 @@ func AutoMigrate() error {
 		&models.Skill{},
 		&models.AlgorithmAsset{},
 		&models.AlgorithmAssetFile{},
+		&models.NotebookLMNotebook{},
+		&models.NotebookLMImportJob{},
+		&models.NotebookLMImportArtifact{},
+		&models.NotebookLMCaptureEvent{},
 		&models.Article{},
 		&models.ArticleView{},
 		&models.ArticleLike{},
@@ -158,6 +162,11 @@ func createIndexes() error {
 	createIndexIfNotExists("idx_algorithm_assets_review_next", "algorithm_assets", "review_status, next_review_at")
 	createIndexIfNotExists("idx_algorithm_assets_author_updated", "algorithm_assets", "author_id, updated_at DESC")
 	createIndexIfNotExists("idx_algorithm_asset_files_asset_sort", "algorithm_asset_files", "asset_id, file_kind, sort_order")
+	createIndexIfNotExists("idx_notebooklm_notebooks_user_updated", "notebooklm_notebooks", "user_id, updated_at DESC")
+	createIndexIfNotExists("idx_notebooklm_jobs_user_updated", "notebooklm_import_jobs", "user_id, updated_at DESC")
+	createIndexIfNotExists("idx_notebooklm_jobs_notebook_status", "notebooklm_import_jobs", "notebook_id, status, updated_at DESC")
+	createIndexIfNotExists("idx_notebooklm_artifacts_job_created", "notebooklm_import_artifacts", "job_id, created_at DESC")
+	createIndexIfNotExists("idx_notebooklm_capture_events_job_created", "notebooklm_capture_events", "job_id, created_at DESC")
 
 	return nil
 }

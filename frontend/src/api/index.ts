@@ -19,6 +19,7 @@ export { seriesApi } from './series';
 export { commentsApi } from './comments';
 export { promptsApi } from './prompts';
 export { skillsApi } from './skills';
+export { notebooklmApi } from './notebooklm';
 export * from './books';
 
 // 认证相关API
