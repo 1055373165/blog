@@ -20,6 +20,7 @@ interface ByteMDEditorProps {
   realTimeRendering?: boolean
   maxLength?: number
   performanceMode?: 'auto' | 'high' | 'standard'
+  mode?: 'auto' | 'split' | 'tab' | 'adaptive'
 }
 
 // 性能优化配置
@@ -27,6 +28,12 @@ const PERFORMANCE_CONFIG = {
   // 大文档阈值 (字符数)
   LARGE_DOCUMENT_THRESHOLD: 50000, // 50KB
   HUGE_DOCUMENT_THRESHOLD: 90000,  // 90KB
+
+  VIEWPORT_MARGINS: {
+    standard: 20,
+    large: 14,
+    high: 10
+  },
   
   // 防抖配置
   DEBOUNCE_TIMES: {
@@ -114,7 +121,8 @@ function ByteMDEditor({
   placeholder = "开始编写你的文章...",
   realTimeRendering = true,
   maxLength,
-  performanceMode = 'auto'
+  performanceMode = 'auto',
+  mode = 'adaptive'
 }: ByteMDEditorProps) {
   // 性能监控状态
   const [isLargeDocument, setIsLargeDocument] = useState(false)
@@ -153,13 +161,26 @@ function ByteMDEditor({
   // 动态预览防抖时间
   const previewDebounce = useMemo(() => {
     if (!realTimeRendering) return 0 // 禁用实时渲染
-    
+
     return isHugeDocument 
       ? PERFORMANCE_CONFIG.DEBOUNCE_TIMES.huge
       : isLargeDocument 
         ? PERFORMANCE_CONFIG.DEBOUNCE_TIMES.large
         : PERFORMANCE_CONFIG.DEBOUNCE_TIMES.standard
   }, [realTimeRendering, isLargeDocument, isHugeDocument])
+
+  // 长文档优先使用标签页模式，避免编辑时持续渲染双栏预览
+  const effectiveMode = useMemo(() => {
+    if (mode !== 'adaptive') {
+      return mode
+    }
+
+    if (!realTimeRendering || isLargeDocument) {
+      return 'tab'
+    }
+
+    return 'split'
+  }, [mode, realTimeRendering, isLargeDocument])
   
   // 优化的编辑器配置
   const editorConfig = useMemo(() => {
@@ -173,7 +194,11 @@ function ByteMDEditor({
       tabSize: 2,
       
       // 性能优化配置
-      viewportMargin: actualPerformanceMode === 'high' ? 10 : Infinity,
+      viewportMargin: actualPerformanceMode === 'high'
+        ? PERFORMANCE_CONFIG.VIEWPORT_MARGINS.high
+        : isLargeDocument
+          ? PERFORMANCE_CONFIG.VIEWPORT_MARGINS.large
+          : PERFORMANCE_CONFIG.VIEWPORT_MARGINS.standard,
       lineWrapping: true,
       
       // 大文档优化
@@ -221,7 +246,7 @@ function ByteMDEditor({
     }
     
     return baseConfig as Omit<EditorConfiguration, 'value' | 'placeholder'>
-  }, [actualPerformanceMode, isHugeDocument])
+  }, [actualPerformanceMode, isHugeDocument, isLargeDocument])
   
   // 优化的图片上传处理
   const uploadImages = useCallback(async (files: File[]) => {
@@ -495,7 +520,7 @@ function ByteMDEditor({
         plugins={plugins}
         onChange={handleChange}
         placeholder={placeholder}
-        mode="split"
+        mode={effectiveMode}
         previewDebounce={previewDebounce}
         locale={zhCNLocale}
         editorConfig={editorConfig}
@@ -503,7 +528,7 @@ function ByteMDEditor({
         sanitize={(html) => html}
         maxLength={maxLength}
         {...(actualPerformanceMode === 'high' && {
-          overridePreview: !realTimeRendering ? (() => {}) : undefined
+          overridePreview: !realTimeRendering && effectiveMode === 'split' ? (() => {}) : undefined
         })}
       />
     </div>
@@ -518,7 +543,8 @@ const propsAreEqual = (prev: ByteMDEditorProps, next: ByteMDEditorProps) => {
     prev.placeholder === next.placeholder &&
     prev.realTimeRendering === next.realTimeRendering &&
     prev.maxLength === next.maxLength &&
-    prev.performanceMode === next.performanceMode
+    prev.performanceMode === next.performanceMode &&
+    prev.mode === next.mode
   );
 };
 

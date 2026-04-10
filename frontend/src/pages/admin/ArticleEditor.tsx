@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { memo, startTransition, useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Article, CreateArticleInput, UpdateArticleInput, Category, Tag, Series } from '../../types';
 import { articlesApi, categoriesApi, tagsApi } from '../../api';
@@ -12,11 +12,147 @@ import CoverImageSelector from '../../components/CoverImageSelector';
 import ArticlePreview from '../../components/ArticlePreview';
 import { useAuth } from '../../contexts/AuthContext';
 
+const CONTENT_SYNC_DELAYS = {
+  standard: 250,
+  large: 500,
+  huge: 1000,
+} as const;
+
+interface ArticleContentPanelProps {
+  article: CreateArticleInput;
+  height: number;
+  isPreviewMode: boolean;
+  onContentCommit: (value: string) => void;
+  onContentLiveChange: (value: string) => void;
+  onPreviewModeChange: (isPreviewMode: boolean) => void;
+  value: string;
+}
+
+const ArticleContentPanel = memo(function ArticleContentPanel({
+  article,
+  height,
+  isPreviewMode,
+  onContentCommit,
+  onContentLiveChange,
+  onPreviewModeChange,
+  value,
+}: ArticleContentPanelProps) {
+  const [localValue, setLocalValue] = useState(value);
+  const committedValueRef = useRef(value);
+  const latestValueRef = useRef(value);
+  const lastPropValueRef = useRef(value);
+
+  const commitDelay = localValue.length > 90000
+    ? CONTENT_SYNC_DELAYS.huge
+    : localValue.length > 50000
+      ? CONTENT_SYNC_DELAYS.large
+      : CONTENT_SYNC_DELAYS.standard;
+
+  useEffect(() => {
+    if (value === lastPropValueRef.current) {
+      return;
+    }
+
+    lastPropValueRef.current = value;
+
+    // Ignore prop updates that only acknowledge a value we already sent upstream.
+    if (value === committedValueRef.current) {
+      return;
+    }
+
+    committedValueRef.current = value;
+    latestValueRef.current = value;
+    setLocalValue(value);
+    onContentLiveChange(value);
+  }, [onContentLiveChange, value]);
+
+  useEffect(() => {
+    if (localValue === committedValueRef.current) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const nextValue = latestValueRef.current;
+      committedValueRef.current = nextValue;
+      onContentCommit(nextValue);
+    }, commitDelay);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [commitDelay, localValue, onContentCommit]);
+
+  useEffect(() => {
+    return () => {
+      if (latestValueRef.current !== committedValueRef.current) {
+        const nextValue = latestValueRef.current;
+        committedValueRef.current = nextValue;
+        onContentCommit(nextValue);
+      }
+    };
+  }, [onContentCommit]);
+
+  const handleEditorChange = useCallback((nextValue: string) => {
+    latestValueRef.current = nextValue;
+    setLocalValue(nextValue);
+    onContentLiveChange(nextValue);
+  }, [onContentLiveChange]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          文章内容 *
+        </label>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => onPreviewModeChange(false)}
+            className={`px-3 py-1 text-sm rounded-md transition-colors ${
+              !isPreviewMode
+                ? 'bg-go-100 text-go-700 dark:bg-go-900/30 dark:text-go-300'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            编辑
+          </button>
+          <button
+            onClick={() => onPreviewModeChange(true)}
+            className={`px-3 py-1 text-sm rounded-md transition-colors ${
+              isPreviewMode
+                ? 'bg-go-100 text-go-700 dark:bg-go-900/30 dark:text-go-300'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            预览
+          </button>
+        </div>
+      </div>
+
+      <div>
+        {isPreviewMode ? (
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800 min-h-[600px]">
+            <ArticlePreview article={{ ...article, content: localValue }} />
+          </div>
+        ) : (
+          <ByteMDEditor
+            value={localValue}
+            onChange={handleEditorChange}
+            height={height}
+            placeholder="开始编写你的精彩文章..."
+            mode="tab"
+          />
+        )}
+      </div>
+    </div>
+  );
+});
+
 export default function ArticleEditor() {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const isEditing = !!id;
+  const latestContentRef = useRef('');
 
   // Form state
   const [formData, setFormData] = useState<CreateArticleInput>({
@@ -122,6 +258,7 @@ export default function ArticleEditor() {
       
       if (response.success) {
         const article: Article = response.data;
+        latestContentRef.current = article.content;
         setFormData({
           title: article.title,
           content: article.content,
@@ -177,6 +314,31 @@ export default function ArticleEditor() {
     }));
   }, []);
 
+  const getCurrentContent = useCallback(() => {
+    return latestContentRef.current;
+  }, []);
+
+  const handleContentLiveChange = useCallback((value: string) => {
+    latestContentRef.current = value;
+  }, []);
+
+  const handleContentCommit = useCallback((value: string) => {
+    latestContentRef.current = value;
+
+    startTransition(() => {
+      setFormData((prev) => {
+        if (prev.content === value) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          content: value,
+        };
+      });
+    });
+  }, []);
+
   const handleTagToggle = (tagId: string) => {
     const currentTags = selectedTags || [];
     const newSelectedTags = currentTags.includes(tagId)
@@ -194,11 +356,12 @@ export default function ArticleEditor() {
   };
 
   const generateExcerpt = () => {
-    if (!formData.content) return;
+    const content = getCurrentContent();
+    if (!content) return;
     
     // Extract first paragraph or first 150 characters
-    const content = formData.content.replace(/[#*`]/g, ''); // Remove markdown syntax
-    const firstParagraph = content.split('\n\n')[0];
+    const plainContent = content.replace(/[#*`]/g, ''); // Remove markdown syntax
+    const firstParagraph = plainContent.split('\n\n')[0];
     const excerpt = firstParagraph.length > 150 
       ? firstParagraph.substring(0, 150) + '...'
       : firstParagraph;
@@ -230,8 +393,10 @@ export default function ArticleEditor() {
       setSaving(true);
       if (!silent) setError(null);
 
+      const currentContent = getCurrentContent();
       const payload = {
         ...formData,
+        content: currentContent,
         tag_ids: (selectedTags || []).map(id => parseInt(id)),
         category_id: selectedCategories?.length ? parseInt(selectedCategories[0]) : undefined,
       };
@@ -273,6 +438,7 @@ export default function ArticleEditor() {
 
     const wasPublished = formData.is_published;
     const newPublishedState = !wasPublished;
+    const currentContent = getCurrentContent();
 
     // Update the state
     handleInputChange('is_published', newPublishedState);
@@ -280,6 +446,7 @@ export default function ArticleEditor() {
     // Save with explicit published state to avoid timing issues
     const updatedFormData = {
       ...formData,
+      content: currentContent,
       is_published: newPublishedState,
       tag_ids: (selectedTags || []).map(id => parseInt(id)),
       category_id: selectedCategories?.length ? parseInt(selectedCategories[0]) : undefined,
@@ -319,6 +486,7 @@ export default function ArticleEditor() {
 
 
   const handleFileImport = (content: string, metadata?: any) => {
+    latestContentRef.current = content;
     setFormData(prev => ({
       ...prev,
       content,
@@ -338,6 +506,7 @@ export default function ArticleEditor() {
 
     // First file → fill current editor
     const primary = files[0];
+    latestContentRef.current = primary.content;
     setFormData(prev => ({
       ...prev,
       content: primary.content,
@@ -407,6 +576,7 @@ export default function ArticleEditor() {
     if (articles.length === 1) {
       // Single article import
       const article = articles[0];
+      latestContentRef.current = article.content;
       setFormData(prev => ({
         ...prev,
         title: article.title,
@@ -431,6 +601,7 @@ export default function ArticleEditor() {
 
   // Content validation
   const validateContent = () => {
+    const content = getCurrentContent();
     const issues = [];
     
     if (!formData.title.trim()) {
@@ -439,13 +610,13 @@ export default function ArticleEditor() {
       issues.push('标题过长，建议不超过200字符');
     }
     
-    if (!formData.content.trim()) {
+    if (!content.trim()) {
       issues.push('文章内容不能为空');
-    } else if (formData.content.length < 100) {
+    } else if (content.length < 100) {
       issues.push('文章内容过短，建议至少100字符');
     }
     
-    if (!formData.excerpt?.trim() && formData.content.length > 0) {
+    if (!formData.excerpt?.trim() && content.length > 0) {
       issues.push('建议添加文章摘要');
     }
     
@@ -462,7 +633,7 @@ export default function ArticleEditor() {
 
   // Get content statistics
   const getContentStats = () => {
-    const content = formData.content || '';
+    const content = getCurrentContent();
     const words = content.length;
     const paragraphs = content.split('\n\n').filter(p => p.trim()).length;
     const readingTime = Math.ceil(words / 200);
@@ -622,49 +793,16 @@ export default function ArticleEditor() {
                   />
                 </div>
 
-                {/* Preview Mode Toggle */}
-                <div className="flex items-center justify-between">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    文章内容 *
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => setIsPreviewMode(false)}
-                      className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                        !isPreviewMode
-                          ? 'bg-go-100 text-go-700 dark:bg-go-900/30 dark:text-go-300'
-                          : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                      }`}
-                    >
-                      编辑
-                    </button>
-                    <button
-                      onClick={() => setIsPreviewMode(true)}
-                      className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                        isPreviewMode
-                          ? 'bg-go-100 text-go-700 dark:bg-go-900/30 dark:text-go-300'
-                          : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                      }`}
-                    >
-                      预览
-                    </button>
-                  </div>
-                </div>
-
-                {/* Content Editor or Preview */}
                 <div>
-                  {isPreviewMode ? (
-                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800 min-h-[600px]">
-                      <ArticlePreview article={formData} />
-                    </div>
-                  ) : (
-                    <ByteMDEditor
-                      value={formData.content}
-                      onChange={(value) => handleInputChange('content', value)}
-                      height={Math.max(800, window.innerHeight - 300)}
-                      placeholder="开始编写你的精彩文章..."
-                    />
-                  )}
+                  <ArticleContentPanel
+                    article={formData}
+                    height={editorHeight}
+                    isPreviewMode={isPreviewMode}
+                    onContentCommit={handleContentCommit}
+                    onContentLiveChange={handleContentLiveChange}
+                    onPreviewModeChange={setIsPreviewMode}
+                    value={formData.content}
+                  />
                 </div>
               </div>
             )}
@@ -682,7 +820,7 @@ export default function ArticleEditor() {
                       </label>
                       <button
                         onClick={generateExcerpt}
-                        disabled={!formData.content}
+                        disabled={!getCurrentContent()}
                         className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 
                                    disabled:opacity-50 disabled:cursor-not-allowed"
                       >
