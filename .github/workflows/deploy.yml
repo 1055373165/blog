@@ -92,21 +92,33 @@ jobs:
             # Login to GHCR
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
 
-            # Export image tags — docker-compose.prod.yml uses these
-            export FRONTEND_IMAGE="${FRONTEND_IMAGE}"
-            export BACKEND_IMAGE="${BACKEND_IMAGE}"
-
             # Pull pre-built images
-            docker compose --env-file .env.prod -f docker-compose.prod.yml pull frontend backend
+            docker pull "${FRONTEND_IMAGE}"
+            docker pull "${BACKEND_IMAGE}"
 
-            # Restart services (--no-build skips local build since images are pre-pulled)
-            docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --no-build --remove-orphans
+            # Create a temporary compose override to inject GHCR images
+            # This way docker-compose.prod.yml stays untouched for manual deploys
+            cat > docker-compose.cicd.yml <<OVERRIDE
+            services:
+              backend:
+                image: ${BACKEND_IMAGE}
+              frontend:
+                image: ${FRONTEND_IMAGE}
+            OVERRIDE
+            sed -i 's/^            //' docker-compose.cicd.yml
+
+            # Restart with override (original compose + GHCR image override)
+            docker compose --env-file .env.prod \
+              -f docker-compose.prod.yml \
+              -f docker-compose.cicd.yml \
+              up -d --no-build --remove-orphans
 
             # Health check
             sleep 5
             docker compose -f docker-compose.prod.yml ps
 
-            # Cleanup dangling images
+            # Cleanup
+            rm -f docker-compose.cicd.yml
             docker image prune -f
 
             echo "✅ Deploy complete"
