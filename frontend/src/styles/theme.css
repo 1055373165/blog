@@ -26,6 +26,32 @@
   animation: fadeRise 0.8s ease-out 0.4s both;
 }
 
+/* ── Hero text stage — auto-hiding scrollbar ────────── */
+.hero-scroll-fade {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+.hero-scroll-fade:hover,
+.hero-scroll-fade:active {
+  scrollbar-color: rgba(255,255,255,0.25) transparent;
+}
+/* Webkit (Chrome / Safari / Edge) */
+.hero-scroll-fade::-webkit-scrollbar {
+  width: 4px;
+}
+.hero-scroll-fade::-webkit-scrollbar-track {
+  background: transparent;
+}
+.hero-scroll-fade::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 2px;
+  transition: background 0.3s ease;
+}
+.hero-scroll-fade:hover::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.25);
+}
+
 /* ── Ambient Player — equalizer bars ─────────────────── */
 @keyframes eqBar {
   0%   { height: 3px; }

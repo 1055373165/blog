@@ -18,13 +18,13 @@ const FULL_TEXT = [
 ].join('\n');
 
 /* ─── Pretext layout constants ──────────────────────────── */
-const BODY_FONT = '16px "Noto Serif SC", "Songti SC", "SimSun", serif';
-const LINE_HEIGHT = 34;
-const GUTTER = 32;
-const COL_MAX_W = 860;
+const BODY_FONT = '15px "Noto Serif SC", "Songti SC", "SimSun", serif';
+const LINE_HEIGHT = 32;
+const GUTTER = 16;
+const COL_MAX_W = 600;
 const MIN_SLOT_W = 30;
-const ORB_R = 50;
-const LERP = 0.10;
+const ORB_R = 28;
+const LERP = 0.18;
 const VIDEO_FADE = 0.5;
 
 /* ─── Geometry: carve text around a circle ──────────────── */
@@ -92,7 +92,7 @@ function syncPool(pool: HTMLDivElement[], n: number, parent: HTMLElement) {
     const el = document.createElement('div');
     el.style.cssText =
       `position:absolute;white-space:pre;pointer-events:none;` +
-      `font:${BODY_FONT};line-height:${LINE_HEIGHT}px;color:#3a3a3a;` +
+      `font:${BODY_FONT};line-height:${LINE_HEIGHT}px;color:#e8e4dc;` +
       `letter-spacing:0.06em;transition:transform 0.15s ease;`;
     parent.appendChild(el);
     pool.push(el);
@@ -143,35 +143,44 @@ export default function CinematicHero() {
     const orbEl = document.createElement('div');
     orbEl.style.cssText =
       `position:absolute;border-radius:50%;pointer-events:none;z-index:10;will-change:transform;` +
-      `background:radial-gradient(circle at 40% 40%,rgba(180,160,100,0.25),rgba(160,140,90,0.08) 55%,transparent 70%);` +
-      `box-shadow:0 0 40px 12px rgba(180,160,100,0.12);` +
+      `background:radial-gradient(circle at 40% 40%,rgba(180,160,100,0.3),rgba(180,160,100,0.1) 55%,transparent 70%);` +
+      `box-shadow:0 0 30px 8px rgba(180,160,100,0.15);` +
       `width:${ORB_R * 2}px;height:${ORB_R * 2}px;opacity:0;transition:opacity 0.5s ease;`;
     stage.appendChild(orbEl);
+
+    /* spacer to drive scrollHeight for overflow-y:auto */
+    const spacer = document.createElement('div');
+    spacer.style.cssText = 'pointer-events:none;width:1px;';
+    stage.appendChild(spacer);
 
     const orb = { x: -999, y: -999 };
     const target = { x: -999, y: -999 };
     let mouseActive = false;
     const linePool: HTMLDivElement[] = [];
 
-    const onPointerMove = (e: PointerEvent) => {
+    const onMouseMove = (e: MouseEvent) => {
       const rect = stage.getBoundingClientRect();
-      target.x = e.clientX - rect.left;
-      target.y = e.clientY - rect.top;
-      if (!mouseActive) { orb.x = target.x; orb.y = target.y; }
-      mouseActive = true;
-      orbEl.style.opacity = '1';
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const inside = x >= 0 && x <= rect.width && y >= 0 && y <= rect.height;
+      if (inside) {
+        target.x = x;
+        target.y = y;
+        if (!mouseActive) { orb.x = x; orb.y = y; }
+        mouseActive = true;
+        orbEl.style.opacity = '1';
+      } else if (mouseActive) {
+        mouseActive = false;
+        orbEl.style.opacity = '0';
+      }
     };
-    const onPointerLeave = () => { mouseActive = false; orbEl.style.opacity = '0'; };
-    stage.addEventListener('pointerenter', onPointerMove);
-    stage.addEventListener('pointermove', onPointerMove);
-    stage.addEventListener('pointerleave', onPointerLeave);
+    document.addEventListener('mousemove', onMouseMove);
 
     const boot = async () => {
       try {
       await document.fonts.ready;
       if (cancelled) return;
       const prepared = prepareWithSegments(FULL_TEXT, BODY_FONT, { wordBreak: 'keep-all' });
-      console.log('[pretext] prepared ok, segments:', prepared.segments?.length);
 
       function frame() {
         if (cancelled) return;
@@ -180,13 +189,16 @@ export default function CinematicHero() {
           orb.y += (target.y - orb.y) * LERP;
         }
         const sw = stage!.clientWidth;
-        const sh = stage!.clientHeight;
+        const VIRTUAL_H = 2000;
+        const scrollY = stage!.scrollTop;
         const colW = Math.min(COL_MAX_W, sw - GUTTER * 2);
-        const colX = (sw - colW) / 2;
+        const colX = GUTTER;
         const lines = layoutLines(
-          prepared, colX, 0, colW, sh,
-          mouseActive ? orb.x : -9999, mouseActive ? orb.y : -9999, ORB_R, mouseActive,
+          prepared, colX, 0, colW, VIRTUAL_H,
+          mouseActive ? orb.x + 0 : -9999, mouseActive ? orb.y + scrollY : -9999, ORB_R, mouseActive,
         );
+        const contentH = lines.length > 0 ? lines[lines.length - 1].y + LINE_HEIGHT + 16 : 0;
+        spacer.style.height = contentH + 'px';
         syncPool(linePool, lines.length, stage!);
         for (let i = 0; i < lines.length; i++) {
           const el = linePool[i];
@@ -195,52 +207,30 @@ export default function CinematicHero() {
           el.style.top = lines[i].y + 'px';
         }
         orbEl.style.left = (orb.x - ORB_R) + 'px';
-        orbEl.style.top = (orb.y - ORB_R) + 'px';
+        orbEl.style.top = (orb.y + scrollY - ORB_R) + 'px';
         animId = requestAnimationFrame(frame);
       }
       animId = requestAnimationFrame(frame);
-      } catch (err) { console.error('[pretext] boot failed:', err); }
+      } catch (err) { console.error('[CinematicHero] pretext boot error:', err); }
     };
     boot();
 
     return () => {
       cancelled = true;
       cancelAnimationFrame(animId);
-      stage.removeEventListener('pointerenter', onPointerMove);
-      stage.removeEventListener('pointermove', onPointerMove);
-      stage.removeEventListener('pointerleave', onPointerLeave);
+      document.removeEventListener('mousemove', onMouseMove);
       linePool.forEach((el) => el.remove());
       orbEl.remove();
+      spacer.remove();
     };
   }, []);
 
   return (
-    <>
-      {/* ═══ Part 1: Editorial Text (white) ═══════════════ */}
-      <section className="w-full bg-white">
-        {/* ── Title & Author ───────────────────────────── */}
-        <div className="animate-fade-rise pt-24 pb-4 text-center">
-          <h1 className="font-serif-cn text-2xl font-light tracking-[0.25em] text-gray-800 sm:text-3xl">
-            前赤壁赋
-          </h1>
-          <p className="animate-fade-rise-delay mt-2 font-serif-cn text-sm tracking-[0.3em] text-gray-400">
-            宋 · 苏轼
-          </p>
-          <div className="mx-auto mt-5 h-px w-16 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-        </div>
-
-        {/* ── Pretext stage — full text reflows around cursor ── */}
-        <div
-          ref={stageRef}
-          className="relative mx-auto cursor-crosshair"
-          style={{ height: '460px', maxWidth: '920px' }}
-        />
-      </section>
-
-      {/* ═══ Part 2: Cinematic Video Window (dark) ════════ */}
-      <section className="relative w-full overflow-hidden bg-gradient-to-b from-gray-50 via-gray-900 to-gray-950 py-16">
-        <div className="mx-auto max-w-5xl px-6 sm:px-10">
-          <div className="relative overflow-hidden rounded-2xl shadow-2xl shadow-black/30 ring-1 ring-white/10">
+    <section className="w-full overflow-x-hidden bg-gradient-to-b from-gray-50 via-gray-900 to-gray-950 pt-32 pb-16">
+      <div className="flex flex-col gap-6 px-[10%] lg:flex-row lg:items-center lg:gap-[10%]">
+        {/* ── Left 40%: Cinematic Video ──────────────── */}
+        <div className="animate-fade-rise lg:w-[40vw] shrink-0">
+          <div className="relative overflow-hidden rounded-2xl">
             <video
               ref={videoRef}
               src="/hero-video.mp4"
@@ -252,7 +242,28 @@ export default function CinematicHero() {
             />
           </div>
         </div>
-      </section>
-    </>
+
+        {/* ── Right 40%: Editorial Text ─────────────── */}
+        <div className="animate-fade-rise-delay lg:w-[30vw] shrink-0">
+          {/* Title & Author */}
+          <div className="mb-5 pl-4 text-center lg:text-left">
+            <h1 className="font-serif-cn text-2xl font-light tracking-[0.25em] text-gray-100">
+              前赤壁赋
+            </h1>
+            <p className="mt-1.5 font-serif-cn text-sm tracking-[0.3em] text-gray-500">
+              宋 · 苏轼
+            </p>
+            <div className="mt-4 h-px w-12 bg-gradient-to-r from-gray-600 to-transparent lg:mx-0 mx-auto" />
+          </div>
+
+          {/* Pretext stage — text reflows around cursor */}
+          <div
+            ref={stageRef}
+            className="hero-scroll-fade relative cursor-crosshair overflow-x-hidden"
+            style={{ height: '480px', overflowY: 'scroll' }}
+          />
+        </div>
+      </div>
+    </section>
   );
 }
