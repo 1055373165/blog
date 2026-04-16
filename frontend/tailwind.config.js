@@ -467,7 +467,6 @@ export default {
       },
       fontFamily: {
         display: ['"Instrument Serif"', 'Georgia', 'serif'],
-        calligraphy: ['"Ma Shan Zheng"', '"STKaiti"', '"KaiTi"', 'serif'],
         body: ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
         sans: [
           'system-ui', 
