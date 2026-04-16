@@ -79,16 +79,16 @@ export default function CinematicHero() {
         />
 
         {/* gradient overlays on video */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white via-transparent to-white" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/60 via-transparent to-white" />
       </div>
 
       {/* ── Hero content (z-10) ───────────────────────── */}
       <div
-        className="relative z-10 flex flex-col items-center justify-center px-6 text-center"
-        style={{ paddingTop: '6rem', paddingBottom: '10rem' }}
+        className="relative z-10 flex items-center justify-center px-6 text-center"
+        style={{ height: '300px', marginTop: '60px' }}
       >
         {/* Description */}
-        <p className="animate-fade-rise max-w-3xl font-serif-cn text-sm font-normal leading-[2.2] tracking-widest text-[#3a3a3a] sm:text-base">
+        <p className="animate-fade-rise max-w-3xl font-serif-cn text-lg font-normal leading-[2.2] tracking-widest text-[#3a3a3a] sm:text-xl">
           寄蜉蝣于天地，渺沧海之一粟。哀吾生之须臾，羡长江之无穷。挟飞仙以遨游，抱明月而长终。苟非吾之所有，虽一毫而莫取。惟江上之清风，与山间之明月，耳得之而为声，目遇之而成色，取之无禁，用之不竭，是造物者之无尽藏也。
         </p>
       </div>
