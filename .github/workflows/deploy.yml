@@ -9,7 +9,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: SSH deploy
+      - uses: actions/checkout@v4
+
+      # SCP source code to server (bypass unreliable git on server)
+      - name: Sync code
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "backend/,frontend/,docker-compose.prod.yml"
+          target: ~/blog
+          overwrite: true
+
+      - name: Build & restart
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -18,8 +31,6 @@ jobs:
           script: |
             set -e
             cd ~/blog
-
-            git pull origin main
 
             docker compose --env-file .env.prod -f docker-compose.prod.yml build backend frontend
             docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --remove-orphans
