@@ -1,5 +1,9 @@
 /* 使用系统字体栈，完全本地化 */
 
+/* Import fonts & theme */
+@import './styles/fonts.css';
+@import './styles/theme.css';
+
 /* Import editor improvements */
 @import './styles/editor-improvements.css';
 

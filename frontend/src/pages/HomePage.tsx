@@ -5,7 +5,7 @@ import { Article } from '../types';
 import EnhancedArticleGrid from '../components/EnhancedArticleGrid';
 import LoadingSpinner from '../components/LoadingSpinner';
 import BookCarousel from '../components/BookCarousel';
-import Hero from '../components/ui/Hero';
+import CinematicHero from '../components/CinematicHero';
 import { getThumbnailUrl, preloadImages } from '../utils/imageUtils';
 
 export default function HomePage() {
@@ -65,7 +65,7 @@ export default function HomePage() {
   return (
     <div className="bg-transparent">
       {/* Hero Section */}
-      <Hero />
+      <CinematicHero />
 
       <div className="max-w-7xl mx-auto px-8 sm:px-12 lg:px-16 pt-16 pb-16">
         {/* Book Carousel Section - 调整间距和背景避免冲突 */}

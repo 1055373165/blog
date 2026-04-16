@@ -466,6 +466,8 @@ export default {
         }
       },
       fontFamily: {
+        display: ['"Instrument Serif"', 'Georgia', 'serif'],
+        body: ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
         sans: [
           'system-ui', 
           '-apple-system', 
@@ -492,16 +494,6 @@ export default {
           'monospace'
         ],
         heading: [
-          'system-ui', 
-          '-apple-system', 
-          'BlinkMacSystemFont', 
-          '"Segoe UI"', 
-          'Roboto', 
-          '"Helvetica Neue"', 
-          'Arial', 
-          'sans-serif'
-        ],
-        body: [
           'system-ui', 
           '-apple-system', 
           'BlinkMacSystemFont', 
