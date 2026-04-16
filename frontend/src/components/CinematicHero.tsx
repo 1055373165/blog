@@ -107,10 +107,8 @@ export default function CinematicHero() {
         </h1>
 
         {/* Description */}
-        <p className="animate-fade-rise-delay mt-8 max-w-2xl font-body text-base leading-relaxed text-[#6F6F6F] sm:text-lg">
-          Building platforms for brilliant minds, fearless makers, and thoughtful
-          souls. Through the noise, we craft digital havens for deep work and
-          pure flows.
+        <p className="animate-fade-rise-delay mt-10 max-w-4xl font-serif-cn text-lg font-light leading-loose tracking-wide text-[#6F6F6F] sm:text-xl md:text-2xl">
+          寄蜉蝣于天地，渺沧海之一粟。哀吾生之须臾，羡长江之无穷。挟飞仙以遨游，抱明月而长终。苟非吾之所有，虽一毫而莫取。惟江上之清风，与山间之明月，耳得之而为声，目遇之而成色，取之无禁，用之不竭，是造物者之无尽藏也。
         </p>
 
         {/* Hero CTA */}

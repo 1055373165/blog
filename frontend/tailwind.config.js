@@ -467,6 +467,7 @@ export default {
       },
       fontFamily: {
         display: ['"Instrument Serif"', 'Georgia', 'serif'],
+        'serif-cn': ['"Noto Serif SC"', '"Songti SC"', '"SimSun"', 'serif'],
         body: ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
         sans: [
           'system-ui', 
