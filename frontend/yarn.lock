@@ -227,6 +227,11 @@
   dependencies:
     bytemd "1.22.0"
 
+"@chenglou/pretext@^0.0.5":
+  version "0.0.5"
+  resolved "https://registry.npmjs.org/@chenglou/pretext/-/pretext-0.0.5.tgz"
+  integrity sha512-A8GZN10REdFGsyuiUgLV8jjPDDFMg5GmgxGWV0I3igxBOnzj+jgz2VMmVD7g+SFyoctfeqHFxbNatKSzVRWtRg==
+
 "@chevrotain/cst-dts-gen@11.0.3":
   version "11.0.3"
   resolved "https://registry.npmjs.org/@chevrotain/cst-dts-gen/-/cst-dts-gen-11.0.3.tgz"
