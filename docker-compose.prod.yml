@@ -16,7 +16,6 @@ services:
 
   # 后端API服务
   backend:
-    image: ${BACKEND_IMAGE:-}
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -57,7 +56,6 @@ services:
 
   # 前端服务
   frontend:
-    image: ${FRONTEND_IMAGE:-}
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod

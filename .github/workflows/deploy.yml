@@ -1,104 +1,30 @@
-name: Build & Deploy
+name: Deploy
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-env:
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/blog-frontend
-  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/blog-backend
-
 jobs:
-  build-frontend:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
-        with:
-          context: ./frontend
-          file: ./frontend/Dockerfile.prod
-          push: true
-          tags: |
-            ${{ env.FRONTEND_IMAGE }}:latest
-            ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
-          build-args: |
-            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  build-backend:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
-        with:
-          context: ./backend
-          file: ./backend/Dockerfile
-          push: true
-          tags: |
-            ${{ env.BACKEND_IMAGE }}:latest
-            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
   deploy:
-    needs: [build-frontend, build-backend]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      # SCP updated compose file to server (contains image fields)
-      - name: Sync compose file
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.prod.yml"
-          target: ~/blog
-
-      - name: Deploy via SSH
+      - name: SSH deploy
         uses: appleboy/ssh-action@v1.2.0
-        env:
-          FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}:latest
-          BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}:latest
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: FRONTEND_IMAGE,BACKEND_IMAGE
           script: |
             set -e
             cd ~/blog
 
-            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            git pull origin main
 
-            export BACKEND_IMAGE="${BACKEND_IMAGE}"
-            export FRONTEND_IMAGE="${FRONTEND_IMAGE}"
+            docker compose --env-file .env.prod -f docker-compose.prod.yml build backend frontend
+            docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --remove-orphans
 
-            docker compose --env-file .env.prod -f docker-compose.prod.yml pull backend frontend
-            docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --no-build --remove-orphans
-
-            sleep 5
+            sleep 3
             docker compose -f docker-compose.prod.yml ps
             docker image prune -f
 
