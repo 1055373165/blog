@@ -1,5 +1,4 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 
 /* ──────────────────────────────────────────────────────────
    CinematicHero
@@ -83,41 +82,15 @@ export default function CinematicHero() {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white via-transparent to-white" />
       </div>
 
-      {/* ── Branded masthead (z-10) ───────────────────── */}
-      <div className="relative z-10 pt-24 pb-4 text-center">
-        <span className="font-display text-3xl tracking-tight text-[#000000]">
-          Aethera<sup className="text-xs align-super">®</sup>
-        </span>
-      </div>
-
       {/* ── Hero content (z-10) ───────────────────────── */}
       <div
         className="relative z-10 flex flex-col items-center justify-center px-6 text-center"
-        style={{ paddingTop: 'calc(6rem - 40px)', paddingBottom: '10rem' }}
+        style={{ paddingTop: '6rem', paddingBottom: '10rem' }}
       >
-        {/* Headline */}
-        <h1
-          className="animate-fade-rise max-w-7xl font-display text-5xl font-normal sm:text-7xl md:text-8xl"
-          style={{ lineHeight: 0.95, letterSpacing: '-2.46px', color: '#000000' }}
-        >
-          Beyond{' '}
-          <em className="text-[#6F6F6F]">silence,</em>
-          <br className="hidden sm:block" /> we build{' '}
-          <em className="text-[#6F6F6F]">the&nbsp;eternal.</em>
-        </h1>
-
         {/* Description */}
-        <p className="animate-fade-rise-delay mt-10 max-w-4xl font-serif-cn text-lg font-light leading-loose tracking-wide text-[#6F6F6F] sm:text-xl md:text-2xl">
+        <p className="animate-fade-rise max-w-3xl font-serif-cn text-2xl font-normal leading-[2.2] tracking-widest text-[#3a3a3a] sm:text-3xl md:text-4xl">
           寄蜉蝣于天地，渺沧海之一粟。哀吾生之须臾，羡长江之无穷。挟飞仙以遨游，抱明月而长终。苟非吾之所有，虽一毫而莫取。惟江上之清风，与山间之明月，耳得之而为声，目遇之而成色，取之无禁，用之不竭，是造物者之无尽藏也。
         </p>
-
-        {/* Hero CTA */}
-        <Link
-          to="/articles"
-          className="animate-fade-rise-delay-2 mt-12 inline-block rounded-full bg-[#000000] px-14 py-5 font-body text-base text-white no-underline transition-transform hover:scale-[1.03]"
-        >
-          Begin Journey
-        </Link>
       </div>
     </section>
   );
