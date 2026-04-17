@@ -33,6 +33,13 @@ const P_JIANGJIN_TEXT = [
   '五花马，千金裘，呼儿将出换美酒，与尔同销万古愁。',
 ].join('\n');
 
+/* 不第后赋菊 · 黄巢
+   我花开后百花杀——落第书生的铁血诗篇 */
+const P_JUHUA_TEXT = [
+  '待到秋来九月八，我花开后百花杀。',
+  '冲天香阵透长安，满城尽带黄金甲。',
+].join('\n');
+
 /* 水调歌头·明月几时有 · 苏轼
    中秋怀人，旷达与温柔并存 */
 const P_SHUIDIAO_TEXT = [
@@ -52,6 +59,7 @@ const P4_TEXT = '夫天地者，万物之逆旅也；光阴者，百代之过客
 export const poems: Poem[] = [
   { id: 'qian-chibi-fu', title: '前赤壁赋', author: '苏轼', dynasty: '宋', text: P1_TEXT },
   { id: 'jiang-jin-jiu', title: '将进酒', author: '李白', dynasty: '唐', text: P_JIANGJIN_TEXT },
+  { id: 'bu-di-hou-fu-ju', title: '不第后赋菊', author: '黄巢', dynasty: '唐', text: P_JUHUA_TEXT },
   { id: 'shuidiao-getou', title: '水调歌头', author: '苏轼', dynasty: '宋', text: P_SHUIDIAO_TEXT },
   { id: 'ji-chengtian-si-yeyou', title: '记承天寺夜游', author: '苏轼', dynasty: '宋', text: P3_TEXT },
   { id: 'chunye-yan-taohua-yuan-xu', title: '春夜宴从弟桃花园序', author: '李白', dynasty: '唐', text: P4_TEXT },
