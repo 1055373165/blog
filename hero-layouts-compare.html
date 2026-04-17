@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CinematicHero · 布局方案对比</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fafaf7;
+    --card: #ffffff;
+    --ink: #1c1917;
+    --ink-soft: #44403c;
+    --ink-mute: #78716c;
+    --ink-faint: #a8a29e;
+    --line: #e7e5e4;
+    --line-soft: #f5f5f4;
+    --accent: #c2a05a;
+    --video-bg: linear-gradient(135deg, #2a2320 0%, #111 60%, #0a0806 100%);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+  }
+  .serif { font-family: "Noto Serif SC", "Songti SC", "SimSun", serif; }
+
+  /* ───── Page shell ───── */
+  .page {
+    max-width: 1480px;
+    margin: 0 auto;
+    padding: 56px 48px 96px;
+  }
+  .page-title {
+    font-family: "Noto Serif SC", serif;
+    font-size: 32px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+    margin: 0 0 6px;
+  }
+  .page-sub {
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    margin: 0 0 40px;
+  }
+
+  /* ───── Grid of mockups ───── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+  }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px 20px 24px;
+    position: relative;
+  }
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .tag {
+    font-size: 11px;
+    letter-spacing: 0.35em;
+    color: var(--accent);
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+  .card-title {
+    font-family: "Noto Serif SC", serif;
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--ink);
+    margin: 0;
+  }
+  .card-note {
+    font-size: 12px;
+    color: var(--ink-mute);
+    line-height: 1.65;
+    margin: 8px 0 18px;
+    max-width: 62ch;
+  }
+
+  /* ───── Shared mockup primitives ───── */
+  .stage {
+    background: #fbfaf6;
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .row {
+    display: flex;
+    gap: 6%;
+    align-items: center;
+  }
+  .video {
+    flex: 0 0 47%;
+    aspect-ratio: 16 / 10;
+    background: var(--video-bg);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+  .video::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 38% 55%, rgba(90,140,200,0.35), rgba(30,40,60,0.1) 45%, transparent 70%);
+  }
+  .video::after {
+    content: "";
+    position: absolute;
+    left: 26%;
+    top: 34%;
+    width: 32%;
+    aspect-ratio: 1/1;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #d8a878, #6a4428 55%, #180c06 95%);
+    box-shadow: 0 0 40px rgba(120,60,20,0.4);
+    opacity: 0.85;
+  }
+  .text-col {
+    flex: 0 0 47%;
+    min-width: 0;
+  }
+
+  /* Title stack — editorial default */
+  .t-stack .t-title {
+    font-family: "Noto Serif SC", serif;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    color: var(--ink);
+    margin: 0 0 6px;
+  }
+  .t-stack .t-author {
+    font-family: "Noto Serif SC", serif;
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    color: var(--ink-mute);
+    margin: 0;
+  }
+  .t-stack .t-rule {
+    width: 30px;
+    height: 1px;
+    background: linear-gradient(to right, var(--ink-faint), transparent);
+    margin: 10px 0 14px;
+  }
+
+  .poem {
+    font-family: "Noto Serif SC", serif;
+    font-size: 10.5px;
+    line-height: 1.95;
+    color: var(--ink-soft);
+    letter-spacing: 0.06em;
+    white-space: pre-line;
+    position: relative;
+  }
+  .poem .orb {
+    float: right;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, rgba(180,160,100,0.45), rgba(180,160,100,0.1) 60%, transparent 75%);
+    margin: 4px 0 4px 8px;
+    shape-outside: circle(50%);
+  }
+
+  .switcher {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    font-family: "Noto Serif SC", serif;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    color: var(--ink-faint);
+  }
+  .switcher .counter {
+    font-size: 9px;
+    letter-spacing: 0.4em;
+    color: var(--ink-mute);
+  }
+
+  /* ───── Variation-specific styles ───── */
+
+  /* CURRENT — reference */
+  .cur .t-stack { margin-bottom: 0; }
+
+  /* A — shared top header band spanning both columns */
+  .opt-a .header-band {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+  }
+  .opt-a .header-band .left,
+  .opt-a .header-band .right {
+    flex: 0 0 47%;
+  }
+  .opt-a .header-band .right { text-align: left; }
+  .opt-a .header-band .t-title {
+    font-family: "Noto Serif SC", serif;
+    font-size: 22px;
+    font-weight: 400;
+    letter-spacing: 0.28em;
+    margin: 0 0 4px;
+  }
+  .opt-a .header-band .t-author {
+    font-family: "Noto Serif SC", serif;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--ink-mute);
+    margin: 0;
+  }
+  .opt-a .header-band .left .tiny-label {
+    font-family: "Inter", sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.4em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+
+  /* B — same position, smaller tighter title */
+  .opt-b .t-stack .t-title {
+    font-size: 16px;
+    letter-spacing: 0.15em;
+  }
+  .opt-b .t-stack .t-author {
+    font-size: 9.5px;
+    letter-spacing: 0.28em;
+  }
+  .opt-b .t-stack .t-rule {
+    width: 22px;
+    margin: 8px 0 12px;
+  }
+
+  /* C — vertical spine on left side of text area */
+  .opt-c .text-col {
+    display: flex;
+    gap: 14px;
+  }
+  .opt-c .spine {
+    flex: 0 0 24px;
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 4px;
+  }
+  .opt-c .spine-title {
+    writing-mode: vertical-rl;
+    font-family: "Noto Serif SC", serif;
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: 0.35em;
+    color: var(--ink);
+    margin: 0;
+  }
+  .opt-c .spine-author {
+    writing-mode: vertical-rl;
+    font-family: "Noto Serif SC", serif;
+    font-size: 9px;
+    letter-spacing: 0.35em;
+    color: var(--ink-mute);
+    margin-top: 12px;
+  }
+  .opt-c .body {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* ───── Verdict block ───── */
+  .verdict {
+    margin-top: 48px;
+    border-top: 1px solid var(--line);
+    padding-top: 32px;
+  }
+  .verdict h2 {
+    font-family: "Noto Serif SC", serif;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    margin: 0 0 16px;
+  }
+  .verdict-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  @media (max-width: 900px) { .verdict-grid { grid-template-columns: 1fr; } }
+  .v-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px 18px;
+    background: var(--card);
+  }
+  .v-card h3 {
+    font-family: "Noto Serif SC", serif;
+    margin: 0 0 8px;
+    font-size: 14px;
+    letter-spacing: 0.15em;
+    font-weight: 500;
+  }
+  .v-card .pros, .v-card .cons {
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--ink-soft);
+    margin: 6px 0 0;
+    padding-left: 16px;
+  }
+  .v-card .label {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    margin-top: 10px;
+    display: block;
+  }
+  .v-card .best {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--line);
+    font-size: 12px;
+    color: var(--ink);
+  }
+  .v-card .best strong { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1 class="page-title">CinematicHero · 题头布局方案对比</h1>
+  <p class="page-sub">Current · Option A · Option B · Option C</p>
+
+  <div class="grid">
+
+    <!-- ───── CURRENT ───── -->
+    <div class="card cur">
+      <div class="card-head">
+        <span class="tag">Current</span>
+      </div>
+      <h3 class="card-title">当前方案 · 题头位于文字区上方</h3>
+      <p class="card-note">
+        "题目 → 作者 → 分隔线 → 正文"的书卷式垂直节奏。仪式感最强，但视频与文字区的几何对称性偏弱。
+      </p>
+      <div class="stage">
+        <div class="row">
+          <div class="video"></div>
+          <div class="text-col">
+            <div class="t-stack">
+              <h4 class="t-title">将 进 酒</h4>
+              <p class="t-author">唐 · 李白</p>
+              <div class="t-rule"></div>
+            </div>
+            <div class="poem">
+              <span class="orb"></span>君不见，黄河之水天上来，奔流到海不复回。
+君不见，高堂明镜悲白发，朝如青丝暮成雪。
+人生得意须尽欢，莫使金樽空对月。
+天生我材必有用，千金散尽还复来。
+            </div>
+            <div class="switcher">
+              <span>◂ 前赤壁赋</span>
+              <span class="counter">贰 · 伍</span>
+              <span>水调歌头 ▸</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── OPTION A ───── -->
+    <div class="card opt-a">
+      <div class="card-head">
+        <span class="tag" style="color:#5a7d9e;">Option A</span>
+      </div>
+      <h3 class="card-title">方案 A · 共享题头带</h3>
+      <p class="card-note">
+        题目上升至顶部横贯整行，与视频区顶部对齐，形成水平"题头带"。左右两个盒子成为完美几何对称体，仪式感通过分隔线保留。
+      </p>
+      <div class="stage">
+        <div class="header-band">
+          <div class="left">
+            <span class="tiny-label">Cinematic Hero · 名篇精选</span>
+          </div>
+          <div class="right">
+            <h4 class="t-title">将 进 酒</h4>
+            <p class="t-author">唐 · 李白</p>
+          </div>
+        </div>
+        <div class="row">
+          <div class="video"></div>
+          <div class="text-col">
+            <div class="poem">
+              <span class="orb"></span>君不见，黄河之水天上来，奔流到海不复回。
+君不见，高堂明镜悲白发，朝如青丝暮成雪。
+人生得意须尽欢，莫使金樽空对月。
+天生我材必有用，千金散尽还复来。
+烹羊宰牛且为乐，会须一饮三百杯。
+            </div>
+            <div class="switcher">
+              <span>◂ 前赤壁赋</span>
+              <span class="counter">贰 · 伍</span>
+              <span>水调歌头 ▸</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── OPTION B ───── -->
+    <div class="card opt-b">
+      <div class="card-head">
+        <span class="tag" style="color:#7a8a5a;">Option B</span>
+      </div>
+      <h3 class="card-title">方案 B · 题头收敛</h3>
+      <p class="card-note">
+        保持题头位置不变，但字号与字距全面收紧（28→22px，0.3em→0.15em）。视觉重量下降，正文相对更"高"，整体更轻盈现代。改动最小。
+      </p>
+      <div class="stage">
+        <div class="row">
+          <div class="video"></div>
+          <div class="text-col">
+            <div class="t-stack">
+              <h4 class="t-title">将进酒</h4>
+              <p class="t-author">唐 · 李白</p>
+              <div class="t-rule"></div>
+            </div>
+            <div class="poem">
+              <span class="orb"></span>君不见，黄河之水天上来，奔流到海不复回。
+君不见，高堂明镜悲白发，朝如青丝暮成雪。
+人生得意须尽欢，莫使金樽空对月。
+天生我材必有用，千金散尽还复来。
+烹羊宰牛且为乐，会须一饮三百杯。
+            </div>
+            <div class="switcher">
+              <span>◂ 前赤壁赋</span>
+              <span class="counter">贰 · 伍</span>
+              <span>水调歌头 ▸</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── OPTION C ───── -->
+    <div class="card opt-c">
+      <div class="card-head">
+        <span class="tag" style="color:#9e6a4a;">Option C</span>
+      </div>
+      <h3 class="card-title">方案 C · 线装书脊</h3>
+      <p class="card-note">
+        文字区左侧留出 24px 竖带，题名与作者纵向排版，宛如线装书脊。视频与正文真正成为对称矩形，文学感与对称美兼得。古籍气质最重。
+      </p>
+      <div class="stage">
+        <div class="row">
+          <div class="video"></div>
+          <div class="text-col">
+            <div class="spine">
+              <h4 class="spine-title">将进酒</h4>
+              <div class="spine-author">唐 · 李白</div>
+            </div>
+            <div class="body">
+              <div class="poem">
+                <span class="orb"></span>君不见，黄河之水天上来，奔流到海不复回。
+君不见，高堂明镜悲白发，朝如青丝暮成雪。
+人生得意须尽欢，莫使金樽空对月。
+天生我材必有用，千金散尽还复来。
+烹羊宰牛且为乐，会须一饮三百杯。
+              </div>
+              <div class="switcher">
+                <span>◂ 前赤壁赋</span>
+                <span class="counter">贰 · 伍</span>
+                <span>水调歌头 ▸</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ───── Verdict ───── -->
+  <section class="verdict">
+    <h2>· 我的推荐 ·</h2>
+    <div class="verdict-grid">
+
+      <div class="v-card">
+        <h3>方案 A · 共享题头带</h3>
+        <span class="label">优点</span>
+        <ul class="pros">
+          <li>几何对称最完美</li>
+          <li>题头成为整屏焦点</li>
+          <li>保留分隔线仪式感</li>
+        </ul>
+        <span class="label">代价</span>
+        <ul class="cons">
+          <li>正文顶部要让位给题头</li>
+          <li>小屏垂直空间占用增加</li>
+        </ul>
+        <div class="best">适合：<strong>想要"封面感"的用户</strong></div>
+      </div>
+
+      <div class="v-card">
+        <h3>方案 B · 题头收敛</h3>
+        <span class="label">优点</span>
+        <ul class="pros">
+          <li>改动最小、风险最低</li>
+          <li>正文权重提升</li>
+          <li>不影响 pretext 月球交互</li>
+        </ul>
+        <span class="label">代价</span>
+        <ul class="cons">
+          <li>对称问题未根本解决</li>
+          <li>仪式感略减弱</li>
+        </ul>
+        <div class="best">适合：<strong>增量改进、不想动结构</strong>（推荐起点）</div>
+      </div>
+
+      <div class="v-card">
+        <h3>方案 C · 线装书脊</h3>
+        <span class="label">优点</span>
+        <ul class="pros">
+          <li>古籍气质最浓</li>
+          <li>视频/正文真·对称矩形</li>
+          <li>竖排题名具东方美感</li>
+        </ul>
+        <span class="label">代价</span>
+        <ul class="cons">
+          <li>竖排字符在小屏可读性需额外测试</li>
+          <li>需调整 pretext 布局起点（+24px 左缩进）</li>
+        </ul>
+        <div class="best">适合：<strong>追求最强文学气质</strong>（个人偏好首选）</div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
