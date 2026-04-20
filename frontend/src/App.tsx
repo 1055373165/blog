@@ -52,6 +52,7 @@ import NotebookLMImportCenter from './pages/admin/NotebookLMImportCenter';
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
 import PerformanceOptimizer from './components/PerformanceOptimizer';
+import AmbientPlayer from './components/AmbientPlayer';
 
 // 创建 QueryClient 实例
 const queryClient = new QueryClient({
@@ -86,9 +87,14 @@ function RouterContent() {
     return pathsToDisableSkipLinks.includes(location.pathname);
   };
 
+  // 是否为管理后台路径 - 后台不显示音乐播放器
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   return (
     <PerformanceOptimizer enableSkipLinks={!shouldDisableSkipLinks()}>
       <div className={`min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300 ${getFontSizeClass()}`}>
+        {/* 全局环境音乐播放器 — 位于 Suspense 之外，保证路由切换时不卸载 */}
+        {!isAdminRoute && <AmbientPlayer />}
         <Suspense fallback={<LoadingSpinner />}>
         <Routes>
             {/* 前台路由 */}
