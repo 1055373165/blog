@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /* ──────────────────────────────────────────────────────────
    AmbientPlayer
@@ -16,6 +16,7 @@ const TRACK = {
 
 export default function AmbientPlayer() {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const playPromiseRef = useRef<Promise<void> | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [visible, setVisible] = useState(false);
 
@@ -25,46 +26,72 @@ export default function AmbientPlayer() {
     return () => clearTimeout(timer);
   }, []);
 
-  /* ── Attempt autoplay; fall back to first-click ─────── */
-  const tryPlay = useCallback(() => {
+  /* ── Sync state with native audio events ────────────── */
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    a.addEventListener('play', onPlay);
+    a.addEventListener('pause', onPause);
+    return () => {
+      a.removeEventListener('play', onPlay);
+      a.removeEventListener('pause', onPause);
+    };
+  }, []);
+
+  /* ── Safe play / pause (handles pending play promise) ─ */
+  const safePlay = async () => {
     const a = audioRef.current;
     if (!a) return;
     a.volume = 0.35;
-    a.play()
-      .then(() => {
-        setIsPlaying(true);
-      })
-      .catch(() => {
-        // Browser blocked autoplay — we'll wait for user gesture
-      });
-  }, []);
+    try {
+      playPromiseRef.current = a.play();
+      await playPromiseRef.current;
+    } catch {
+      // Autoplay blocked or play was aborted — ignore
+    } finally {
+      playPromiseRef.current = null;
+    }
+  };
 
+  const safePause = async () => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (playPromiseRef.current) {
+      try {
+        await playPromiseRef.current;
+      } catch {
+        // play was aborted — expected when pausing quickly
+      }
+    }
+    a.pause();
+  };
+
+  /* ── Attempt autoplay on mount; fall back to 1st click ─ */
   useEffect(() => {
-    tryPlay();
+    safePlay();
 
-    const onFirstClick = () => {
-      if (!audioRef.current?.paused) return;
-      tryPlay();
+    const onFirstClick = (e: MouseEvent) => {
+      const a = audioRef.current;
+      if (!a || !a.paused) return;
+      // Skip clicks on the player itself — it has its own handler
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-ambient-player]')) return;
+      safePlay();
       document.removeEventListener('click', onFirstClick);
     };
 
     document.addEventListener('click', onFirstClick);
     return () => document.removeEventListener('click', onFirstClick);
-  }, [tryPlay]);
+  }, []);
 
   /* ── Toggle play/pause ──────────────────────────────── */
   const toggle = () => {
     const a = audioRef.current;
     if (!a) return;
-
-    if (a.paused) {
-      a.play().then(() => {
-        setIsPlaying(true);
-      });
-    } else {
-      a.pause();
-      setIsPlaying(false);
-    }
+    if (a.paused) safePlay();
+    else safePause();
   };
 
   return (
@@ -72,6 +99,7 @@ export default function AmbientPlayer() {
       <audio ref={audioRef} src={TRACK.src} loop preload="auto" />
 
       <div
+        data-ambient-player
         className={`fixed bottom-6 left-6 z-50 flex items-center gap-3 rounded-full
           border border-black/[0.06] bg-white/70 px-4 py-2.5 shadow-lg backdrop-blur-xl
           transition-all duration-700 ease-out cursor-pointer select-none

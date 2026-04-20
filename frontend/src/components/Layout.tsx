@@ -2,6 +2,7 @@ import { Outlet, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import FloatingNavigation from './FloatingNavigation';
 import AnimatedBackground from './AnimatedBackground';
+import AmbientPlayer from './AmbientPlayer';
 import { BlogStats } from '../types';
 import { statsApi } from '../api';
 import policeBadge from '../assets/公安备案编号图标.png';
@@ -42,6 +43,9 @@ export default function Layout() {
       
       {/* 悬浮导航 */}
       <FloatingNavigation />
+
+      {/* 全局环境音乐播放器 */}
+      <AmbientPlayer />
       
       {/* 传统导航栏已移除 - 统一使用悬浮导航 */}
 
