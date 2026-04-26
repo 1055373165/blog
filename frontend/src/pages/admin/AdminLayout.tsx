@@ -25,7 +25,6 @@ export default function AdminLayout() {
 
   const navigation = [
     { name: '仪表板', href: '/admin', icon: 'dashboard' },
-    { name: 'NotebookLM 导入', href: '/admin/notebooklm', icon: 'notebooklm' },
     { name: '文章管理', href: '/admin/articles', icon: 'document' },
     { name: 'AI资产管理', href: '/admin/prompts', icon: 'prompt' },
     { name: '算法学习', href: '/admin/algorithms', icon: 'algorithm' },
@@ -54,12 +53,6 @@ export default function AdminLayout() {
       dashboard: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
-        </svg>
-      ),
-      notebooklm: (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h9a2 2 0 002-2V8.414a2 2 0 00-.586-1.414l-3.414-3.414A2 2 0 009.586 3H4zm5 1.5v3A1.5 1.5 0 0010.5 9h3v6a.5.5 0 01-.5.5H4a.5.5 0 01-.5-.5V5A.5.5 0 014 4.5h5z" />
-          <path d="M6 11.25a.75.75 0 01.75-.75h3.5a.75.75 0 010 1.5h-3.5a.75.75 0 01-.75-.75zm0 3a.75.75 0 01.75-.75h5.5a.75.75 0 010 1.5h-5.5a.75.75 0 01-.75-.75z" />
         </svg>
       ),
       document: (

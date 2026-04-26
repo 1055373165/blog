@@ -1,46 +1,49 @@
+import { useCallback } from 'react';
 import { articlesApi } from '../api';
 import { Article, PaginatedResponse } from '../types';
 import ArticleList from '../components/ArticleList';
 
 export default function ArticlesPage() {
-  const fetchArticles = async (page: number, limit: number): Promise<PaginatedResponse<Article>> => {
-    const response = await articlesApi.getArticles({
-      page,
-      limit,
-      is_published: true,
-      sort_by: 'published_at',
-      sort_order: 'desc',
-    });
-    // 后端实际响应：{ data: { articles: [...], pagination: { page, limit, total, total_pages } } }
-    // 注意分页字段嵌套在 data.pagination 里，而不是 data 顶层 —— 之前直接读
-    // response.data.total_pages 永远是 undefined，导致 totalPages 默认 1，分页器被隐藏。
-    const data: any = response.data || {};
-    const pagination = data.pagination || {};
-    const total = pagination.total ?? data.total ?? 0;
-    const totalPages = pagination.total_pages ?? data.total_pages ?? 1;
-    const currentPage = pagination.page ?? data.current_page ?? page;
-    const perPage = pagination.limit ?? data.per_page ?? limit;
-    const articles = (data.articles || []) as Article[];
+  // fetchArticles 仅在 page/limit 变更时被 ArticleList 调用，
+  // 后端列表接口现已剔除 content 字段（excerpt 由 SQL CASE WHEN 自动 fallback），
+  // 单次响应从 ~2.3MB 降到 < 100KB。
+  const fetchArticles = useCallback(
+    async (page: number, limit: number): Promise<PaginatedResponse<Article>> => {
+      const response = await articlesApi.getArticles({
+        page,
+        limit,
+        is_published: true,
+        sort_by: 'published_at',
+        sort_order: 'desc',
+      });
+      const data: any = response.data || {};
+      const pagination = data.pagination || {};
+      const total = pagination.total ?? data.total ?? 0;
+      const totalPages = pagination.total_pages ?? data.total_pages ?? 1;
+      const currentPage = pagination.page ?? data.current_page ?? page;
+      const perPage = pagination.limit ?? data.per_page ?? limit;
+      const articles = (data.articles || []) as Article[];
 
-    return {
-      articles,
-      total,
-      current_page: currentPage,
-      per_page: perPage,
-      total_pages: totalPages,
-      // 保持兼容性别名（ArticleList 读这些 camelCase 字段）
-      items: articles,
-      page: currentPage,
-      limit: perPage,
-      totalPages,
-      pagination: {
-        current: currentPage,
+      return {
+        articles,
         total,
+        current_page: currentPage,
         per_page: perPage,
         total_pages: totalPages,
-      },
-    };
-  };
+        items: articles,
+        page: currentPage,
+        limit: perPage,
+        totalPages,
+        pagination: {
+          current: currentPage,
+          total,
+          per_page: perPage,
+          total_pages: totalPages,
+        },
+      };
+    },
+    []
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -68,7 +71,7 @@ export default function ArticlesPage() {
         showStats={true}
         showPagination={true}
         initialPage={1}
-        pageSize={100}
+        pageSize={24}
       />
     </div>
   );

@@ -8,6 +8,9 @@ import { categoriesApi } from '../../api/categories';
 import { tagsApi } from '../../api/tags';
 import CategoryTreeView from '../../components/admin/CategoryTreeView';
 import ArticleSelectorModal from '../../components/admin/ArticleSelectorModal';
+import { getThumbnailUrl } from '../../utils/imageUtils';
+
+const PAGE_SIZE = 20;
 
 export default function ArticleList() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -106,12 +109,9 @@ export default function ArticleList() {
     try {
       setTagsLoading(true);
       const response = await tagsApi.getTags({ limit: 100, sort_by: 'articles_count', sort_order: 'desc' });
-      console.log('Tags API Response:', response); // Debug log
       if (response.success && response.data) {
         const data = response.data as PaginatedResponse<Tag>;
-        const tags = data.tags || data.items || [];
-        console.log('Loaded tags:', tags); // Debug log
-        setTags(tags);
+        setTags(data.tags || data.items || []);
       }
     } catch (err) {
       console.error('Failed to load tags:', err);
@@ -127,7 +127,7 @@ export default function ArticleList() {
 
       const queryParams = new URLSearchParams({
         page: currentPage.toString(),
-        limit: '10',
+        limit: String(PAGE_SIZE),
       });
 
       if (filter !== 'all') {
@@ -655,8 +655,12 @@ export default function ArticleList() {
                           {article.cover_image && (
                             <div className="flex-shrink-0 w-12 h-12 mr-4">
                               <img
-                                src={article.cover_image}
+                                src={getThumbnailUrl(article.cover_image) || article.cover_image}
                                 alt=""
+                                loading="lazy"
+                                decoding="async"
+                                width={48}
+                                height={48}
                                 className="w-12 h-12 rounded-xl object-cover shadow-soft"
                               />
                             </div>

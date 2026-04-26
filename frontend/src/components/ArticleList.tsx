@@ -170,9 +170,11 @@ export default function ArticleList({
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors mb-2">
                   {article.title}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
-                  {article.excerpt || article.content?.substring(0, 150) + '...'}
-                </p>
+                {article.excerpt && (
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
+                    {article.excerpt}
+                  </p>
+                )}
                 <div className="flex items-center justify-between">
                   {showTags && article.tags && article.tags.length > 0 && (
                     <div className="flex gap-1">
@@ -211,9 +213,11 @@ export default function ArticleList({
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors line-clamp-2 mb-2">
               {article.title}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 text-xs line-clamp-3 mb-3">
-              {article.excerpt || article.content?.substring(0, 80) + '...'}
-            </p>
+            {article.excerpt && (
+              <p className="text-gray-600 dark:text-gray-400 text-xs line-clamp-3 mb-3">
+                {article.excerpt}
+              </p>
+            )}
             <div className="flex items-center justify-between text-xs">
               {showCategory && article.category ? (
                 <span className="px-1.5 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded">

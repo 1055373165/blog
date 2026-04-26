@@ -1,67 +1,30 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { BlogStats } from '../../types';
-import LoadingSpinner from '../../components/LoadingSpinner';
 import { statsApi } from '../../api';
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<BlogStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadStats();
-  }, []);
-
-  const loadStats = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
+  // 用 useQuery：5min staleTime + 30min gcTime（已在 App.tsx 全局 QueryClient 配置）。
+  // 切换到其它 admin 页面再回来不会重发请求；请求未完成时直接渲染骨架（数字位 0），
+  // 避免整页 spinner 阻塞 UX。
+  const { data: stats, error } = useQuery<BlogStats>({
+    queryKey: ['admin', 'stats'],
+    queryFn: async () => {
       const response = await statsApi.getStats();
-      
-      if (response.success) {
-        // 将API返回的数据映射到组件需要的格式
-        const apiData = response.data;
-        setStats({
-          totalArticles: apiData.totalArticles || 0,
-          publishedArticles: apiData.publishedArticles || 0,
-          draftArticles: apiData.draftArticles || 0,
-          totalViews: apiData.totalViews || 0,
-          totalLikes: apiData.totalLikes || 0,
-          totalCategories: apiData.totalCategories || 0,
-          totalTags: apiData.totalTags || 0,
-          totalSeries: apiData.totalSeries || 0,
-        });
-      } else {
-        throw new Error('获取统计数据失败');
-      }
-    } catch (err: any) {
-      console.error('Failed to load stats:', err);
-      setError(err.message || '加载统计数据失败');
-      // Use mock data as fallback
-      setStats({
-        totalArticles: 4,
-        publishedArticles: 4,
-        draftArticles: 0,
-        totalViews: 1250,
-        totalLikes: 89,
-        totalCategories: 3,
-        totalTags: 8,
-        totalSeries: 2,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
+      if (!response.success) throw new Error('获取统计数据失败');
+      const d = response.data;
+      return {
+        totalArticles: d.totalArticles || 0,
+        publishedArticles: d.publishedArticles || 0,
+        draftArticles: d.draftArticles || 0,
+        totalViews: d.totalViews || 0,
+        totalLikes: d.totalLikes || 0,
+        totalCategories: d.totalCategories || 0,
+        totalTags: d.totalTags || 0,
+        totalSeries: d.totalSeries || 0,
+      };
+    },
+  });
 
   return (
     <div className="p-6">
@@ -103,7 +66,7 @@ export default function AdminDashboard() {
             <svg className="w-5 h-5 text-red-400 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
-            <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+            <p className="text-sm text-red-800 dark:text-red-200">{(error as Error).message || '加载统计数据失败'}</p>
           </div>
         </div>
       )}
@@ -218,25 +181,6 @@ export default function AdminDashboard() {
                 <p className="text-xs text-gray-500 dark:text-gray-400">创建一篇新的博客文章</p>
               </div>
               <svg className="w-4 h-4 text-gray-400 group-hover:text-go-500 transition-colors" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
-            </Link>
-
-            <Link
-              to="/admin/notebooklm"
-              className="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-300 dark:hover:border-amber-600 transition-all duration-200 hover:shadow-medium group"
-            >
-              <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center mr-4 group-hover:bg-amber-200 dark:group-hover:bg-amber-800 transition-colors">
-                <svg className="w-5 h-5 text-amber-700 dark:text-amber-300" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h9a2 2 0 002-2V8.414a2 2 0 00-.586-1.414l-3.414-3.414A2 2 0 009.586 3H4zm5 1.5v3A1.5 1.5 0 0010.5 9h3v6a.5.5 0 01-.5.5H4a.5.5 0 01-.5-.5V5A.5.5 0 014 4.5h5z" />
-                  <path d="M6 11.25a.75.75 0 01.75-.75h3.5a.75.75 0 010 1.5h-3.5a.75.75 0 01-.75-.75zm0 3a.75.75 0 01.75-.75h5.5a.75.75 0 010 1.5h-5.5a.75.75 0 01-.75-.75z" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">NotebookLM 导入</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">整理链接、文件和视频号导入任务</p>
-              </div>
-              <svg className="w-4 h-4 text-gray-400 group-hover:text-amber-500 transition-colors" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
               </svg>
             </Link>

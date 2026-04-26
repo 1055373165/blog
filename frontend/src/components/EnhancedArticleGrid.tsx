@@ -186,7 +186,7 @@ const EnhancedArticleCard = ({
 
             {/* 阅读时间 */}
             <div className="absolute top-2 right-2 px-2 py-1 bg-black/50 backdrop-blur-sm rounded text-white text-xs font-medium">
-              {Math.ceil((article.content?.length || 1000) / 200)}分钟
+              {article.reading_time || 1}分钟
             </div>
 
             {/* 分类标签 */}
@@ -208,9 +208,9 @@ const EnhancedArticleCard = ({
           </h3>
 
           {/* 摘要 */}
-          {showExcerpt && (
+          {showExcerpt && article.excerpt && (
             <p className="text-gray-600 dark:text-gray-300 text-base line-clamp-3 mb-4 leading-relaxed">
-              {article.excerpt || article.content?.substring(0, 200) + '...'}
+              {article.excerpt}
             </p>
           )}
 
@@ -342,7 +342,7 @@ const EnhancedArticleCard = ({
 
             {/* 阅读时间指示器 */}
             <div className="absolute top-4 right-4 px-2 py-1 bg-black/50 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
-              {Math.ceil((article.content?.length || 1000) / 200)} 分钟阅读
+              {article.reading_time || 1} 分钟阅读
             </div>
 
             {/* 分类标签 */}
@@ -364,9 +364,9 @@ const EnhancedArticleCard = ({
           </h3>
 
           {/* 摘要 */}
-          {showExcerpt && (
+          {showExcerpt && article.excerpt && (
             <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 mb-4 leading-relaxed min-h-[2.8rem]">
-              {article.excerpt || article.content?.substring(0, 150) + '...'}
+              {article.excerpt}
             </p>
           )}
 
