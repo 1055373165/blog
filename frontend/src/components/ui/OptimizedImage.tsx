@@ -155,14 +155,15 @@ export default function OptimizedImage({
   }, [src]);
 
   const handleImageLoad = useCallback(() => {
-    console.log(`✅ 图片加载成功: ${src}`);
     setLoaded(true);
     handleLoad();
     onLoad?.();
-  }, [handleLoad, onLoad, src]);
+  }, [handleLoad, onLoad]);
 
   const handleImageError = useCallback(() => {
-    console.error(`❌ 图片加载失败: ${src}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`图片加载失败: ${src}`);
+    }
     setError(true);
     onError?.();
   }, [onError, src]);
@@ -238,6 +239,7 @@ export default function OptimizedImage({
           sizes={sizes}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
+          {...(priority ? { fetchpriority: 'high' as any } : {})}
           onLoad={handleImageLoad}
           onError={handleImageError}
           className={clsx(

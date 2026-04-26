@@ -1,9 +1,8 @@
-import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, memo, lazy, Suspense } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { articlesApi } from '../api';
 import { Article } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
-import MarkdownRenderer from '../components/MarkdownRenderer';
 import OptimizedImage from '../components/ui/OptimizedImage';
 import CollapsibleTOC from '../components/reading/CollapsibleTOC';
 import StripTOC from '../components/reading/StripTOC';
@@ -11,9 +10,36 @@ import SubstackLayout from '../components/SubstackLayout';
 import { useReadingTime } from '../hooks/useReadingTime';
 import { formatDate } from '../utils';
 import '../styles/foldable-article.css';
-import EnhancedArticleGrid from '../components/EnhancedArticleGrid';
-import { CommentSection } from '../components/comments';
 import { useAuth } from '../contexts/AuthContext';
+
+// 重组件按需懒加载：MarkdownRenderer 拖着 markdown-vendor / mermaid / 代码高亮等大依赖，
+// CommentSection / EnhancedArticleGrid 是次要内容，先把首屏头图 + 标题 + 作者信息打出来再装。
+const MarkdownRenderer = lazy(() => import('../components/MarkdownRenderer'));
+const EnhancedArticleGrid = lazy(() => import('../components/EnhancedArticleGrid'));
+const CommentSection = lazy(() =>
+  import('../components/comments').then((m) => ({ default: m.CommentSection }))
+);
+
+// 仅当下方区域接近视口时才挂载子树，避免首屏一次性触发 comments / related 的请求和大组件
+const useNearViewport = (rootMargin = '300px') => {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    if (near || !ref.current) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setNear(true);
+          obs.disconnect();
+        }
+      },
+      { rootMargin }
+    );
+    obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [near, rootMargin]);
+  return { ref, near };
+};
 
 // Memoized RelatedArticles component to prevent unnecessary re-renders
 const RelatedArticles = memo(({ articles }: { articles: Article[] }) => {
@@ -65,8 +91,6 @@ export default function ArticlePage() {
   const handleReadingComplete = useCallback(() => {
     if (!hasCompletedReading) {
       setHasCompletedReading(true);
-      console.log('文章阅读完成！');
-      // 可以在这里添加阅读完成的统计或其他逻辑
     }
   }, [hasCompletedReading]);
   
@@ -107,35 +131,29 @@ export default function ArticlePage() {
       setLoading(true);
       setError(null);
 
-      // 获取文章详情
+      // 获取文章详情 — 这是首屏唯一阻塞请求，保持 await
       const articleResponse = await articlesApi.getArticleBySlug(slug);
       const articleData = articleResponse.data;
-      
+
       // 使用单次批量状态更新减少重渲染
       setArticle(articleData);
       setLikes_count(articleData.likes_count);
       setLiked(articleData.is_liked || false);
       setViews_count(articleData.views_count || 0);
 
-      // 增加浏览量 - 异步进行，不影响页面渲染
-      articlesApi.incrementViews(articleData.id.toString())
-        .then(() => {
-          setViews_count(prev => prev + 1);
-        })
-        .catch(error => {
-          console.error('Failed to increment views:', error);
-        });
-
-      // 获取相关文章 - 使用 Set 优化去重逻辑
-      try {
-        const relatedResponse = await articlesApi.getRelatedArticles(articleData.id.toString(), 4);
-        const articles = relatedResponse.data || [];
-        const uniqueArticles = Array.from(
-          new Map(articles.map((article: Article) => [article.id, article])).values()
-        );
-        setRelatedArticles(uniqueArticles);
-      } catch (relatedError) {
-        console.error('Failed to load related articles:', relatedError);
+      // 把"统计/推荐"等非首屏数据推到 idle 时段：
+      // - 浏览量自增不影响阅读体验，可以拖到 LCP 之后
+      // - 相关文章在页面底部，由下方 IntersectionObserver 控制实际请求时机
+      const articleIdStr = articleData.id.toString();
+      const fireSecondary = () => {
+        articlesApi.incrementViews(articleIdStr)
+          .then(() => setViews_count((prev) => prev + 1))
+          .catch(() => {});
+      };
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(fireSecondary, { timeout: 2000 });
+      } else {
+        setTimeout(fireSecondary, 800);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '文章加载失败');
@@ -143,6 +161,29 @@ export default function ArticlePage() {
       setLoading(false);
     }
   }, [slug, navigate]);
+
+  // 相关文章：仅在用户滚动到底部附近时才发起请求，避免和 LCP 抢带宽
+  const { ref: relatedSentinelRef, near: relatedInView } = useNearViewport('400px');
+  useEffect(() => {
+    if (!relatedInView || !article || relatedArticles.length > 0) return;
+    let cancelled = false;
+    articlesApi.getRelatedArticles(article.id.toString(), 4)
+      .then((res) => {
+        if (cancelled) return;
+        const list = res.data || [];
+        const unique = Array.from(
+          new Map(list.map((a: Article) => [a.id, a])).values()
+        );
+        setRelatedArticles(unique);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [relatedInView, article, relatedArticles.length]);
+
+  // 评论区也走同样的延迟挂载策略
+  const { ref: commentsSentinelRef, near: commentsInView } = useNearViewport('400px');
 
   useEffect(() => {
     loadArticle();
@@ -436,41 +477,63 @@ export default function ArticlePage() {
                 aria-label="文章内容"
               >
                 {memoizedContent?.content && (
-                  <MarkdownRenderer 
-                    content={memoizedContent.content}
-                    className="prose prose-lg max-w-none
-                               prose-headings:text-gray-900 dark:prose-headings:text-white prose-headings:font-heading
-                               prose-a:text-go-600 dark:prose-a:text-go-400 prose-a:font-medium hover:prose-a:text-go-700
-                               prose-strong:text-gray-900 dark:prose-strong:text-white prose-strong:font-semibold
-                               prose-code:text-go-700 dark:prose-code:text-go-300
-                               prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 prose-pre:rounded-xl prose-pre:shadow-soft
-                               prose-blockquote:border-go-500 prose-blockquote:bg-go-50/50 dark:prose-blockquote:bg-go-900/20 prose-blockquote:py-1.5 prose-blockquote:px-4
-                               prose-img:rounded-xl prose-img:shadow-medium prose-img:border prose-img:border-gray-200 dark:prose-img:border-gray-700
-                               prose-table:border prose-table:border-gray-200 dark:prose-table:border-gray-700 prose-table:rounded-lg prose-table:overflow-hidden
-                               prose-th:bg-go-50 dark:prose-th:bg-go-900/30 prose-th:text-go-900 dark:prose-th:text-go-100
-                               prose-td:border-gray-200 dark:prose-td:border-gray-700"
-                  />
+                  <Suspense fallback={
+                    <div className="space-y-3 animate-pulse">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-11/12" />
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-10/12" />
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-9/12" />
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-11/12" />
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-8/12" />
+                    </div>
+                  }>
+                    <MarkdownRenderer
+                      content={memoizedContent.content}
+                      className="prose prose-lg max-w-none
+                                 prose-headings:text-gray-900 dark:prose-headings:text-white prose-headings:font-heading
+                                 prose-a:text-go-600 dark:prose-a:text-go-400 prose-a:font-medium hover:prose-a:text-go-700
+                                 prose-strong:text-gray-900 dark:prose-strong:text-white prose-strong:font-semibold
+                                 prose-code:text-go-700 dark:prose-code:text-go-300
+                                 prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 prose-pre:rounded-xl prose-pre:shadow-soft
+                                 prose-blockquote:border-go-500 prose-blockquote:bg-go-50/50 dark:prose-blockquote:bg-go-900/20 prose-blockquote:py-1.5 prose-blockquote:px-4
+                                 prose-img:rounded-xl prose-img:shadow-medium prose-img:border prose-img:border-gray-200 dark:prose-img:border-gray-700
+                                 prose-table:border prose-table:border-gray-200 dark:prose-table:border-gray-700 prose-table:rounded-lg prose-table:overflow-hidden
+                                 prose-th:bg-go-50 dark:prose-th:bg-go-900/30 prose-th:text-go-900 dark:prose-th:text-go-100
+                                 prose-td:border-gray-200 dark:prose-td:border-gray-700"
+                    />
+                  </Suspense>
                 )}
               </div>
             </div>
             </article>
 
-            {/* Comment Section */}
+            {/* Comment Section — 滚动接近时再挂载，避免首屏拉评论列表 */}
             {article && (
-              <div className="mt-16">
-                <CommentSection
-                  articleId={article.id.toString()}
-                  currentUserId={user?.id}
-                  maxDepth={3}
-                  pageSize={10}
-                  autoFocus={false}
-                  showNewCommentForm={true}
-                />
+              <div className="mt-16" ref={commentsSentinelRef}>
+                {commentsInView ? (
+                  <Suspense fallback={<div className="h-32 animate-pulse bg-gray-100 dark:bg-gray-800/50 rounded-xl" />}>
+                    <CommentSection
+                      articleId={article.id.toString()}
+                      currentUserId={user?.id}
+                      maxDepth={3}
+                      pageSize={10}
+                      autoFocus={false}
+                      showNewCommentForm={true}
+                    />
+                  </Suspense>
+                ) : (
+                  <div className="h-32" aria-hidden="true" />
+                )}
               </div>
             )}
 
-            {/* Related Articles - 使用优化的组件 */}
-            <RelatedArticles articles={relatedArticles} />
+            {/* Related Articles — 同样延迟到接近视口才请求 */}
+            <div ref={relatedSentinelRef}>
+              {relatedArticles.length > 0 && (
+                <Suspense fallback={null}>
+                  <RelatedArticles articles={relatedArticles} />
+                </Suspense>
+              )}
+            </div>
 
           {/* Navigation */}
           <div className="mt-16 flex justify-center">
