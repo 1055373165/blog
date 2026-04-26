@@ -21,7 +21,6 @@ type Config struct {
 	CORS       CORSConfig
 	App        AppConfig
 	Claude     ClaudeConfig
-	NotebookLM NotebookLMConfig
 	AssetSync  AssetSyncConfig
 }
 
@@ -98,18 +97,6 @@ type ClaudeConfig struct {
 	BaseURL string
 	Model   string
 	Timeout time.Duration
-}
-
-// NotebookLMConfig NotebookLM 同步配置
-type NotebookLMConfig struct {
-	Enabled       bool
-	MockMode      bool
-	APIBaseURL    string
-	ProjectNumber string
-	Location      string
-	AccessToken   string
-	AgentToken    string
-	Timeout       time.Duration
 }
 
 // AssetSyncConfig AI资产 GitHub 同步配置
@@ -209,16 +196,6 @@ func LoadConfig() error {
 			BaseURL: getEnv("CLAUDE_BASE_URL", "https://api.anthropic.com"),
 			Model:   getEnv("CLAUDE_MODEL", "claude-3-haiku-20240307"),
 			Timeout: getDurationEnv("CLAUDE_TIMEOUT", "30s"),
-		},
-		NotebookLM: NotebookLMConfig{
-			Enabled:       getBoolEnv("NOTEBOOKLM_ENABLED", false),
-			MockMode:      getBoolEnv("NOTEBOOKLM_MOCK_MODE", getEnv("ENVIRONMENT", "development") != "production"),
-			APIBaseURL:    getEnv("NOTEBOOKLM_API_BASE_URL", "https://discoveryengine.googleapis.com"),
-			ProjectNumber: getEnv("NOTEBOOKLM_PROJECT_NUMBER", ""),
-			Location:      getEnv("NOTEBOOKLM_LOCATION", "global"),
-			AccessToken:   getEnv("NOTEBOOKLM_ACCESS_TOKEN", ""),
-			AgentToken:    getEnv("NOTEBOOKLM_AGENT_TOKEN", ""),
-			Timeout:       getDurationEnv("NOTEBOOKLM_TIMEOUT", "60s"),
 		},
 		AssetSync: AssetSyncConfig{
 			Enabled:        getBoolEnv("AI_ASSET_GITHUB_ENABLED", true),

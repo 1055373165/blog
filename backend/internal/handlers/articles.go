@@ -74,7 +74,21 @@ func GetArticles(c *gin.Context) {
 	}
 
 	// 构建查询
+	// 列表接口绝不返回 content（longtext，单篇可达数百 KB），否则一次列表请求会传输几 MB。
+	// 使用 SELECT 显式列出列表所需字段；excerpt 为空时回退取 content 前 300 字（在 SQL 层完成，避免传输）。
+	const listSelect = `articles.id, articles.created_at, articles.updated_at, articles.deleted_at,
+		articles.title, articles.slug,
+		CASE WHEN articles.excerpt IS NULL OR articles.excerpt = ''
+		     THEN LEFT(articles.content, 300)
+		     ELSE articles.excerpt END AS excerpt,
+		articles.cover_image, articles.is_published, articles.is_draft,
+		articles.published_at, articles.reading_time, articles.views_count, articles.likes_count,
+		articles.author_id, articles.author_display_name, articles.category_id,
+		articles.series_id, articles.series_order, articles.submission_id,
+		articles.meta_title, articles.meta_description, articles.meta_keywords`
+
 	query := database.DB.Model(&models.Article{}).
+		Select(listSelect).
 		Preload("Author").
 		Preload("Category").
 		Preload("Tags").

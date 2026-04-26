@@ -158,28 +158,6 @@ func main() {
 			skills.DELETE("/:id", handlers.DeleteSkill)
 		}
 
-		notebooklm := api.Group("/notebooklm")
-		notebooklm.Use(middleware.AdminRequired())
-		{
-			notebooklm.GET("/notebooks", handlers.ListNotebookLMNotebooks)
-			notebooklm.POST("/notebooks", handlers.CreateNotebookLMNotebook)
-			notebooklm.GET("/import-jobs", handlers.ListNotebookLMImportJobs)
-			notebooklm.GET("/import-jobs/:id", handlers.GetNotebookLMImportJob)
-			notebooklm.POST("/import-jobs", handlers.CreateNotebookLMImportJob)
-			notebooklm.POST("/import-jobs/:id/retry", handlers.RetryNotebookLMImportJob)
-			notebooklm.POST("/import-jobs/:id/sync", handlers.SyncNotebookLMImportJob)
-			notebooklm.POST("/import-jobs/:id/artifacts", handlers.UploadNotebookLMImportArtifact)
-		}
-
-		notebooklmAgent := api.Group("/notebooklm/agent")
-		{
-			notebooklmAgent.GET("/import-jobs/:id", handlers.GetNotebookLMImportJobForAgent)
-			notebooklmAgent.POST("/import-jobs/:id/capture-start", handlers.StartNotebookLMCapture)
-			notebooklmAgent.POST("/import-jobs/:id/events", handlers.ReportNotebookLMCaptureEvent)
-			notebooklmAgent.POST("/import-jobs/:id/artifacts", handlers.UploadNotebookLMArtifactFromAgent)
-			notebooklmAgent.POST("/import-jobs/:id/finalize", handlers.FinalizeNotebookLMCapture)
-		}
-
 		// 算法资产管理路由（管理员）
 		algorithmAssets := api.Group("/algorithm-assets")
 		algorithmAssets.Use(middleware.AdminRequired())
