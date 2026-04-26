@@ -377,8 +377,18 @@ func GetRelatedArticles(c *gin.Context) {
 		return
 	}
 
+	// 卡片所需的轻量字段集合 — 显式排除 content / meta_*，避免把整篇正文打到响应里
+	// 单篇正文可能 50KB ~ 1MB+，相关文章 4-5 篇会让响应膨胀到几 MB，对详情页 TTI 影响很大。
+	cardSelect := []string{
+		"id", "title", "slug", "excerpt", "cover_image", "is_published",
+		"published_at", "reading_time", "views_count", "likes_count",
+		"author_id", "category_id", "series_id", "series_order",
+		"created_at", "updated_at",
+	}
+
 	// 构建相关文章查询
 	query := database.DB.Model(&models.Article{}).
+		Select(cardSelect).
 		Preload("Author").
 		Preload("Category").
 		Preload("Tags").
@@ -412,13 +422,20 @@ func GetRelatedArticles(c *gin.Context) {
 			tagIDs = append(tagIDs, tag.ID)
 		}
 
+		// 注意：JOIN 之后 Select 的列要带表前缀，避免 ambiguous
+		joinedSelect := make([]string, len(cardSelect))
+		for i, col := range cardSelect {
+			joinedSelect[i] = "articles." + col
+		}
+
 		var tagArticles []models.Article
 		tagQuery := database.DB.Model(&models.Article{}).
+			Select(joinedSelect).
 			Preload("Author").
 			Preload("Category").
 			Preload("Tags").
 			Joins("JOIN article_tags ON article_tags.article_id = articles.id").
-			Where("articles.id != ? AND articles.is_published = ? AND article_tags.tag_id IN ?", 
+			Where("articles.id != ? AND articles.is_published = ? AND article_tags.tag_id IN ?",
 				article.ID, true, tagIDs).
 			Group("articles.id").
 			Order("COUNT(article_tags.tag_id) DESC, articles.created_at DESC").
