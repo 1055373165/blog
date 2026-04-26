@@ -2,6 +2,7 @@ import { memo, startTransition, useCallback, useEffect, useRef, useState } from 
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Article, CreateArticleInput, UpdateArticleInput, Category, Tag, Series } from '../../types';
 import { articlesApi, categoriesApi, tagsApi } from '../../api';
+import type { ArticleVersionMeta } from '../../api/articles';
 import seriesApi from '../../services/seriesApi';
 import ByteMDEditor from '../../components/ByteMDEditor';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -193,10 +194,18 @@ export default function ArticleEditor() {
   // Editor height calculation
   const [editorHeight, setEditorHeight] = useState(1400);
 
+  // 版本管理状态
+  const [versions, setVersions] = useState<ArticleVersionMeta[]>([]);
+  const [showVersionsPanel, setShowVersionsPanel] = useState(false);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [versionActionId, setVersionActionId] = useState<number | null>(null);
+  const [creatingStable, setCreatingStable] = useState(false);
+
   // Load article data if editing
   useEffect(() => {
     if (isEditing && id) {
       loadArticle(id);
+      loadVersions(id);
     }
     loadFormData();
   }, [id, isEditing]);
@@ -426,6 +435,130 @@ export default function ArticleEditor() {
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+  // ===== 版本管理 =====
+  const loadVersions = async (articleId: string) => {
+    try {
+      setVersionsLoading(true);
+      const res = await articlesApi.listVersions(articleId);
+      if (res.success) {
+        setVersions(res.data?.versions || []);
+      }
+    } catch (err) {
+      // 静默失败，不阻塞编辑
+    } finally {
+      setVersionsLoading(false);
+    }
+  };
+
+  const handleCreateStableVersion = async () => {
+    if (!isEditing || !id) {
+      setError('请先保存文章后再创建稳定版本');
+      return;
+    }
+    if (!user?.is_admin) {
+      setError('只有管理员才能创建版本');
+      return;
+    }
+    try {
+      setCreatingStable(true);
+      setError(null);
+      // 先把当前编辑器内容落库（保证稳定版本快照来自当前最新内容）
+      await handleSave(true);
+      const label = window.prompt('请输入稳定版本标签（可选）', '稳定版') || '稳定版';
+      const res = await articlesApi.createStableVersion(id, label);
+      if (res.success) {
+        await loadVersions(id);
+        setShowVersionsPanel(true);
+      } else {
+        setError(res.error || '创建稳定版本失败');
+      }
+    } catch (err: any) {
+      setError(err?.error || err?.message || '创建稳定版本失败');
+    } finally {
+      setCreatingStable(false);
+    }
+  };
+
+  const handleRestoreVersion = async (vid: number, versionNo: number) => {
+    if (!isEditing || !id) return;
+    if (!window.confirm(`确认恢复到 v${versionNo}？\n当前内容会自动备份为一个新版本，可随时再切回。`)) return;
+    try {
+      setVersionActionId(vid);
+      setError(null);
+      const res = await articlesApi.restoreVersion(id, vid);
+      if (res.success) {
+        await loadArticle(id);
+        await loadVersions(id);
+      } else {
+        setError(res.error || '恢复失败');
+      }
+    } catch (err: any) {
+      setError(err?.error || err?.message || '恢复失败');
+    } finally {
+      setVersionActionId(null);
+    }
+  };
+
+  const handlePreviewVersion = async (vid: number) => {
+    if (!isEditing || !id) return;
+    try {
+      setVersionActionId(vid);
+      const res = await articlesApi.getVersion(id, vid);
+      if (res.success) {
+        const content = res.data?.content || '';
+        const w = window.open('', '_blank');
+        if (w) {
+          w.document.title = `版本预览 v${res.data?.version_no} - ${res.data?.title || ''}`;
+          w.document.body.style.fontFamily = 'system-ui,sans-serif';
+          w.document.body.style.padding = '24px';
+          w.document.body.style.whiteSpace = 'pre-wrap';
+          w.document.body.textContent = content;
+        }
+      }
+    } catch (err: any) {
+      setError(err?.error || err?.message || '预览失败');
+    } finally {
+      setVersionActionId(null);
+    }
+  };
+
+  const handleRenameVersion = async (vid: number, currentLabel: string) => {
+    if (!isEditing || !id) return;
+    const next = window.prompt('请输入新的版本标签', currentLabel);
+    if (next == null || next.trim() === currentLabel) return;
+    try {
+      setVersionActionId(vid);
+      const res = await articlesApi.renameVersion(id, vid, next.trim());
+      if (res.success) {
+        await loadVersions(id);
+      } else {
+        setError(res.error || '改名失败');
+      }
+    } catch (err: any) {
+      setError(err?.error || err?.message || '改名失败');
+    } finally {
+      setVersionActionId(null);
+    }
+  };
+
+  const handleDeleteVersion = async (vid: number, versionNo: number) => {
+    if (!isEditing || !id) return;
+    if (!window.confirm(`确认删除 v${versionNo}？此操作不可恢复。`)) return;
+    try {
+      setVersionActionId(vid);
+      const res = await articlesApi.deleteVersion(id, vid);
+      if (res.success) {
+        await loadVersions(id);
+      } else {
+        setError(res.error || '删除失败');
+      }
+    } catch (err: any) {
+      setError(err?.error || err?.message || '删除失败');
+    } finally {
+      setVersionActionId(null);
     }
   };
 
@@ -719,6 +852,32 @@ export default function ArticleEditor() {
                 {saving ? '保存中...' : '保存'}
               </button>
 
+              {isEditing && (
+                <>
+                  <button
+                    onClick={handleCreateStableVersion}
+                    disabled={creatingStable || saving || !user?.is_admin}
+                    className="btn btn-outline flex items-center space-x-2"
+                    title="将当前内容固化为一个稳定版本，便于随时切回"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                    <span>{creatingStable ? '创建中...' : '设为稳定版本'}</span>
+                  </button>
+                  <button
+                    onClick={() => setShowVersionsPanel(v => !v)}
+                    className="btn btn-outline flex items-center space-x-2"
+                    title="查看历史版本"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>版本 ({versions.length})</span>
+                  </button>
+                </>
+              )}
+
               <button
                 onClick={handlePublish}
                 disabled={saving || !user?.is_admin}
@@ -735,6 +894,104 @@ export default function ArticleEditor() {
           </div>
         </div>
       </div>
+
+      {/* Versions Panel */}
+      {isEditing && showVersionsPanel && (
+        <div className="px-6 mt-4">
+          <div className="card p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                历史版本 {versionsLoading && <span className="text-xs text-gray-400 ml-2">加载中...</span>}
+              </h3>
+              <button
+                onClick={() => id && loadVersions(id)}
+                className="text-xs text-go-600 dark:text-go-400 hover:underline"
+              >
+                刷新
+              </button>
+            </div>
+            {versions.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
+                暂无历史版本。点击"设为稳定版本"创建第一个版本。
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                      <th className="py-2 pr-3">版本</th>
+                      <th className="py-2 pr-3">标签</th>
+                      <th className="py-2 pr-3">类型</th>
+                      <th className="py-2 pr-3">标题</th>
+                      <th className="py-2 pr-3">字符数</th>
+                      <th className="py-2 pr-3">时间</th>
+                      <th className="py-2 pr-3 text-right">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {versions.map((v) => {
+                      const busy = versionActionId === v.id;
+                      return (
+                        <tr key={v.id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
+                          <td className="py-2 pr-3 font-mono">v{v.version_no}</td>
+                          <td className="py-2 pr-3">{v.label || '-'}</td>
+                          <td className="py-2 pr-3">
+                            {v.is_stable && (
+                              <span className="inline-block px-2 py-0.5 rounded text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                                稳定
+                              </span>
+                            )}
+                            {v.is_autosave && (
+                              <span className="inline-block px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 ml-1">
+                                自动
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2 pr-3 max-w-xs truncate" title={v.title}>{v.title}</td>
+                          <td className="py-2 pr-3 text-gray-500">{v.content_length}</td>
+                          <td className="py-2 pr-3 text-gray-500">
+                            {new Date(v.created_at).toLocaleString('zh-CN')}
+                          </td>
+                          <td className="py-2 pr-3 text-right space-x-2 whitespace-nowrap">
+                            <button
+                              onClick={() => handlePreviewVersion(v.id)}
+                              disabled={busy}
+                              className="text-xs text-go-600 dark:text-go-400 hover:underline disabled:opacity-50"
+                            >
+                              预览
+                            </button>
+                            <button
+                              onClick={() => handleRestoreVersion(v.id, v.version_no)}
+                              disabled={busy}
+                              className="text-xs text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-50"
+                            >
+                              恢复
+                            </button>
+                            <button
+                              onClick={() => handleRenameVersion(v.id, v.label)}
+                              disabled={busy}
+                              className="text-xs text-gray-600 dark:text-gray-400 hover:underline disabled:opacity-50"
+                            >
+                              改名
+                            </button>
+                            <button
+                              onClick={() => handleDeleteVersion(v.id, v.version_no)}
+                              disabled={busy}
+                              className="text-xs text-red-600 dark:text-red-400 hover:underline disabled:opacity-50"
+                            >
+                              删除
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (

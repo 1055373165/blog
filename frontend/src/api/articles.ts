@@ -166,4 +166,51 @@ export const articlesApi = {
   async publishDraft(id: string) {
     return apiClient.patch<Article>(`/api/articles/${id}/publish-draft`);
   },
+
+  // ===== 文章版本管理 =====
+  async listVersions(articleId: string | number) {
+    return apiClient.get<{ versions: ArticleVersionMeta[] }>(`/api/articles/${articleId}/versions`);
+  },
+  async getVersion(articleId: string | number, vid: string | number) {
+    return apiClient.get<ArticleVersion>(`/api/articles/${articleId}/versions/${vid}`);
+  },
+  async createStableVersion(articleId: string | number, label?: string) {
+    return apiClient.post<ArticleVersion>(`/api/articles/${articleId}/versions`, { label });
+  },
+  async restoreVersion(articleId: string | number, vid: string | number) {
+    return apiClient.post<{ restored_from_version_no: number }>(
+      `/api/articles/${articleId}/versions/${vid}/restore`,
+      {}
+    );
+  },
+  async renameVersion(articleId: string | number, vid: string | number, label: string) {
+    return apiClient.patch<void>(`/api/articles/${articleId}/versions/${vid}`, { label });
+  },
+  async deleteVersion(articleId: string | number, vid: string | number) {
+    return apiClient.delete<void>(`/api/articles/${articleId}/versions/${vid}`);
+  },
 };
+
+// 版本管理类型 — 与后端 article_versions 表对应
+export interface ArticleVersionMeta {
+  id: number;
+  version_no: number;
+  label: string;
+  is_stable: boolean;
+  is_autosave: boolean;
+  title: string;
+  content_length: number;
+  created_by: number;
+  created_at: string;
+}
+
+export interface ArticleVersion extends ArticleVersionMeta {
+  article_id: number;
+  slug: string;
+  excerpt: string;
+  content: string;
+  cover_image: string;
+  meta_title: string;
+  meta_description: string;
+  meta_keywords: string;
+}
