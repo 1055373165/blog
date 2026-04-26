@@ -203,8 +203,8 @@ export default function ArticleList() {
 
   const handleTogglePublish = async (article: Article) => {
     try {
+      // ⚠️ 只发要改的字段：列表接口不返回 content，全展开会把 content="" 推回后端，导致正文被清空。
       await apiClient.put(`/api/articles/${article.id}`, {
-        ...article,
         is_published: !article.is_published,
       });
 

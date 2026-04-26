@@ -489,9 +489,22 @@ func UpdateArticle(c *gin.Context) {
 	}
 
 	if req.Content != nil {
-		updates["content"] = *req.Content
+		// ⚠️ 安全护栏：拒绝把"非空 content"覆盖为空。
+		// 历史教训：列表接口剔除 content 字段后，前端如果用 {...article} 全展开发 PUT，
+		// 会把 content="" 推回后端，导致正文被清空。这里硬性拒绝该模式。
+		// 真正想清空 content 的极少场景，请在 body 显式传 "force_clear_content": true（暂未实现）。
+		newContent := *req.Content
+		if newContent == "" && article.Content != "" {
+			// 此时事务尚未开启（tx 在下面 Begin），直接 return 即可。
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"error":   "拒绝将非空文章内容覆盖为空。请检查前端是否在未携带完整 content 的情况下提交了 PUT 请求。",
+			})
+			return
+		}
+		updates["content"] = newContent
 		// 重新计算阅读时间
-		updates["reading_time"] = utils.CalculateReadingTime(*req.Content)
+		updates["reading_time"] = utils.CalculateReadingTime(newContent)
 	}
 
 	if req.Excerpt != nil {
