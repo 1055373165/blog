@@ -11,23 +11,33 @@ export default function ArticlesPage() {
       sort_by: 'published_at',
       sort_order: 'desc',
     });
-    // 返回符合PaginatedResponse<Article>接口的数据格式
+    // 后端实际响应：{ data: { articles: [...], pagination: { page, limit, total, total_pages } } }
+    // 注意分页字段嵌套在 data.pagination 里，而不是 data 顶层 —— 之前直接读
+    // response.data.total_pages 永远是 undefined，导致 totalPages 默认 1，分页器被隐藏。
+    const data: any = response.data || {};
+    const pagination = data.pagination || {};
+    const total = pagination.total ?? data.total ?? 0;
+    const totalPages = pagination.total_pages ?? data.total_pages ?? 1;
+    const currentPage = pagination.page ?? data.current_page ?? page;
+    const perPage = pagination.limit ?? data.per_page ?? limit;
+    const articles = (data.articles || []) as Article[];
+
     return {
-      articles: response.data.articles || [],
-      total: response.data.total || 0,
-      current_page: response.data.current_page || page,
-      per_page: response.data.per_page || limit,
-      total_pages: response.data.total_pages || 1,
-      // 保持兼容性别名
-      items: response.data.articles || [],
-      page: response.data.current_page || page,
-      limit: response.data.per_page || limit,
-      totalPages: response.data.total_pages || 1,
+      articles,
+      total,
+      current_page: currentPage,
+      per_page: perPage,
+      total_pages: totalPages,
+      // 保持兼容性别名（ArticleList 读这些 camelCase 字段）
+      items: articles,
+      page: currentPage,
+      limit: perPage,
+      totalPages,
       pagination: {
-        current: response.data.current_page || page,
-        total: response.data.total || 0,
-        per_page: response.data.per_page || limit,
-        total_pages: response.data.total_pages || 1,
+        current: currentPage,
+        total,
+        per_page: perPage,
+        total_pages: totalPages,
       },
     };
   };
