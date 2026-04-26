@@ -1,21 +1,30 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type PluginOption } from 'vite'
 import react from '@vitejs/plugin-react'
-import { visualizer } from 'rollup-plugin-visualizer'
 
 const ANALYZE = process.env.ANALYZE === '1'
 
-export default defineConfig(({ mode }) => ({
-  plugins: [
-    react(),
-    ANALYZE &&
-      visualizer({
-        filename: 'dist/stats.html',
-        template: 'treemap',
-        gzipSize: true,
-        brotliSize: true,
-        open: false,
-      }),
-  ].filter(Boolean),
+// Bundle 可视化插件按需启用：
+// 只有显式 `ANALYZE=1 npm run build` 时才尝试 require，避免把它塞进 lockfile / 生产镜像。
+// 想用之前先临时安装：`npm i -D rollup-plugin-visualizer`（用完可直接卸载）。
+async function loadVisualizerPlugin(): Promise<PluginOption | null> {
+  if (!ANALYZE) return null
+  try {
+    const mod = await import('rollup-plugin-visualizer')
+    return mod.visualizer({
+      filename: 'dist/stats.html',
+      template: 'treemap',
+      gzipSize: true,
+      brotliSize: true,
+      open: false,
+    }) as unknown as PluginOption
+  } catch {
+    console.warn('[vite] ANALYZE=1 但未安装 rollup-plugin-visualizer，跳过 bundle 分析')
+    return null
+  }
+}
+
+export default defineConfig(async ({ mode }) => ({
+  plugins: [react(), await loadVisualizerPlugin()].filter(Boolean) as PluginOption[],
   server: {
     port: 5173,
     strictPort: true,
