@@ -36,7 +36,7 @@ export default function ArticleList({
   showStats = true,
   showPagination = true,
   initialPage = 1,
-  pageSize = 10,
+  pageSize = 20,
   defaultViewMode = 'card',
   allowViewModeChange = true,
 }: ArticleListProps) {

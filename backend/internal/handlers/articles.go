@@ -66,8 +66,11 @@ func GetArticles(c *gin.Context) {
 	if page < 1 {
 		page = 1
 	}
-	if limit < 1 || limit > 100 {
+	// limit 兜底：非法值回退默认；超出上限封顶（而非静默回退到 10，避免大 limit 被误降级）
+	if limit < 1 {
 		limit = 10
+	} else if limit > 100 {
+		limit = 100
 	}
 
 	// 构建查询

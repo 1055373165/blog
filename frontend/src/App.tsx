@@ -1,52 +1,54 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 
-// 页面组件
+// 前台首屏 / 高频访问页面 — 保持 eager，避免首屏 LCP 受 chunk 拉取影响
 import HomePage from './pages/HomePage';
 import ArticlesPage from './pages/ArticlesPage';
-import ArticlePage from './pages/ArticlePage';
-import BlogsPage from './pages/BlogsPage';
-import BlogPage from './pages/BlogPage';
-import CategoriesPage from './pages/CategoriesPage';
-import CategoryPage from './pages/CategoryPage';
-import TagsPage from './pages/TagsPage';
-import TagPage from './pages/TagPage';
-import SeriesPage from './pages/SeriesPage';
-import SeriesDetailPage from './pages/SeriesDetailPage';
-import QuotesPage from './pages/QuotesPage';
-import QuoteDetailPage from './pages/QuoteDetailPage';
-import SearchPage from './pages/SearchPage';
-import ArticlePreviewPage from './pages/ArticlePreviewPage';
-import ProfilePage from './pages/ProfilePage';
-import SubmissionsPage from './pages/SubmissionsPage';
-import SubmissionDetailPage from './pages/SubmissionDetailPage';
-import SubmissionEditorPage from './pages/SubmissionEditorPage';
 import NotFoundPage from './pages/NotFoundPage';
 
-// 管理后台页面
-import AdminLayout from './pages/admin/AdminLayout';
-import AdminLogin from './pages/admin/AdminLogin';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import ArticleList from './pages/admin/ArticleList';
-import ArticleEditor from './pages/admin/ArticleEditor';
-import AdminCategories from './pages/admin/AdminCategories';
-import AdminTags from './pages/admin/AdminTags';
-import AdminSeries from './pages/admin/AdminSeries';
-import AdminBlogs from './pages/admin/AdminBlogs';
-import BlogEditor from './pages/admin/BlogEditor';
-import AdminUsers from './pages/admin/AdminUsers';
-import AdminSubmissions from './pages/admin/AdminSubmissions';
-import AdminStudyPlans from './pages/admin/AdminStudyPlans';
-import AdminReminders from './pages/admin/AdminReminders';
-import AdminPrompts from './pages/admin/AdminPrompts';
-import PromptEditor from './pages/admin/PromptEditor';
-import SkillEditor from './pages/admin/SkillEditor';
-import AdminAlgorithms from './pages/admin/AdminAlgorithms';
-import AlgorithmAssetDetail from './pages/admin/AlgorithmAssetDetail';
-import NotebookLMImportCenter from './pages/admin/NotebookLMImportCenter';
+// 二级前台页面 — lazy，按需加载
+const ArticlePage = lazy(() => import('./pages/ArticlePage'));
+const BlogsPage = lazy(() => import('./pages/BlogsPage'));
+const BlogPage = lazy(() => import('./pages/BlogPage'));
+const CategoriesPage = lazy(() => import('./pages/CategoriesPage'));
+const CategoryPage = lazy(() => import('./pages/CategoryPage'));
+const TagsPage = lazy(() => import('./pages/TagsPage'));
+const TagPage = lazy(() => import('./pages/TagPage'));
+const SeriesPage = lazy(() => import('./pages/SeriesPage'));
+const SeriesDetailPage = lazy(() => import('./pages/SeriesDetailPage'));
+const QuotesPage = lazy(() => import('./pages/QuotesPage'));
+const QuoteDetailPage = lazy(() => import('./pages/QuoteDetailPage'));
+const SearchPage = lazy(() => import('./pages/SearchPage'));
+const ArticlePreviewPage = lazy(() => import('./pages/ArticlePreviewPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const SubmissionsPage = lazy(() => import('./pages/SubmissionsPage'));
+const SubmissionDetailPage = lazy(() => import('./pages/SubmissionDetailPage'));
+const SubmissionEditorPage = lazy(() => import('./pages/SubmissionEditorPage'));
+
+// 管理后台 — 全部 lazy
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminArticleList = lazy(() => import('./pages/admin/ArticleList'));
+const ArticleEditor = lazy(() => import('./pages/admin/ArticleEditor'));
+const AdminCategories = lazy(() => import('./pages/admin/AdminCategories'));
+const AdminTags = lazy(() => import('./pages/admin/AdminTags'));
+const AdminSeries = lazy(() => import('./pages/admin/AdminSeries'));
+const AdminBlogs = lazy(() => import('./pages/admin/AdminBlogs'));
+const BlogEditor = lazy(() => import('./pages/admin/BlogEditor'));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminSubmissions = lazy(() => import('./pages/admin/AdminSubmissions'));
+const AdminStudyPlans = lazy(() => import('./pages/admin/AdminStudyPlans'));
+const AdminReminders = lazy(() => import('./pages/admin/AdminReminders'));
+const AdminPrompts = lazy(() => import('./pages/admin/AdminPrompts'));
+const PromptEditor = lazy(() => import('./pages/admin/PromptEditor'));
+const SkillEditor = lazy(() => import('./pages/admin/SkillEditor'));
+const AdminAlgorithms = lazy(() => import('./pages/admin/AdminAlgorithms'));
+const AlgorithmAssetDetail = lazy(() => import('./pages/admin/AlgorithmAssetDetail'));
+const NotebookLMImportCenter = lazy(() => import('./pages/admin/NotebookLMImportCenter'));
 
 // 布局组件
 import Layout from './components/Layout';
@@ -61,6 +63,7 @@ const queryClient = new QueryClient({
       retry: 1,
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // 5分钟
+      gcTime: 30 * 60 * 1000, // 30分钟
     },
   },
 });
@@ -69,12 +72,12 @@ const queryClient = new QueryClient({
 function RouterContent() {
   const location = useLocation();
   const { settings } = useTheme();
-  
+
   // 根据字号设置获取基础字号类
   const getFontSizeClass = () => {
     const sizeMap = {
       sm: 'text-sm',
-      base: 'text-base', 
+      base: 'text-base',
       lg: 'text-lg',
       xl: 'text-xl',
     };
@@ -127,7 +130,7 @@ function RouterContent() {
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
-              <Route path="articles" element={<ArticleList />} />
+              <Route path="articles" element={<AdminArticleList />} />
               <Route path="articles/new" element={<ArticleEditor />} />
               <Route path="articles/:id/edit" element={<ArticleEditor />} />
               <Route path="blogs" element={<AdminBlogs />} />

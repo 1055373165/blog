@@ -3,7 +3,6 @@ import { Article, Tag } from '../types';
 import { formatDistanceToNow, format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { getAvatarUrl } from '../utils/avatarUtils';
 import { clsx } from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
@@ -159,6 +158,9 @@ const EnhancedArticleCard = ({
                 alt=""
                 loading={index < 3 ? 'eager' : 'lazy'}
                 decoding="async"
+                width={192}
+                height={128}
+                {...(index < 3 ? { fetchpriority: 'high' as any } : {})}
                 className={clsx(
                   'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',
                   thumbnailLoaded ? 'opacity-100' : 'opacity-0'
@@ -172,6 +174,9 @@ const EnhancedArticleCard = ({
               alt={article.title}
               loading={index < 3 ? 'eager' : 'lazy'}
               decoding="async"
+              width={192}
+              height={128}
+              {...(index < 3 ? { fetchpriority: 'high' as any } : { fetchpriority: 'low' as any })}
               className={clsx(
                 'absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-105',
                 fullImageLoaded ? 'opacity-100' : 'opacity-0'
@@ -303,6 +308,9 @@ const EnhancedArticleCard = ({
                 alt=""
                 loading={index < 3 ? 'eager' : 'lazy'}
                 decoding="async"
+                width={640}
+                height={360}
+                {...(index < 3 ? { fetchpriority: 'high' as any } : {})}
                 className={clsx(
                   'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',
                   thumbnailLoaded ? 'opacity-100' : 'opacity-0'
@@ -316,6 +324,9 @@ const EnhancedArticleCard = ({
               alt={article.title}
               loading={index < 3 ? 'eager' : 'lazy'}
               decoding="async"
+              width={640}
+              height={360}
+              {...(index < 3 ? { fetchpriority: 'high' as any } : { fetchpriority: 'low' as any })}
               className={clsx(
                 'absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110',
                 fullImageLoaded ? 'opacity-100' : 'opacity-0'

@@ -58,7 +58,7 @@ export default function ArticlesPage() {
         showStats={true}
         showPagination={true}
         initialPage={1}
-        pageSize={1000}
+        pageSize={100}
       />
     </div>
   );

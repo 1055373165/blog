@@ -62,7 +62,16 @@ import {
 } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { useTheme } from '../contexts/ThemeContext';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import mermaid from 'mermaid';
+
+// mermaid 体积约 150KB+，仅在文档中真有 ```mermaid 代码块时才动态加载
+type MermaidApi = typeof import('mermaid')['default'];
+let mermaidPromise: Promise<MermaidApi> | null = null;
+const loadMermaid = (): Promise<MermaidApi> => {
+  if (!mermaidPromise) {
+    mermaidPromise = import('mermaid').then((m) => m.default);
+  }
+  return mermaidPromise;
+};
 
 interface MarkdownRendererProps {
   content: string;
@@ -114,11 +123,14 @@ const MermaidDiagram = ({ code, isDark }: { code: string; isDark: boolean }) => 
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const renderDiagram = async () => {
       if (!elementRef.current) return;
 
       try {
-        // Initialize Mermaid with appropriate theme
+        const mermaid = await loadMermaid();
+        if (cancelled || !elementRef.current) return;
+
         mermaid.initialize({
           startOnLoad: false,
           theme: isDark ? 'dark' : 'default',
@@ -128,31 +140,32 @@ const MermaidDiagram = ({ code, isDark }: { code: string; isDark: boolean }) => 
             primaryBorderColor: '#d1d5db',
             lineColor: isDark ? '#6b7280' : '#374151',
             secondaryColor: '#f3f4f6',
-            tertiaryColor: '#fafafa'
+            tertiaryColor: '#fafafa',
           },
           flowchart: {
             useMaxWidth: false,
-            htmlLabels: true
-          }
+            htmlLabels: true,
+          },
         });
 
-        // Generate unique ID for the diagram
         const id = `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-        // Validate and render the diagram
         const { svg } = await mermaid.render(id, code);
 
-        if (elementRef.current) {
+        if (!cancelled && elementRef.current) {
           elementRef.current.innerHTML = svg;
           setError(null);
         }
       } catch (err) {
-        console.error('Mermaid rendering error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to render Mermaid diagram');
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to render Mermaid diagram');
+        }
       }
     };
 
     renderDiagram();
+    return () => {
+      cancelled = true;
+    };
   }, [code, isDark]);
 
   if (error) {

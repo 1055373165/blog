@@ -45,6 +45,11 @@ export default function AmbientPlayer() {
     const a = audioRef.current;
     if (!a) return;
     a.volume = 0.35;
+    // 首次播放才真正加载，避免初始就下载 12MB 文件
+    if (!a.src) {
+      a.src = TRACK.src;
+      a.load();
+    }
     try {
       playPromiseRef.current = a.play();
       await playPromiseRef.current;
@@ -68,9 +73,17 @@ export default function AmbientPlayer() {
     a.pause();
   };
 
-  /* ── Attempt autoplay on mount; fall back to 1st click ─ */
+  /* ── Defer autoplay attempt until idle; fall back to 1st click ─ */
   useEffect(() => {
-    safePlay();
+    // 不在 mount 时立即播放——把昂贵的网络抢占推迟到主线程空闲后
+    const idle =
+      typeof window !== 'undefined' && 'requestIdleCallback' in window
+        ? (cb: () => void) => (window as any).requestIdleCallback(cb, { timeout: 3000 })
+        : (cb: () => void) => setTimeout(cb, 2000);
+
+    const handle = idle(() => {
+      safePlay();
+    });
 
     const onFirstClick = (e: MouseEvent) => {
       const a = audioRef.current;
@@ -83,7 +96,14 @@ export default function AmbientPlayer() {
     };
 
     document.addEventListener('click', onFirstClick);
-    return () => document.removeEventListener('click', onFirstClick);
+    return () => {
+      document.removeEventListener('click', onFirstClick);
+      if (typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        (window as any).cancelIdleCallback(handle);
+      } else {
+        clearTimeout(handle as unknown as number);
+      }
+    };
   }, []);
 
   /* ── Toggle play/pause ──────────────────────────────── */
@@ -96,7 +116,8 @@ export default function AmbientPlayer() {
 
   return (
     <>
-      <audio ref={audioRef} src={TRACK.src} loop preload="auto" />
+      {/* src 在首次播放时通过 safePlay 注入，避免初始页面就下载 12MB */}
+      <audio ref={audioRef} loop preload="none" />
 
       <div
         data-ambient-player

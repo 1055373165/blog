@@ -1,8 +1,21 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { visualizer } from 'rollup-plugin-visualizer'
 
-export default defineConfig({
-  plugins: [react()],
+const ANALYZE = process.env.ANALYZE === '1'
+
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    react(),
+    ANALYZE &&
+      visualizer({
+        filename: 'dist/stats.html',
+        template: 'treemap',
+        gzipSize: true,
+        brotliSize: true,
+        open: false,
+      }),
+  ].filter(Boolean),
   server: {
     port: 5173,
     strictPort: true,
@@ -10,7 +23,111 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
-      }
-    }
-  }
-})
+      },
+    },
+  },
+  esbuild:
+    mode === 'production'
+      ? { drop: ['console', 'debugger'] }
+      : undefined,
+  build: {
+    target: 'es2020',
+    cssCodeSplit: true,
+    sourcemap: false,
+    chunkSizeWarningLimit: 1024,
+    // 自定义 modulepreload：只保留真正首屏需要的 vendor chunk，
+    // 把大型懒加载分块（markdown/syntax/highlight/mermaid/bytemd/tiptap）从首屏 HTML 中剔除，
+    // 它们仅在用户进入对应路由时才按需加载。
+    modulePreload: {
+      polyfill: true,
+      resolveDependencies: (_filename, deps) =>
+        deps.filter(
+          (dep) =>
+            !/(markdown|syntax|highlight|mermaid|bytemd|tiptap|dnd|date)-vendor/.test(dep)
+        ),
+    },
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined
+
+          if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('scheduler')) {
+            return 'react-vendor'
+          }
+          if (id.includes('react-router')) return 'router-vendor'
+          if (id.includes('@tanstack/react-query')) return 'query-vendor'
+          if (id.includes('axios')) return 'http-vendor'
+
+          // Mermaid + 其全部传递依赖 — 单独成块且仅在动态 import 时拉取
+          if (
+            id.includes('/mermaid/') ||
+            id.includes('@mermaid-js') ||
+            id.includes('/dagre') ||
+            id.includes('/graphlib') ||
+            id.includes('/cytoscape') ||
+            id.includes('/elkjs') ||
+            id.includes('/khroma') ||
+            id.includes('/katex') ||
+            id.includes('chevrotain') ||
+            id.includes('/d3') ||
+            id.includes('/dompurify') ||
+            id.includes('@braintree/sanitize-url') ||
+            id.includes('/internmap') ||
+            id.includes('/delaunator') ||
+            id.includes('/robust-predicates') ||
+            id.includes('/ts-dedent') ||
+            id.includes('/stylis')
+          ) {
+            return 'mermaid-vendor'
+          }
+          if (id.includes('react-syntax-highlighter') || id.includes('refractor') || id.includes('prismjs')) {
+            return 'syntax-vendor'
+          }
+          if (id.includes('highlight.js') || id.includes('lowlight')) return 'highlight-vendor'
+
+          if (
+            id.includes('@bytemd') ||
+            id.includes('/bytemd/') ||
+            id.includes('@uiw/react-md-editor') ||
+            id.includes('marked')
+          ) {
+            return 'bytemd-vendor'
+          }
+          if (id.includes('@tiptap') || id.includes('prosemirror')) return 'tiptap-vendor'
+
+          if (
+            id.includes('react-markdown') ||
+            id.includes('remark-') ||
+            id.includes('rehype-') ||
+            id.includes('mdast') ||
+            id.includes('unist') ||
+            id.includes('hast') ||
+            id.includes('micromark') ||
+            id.includes('vfile') ||
+            id.includes('decode-named-character-reference') ||
+            id.includes('character-entities')
+          ) {
+            return 'markdown-vendor'
+          }
+
+          if (
+            id.includes('@headlessui') ||
+            id.includes('@heroicons') ||
+            id.includes('lucide-react') ||
+            id.includes('@floating-ui') ||
+            id.includes('react-photo-view') ||
+            id.includes('yet-another-react-lightbox')
+          ) {
+            return 'ui-vendor'
+          }
+
+          if (id.includes('@dnd-kit')) return 'dnd-vendor'
+          if (id.includes('date-fns')) return 'date-vendor'
+          if (id.includes('@chenglou/pretext')) return 'pretext-vendor'
+
+          return 'vendor'
+        },
+      },
+    },
+  },
+}))

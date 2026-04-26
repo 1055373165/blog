@@ -70,13 +70,11 @@ export function useImagePreloader(
       img.onload = () => {
         cacheEntry.loaded = true;
         cacheEntry.loading = false;
-        console.log(`预加载成功: ${url}`);
         resolve(img);
       };
       img.onerror = () => {
         cacheEntry.error = true;
         cacheEntry.loading = false;
-        console.error(`预加载失败: ${url}`);
         reject(new Error(`Failed to load image: ${url}`));
       };
       img.src = url;
@@ -99,13 +97,7 @@ export function useImagePreloader(
 
     if (newUrls.length === 0) return; // nothing new to load
 
-    const results = await Promise.allSettled(
-      newUrls.map(url => preloadImage(url))
-    );
-
-    const successful = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
-    console.log(`预加载完成: ${successful} 张成功，${failed} 张失败 (跳过 ${urls.length - newUrls.length} 张已缓存)`);
+    await Promise.allSettled(newUrls.map(url => preloadImage(url)));
   }, [enabled, preloadImage]);
 
   // 获取需要预加载的图片索引

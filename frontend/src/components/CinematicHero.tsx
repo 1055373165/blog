@@ -301,6 +301,9 @@ export default function CinematicHero() {
               muted
               playsInline
               autoPlay
+              preload="metadata"
+              disablePictureInPicture
+              disableRemotePlayback
               className="block w-full"
               style={{ opacity: 0 }}
             />

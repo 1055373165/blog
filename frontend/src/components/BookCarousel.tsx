@@ -30,7 +30,7 @@ const fallbackBooks: Book[] = [];
 export default function BookCarousel({
   className = '',
   autoPlay = true,
-  autoPlayInterval = 1500,
+  autoPlayInterval = 4500,
   showControls = true,
   showDots = true,
   useLocalImages = true // 默认使用本地优化
@@ -44,35 +44,10 @@ export default function BookCarousel({
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isMobile, setIsMobile] = useState(false);
   const [isPageVisible, setIsPageVisible] = useState(true);
+  const [isInViewport, setIsInViewport] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
-
-  // 初始化调试信息
-  useEffect(() => {
-    console.log('BookCarousel初始化:', {
-      useLocalImages,
-      dataSource: useLocalImages ? 'local' : 'api',
-      autoPlay,
-      autoPlayInterval,
-      isPlaying,
-      totalBooks,
-      hasBooks,
-      loading,
-      error
-    });
-  }, [useLocalImages, autoPlay, autoPlayInterval, isPlaying, totalBooks, hasBooks, loading, error]);
-
-  // 监听状态变化
-  useEffect(() => {
-    console.log('状态变化:', {
-      isPlaying,
-      isPageVisible,
-      currentIndex,
-      autoPlayInterval,
-      totalBooks
-    });
-  }, [isPlaying, isPageVisible, currentIndex, autoPlayInterval, totalBooks]);
 
   // 使用实际的书籍数据，如果没有数据则使用fallback
   const activeBooks = hasBooks ? books : fallbackBooks;
@@ -85,11 +60,11 @@ export default function BookCarousel({
 
   // 智能图片预加载 - 使用优化后的URLs
   const imageUrls = activeBooks.map(book => getOptimizedImageUrl(book));
-  // 预加载优化: 由于使用本地路径，可以简化预加载逻辑
+  // 预加载优化: 仅当组件可见时才预加载，避免离屏组件浪费带宽与触发不必要的网络请求
   useImagePreloader(imageUrls, currentIndex, {
-    preloadRange: 2, // 预加载当前位置前后各2张图片
-    delay: 100, // 减少延迟，本地文件加载更快
-    enabled: hasBooks && !loading
+    preloadRange: 2,
+    delay: 200,
+    enabled: hasBooks && !loading && isInViewport && isPageVisible,
   });
 
   // 图片缓存管理
@@ -164,22 +139,51 @@ export default function BookCarousel({
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
-  // 自动播放逻辑
+  // 视口可见性 — 离屏时停止自动播放与预加载，避免后台浪费 CPU/带宽
   useEffect(() => {
-    // 只有在有书籍数据、播放状态、页面可见、且不是手动暂停时才自动播放
-    if (!isPlaying || !isPageVisible || activeBooks.length === 0 || loading) return;
+    const node = carouselRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') {
+      setIsInViewport(true);
+      return;
+    }
 
-    console.log('开始自动播放，间隔:', autoPlayInterval);
-    const interval = setInterval(() => {
-      console.log('自动切换到下一张');
-      nextSlide();
-    }, autoPlayInterval);
-    
-    return () => {
-      console.log('清除自动播放定时器');
-      clearInterval(interval);
-    };
-  }, [isPlaying, isPageVisible, nextSlide, autoPlayInterval, activeBooks.length, loading]);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry) setIsInViewport(entry.isIntersecting);
+      },
+      { rootMargin: '200px 0px', threshold: 0.05 }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  // 自动播放逻辑 — 仅当播放中、页面可见、组件在视口内、未悬停时运行
+  useEffect(() => {
+    if (
+      !isPlaying ||
+      !isPageVisible ||
+      !isInViewport ||
+      isHovered ||
+      activeBooks.length === 0 ||
+      loading
+    ) {
+      return;
+    }
+
+    const interval = setInterval(nextSlide, autoPlayInterval);
+    return () => clearInterval(interval);
+  }, [
+    isPlaying,
+    isPageVisible,
+    isInViewport,
+    isHovered,
+    nextSlide,
+    autoPlayInterval,
+    activeBooks.length,
+    loading,
+  ]);
 
   // 键盘导航
   useEffect(() => {
@@ -190,9 +194,7 @@ export default function BookCarousel({
         nextSlide();
       } else if (event.key === ' ') {
         event.preventDefault();
-        const newPlayingState = !isPlaying;
-        console.log('空格键切换播放状态:', newPlayingState ? '播放' : '暂停');
-        setIsPlaying(newPlayingState);
+        setIsPlaying((prev) => !prev);
       }
     };
 
@@ -207,9 +209,8 @@ export default function BookCarousel({
     setIsRefreshing(true);
     try {
       await refresh();
-      console.log('书籍数据刷新成功');
     } catch (error) {
-      console.error('书籍数据刷新失败:', error);
+      // 静默失败 — UI 上有 error 状态展示
     } finally {
       setIsRefreshing(false);
     }
@@ -464,15 +465,13 @@ export default function BookCarousel({
                               transform: 'translateZ(5px)',
                               filter: `saturate(${isCenter ? 1.0 : 0.9}) hue-rotate(0deg)`
                             }}
-                            loading="eager"
+                            loading={book.isCenterPosition ? 'eager' : 'lazy'}
                             decoding="async"
-                            onLoad={() => console.log(`本地图片加载成功: ${book.filename}`)}
+                            width={192}
+                            height={256}
                             onError={(e) => {
-                              console.error(`本地图片加载失败: ${book.filename}`);
-                              // 如果本地图片加载失败，尝试使用API URL作为fallback
                               const target = e.target as HTMLImageElement;
-                              if (target.src.startsWith('/books/')) {
-                                console.log(`尝试fallback URL: ${book.url}`);
+                              if (target.src.endsWith(`/books/${book.filename}`) && book.url) {
                                 target.src = book.url;
                               }
                             }}
@@ -575,11 +574,7 @@ export default function BookCarousel({
         <div className="flex items-center justify-center mt-8 space-x-8">
           {/* 增强的播放/暂停按钮 */}
           <button
-            onClick={() => {
-              const newPlayingState = !isPlaying;
-              setIsPlaying(newPlayingState);
-              console.log(`播放状态切换: ${newPlayingState ? '播放' : '暂停'}`);
-            }}
+            onClick={() => setIsPlaying((prev) => !prev)}
             className={clsx(
               'bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl',
               'hover:bg-white dark:hover:bg-gray-800',
