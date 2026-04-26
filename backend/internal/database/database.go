@@ -83,6 +83,7 @@ func AutoMigrate() error {
 		&models.AlgorithmAsset{},
 		&models.AlgorithmAssetFile{},
 		&models.Article{},
+		&models.ArticleVersion{},
 		&models.ArticleView{},
 		&models.ArticleLike{},
 		&models.Blog{},

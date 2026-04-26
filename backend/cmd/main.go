@@ -133,6 +133,14 @@ func main() {
 			// 评论相关路由
 			articles.GET("/:id/comments", handlers.GetComments)
 			articles.POST("/:id/comments", handlers.CreateComment)
+
+			// 文章版本管理（需要登录 + 文章所有者/管理员权限，权限校验在 handler 内）
+			articles.GET("/:id/versions", middleware.AuthRequired(), handlers.ListArticleVersions)
+			articles.GET("/:id/versions/:vid", middleware.AuthRequired(), handlers.GetArticleVersion)
+			articles.POST("/:id/versions", middleware.AuthRequired(), handlers.CreateArticleVersion)
+			articles.POST("/:id/versions/:vid/restore", middleware.AuthRequired(), handlers.RestoreArticleVersion)
+			articles.PATCH("/:id/versions/:vid", middleware.AuthRequired(), handlers.UpdateArticleVersionLabel)
+			articles.DELETE("/:id/versions/:vid", middleware.AuthRequired(), handlers.DeleteArticleVersion)
 		}
 
 		// 提示词管理路由（管理员）

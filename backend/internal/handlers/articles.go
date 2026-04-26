@@ -561,6 +561,21 @@ func UpdateArticle(c *gin.Context) {
 	// 开始事务
 	tx := database.DB.Begin()
 
+	// 🛡️ 自动版本快照：只要 content 变化（且新值非空，避免无意义快照），
+	// 就在更新主表之前先把"旧版本"保存到 article_versions。
+	// 这是版本管理系统的核心安全网 —— 哪怕未来再出现 bug 把 content 写空，
+	// 用户也能在编辑器版本面板里 1-click 还原回任何历史版本。
+	if req.Content != nil && *req.Content != "" && *req.Content != article.Content && article.Content != "" {
+		if _, snapErr := snapshotArticleVersion(tx, &article, userID, "保存前自动备份", false, true); snapErr != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"error":   "保存历史版本失败",
+			})
+			return
+		}
+	}
+
 	// 更新文章
 	if len(updates) > 0 {
 		err = tx.Model(&article).Updates(updates).Error
