@@ -94,30 +94,28 @@ export default defineConfig(async ({ mode }) => ({
           }
           if (id.includes('highlight.js') || id.includes('lowlight')) return 'highlight-vendor'
 
+          // unified 生态（react-markdown / bytemd / 各类 remark/rehype 插件共用）
+          // 必须把 unified 自身、所有 *-util-*、各种小 util 全部圈进同一个 chunk，
+          // 否则跨 chunk 循环 re-export 会触发 "Cannot access X before initialization" TDZ。
           if (
-            id.includes('@bytemd') ||
-            id.includes('/bytemd/') ||
-            id.includes('@uiw/react-md-editor') ||
-            id.includes('marked')
-          ) {
-            return 'bytemd-vendor'
-          }
-          if (id.includes('@tiptap') || id.includes('prosemirror')) return 'tiptap-vendor'
-
-          if (
-            id.includes('react-markdown') ||
-            id.includes('remark-') ||
-            id.includes('rehype-') ||
-            id.includes('mdast') ||
-            id.includes('unist') ||
-            id.includes('hast') ||
-            id.includes('micromark') ||
-            id.includes('vfile') ||
-            id.includes('decode-named-character-reference') ||
-            id.includes('character-entities')
+            /node_modules\/(?:unified|bail|trough|vfile|vfile-message|devlop|extend|zwitch|ccount|mdurl|hastscript|html-(?:void-elements|url-attributes)|property-information|web-namespaces|comma-separated-tokens|space-separated-tokens|escape-string-regexp|longest-streak|markdown-table|character-entities[^/]*|decode-named-character-reference|stringify-entities|parse-entities|is-(?:plain-obj|alphabetical|decimal|hexadecimal|alphanumerical|reference)|estree-util-[^/]+|mdast-util-[^/]+|hast-util-[^/]+|unist-util-[^/]+|micromark[^/]*|remark-[^/]+|rehype-[^/]+|react-markdown|@types\/(?:hast|mdast|unist))\//.test(
+              id
+            )
           ) {
             return 'markdown-vendor'
           }
+
+          // bytemd 编辑器（仅 admin 编辑页用）
+          if (
+            id.includes('/@bytemd/') ||
+            id.includes('/bytemd/') ||
+            id.includes('/@uiw/react-md-editor/') ||
+            id.includes('/marked/')
+          ) {
+            return 'bytemd-vendor'
+          }
+
+          if (id.includes('@tiptap') || id.includes('prosemirror')) return 'tiptap-vendor'
 
           if (
             id.includes('@headlessui') ||
