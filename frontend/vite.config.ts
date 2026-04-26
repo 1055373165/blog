@@ -67,28 +67,12 @@ export default defineConfig(async ({ mode }) => ({
           if (id.includes('@tanstack/react-query')) return 'query-vendor'
           if (id.includes('axios')) return 'http-vendor'
 
-          // Mermaid + 其全部传递依赖 — 单独成块且仅在动态 import 时拉取
-          if (
-            id.includes('/mermaid/') ||
-            id.includes('@mermaid-js') ||
-            id.includes('/dagre') ||
-            id.includes('/graphlib') ||
-            id.includes('/cytoscape') ||
-            id.includes('/elkjs') ||
-            id.includes('/khroma') ||
-            id.includes('/katex') ||
-            id.includes('chevrotain') ||
-            id.includes('/d3') ||
-            id.includes('/dompurify') ||
-            id.includes('@braintree/sanitize-url') ||
-            id.includes('/internmap') ||
-            id.includes('/delaunator') ||
-            id.includes('/robust-predicates') ||
-            id.includes('/ts-dedent') ||
-            id.includes('/stylis')
-          ) {
-            return 'mermaid-vendor'
-          }
+          // Mermaid 不在此处手工 chunk —— 它依赖大量带原型链初始化模式的包
+          // (lodash-es/chevrotain/dayjs/roughjs/d3 等)，手工分块会把
+          // `Foo.prototype.method = ...` 这类副作用赋值与 `new Foo()` 拆到不同 chunk，
+          // 引发运行时 "this.X is not a function" 类错误。
+          // mermaid 已在 MarkdownRenderer 内通过动态 import 加载，
+          // Rollup 会自动按动态 import 边界生成独立 chunk，且不进首屏 preload。
           if (id.includes('react-syntax-highlighter') || id.includes('refractor') || id.includes('prismjs')) {
             return 'syntax-vendor'
           }
@@ -132,7 +116,10 @@ export default defineConfig(async ({ mode }) => ({
           if (id.includes('date-fns')) return 'date-vendor'
           if (id.includes('@chenglou/pretext')) return 'pretext-vendor'
 
-          return 'vendor'
+          // 其余 node_modules 不强制 chunk —— 交给 Rollup 按 import 边界（特别是
+          // 动态 import 边界）自动决定。这样 mermaid/lodash-es/chevrotain/d3/dayjs
+          // 这类 mermaid 传递依赖会被自动归到 mermaid 动态 chunk，而不是堆进 vendor。
+          return undefined
         },
       },
     },
