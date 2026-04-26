@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# 项目统一使用 yarn，禁止 npm/pnpm 生成的 lockfile 进入仓库
+package-lock.json
+pnpm-lock.yaml
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
