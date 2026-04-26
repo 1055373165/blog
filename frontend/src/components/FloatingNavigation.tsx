@@ -339,32 +339,23 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
                   <Link
                     key={item.href}
                     to={item.href}
+                    aria-label={item.description}
+                    aria-current={isActive ? 'page' : undefined}
                     className={clsx(
                       'relative px-4 py-2 rounded-xl transition-all duration-300 group',
                       'text-sm font-medium whitespace-nowrap',
+                      'flex items-center justify-center',
                       isActive
                         ? 'text-primary-600 dark:text-primary-400'
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                     )}
-                    title={`${item.description} (Ctrl+${index + 1})`}
                   >
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center justify-center space-x-2">
                       <Icon className={clsx(
                         'w-4 h-4 transition-all duration-300 flex-shrink-0',
                         isActive ? 'scale-110' : 'group-hover:scale-105'
                       )} />
                       <span className="text-sm whitespace-nowrap">{item.name}</span>
-                    </div>
-
-                    {/* 悬浮提示 */}
-                    <div className={clsx(
-                      'absolute -top-12 left-1/2 transform -translate-x-1/2 px-2 py-1',
-                      'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded-lg',
-                      'opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none',
-                      'whitespace-nowrap'
-                    )}>
-                      {item.description}
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-900 dark:border-t-gray-100" />
                     </div>
                   </Link>
                 );
