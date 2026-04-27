@@ -116,6 +116,27 @@ export const uploadApi = {
       throw new Error('Invalid response format from server');
     }
   },
+
+  async uploadMedia(file: File, onProgress?: (progress: number) => void, timeout?: number) {
+    const response = await apiClient.upload<{ url: string; filename: string; size: number; mime_type: string }>('/api/upload/media', file, onProgress, timeout);
+    console.log('Upload API - uploadMedia response:', response);
+
+    // 检查响应格式 - 后端可能直接返回上传数据，而不是包装在 ApiResponse 中
+    const responseAny = response as any;
+
+    if (response && response.data) {
+      return response;
+    } else if (responseAny && responseAny.url) {
+      return {
+        success: true,
+        data: responseAny,
+        message: '上传成功'
+      };
+    } else {
+      console.error('Unexpected upload response format:', response);
+      throw new Error('Invalid response format from server');
+    }
+  },
 };
 
 // 封面图片相关API

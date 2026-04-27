@@ -634,6 +634,24 @@ export default function ArticleEditor() {
     setError(null);
   };
 
+  const handleMediaImport = (markdown: string) => {
+    if (!markdown) return;
+
+    // 与 ByteMD 拖拽行为保持一致：在当前内容末尾追加媒体标签
+    setFormData(prev => {
+      const currentContent = prev.content || '';
+      const separator = currentContent.length === 0
+        ? ''
+        : currentContent.endsWith('\n') ? '\n' : '\n\n';
+      const nextContent = `${currentContent}${separator}${markdown}\n\n`;
+      latestContentRef.current = nextContent;
+      return { ...prev, content: nextContent };
+    });
+
+    setShowImportModal(false);
+    setError(null);
+  };
+
   const handleBatchFileImport = async (files: BatchImportFile[]) => {
     if (files.length === 0) return;
 
@@ -1465,6 +1483,7 @@ export default function ArticleEditor() {
                 <FileImport
                   onFileImport={handleFileImport}
                   onBatchImport={handleBatchFileImport}
+                  onMediaImport={handleMediaImport}
                   onError={handleImportError}
                   className="mb-4"
                 />

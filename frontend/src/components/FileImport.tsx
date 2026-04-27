@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react';
 import { uploadApi } from '../api';
 
 const MAX_TEXT_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_MEDIA_FILE_SIZE = 200 * 1024 * 1024; // 与后端 /api/upload/media 200MB 限制保持一致
+const MEDIA_UPLOAD_TIMEOUT = 240000; // 与 ByteMD 拖拽上传行为保持一致
 const MASK_TOKEN_PREFIX = '__FILE_IMPORT_MASK__';
 
 type DirectoryFile = File;
@@ -501,10 +503,51 @@ export interface BatchImportFile {
 interface FileImportProps {
   onFileImport: (content: string, metadata?: ImportMetadata) => void;
   onBatchImport?: (files: BatchImportFile[]) => void;
+  onMediaImport?: (markdown: string) => void;
   onError?: (error: string) => void;
   accept?: string;
   className?: string;
 }
+
+const isAudioFile = (file: File): boolean => {
+  if (file.type.startsWith('audio/')) return true;
+  const lowerName = file.name.toLowerCase();
+  return /\.(mp3|wav|ogg|oga|flac|m4a|aac|weba|wma|amr|opus|mid|midi)$/.test(lowerName);
+};
+
+const isVideoFile = (file: File): boolean => {
+  if (file.type.startsWith('video/')) return true;
+  const lowerName = file.name.toLowerCase();
+  return /\.(mp4|webm|ogv|mkv|mov|m4v|avi|wmv|flv|3gp)$/.test(lowerName);
+};
+
+const isMediaFile = (file: File): boolean => isAudioFile(file) || isVideoFile(file);
+
+const escapeHtmlAttribute = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+const buildMediaMarkdown = (
+  file: File,
+  url: string,
+  responseMimeType: string | undefined
+): string => {
+  const mimeType = responseMimeType || file.type || '';
+  const safeUrl = escapeHtmlAttribute(url);
+  const safeType = escapeHtmlAttribute(mimeType || (isAudioFile(file) ? 'audio/mpeg' : 'video/mp4'));
+  const safeName = escapeHtmlAttribute(file.name);
+
+  if (isAudioFile(file) && !isVideoFile(file)) {
+    return `<audio controls preload="metadata" style="max-width: 100%;"><source src="${safeUrl}" type="${safeType}" />${safeName}</audio>`;
+  }
+
+  // 视频（或未识别的媒体）沿用 ByteMD 拖拽行为
+  return `<video controls preload="metadata" style="max-width: 100%;"><source src="${safeUrl}" type="${safeType}" />${safeName}</video>`;
+};
 
 interface ImportedFile {
   name: string;
@@ -517,6 +560,7 @@ interface ImportedFile {
 export default function FileImport({
   onFileImport,
   onBatchImport,
+  onMediaImport,
   onError,
   accept = '.md,.txt,.json,.csv',
   className = '',
@@ -843,6 +887,45 @@ export default function FileImport({
     return results;
   }, [processFile, uploadReferencedImages]);
 
+  const processMediaImport = useCallback(async (files: DirectoryFile[]): Promise<string> => {
+    // 校验尺寸
+    for (const file of files) {
+      if (file.size > MAX_MEDIA_FILE_SIZE) {
+        throw new Error(`媒体文件 ${file.name} 超过 200MB 上限`);
+      }
+    }
+
+    const markdownSnippets: string[] = [];
+    setUploadProgress(5);
+
+    for (let index = 0; index < files.length; index += 1) {
+      const file = files[index];
+      try {
+        const response = await uploadApi.uploadMedia(
+          file,
+          (fileProgress) => {
+            const overall = ((index + fileProgress / 100) / files.length) * 90;
+            setUploadProgress(Math.min(95, Math.max(5, Math.round(overall))));
+          },
+          MEDIA_UPLOAD_TIMEOUT
+        );
+
+        if (!response.success || !response.data?.url) {
+          throw new Error('上传接口未返回可用 URL');
+        }
+
+        markdownSnippets.push(
+          buildMediaMarkdown(file, response.data.url, response.data.mime_type)
+        );
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : '未知错误';
+        throw new Error(`媒体文件上传失败: ${file.name} (${errorMessage})`);
+      }
+    }
+
+    return markdownSnippets.join('\n\n');
+  }, []);
+
   const handleFiles = useCallback(async (files: DirectoryFile[]) => {
     if (files.length === 0) return;
 
@@ -851,6 +934,29 @@ export default function FileImport({
     
     try {
       const hasDirectoryStructure = files.some(file => getFileRelativePath(file).includes('/'));
+      const mediaFiles = files.filter(isMediaFile);
+      const hasMediaFiles = mediaFiles.length > 0;
+
+      if (hasMediaFiles && !hasDirectoryStructure) {
+        // 混入非媒体文件时拒绝，避免覆盖现有文章内容
+        if (mediaFiles.length !== files.length) {
+          throw new Error('音视频与文档不能同时导入，请分别选择');
+        }
+
+        if (!onMediaImport) {
+          throw new Error('当前页面不支持音视频导入');
+        }
+
+        const markdown = await processMediaImport(files);
+        setUploadProgress(98);
+        onMediaImport(markdown);
+        setUploadProgress(100);
+        setTimeout(() => {
+          setIsUploading(false);
+          setUploadProgress(0);
+        }, 1000);
+        return;
+      }
 
       if (hasDirectoryStructure) {
         const importedFiles = await processFolderImport(files);
@@ -920,7 +1026,7 @@ export default function FileImport({
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       onError?.(errorMessage);
     }
-  }, [accept, isAllowedSingleFile, onFileImport, onBatchImport, onError, processFile, processFolderImport]);
+  }, [accept, isAllowedSingleFile, onFileImport, onBatchImport, onMediaImport, onError, processFile, processFolderImport, processMediaImport]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -958,6 +1064,14 @@ export default function FileImport({
     e.target.value = '';
   }, [handleFiles]);
 
+  const handleMediaInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []) as DirectoryFile[];
+    if (files.length > 0) {
+      void handleFiles(files);
+    }
+    e.target.value = '';
+  }, [handleFiles]);
+
   return (
     <div className={`file-import ${className}`}>
       <input
@@ -978,6 +1092,17 @@ export default function FileImport({
         disabled={isUploading}
         id="file-import-folder-input"
       />
+      {onMediaImport && (
+        <input
+          type="file"
+          accept="audio/*,video/*"
+          multiple
+          onChange={handleMediaInput}
+          className="hidden"
+          disabled={isUploading}
+          id="file-import-media-input"
+        />
+      )}
 
       <div
         onDragOver={handleDragOver}
@@ -1041,6 +1166,14 @@ export default function FileImport({
               >
                 选择文件夹
               </label>
+              {onMediaImport && (
+                <label
+                  htmlFor="file-import-media-input"
+                  className="inline-flex cursor-pointer items-center rounded-lg border border-purple-200 bg-purple-50 px-4 py-2 text-sm font-medium text-purple-700 transition-colors hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50"
+                >
+                  选择音视频
+                </label>
+              )}
             </div>
             
             <div className="text-xs text-gray-400 dark:text-gray-500 space-y-1">
@@ -1058,9 +1191,19 @@ export default function FileImport({
                 <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">
                   .csv
                 </span>
+                {onMediaImport && (
+                  <>
+                    <span className="px-2 py-1 bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 rounded text-xs font-mono">
+                      audio/*
+                    </span>
+                    <span className="px-2 py-1 bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 rounded text-xs font-mono">
+                      video/*
+                    </span>
+                  </>
+                )}
               </div>
               <p className="mt-2">文件夹导入支持 1 个或多个 markdown 文件 + 共享 assets 资源目录</p>
-              <p>单个导入文档最大 5MB，资源文件按上传接口限制处理</p>
+              <p>单个文档最大 5MB；音视频单文件最大 200MB，上传后会以媒体标签形式追加到当前文章</p>
             </div>
           </div>
         )}
