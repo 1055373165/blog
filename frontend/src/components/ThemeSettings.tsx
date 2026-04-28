@@ -317,79 +317,62 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
   );
 }
 
-// 字体系列选择器
+// 字体系列选择器：正文 / 标题 / 代码统一为一份选择，避免重复保存。
+// 选择器中的"等宽"分类用于代码渲染，其余分类用于正文+标题；
+// updateFontSettings 会把所选字体同时写入 body / heading / code 三个槽位。
 function FontFamilySelector() {
   const { settings, updateFontSettings } = useTheme();
 
-  const fontFamilyOptions: Array<{ 
-    value: FontFamily; 
-    label: string; 
-    preview: string; 
-    category: string; 
-    description?: string; 
+  const fontFamilyOptions: Array<{
+    value: FontFamily;
+    label: string;
+    preview: string;
+    category: string;
+    description?: string;
   }> = [
     // 系统字体
     { value: 'system', label: '系统默认', preview: 'System UI', category: '系统' },
-    
-    // 西文字体
+
+    // 西文字体（精选）
     { value: 'inter', label: 'Inter', preview: 'Inter', category: '西文', description: '现代化无衬线字体' },
     { value: 'roboto', label: 'Roboto', preview: 'Roboto', category: '西文', description: 'Google 设计' },
     { value: 'open-sans', label: 'Open Sans', preview: 'Open Sans', category: '西文', description: '友好易读' },
-    { value: 'lato', label: 'Lato', preview: 'Lato', category: '西文', description: '优雅简洁' },
-    { value: 'source-sans-pro', label: 'Source Sans Pro', preview: 'Source Sans Pro', category: '西文', description: 'Adobe 出品' },
-    { value: 'poppins', label: 'Poppins', preview: 'Poppins', category: '西文', description: '几何圆润' },
-    { value: 'nunito', label: 'Nunito', preview: 'Nunito', category: '西文', description: '圆润友好' },
     { value: 'work-sans', label: 'Work Sans', preview: 'Work Sans', category: '西文', description: '工作专用' },
-    
-    // 中文字体
-    { value: 'noto-sans-sc', label: 'Noto Sans SC', preview: '思源黑体', category: '中文', description: 'Google 中文字体' },
-    { value: 'source-han-sans', label: 'Source Han Sans', preview: '思源黑体', category: '中文', description: 'Adobe 中文字体' },
-    { value: 'pingfang-sc', label: 'PingFang SC', preview: '苹方', category: '中文', description: 'Apple 中文字体' },
-    { value: 'microsoft-yahei', label: 'Microsoft YaHei', preview: '微软雅黑', category: '中文', description: 'Windows 系统字体' },
-    { value: 'hiragino-sans-gb', label: 'Hiragino Sans GB', preview: '冬青黑体', category: '中文', description: 'macOS 中文字体' },
-    { value: 'dengxian', label: 'DengXian', preview: '等线', category: '中文', description: 'Office 字体' },
-    { value: 'simhei', label: 'SimHei', preview: '黑体', category: '中文', description: '经典黑体' },
+
+    // 中文字体（精选）
+    { value: 'noto-sans-sc', label: 'Noto Sans SC', preview: '思源黑体', category: '中文', description: '现代中文无衬线' },
     { value: 'simsun', label: 'SimSun', preview: '宋体', category: '中文', description: '经典宋体' },
     { value: 'kaiti', label: 'KaiTi', preview: '楷体', category: '中文', description: '经典楷书' },
     { value: 'fangsong', label: 'FangSong', preview: '仿宋', category: '中文', description: '传统仿宋体' },
-    
-    // 等宽字体
+
+    // 等宽字体（精选，仅用于代码块）
     { value: 'jetbrains-mono', label: 'JetBrains Mono', preview: 'JetBrains Mono', category: '等宽', description: '编程专用' },
-    { value: 'fira-code', label: 'Fira Code', preview: 'Fira Code', category: '等宽', description: '连字支持' },
     { value: 'source-code-pro', label: 'Source Code Pro', preview: 'Source Code Pro', category: '等宽', description: 'Adobe 等宽' },
-    { value: 'cascadia-code', label: 'Cascadia Code', preview: 'Cascadia Code', category: '等宽', description: 'VS Code 字体' },
-    { value: 'sf-mono', label: 'SF Mono', preview: 'SF Mono', category: '等宽', description: 'Apple 等宽' },
-    { value: 'consolas', label: 'Consolas', preview: 'Consolas', category: '等宽', description: 'Windows 等宽' },
-    { value: 'menlo', label: 'Menlo', preview: 'Menlo', category: '等宽', description: 'macOS 等宽' },
   ];
+
+  // 当前正文/标题选择以 body 为准；若历史 localStorage 中存了已被精简掉的旧值，回退到 system
+  const validValues = new Set(fontFamilyOptions.map((o) => o.value));
+  const currentTextFont = validValues.has(settings.fonts.body) ? settings.fonts.body : 'system';
+  const currentCodeFont = validValues.has(settings.fonts.code) ? settings.fonts.code : 'jetbrains-mono';
+
+  const textOptions = fontFamilyOptions.filter((opt) => opt.category !== '等宽');
+  const codeOptions = fontFamilyOptions.filter((opt) => opt.category === '等宽');
 
   return (
     <div>
       <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
         字体系列
       </h3>
-      
-      {/* 正文字体 */}
-      <div className="mb-6">
-        <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-          📖 正文字体
-        </h4>
-        <FontCategoryGrid
-          options={fontFamilyOptions}
-          currentValue={settings.fonts.body}
-          onSelect={(value) => updateFontSettings({ body: value })}
-        />
-      </div>
 
-      {/* 标题字体 */}
+      {/* 文本字体（正文 + 标题统一）*/}
       <div className="mb-6">
         <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-          📝 标题字体
+          📖 文本字体（正文 / 标题）
         </h4>
         <FontCategoryGrid
-          options={fontFamilyOptions}
-          currentValue={settings.fonts.heading}
-          onSelect={(value) => updateFontSettings({ heading: value })}
+          options={textOptions}
+          currentValue={currentTextFont}
+          onSelect={(value) => updateFontSettings({ body: value, heading: value })}
         />
       </div>
 
@@ -399,8 +382,8 @@ function FontFamilySelector() {
           💻 代码字体
         </h4>
         <FontCategoryGrid
-          options={fontFamilyOptions.filter(opt => opt.category === '等宽')}
-          currentValue={settings.fonts.code}
+          options={codeOptions}
+          currentValue={currentCodeFont}
           onSelect={(value) => updateFontSettings({ code: value })}
         />
       </div>

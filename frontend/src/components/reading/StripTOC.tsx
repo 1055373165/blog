@@ -56,71 +56,76 @@ function useStripTOC(
     return items;
   }, [contentSelector, headingSelector, maxLevel]);
 
-  // Setup intersection observer for active heading detection
+  // 监听内容容器的 DOM 变化并提取目录。
+  // MarkdownRenderer 是 React.lazy 懒加载的，初次挂载时 .article-content 只有 Suspense 占位骨架，
+  // 所以即便首次 extract 拿到 0 条，也必须把 MutationObserver 装上，等 chunk 到达后再次提取。
   useEffect(() => {
-    const items = extractTOC();
-    setTocItems(items);
+    const container = document.querySelector(contentSelector);
+    if (!container) return;
 
-    if (items.length === 0) return;
+    let rafId = 0;
+    const scheduleExtract = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const next = extractTOC();
+        setTocItems((prev) => {
+          if (
+            prev.length === next.length &&
+            prev.every((p, i) => p.id === next[i].id)
+          ) {
+            return prev;
+          }
+          return next;
+        });
+      });
+    };
+
+    scheduleExtract();
+
+    const mutationObserver = new MutationObserver(scheduleExtract);
+    mutationObserver.observe(container, { childList: true, subtree: true });
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      mutationObserver.disconnect();
+    };
+  }, [contentSelector, extractTOC]);
+
+  // 单独维护活动标题的 IntersectionObserver——每次 tocItems 变化都重新绑定到新的 DOM 节点，
+  // 否则懒加载完成后 observer 仍指向旧节点（或没有节点）。
+  useEffect(() => {
+    if (tocItems.length === 0) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const visibleEntries = entries.filter(entry => entry.isIntersecting);
-        
+        const visibleEntries = entries.filter((entry) => entry.isIntersecting);
+
         if (visibleEntries.length > 0) {
-          // Select the topmost visible heading
           const topEntry = visibleEntries.reduce((top, entry) => {
             return entry.boundingClientRect.top < top.boundingClientRect.top ? entry : top;
           });
-          
-          const id = (topEntry.target as HTMLElement).id;
-          setActiveId(id);
+          setActiveId((topEntry.target as HTMLElement).id);
         } else {
-          // Find closest heading above viewport
           const scrollTop = window.scrollY;
-          let activeItem = items[0];
-          
-          for (const item of items) {
-            const rect = item.element.getBoundingClientRect();
-            const elementTop = rect.top + scrollTop;
-            
+          let activeItem = tocItems[0];
+          for (const item of tocItems) {
+            const elementTop = item.element.getBoundingClientRect().top + scrollTop;
             if (elementTop <= scrollTop + 100) {
               activeItem = item;
             } else {
               break;
             }
           }
-          
           setActiveId(activeItem.id);
         }
       },
-      {
-        rootMargin: '-100px 0px -66%',
-        threshold: 0
-      }
+      { rootMargin: '-100px 0px -66%', threshold: 0 }
     );
 
-    items.forEach(item => observer.observe(item.element));
+    tocItems.forEach((item) => observer.observe(item.element));
 
-    // Watch for content changes
-    const container = document.querySelector(contentSelector);
-    if (!container) return;
-
-    const mutationObserver = new MutationObserver(() => {
-      const newItems = extractTOC();
-      setTocItems(newItems);
-    });
-
-    mutationObserver.observe(container, {
-      childList: true,
-      subtree: true
-    });
-
-    return () => {
-      observer.disconnect();
-      mutationObserver.disconnect();
-    };
-  }, [contentSelector, extractTOC]);
+    return () => observer.disconnect();
+  }, [tocItems]);
 
   return { tocItems, activeId };
 }

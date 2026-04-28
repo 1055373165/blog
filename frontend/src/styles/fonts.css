@@ -1,8 +1,3 @@
-/* Instrument Serif — display/headings */
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
-
-/* Inter — body/navigation */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-/* Noto Serif SC — Chinese literary serif, pairs with Instrument Serif */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600&display=swap');
+/* 已移除 Google Fonts 同步 @import：服务器无法访问 fonts.googleapis.com，
+ * @import 是阻塞式请求，在国内网络下会卡住首屏数秒到数十秒。
+ * 字体改为完全使用系统本地字体（见 fontUtils.ts 与 index.css 的 --font-* 变量栈）。 */

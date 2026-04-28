@@ -54,37 +54,22 @@ export type CodeTheme =
   | 'atelierSulphurpoolLight'
   | 'atelierSulphurpoolDark';
 
-export type FontFamily = 
+export type FontFamily =
   // 系统字体
   | 'system'
   // 西文字体
   | 'inter'
   | 'roboto'
   | 'open-sans'
-  | 'lato'
-  | 'source-sans-pro'
-  | 'poppins'
-  | 'nunito'
   | 'work-sans'
   // 中文字体
   | 'noto-sans-sc'
-  | 'source-han-sans'
-  | 'pingfang-sc'
-  | 'microsoft-yahei'
-  | 'hiragino-sans-gb'
-  | 'dengxian'
-  | 'simhei'
   | 'simsun'
   | 'kaiti'
   | 'fangsong'
   // 等宽字体
   | 'jetbrains-mono'
-  | 'fira-code'
-  | 'source-code-pro'
-  | 'cascadia-code'
-  | 'sf-mono'
-  | 'consolas'
-  | 'menlo';
+  | 'source-code-pro';
 
 export type FontWeight = 'thin' | 'light' | 'normal' | 'medium' | 'semibold' | 'bold';
 

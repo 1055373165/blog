@@ -1,40 +1,28 @@
 import { FontFamily, FontWeight, LineHeight, FontSettings } from '../contexts/ThemeContext';
 
-// 字体映射到实际的CSS font-family - 使用系统本地字体
+// 字体映射到实际的CSS font-family - 完全本地化（不依赖任何 Google Fonts）
+const SANS_STACK = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+const CJK_STACK = '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", system-ui, sans-serif';
+const MONO_STACK = 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+
 export const fontFamilyMap: Record<FontFamily, string> = {
-  // 系统字体
-  'system': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  
-  // 西文字体 - 使用系统字体作为首选
-  'inter': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
-  'roboto': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
-  'open-sans': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
-  'lato': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
-  'source-sans-pro': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
-  'poppins': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
-  'nunito': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
-  'work-sans': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
-  
-  // 中文字体 - 使用系统本地字体
-  'noto-sans-sc': '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", system-ui, sans-serif',
-  'source-han-sans': '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", system-ui, sans-serif',
-  'pingfang-sc': '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif',
-  'microsoft-yahei': '"Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Segoe UI", system-ui, sans-serif',
-  'hiragino-sans-gb': '"Hiragino Sans GB", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif',
-  'dengxian': '"DengXian", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif',
-  'simhei': '"SimHei", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif',
+  'system': SANS_STACK,
+
+  // 西文（精选）
+  'inter': SANS_STACK,
+  'roboto': SANS_STACK,
+  'open-sans': SANS_STACK,
+  'work-sans': SANS_STACK,
+
+  // 中文（精选）
+  'noto-sans-sc': CJK_STACK,
   'simsun': '"SimSun", "Microsoft YaHei", "Times New Roman", system-ui, serif',
   'kaiti': '"KaiTi", "STKaiti", "Microsoft YaHei", "PingFang SC", system-ui, serif',
   'fangsong': '"FangSong", "STFangsong", "Microsoft YaHei", "Times New Roman", system-ui, serif',
-  
-  // 等宽字体 - 使用系统本地字体
-  'jetbrains-mono': '"SF Mono", "Monaco", "Cascadia Code", "Consolas", "Courier New", monospace',
-  'fira-code': '"SF Mono", "Monaco", "Cascadia Code", "Consolas", "Courier New", monospace',
-  'source-code-pro': '"SF Mono", "Monaco", "Cascadia Code", "Consolas", "Courier New", monospace',
-  'cascadia-code': '"Cascadia Code", "SF Mono", "Monaco", "Consolas", "Courier New", monospace',
-  'sf-mono': '"SF Mono", "Monaco", "Cascadia Code", "Consolas", "Menlo", monospace',
-  'consolas': '"Consolas", "SF Mono", "Monaco", "Cascadia Code", "Courier New", monospace',
-  'menlo': '"Menlo", "SF Mono", "Monaco", "Consolas", "Courier New", monospace',
+
+  // 等宽（精选）
+  'jetbrains-mono': MONO_STACK,
+  'source-code-pro': MONO_STACK,
 };
 
 // 字体粗细映射到CSS font-weight
@@ -122,19 +110,19 @@ export function preloadGoogleFonts(fontFamilies: FontFamily[]): void {
 export function getFontRecommendations(purpose: 'body' | 'heading' | 'code', language: 'zh' | 'en' | 'mixed' = 'mixed'): FontFamily[] {
   const recommendations: Record<string, Record<string, FontFamily[]>> = {
     body: {
-      zh: ['noto-sans-sc', 'source-han-sans', 'pingfang-sc', 'microsoft-yahei', 'kaiti', 'fangsong'],
-      en: ['inter', 'roboto', 'open-sans', 'lato'],
-      mixed: ['inter', 'noto-sans-sc', 'source-han-sans', 'roboto'],
+      zh: ['noto-sans-sc', 'kaiti', 'fangsong'],
+      en: ['inter', 'roboto', 'open-sans'],
+      mixed: ['inter', 'noto-sans-sc', 'roboto'],
     },
     heading: {
-      zh: ['pingfang-sc', 'noto-sans-sc', 'source-han-sans', 'hiragino-sans-gb', 'kaiti'],
-      en: ['inter', 'poppins', 'work-sans', 'nunito'],
-      mixed: ['inter', 'pingfang-sc', 'poppins', 'noto-sans-sc'],
+      zh: ['noto-sans-sc', 'kaiti'],
+      en: ['inter', 'work-sans'],
+      mixed: ['inter', 'noto-sans-sc'],
     },
     code: {
-      zh: ['jetbrains-mono', 'fira-code', 'source-code-pro'],
-      en: ['jetbrains-mono', 'fira-code', 'cascadia-code'],
-      mixed: ['jetbrains-mono', 'fira-code', 'source-code-pro'],
+      zh: ['jetbrains-mono', 'source-code-pro'],
+      en: ['jetbrains-mono', 'source-code-pro'],
+      mixed: ['jetbrains-mono', 'source-code-pro'],
     },
   };
 
