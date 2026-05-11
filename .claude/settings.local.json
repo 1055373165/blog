@@ -88,7 +88,8 @@
       "Bash(go list -m -versions golang.org/x/image 2>&1 | tr ' ' '\\\\n' | tail -20)",
       "Bash(GOTOOLCHAIN=local go get golang.org/x/image@v0.23.0 2>&1)",
       "Bash(GOTOOLCHAIN=local go mod tidy 2>&1)",
-      "Bash(GOTOOLCHAIN=local go build ./... 2>&1)"
+      "Bash(GOTOOLCHAIN=local go build ./... 2>&1)",
+      "Bash(python3 *)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

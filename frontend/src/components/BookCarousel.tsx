@@ -30,7 +30,7 @@ const fallbackBooks: Book[] = [];
 export default function BookCarousel({
   className = '',
   autoPlay = true,
-  autoPlayInterval = 4500,
+  autoPlayInterval = 3000,
   showControls = true,
   showDots = true,
   useLocalImages = true // 默认使用本地优化

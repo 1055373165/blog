@@ -10,16 +10,32 @@ import { poems } from '../constants/poems';
    ────────────────────────────────────────────────────────── */
 
 /* ─── Pretext layout constants ──────────────────────────── */
-const BODY_FONT = '16px "Noto Serif SC", "Songti SC", "SimSun", serif';
+const FONT_SIZE = 16;
+const BODY_FONT = `${FONT_SIZE}px "Noto Serif SC", "Songti SC", "SimSun", serif`;
 const LINE_HEIGHT = 36;
 const GUTTER = 16;
 const COL_MAX_W = 600;
 const MIN_SLOT_W = 30;
 const ORB_R = 26;
 const VIDEO_FADE = 0.5;
+/* Rendered text adds letter-spacing that pretext's measurement doesn't see;
+   shrink the layout width so packed lines don't clip the right edge. */
+const LETTER_SPACING_EM = 0.08;
+const LAYOUT_WIDTH_FACTOR = 1 / (1 + LETTER_SPACING_EM);
 
-/* Chinese numerals for counter */
-const CN_NUM = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖', '拾'];
+/* Chinese numerals for counter (handles 0–99, sufficient for any reasonable poem count) */
+const CN_DIGITS = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'];
+function toCnNumeral(n: number): string {
+  if (n < 10) return CN_DIGITS[n];
+  if (n === 10) return '拾';
+  if (n < 20) return '拾' + CN_DIGITS[n - 10];
+  if (n < 100) {
+    const tens = Math.floor(n / 10);
+    const ones = n % 10;
+    return CN_DIGITS[tens] + '拾' + (ones === 0 ? '' : CN_DIGITS[ones]);
+  }
+  return String(n);
+}
 
 /* Module-level orb position persisted across poem switches (content-space coords) */
 let persistedOrb: { x: number; y: number } | null = null;
@@ -71,7 +87,7 @@ function layoutLines(
     slots.sort((a, b) => a.left - b.left);
     let advanced = false;
     for (const slot of slots) {
-      const line = layoutNextLine(prepared, cursor, slot.right - slot.left);
+      const line = layoutNextLine(prepared, cursor, (slot.right - slot.left) * LAYOUT_WIDTH_FACTOR);
       if (!line) break;
       lines.push({ x: Math.round(slot.left), y: Math.round(y), text: line.text });
       cursor = line.end;
@@ -90,7 +106,7 @@ function syncPool(pool: HTMLDivElement[], n: number, parent: HTMLElement) {
     el.style.cssText =
       `position:absolute;white-space:pre;pointer-events:none;` +
       `font:${BODY_FONT};line-height:${LINE_HEIGHT}px;color:inherit;` +
-      `letter-spacing:0.08em;font-feature-settings:"palt";`;
+      `letter-spacing:${LETTER_SPACING_EM}em;font-feature-settings:"palt";`;
     parent.appendChild(el);
     pool.push(el);
   }
@@ -355,7 +371,7 @@ export default function CinematicHero() {
 
                 <div className="flex items-center gap-3">
                   <span className="text-[11px] tracking-[0.4em] text-stone-500 dark:text-stone-400">
-                    {CN_NUM[currentIndex + 1]} · {CN_NUM[poems.length]}
+                    {toCnNumeral(currentIndex + 1)} · {toCnNumeral(poems.length)}
                   </span>
                 </div>
 
