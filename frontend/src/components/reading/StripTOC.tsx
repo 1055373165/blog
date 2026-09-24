@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { clsx } from 'clsx';
+import { useActiveHeading, type OutlineItem } from '../../hooks/useActiveHeading';
+import { scrollToHeading } from '../../utils/articleNavigation';
 
-interface TocItem {
-  id: string;
-  text: string;
-  level: number;
-  element: HTMLElement;
+interface TocItem extends OutlineItem {
+  element?: HTMLElement;
 }
 
 interface StripTOCProps {
@@ -14,13 +13,17 @@ interface StripTOCProps {
   maxLevel?: number;
   className?: string;
   onActiveChange?: (activeId: string) => void;
+  /** Outline from the markdown source. When given, the TOC is complete before
+      the body has rendered and the DOM is not scanned for headings. */
+  items?: OutlineItem[];
 }
 
 // Hook for extracting TOC items and handling active state
 function useStripTOC(
   contentSelector = 'main, .content, article',
   headingSelector = 'h1, h2, h3, h4, h5, h6',
-  maxLevel = 3
+  maxLevel = 3,
+  enabled = true
 ) {
   const [tocItems, setTocItems] = useState<TocItem[]>([]);
   const [activeId, setActiveId] = useState<string>('');
@@ -60,6 +63,7 @@ function useStripTOC(
   // MarkdownRenderer 是 React.lazy 懒加载的，初次挂载时 .article-content 只有 Suspense 占位骨架，
   // 所以即便首次 extract 拿到 0 条，也必须把 MutationObserver 装上，等 chunk 到达后再次提取。
   useEffect(() => {
+    if (!enabled) return;
     const container = document.querySelector(contentSelector);
     if (!container) return;
 
@@ -89,7 +93,7 @@ function useStripTOC(
       cancelAnimationFrame(rafId);
       mutationObserver.disconnect();
     };
-  }, [contentSelector, extractTOC]);
+  }, [contentSelector, extractTOC, enabled]);
 
   // 单独维护活动标题的 IntersectionObserver——每次 tocItems 变化都重新绑定到新的 DOM 节点，
   // 否则懒加载完成后 observer 仍指向旧节点（或没有节点）。
@@ -109,6 +113,7 @@ function useStripTOC(
           const scrollTop = window.scrollY;
           let activeItem = tocItems[0];
           for (const item of tocItems) {
+            if (!item.element) continue;
             const elementTop = item.element.getBoundingClientRect().top + scrollTop;
             if (elementTop <= scrollTop + 100) {
               activeItem = item;
@@ -122,7 +127,7 @@ function useStripTOC(
       { rootMargin: '-100px 0px -66%', threshold: 0 }
     );
 
-    tocItems.forEach((item) => observer.observe(item.element));
+    tocItems.forEach((item) => item.element && observer.observe(item.element));
 
     return () => observer.disconnect();
   }, [tocItems]);
@@ -143,16 +148,8 @@ function StripTOCItem({
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     onClick(item.id);
-    
-    // Smooth scroll to target
-    const targetElement = document.getElementById(item.id);
-    if (targetElement) {
-      const offsetTop = targetElement.getBoundingClientRect().top + window.scrollY - 100;
-      window.scrollTo({
-        top: offsetTop,
-        behavior: 'smooth'
-      });
-    }
+    // 标题可能尚未渲染（长文分段渲染），由 scrollToHeading 负责先渲染再跳转
+    scrollToHeading(item.id);
   };
 
   // Get hierarchical green styling based on heading level
@@ -273,9 +270,14 @@ export default function StripTOC({
   headingSelector,
   maxLevel = 5,
   className,
-  onActiveChange
+  onActiveChange,
+  items
 }: StripTOCProps) {
-  const { tocItems, activeId } = useStripTOC(contentSelector, headingSelector, maxLevel);
+  const dom = useStripTOC(contentSelector, headingSelector, maxLevel, !items);
+  const sourceItems = useMemo(() => items?.filter((i) => i.level <= maxLevel) ?? [], [items, maxLevel]);
+  const sourceActiveId = useActiveHeading(sourceItems, contentSelector ?? '.article-content');
+  const tocItems: TocItem[] = items ? sourceItems : dom.tocItems;
+  const activeId = items ? sourceActiveId : dom.activeId;
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Notify parent of active changes

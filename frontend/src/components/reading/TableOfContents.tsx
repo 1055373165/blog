@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { clsx } from 'clsx';
+import { useActiveHeading, type OutlineItem } from '../../hooks/useActiveHeading';
+import { scrollToHeading } from '../../utils/articleNavigation';
 
 interface TocItem {
   id: string;
   text: string;
   level: number; // 1-6 对应 h1-h6
-  element: HTMLElement;
+  element?: HTMLElement;
   children?: TocItem[];
 }
 
@@ -19,7 +21,9 @@ interface TableOfContentsProps {
   position?: 'fixed' | 'sticky' | 'static'; // 定位方式
   offsetTop?: number; // 距离顶部偏移量
   onActiveChange?: (activeId: string) => void; // 当前激活项变化回调
+  onItemClick?: (id: string) => void; // 用户点击目录项
   autoCollapse?: boolean; // 是否自动折叠非激活分支
+  items?: OutlineItem[]; // 来自 markdown 源的目录；提供时不再扫描 DOM
 }
 
 // 构建树形目录结构
@@ -70,11 +74,12 @@ function flattenTocTree(tree: TocItem[]): TocItem[] {
 function useTableOfContents(
   contentSelector = 'main, .content, article',
   headingSelector = 'h1, h2, h3, h4, h5, h6',
-  maxLevel = 6
+  maxLevel = 6,
+  enabled = true
 ) {
   const [tocItems, setTocItems] = useState<TocItem[]>([]);
   const [activeId, setActiveId] = useState<string>('');
-  const observerRef = useRef<IntersectionObserver>();
+  const observerRef = useRef<IntersectionObserver | undefined>(undefined);
 
   // 提取目录
   const extractToc = useCallback(() => {
@@ -136,6 +141,7 @@ function useTableOfContents(
           let activeItem = flatItems[0];
           
           for (const item of flatItems) {
+            if (!item.element) continue;
             const rect = item.element.getBoundingClientRect();
             const elementTop = rect.top + scrollTop;
             
@@ -156,7 +162,7 @@ function useTableOfContents(
     );
 
     flatItems.forEach(item => {
-      observer.observe(item.element);
+      if (item.element) observer.observe(item.element);
     });
 
     observerRef.current = observer;
@@ -164,6 +170,7 @@ function useTableOfContents(
 
   // 初始化和更新
   useEffect(() => {
+    if (!enabled) return;
     const items = extractToc();
     setTocItems(items);
     setupIntersectionObserver(items);
@@ -187,7 +194,7 @@ function useTableOfContents(
       observerRef.current?.disconnect();
       mutationObserver.disconnect();
     };
-  }, [contentSelector, extractToc, setupIntersectionObserver]);
+  }, [contentSelector, extractToc, setupIntersectionObserver, enabled]);
 
   return { tocItems, activeId, setActiveId };
 }
@@ -220,16 +227,8 @@ function TocItemComponent({
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     onClick?.(item.id);
-    
-    // 平滑滚动到目标
-    const targetElement = document.getElementById(item.id);
-    if (targetElement) {
-      const offsetTop = targetElement.getBoundingClientRect().top + window.scrollY - 100; // 100px 偏移
-      window.scrollTo({
-        top: offsetTop,
-        behavior: 'smooth'
-      });
-    }
+    // 标题可能尚未渲染（长文分段渲染），由 scrollToHeading 负责先渲染再跳转
+    scrollToHeading(item.id);
   };
 
   const handleToggle = (e: React.MouseEvent) => {
@@ -332,9 +331,16 @@ export default function TableOfContents({
   position = 'sticky',
   offsetTop = 100,
   onActiveChange,
-  autoCollapse = false
+  autoCollapse = false,
+  items,
+  onItemClick
 }: TableOfContentsProps) {
-  const { tocItems, activeId } = useTableOfContents(contentSelector, headingSelector, maxLevel);
+  const dom = useTableOfContents(contentSelector, headingSelector, maxLevel, !items);
+  const sourceItems = useMemo(() => items?.filter((i) => i.level <= maxLevel) ?? [], [items, maxLevel]);
+  const sourceTree = useMemo(() => buildTocTree(sourceItems), [sourceItems]);
+  const sourceActiveId = useActiveHeading(sourceItems, contentSelector ?? '.article-content');
+  const tocItems = items ? sourceTree : dom.tocItems;
+  const activeId = items ? sourceActiveId : dom.activeId;
   const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set());
 
   // 通知激活项变化
@@ -359,6 +365,7 @@ export default function TableOfContents({
   const handleItemClick = useCallback((id: string) => {
     // 通知父组件项目被点击
     onActiveChange?.(id);
+    onItemClick?.(id);
     
     // 点击时自动展开父级
     if (autoCollapse) {
@@ -387,7 +394,7 @@ export default function TableOfContents({
         return newSet;
       });
     }
-  }, [autoCollapse, tocItems, onActiveChange]);
+  }, [autoCollapse, tocItems, onActiveChange, onItemClick]);
 
   // 如果没有目录项，不渲染
   if (tocItems.length === 0) {

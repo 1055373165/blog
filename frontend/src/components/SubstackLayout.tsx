@@ -7,14 +7,15 @@ interface SubstackLayoutProps {
   className?: string;
 }
 
+/* 桌面三栏（目录 20% · 正文 60% · 留白 20%）与移动单栏共用同一份 children。
+   只挂载一次正文：长文若分别为两种布局各渲染一遍，解析与 DOM 开销都会翻倍。 */
 export default function SubstackLayout({ children, tocContent, className }: SubstackLayoutProps) {
   return (
     <div className={clsx('min-h-screen bg-white dark:bg-gray-900', className)}>
-      {/* Desktop Three-Column Layout */}
-      <div className="hidden lg:flex w-full">
-        {/* Left TOC Column - 20% width */}
-        <aside 
-          className="w-[20%] flex-shrink-0 sticky top-0 h-screen overflow-y-auto border-r border-gray-100 dark:border-gray-800"
+      <div className="w-full lg:grid lg:grid-cols-[20%_60%_20%]">
+        {/* Left TOC Column — desktop only */}
+        <aside
+          className="hidden lg:block sticky top-0 h-screen overflow-y-auto border-r border-gray-100 dark:border-gray-800"
           aria-label="目录导航"
         >
           <div className="py-8 px-4">
@@ -22,35 +23,18 @@ export default function SubstackLayout({ children, tocContent, className }: Subs
           </div>
         </aside>
 
-        {/* Center Content Column - 60% width */}
-        <main 
-          className="w-[60%] flex-shrink-0 px-6 xl:px-8"
+        {/* Content Column */}
+        <main
+          className="min-w-0 px-6 xl:px-8"
           role="main"
         >
-          <div className="max-w-none mx-auto">
+          <div className="max-w-4xl lg:max-w-none mx-auto">
             {children}
           </div>
         </main>
 
         {/* Right Empty Column - 20% width for balance */}
-        <aside 
-          className="w-[20%] flex-shrink-0"
-          aria-hidden="true"
-        >
-          {/* Intentionally empty for visual balance */}
-        </aside>
-      </div>
-
-      {/* Mobile/Tablet Single-Column Layout */}
-      <div className="lg:hidden">
-        <main 
-          className="px-6 xl:px-8"
-          role="main"
-        >
-          <div className="max-w-4xl mx-auto">
-            {children}
-          </div>
-        </main>
+        <aside className="hidden lg:block" aria-hidden="true" />
       </div>
     </div>
   );

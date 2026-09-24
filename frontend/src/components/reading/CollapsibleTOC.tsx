@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { clsx } from 'clsx';
 import TableOfContents, { TocItem } from './TableOfContents';
+import type { OutlineItem } from '../../hooks/useActiveHeading';
 
 interface CollapsibleTOCProps {
   contentSelector?: string;
@@ -9,6 +10,8 @@ interface CollapsibleTOCProps {
   showNumbers?: boolean;
   autoCollapse?: boolean;
   className?: string;
+  /** Outline from the markdown source; skips DOM scanning when given */
+  items?: OutlineItem[];
 }
 
 export default function CollapsibleTOC({
@@ -17,15 +20,26 @@ export default function CollapsibleTOC({
   maxLevel = 5,
   showNumbers = false,
   autoCollapse = false,
-  className
+  className,
+  items
 }: CollapsibleTOCProps) {
   const [isOpen, setIsOpen] = useState(false);
+  // 目录面板内容在第一次打开时才挂载（之后保留，关闭动画不受影响）——长文有数百个标题，
+  // 不必在每次进入页面时就为一个默认收起、桌面端还隐藏的面板构建整棵目录树
+  const [hasOpened, setHasOpened] = useState(false);
+  useEffect(() => {
+    if (isOpen) setHasOpened(true);
+  }, [isOpen]);
   const [hasContent, setHasContent] = useState(false);
   const tocRef = useRef<HTMLDivElement>(null);
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
 
   // Check if there's content to show TOC for
   useEffect(() => {
+    if (items) {
+      setHasContent(items.some((i) => i.level <= maxLevel));
+      return;
+    }
     const checkContent = () => {
       const container = document.querySelector(contentSelector);
       if (!container) {
@@ -56,7 +70,7 @@ export default function CollapsibleTOC({
     });
 
     return () => observer.disconnect();
-  }, [contentSelector, headingSelector, maxLevel]);
+  }, [contentSelector, headingSelector, maxLevel, items]);
 
   // Close TOC when clicking outside
   useEffect(() => {
@@ -219,21 +233,24 @@ export default function CollapsibleTOC({
 
         {/* TOC Content */}
         <div className="p-0 overflow-y-auto max-h-full">
-          <TableOfContents
-            contentSelector={contentSelector}
-            headingSelector={headingSelector}
-            maxLevel={maxLevel}
-            showNumbers={showNumbers}
-            autoCollapse={autoCollapse}
-            position="static"
-            isCollapsible={true}
-            onActiveChange={handleItemClick}
-            className={clsx(
-              'border-0 shadow-none bg-transparent p-4 max-w-none',
-              'max-h-none', // Remove height constraint from inner component
-              className
-            )}
-          />
+          {hasOpened && (
+            <TableOfContents
+              contentSelector={contentSelector}
+              headingSelector={headingSelector}
+              maxLevel={maxLevel}
+              showNumbers={showNumbers}
+              autoCollapse={autoCollapse}
+              position="static"
+              isCollapsible={true}
+              onItemClick={handleItemClick}
+              items={items}
+              className={clsx(
+                'border-0 shadow-none bg-transparent p-4 max-w-none',
+                'max-h-none', // Remove height constraint from inner component
+                className
+              )}
+            />
+          )}
         </div>
       </div>
     </>

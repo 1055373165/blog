@@ -58,9 +58,13 @@ export default defineConfig(async ({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Vite 的 preload helper 被所有动态 import 共用，必须随入口加载，不能被并进某个懒加载的 vendor 包
+          if (id.includes('vite/preload-helper') || id.includes('commonjsHelpers')) return 'react-vendor'
           if (!id.includes('node_modules')) return undefined
 
-          if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('scheduler')) {
+          // 只匹配 react / react-dom 包本身：宽松的 '/react/' 会命中 @bytemd/react，把编辑器连同
+          // markdown-vendor / highlight-vendor（合计 500KB+ gzip）拉进每个页面的首屏
+          if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) {
             return 'react-vendor'
           }
           if (id.includes('react-router')) return 'router-vendor'

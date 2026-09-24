@@ -342,3 +342,8 @@ details .prose code {
 details .prose pre code {
   white-space: pre;
 }
+
+/* 目录 / 继续阅读跳转到标题时，给顶部悬浮导航留出空间 */
+.article-content :is(h1, h2, h3, h4, h5, h6) {
+  scroll-margin-top: 100px;
+}

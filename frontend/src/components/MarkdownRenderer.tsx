@@ -1,67 +1,38 @@
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeSlug from 'rehype-slug';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import type { Root, Image } from 'mdast';
+import type { Root as HastRoot, Element as HastElement, ElementContent } from 'hast';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { visit } from 'unist-util-visit';
-import { 
-  vscDarkPlus, 
-  vs, 
-  tomorrow,
-  twilight,
-  dracula,
-  nord,
-  oneLight,
-  oneDark,
-  materialDark,
-  materialLight,
-  atomDark,
-  base16AteliersulphurpoolLight,
-  coldarkCold,
-  coldarkDark,
-  prism,
-  synthwave84,
-  nightOwl,
-  shadesOfPurple,
-  lucario,
-  duotoneDark,
-  duotoneLight,
-  okaidia,
-  solarizedlight,
-  darcula
-} from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { 
-  github, 
-  monokai,
-  atelierCaveLight,
-  atelierCaveDark,
-  atelierDuneLight,
-  atelierDuneDark,
-  atelierEstuaryLight,
-  atelierEstuaryDark,
-  atelierForestLight,
-  atelierForestDark,
-  atelierHeathLight,
-  atelierHeathDark,
-  atelierLakesideLight,
-  atelierLakesideDark,
-  atelierPlateauLight,
-  atelierPlateauDark,
-  atelierSavannaLight,
-  atelierSavannaDark,
-  atelierSeasideLight,
-  atelierSeasideDark,
-  atelierSulphurpoolLight,
-  atelierSulphurpoolDark
-} from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { useTheme } from '../contexts/ThemeContext';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import {
+  Children,
+  isValidElement,
+  lazy,
+  memo,
+  startTransition,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import type { ReactNode } from 'react';
+import {
+  baseSlug,
+  getMarkdownDocument,
+  type MarkdownChunk,
+  type MarkdownDocument,
+  type MarkdownHeading,
+} from '../utils/markdownChunks';
+import { REVEAL_HEADING_EVENT, scrollElementIntoView, takePendingReveal } from '../utils/articleNavigation';
 
 // mermaid 体积约 150KB+，仅在文档中真有 ```mermaid 代码块时才动态加载
 type MermaidApi = typeof import('mermaid')['default'];
@@ -202,107 +173,362 @@ const MermaidDiagram = ({ code, isDark }: { code: string; isDark: boolean }) => 
   );
 };
 
+
+// 安全策略配置 - 扩展白名单允许图片相关属性和代码块属性
+const sanitizeSchema = {
+  ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames || []), 'video', 'source'],
+  attributes: {
+    ...defaultSchema.attributes,
+    img: [
+      'src', 'alt', 'title', 'width', 'height', 'className', 'style',
+      'loading', 'decoding', 'data-*'
+    ],
+    video: [
+      'src', 'controls', 'preload', 'style', 'className', 'width', 'height',
+      'poster', 'muted', 'loop', 'autoplay', 'playsInline'
+    ],
+    source: ['src', 'type'],
+    // 确保代码块渲染不受影响
+    code: [...(defaultSchema.attributes?.code || []), 'className', 'style'],
+    pre: [...(defaultSchema.attributes?.pre || []), 'className', 'style'],
+    div: [...(defaultSchema.attributes?.div || []), 'className', 'style'],
+    span: [...(defaultSchema.attributes?.span || []), 'className', 'style']
+  },
+  protocols: {
+    ...defaultSchema.protocols,
+    src: ['http', 'https', 'data']
+  }
+};
+
+const REMARK_PLUGINS = [remarkGfm, remarkImageSize];
+
+function hastText(node: HastElement | ElementContent): string {
+  if (node.type === 'text') return node.value;
+  if (node.type === 'element') return node.children.map(hastText).join('');
+  return '';
+}
+
+/* Assigns heading ids precomputed from the whole document (see markdownChunks),
+   so ids stay unique and stable although each chunk is parsed on its own.
+   Matching is by slugged text; anything unmatched gets a chunk-scoped id. */
+const rehypeHeadingIds = (headings: MarkdownHeading[], chunkIndex: number) => () => (tree: HastRoot) => {
+  const pool = headings.slice();
+  let fallback = 0;
+  visit(tree, 'element', (node: HastElement) => {
+    if (!/^h[1-6]$/.test(node.tagName)) return;
+    const base = baseSlug(hastText(node).trim());
+    const i = pool.findIndex((h) => h.base === base);
+    const id = i >= 0 ? pool.splice(i, 1)[0].id : `${base || 'section'}-c${chunkIndex}-${fallback++}`;
+    node.properties = { ...node.properties, id };
+  });
+};
+
+/* Safari 没有 requestIdleCallback，退化为短 setTimeout */
+const hasIdleCallback = typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function';
+const requestIdle = (cb: () => void): number =>
+  hasIdleCallback ? window.requestIdleCallback(cb, { timeout: 300 }) : window.setTimeout(cb, 16);
+const cancelIdle = (h: number) => (hasIdleCallback ? window.cancelIdleCallback(h) : window.clearTimeout(h));
+
+/* ─── Code blocks: plain text first, syntax highlighting once near the viewport ─── */
+const CodeHighlighter = lazy(() => import('./CodeHighlighter'));
+
+/* The theme table (syntax-vendor chunk) is fetched once — after the article has fully
+   rendered, or when the first code block nears the viewport — so plain code can use the
+   theme's font metrics and highlighting swaps in without reflow. */
+type CodeMetricsFn = typeof import('./code/codeThemes')['getCodeMetrics'];
+let codeMetrics: CodeMetricsFn | null = null;
+let codeThemesPromise: Promise<void> | null = null;
+const loadCodeThemes = () =>
+  (codeThemesPromise ??= import('./code/codeThemes').then((m) => {
+    codeMetrics = m.getCodeMetrics;
+  }));
+/* vscDarkPlus (the default theme) until the table has loaded */
+const DEFAULT_CODE_METRICS = { fontSize: '13px', lineHeight: 1.5, fontFamily: 'Menlo, Monaco, Consolas, "Courier New", monospace' };
+
+interface LazyCodeProps {
+  code: string;
+  language: string;
+  themeName: string;
+  isDark: boolean;
+  wordWrap: boolean;
+  fontSizeClass: string;
+}
+
+function LazyCode(props: LazyCodeProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [near, setNear] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || near) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          loadCodeThemes();
+          setNear(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: '800px 0px' }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [near]);
+
+  // 与高亮后的版式一致（主题字号 / 行高 / 字体 + 同样的内边距与背景），替换时不跳动
+  const metrics = codeMetrics ? codeMetrics(props.themeName) : DEFAULT_CODE_METRICS;
+  const plain = (
+    <div
+      className={`overflow-x-auto ${props.fontSizeClass}`}
+      style={{
+        padding: '16px',
+        fontSize: metrics.fontSize,
+        lineHeight: metrics.lineHeight,
+        fontFamily: metrics.fontFamily,
+        whiteSpace: props.wordWrap ? 'pre-wrap' : 'pre',
+        background: props.isDark ? '#111827' : '#f9fafb',
+        color: props.isDark ? '#e5e7eb' : '#1f2937',
+      }}
+    >
+      <code>{props.code}</code>
+    </div>
+  );
+
+  return (
+    <div ref={ref} className="my-1">
+      {near ? <Suspense fallback={plain}><CodeHighlighter {...props} /></Suspense> : plain}
+    </div>
+  );
+}
+
+/* ─── <details>: the body is only rendered once the reader first opens it ─── */
+type LazyDetailsProps = React.DetailsHTMLAttributes<HTMLDetailsElement> & { node?: unknown; children?: ReactNode };
+
+function LazyDetails({ children, open, ...props }: LazyDetailsProps) {
+  // react-markdown 传入的 hast 节点不能落到 DOM 上
+  const rest = { ...props };
+  delete rest.node;
+  const [opened, setOpened] = useState(Boolean(open));
+  const items = Children.toArray(children);
+  const isSummary = (c: ReactNode) =>
+    isValidElement(c) && (c.props as { node?: { tagName?: string } }).node?.tagName === 'summary';
+  const summary = items.filter(isSummary);
+  const body = items.filter((c) => !isSummary(c));
+
+  return (
+    <details
+      {...rest}
+      open={open}
+      onToggle={(e) => {
+        if (e.currentTarget.open) setOpened(true);
+      }}
+    >
+      {summary}
+      {opened ? body : null}
+    </details>
+  );
+}
+
+/* ─── Progressive rendering of chunks ─── */
+
+/* Rendered height per source character, measured on long bilingual articles */
+const PX_PER_CHAR = 0.62;
+/* Render placeholders this close to the viewport right away */
+const PLACEHOLDER_ROOT_MARGIN = '1500px 0px';
+
+
+const MarkdownChunkView = memo(function MarkdownChunkView({ chunk, components }: { chunk: MarkdownChunk; components: Components }) {
+  const rehypePlugins = useMemo(
+    () => [
+      rehypeRaw,
+      [rehypeSanitize as unknown as never, sanitizeSchema],
+      rehypeHeadingIds(chunk.headings, chunk.index),
+    ],
+    [chunk]
+  );
+  return (
+    <ReactMarkdown remarkPlugins={REMARK_PLUGINS} rehypePlugins={rehypePlugins as never} components={components}>
+      {chunk.source}
+    </ReactMarkdown>
+  );
+});
+
+interface ChunkSectionProps {
+  chunk: MarkdownChunk;
+  components: Components;
+  /** Estimated height, used until the browser lays the section out for real */
+  estimatedHeight: number;
+}
+
+/* content-visibility: auto from the first render: off-screen sections of a very long
+   article skip style, layout and paint entirely. No height is measured here — reading
+   offsetHeight after each mount would force a synchronous layout of the whole document.
+   The `auto` intrinsic size lets the browser remember a section's real height once it
+   has been rendered, and native scroll anchoring absorbs the correction. */
+function ChunkSection({ chunk, components, estimatedHeight }: ChunkSectionProps) {
+  return (
+    <section
+      data-chunk={chunk.index}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: `auto ${estimatedHeight}px` }}
+    >
+      <MarkdownChunkView chunk={chunk} components={components} />
+    </section>
+  );
+}
+
+interface ProgressiveMarkdownProps {
+  doc: MarkdownDocument;
+  components: Components;
+}
+
+function ProgressiveMarkdown({ doc, components }: ProgressiveMarkdownProps) {
+  const total = doc.chunks.length;
+  const [rendered, setRendered] = useState<ReadonlySet<number>>(() => new Set([0]));
+  const priority = useRef<number[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const renderNow = useCallback((indices: number[]) => {
+    setRendered((prev) => {
+      const missing = indices.filter((i) => i >= 0 && i < total && !prev.has(i));
+      if (missing.length === 0) return prev;
+      const next = new Set(prev);
+      missing.forEach((i) => next.add(i));
+      return next;
+    });
+  }, [total]);
+
+  /* Idle fill: prioritized chunks first (after a jump), then in document order.
+     The next chunk is picked inside the updater from the latest state — IntersectionObserver
+     may have rendered chunks meanwhile, and a no-op update here would stall the fill. */
+  useEffect(() => {
+    if (rendered.size >= total) {
+      // 全文渲染完之后再空闲预取代码主题表，避免与首屏和分段渲染抢主线程
+      const handle = requestIdle(() => void loadCodeThemes());
+      return () => cancelIdle(handle);
+    }
+    priority.current = priority.current.filter((i) => i >= 0 && i < total && !rendered.has(i));
+    const handle = requestIdle(() => {
+      startTransition(() => {
+        setRendered((prev) => {
+          let next = priority.current.find((i) => !prev.has(i)) ?? -1;
+          if (next < 0) for (let i = 0; i < total; i++) if (!prev.has(i)) { next = i; break; }
+          if (next < 0) return prev;
+          const updated = new Set(prev);
+          updated.add(next);
+          return updated;
+        });
+      });
+    });
+    return () => cancelIdle(handle);
+  }, [rendered, total]);
+
+  /* Placeholders near the viewport render immediately (fast scrolling / jumps) */
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root || rendered.size >= total) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const near = entries
+          .filter((e) => e.isIntersecting)
+          .map((e) => Number((e.target as HTMLElement).dataset.chunkPlaceholder));
+        if (near.length > 0) renderNow(near);
+      },
+      { rootMargin: PLACEHOLDER_ROOT_MARGIN }
+    );
+    root.querySelectorAll<HTMLElement>('[data-chunk-placeholder]').forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [rendered, total, renderNow]);
+
+  /* Reveal a heading that isn't rendered yet (TOC click, resume reading, #hash):
+     render its chunk, then scroll once that render has committed */
+  const pendingReveal = useRef<string | null>(null);
+
+  const reveal = useCallback((id: string) => {
+    const heading = doc.headings.find((h) => h.id === id);
+    if (!heading) return;
+    pendingReveal.current = id;
+    // 目标之后的段落优先补齐，读者接着往下读时不会遇到占位
+    priority.current.unshift(heading.chunk + 2, heading.chunk + 3);
+    // 连同前一段一起渲染：scroll-margin 让目标上方露出的那一截是真实内容而非占位
+    renderNow([heading.chunk - 1, heading.chunk, heading.chunk + 1]);
+  }, [doc, renderNow]);
+
+  useLayoutEffect(() => {
+    const id = pendingReveal.current;
+    if (!id) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    pendingReveal.current = null;
+    scrollElementIntoView(el, { instant: true });
+  }, [rendered]);
+
+  useEffect(() => {
+    const onReveal = () => {
+      const id = takePendingReveal();
+      if (id) reveal(id);
+    };
+    window.addEventListener(REVEAL_HEADING_EVENT, onReveal);
+    // 渲染器是懒加载的：挂载前发出的跳转请求（如过早点了"继续阅读"）在这里补上
+    onReveal();
+    // 文章是异步加载的，浏览器自身的 #锚点 定位发生在正文出现之前，这里补做一次
+    const hash = decodeURIComponent(window.location.hash.slice(1));
+    const target = hash ? document.getElementById(hash) : null;
+    if (target) scrollElementIntoView(target, { instant: true });
+    else if (hash) reveal(hash);
+    return () => window.removeEventListener(REVEAL_HEADING_EVENT, onReveal);
+  }, [reveal]);
+
+  return (
+    <div ref={containerRef}>
+      {doc.chunks.map((chunk) => {
+        // 估算高度只取决于该段字数，保持不变：若随渲染进度整体重算，视口上方的占位会一起变高，正文整屏跳动
+        const estimate = Math.round(chunk.source.length * PX_PER_CHAR);
+        if (rendered.has(chunk.index)) {
+          return (
+            <ChunkSection key={chunk.index} chunk={chunk} components={components} estimatedHeight={estimate} />
+          );
+        }
+        // overflow-anchor: none — 占位会被替换掉，不能被浏览器选作滚动锚点，否则锚点消失后无法补偿位移
+        return (
+          <div
+            key={chunk.index}
+            data-chunk-placeholder={chunk.index}
+            style={{ height: estimate, overflowAnchor: 'none' }}
+            aria-hidden="true"
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
   const { settings, isDark } = useTheme();
   
-  // 图片查看器状态管理
+  const doc = useMemo(() => getMarkdownDocument(content), [content]);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // 图片查看器状态管理 — 点击时再从已渲染的正文收集图片，避免渲染后 setState 引发整篇重渲染
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [slides, setSlides] = useState<Array<{ src: string; alt?: string; width?: number; height?: number }>>([]);
-  const imageIndexMapRef = useRef<Map<string, number>>(new Map());
-  
-  // 收集所有图片信息（优化版：处理懒加载图片的尺寸获取）
-  useEffect(() => {
-    const imageElements = document.querySelectorAll('.markdown-image');
-    const newSlides: Array<{ src: string; alt?: string; width?: number; height?: number }> = [];
-    const newIndexMap = new Map<string, number>();
 
-    imageElements.forEach((img, index) => {
-      const imgEl = img as HTMLImageElement;
-      const src = imgEl.src;
-      const alt = imgEl.alt;
-
-      // 优化策略：优先使用 naturalWidth，fallback 到 DOM 尺寸
-      let width: number | undefined = imgEl.naturalWidth;
-      let height: number | undefined = imgEl.naturalHeight;
-
-      // 如果图片尚未加载（懒加载），尝试从 data 属性或计算样式获取
-      if (!width || !height) {
-        width = imgEl.width || parseInt(imgEl.getAttribute('width') || '0') || undefined;
-        height = imgEl.height || parseInt(imgEl.getAttribute('height') || '0') || undefined;
-      }
-
-      newSlides.push({ src, alt, width, height });
-      newIndexMap.set(src, index);
-    });
-
-    setSlides(newSlides);
-    imageIndexMapRef.current = newIndexMap;
-  }, [content]);
-  
-  // 打开图片查看器（优化版：等待图片加载完成并获取尺寸）
-  const openLightbox = useCallback(async (src: string) => {
-    const index = imageIndexMapRef.current.get(src) || 0;
-
-    // 如果当前 slide 缺少尺寸信息，等待图片加载完成
-    const currentSlide = slides[index];
-    if (!currentSlide?.width || !currentSlide?.height) {
-      const img = document.querySelector(`.markdown-image[src="${src}"]`) as HTMLImageElement;
-      if (img && (!img.naturalWidth || !img.naturalHeight)) {
-        await new Promise<void>((resolve) => {
-          if (img.complete) {
-            resolve();
-          } else {
-            img.addEventListener('load', () => resolve(), { once: true });
-            img.addEventListener('error', () => resolve(), { once: true }); // 即使加载失败也继续
-            // 超时保护：500ms 后强制继续
-            setTimeout(resolve, 500);
-          }
-        });
-
-        // 重新收集尺寸信息
-        const width = img.naturalWidth || undefined;
-        const height = img.naturalHeight || undefined;
-        if (width && height) {
-          setSlides(prev => {
-            const updated = [...prev];
-            updated[index] = { ...updated[index], width, height };
-            return updated;
-          });
-        }
-      }
-    }
-
-    setLightboxIndex(index);
+  const openLightbox = useCallback((src: string) => {
+    const images = Array.from(
+      containerRef.current?.querySelectorAll<HTMLImageElement>('.markdown-image') ?? []
+    );
+    setSlides(
+      images.map((img) => ({
+        src: img.currentSrc || img.src,
+        alt: img.alt,
+        width: img.naturalWidth || img.width || undefined,
+        height: img.naturalHeight || img.height || undefined,
+      }))
+    );
+    setLightboxIndex(Math.max(0, images.findIndex((img) => img.src === src || img.getAttribute('src') === src)));
     setLightboxOpen(true);
-  }, [slides]);
-
-    // 安全策略配置 - 扩展白名单允许图片相关属性和代码块属性
-  const sanitizeSchema = {
-    ...defaultSchema,
-    tagNames: [...(defaultSchema.tagNames || []), 'video', 'source'],
-    attributes: {
-      ...defaultSchema.attributes,
-      img: [
-        'src', 'alt', 'title', 'width', 'height', 'className', 'style',
-        'loading', 'decoding', 'data-*'
-      ],
-      video: [
-        'src', 'controls', 'preload', 'style', 'className', 'width', 'height',
-        'poster', 'muted', 'loop', 'autoplay', 'playsInline'
-      ],
-      source: ['src', 'type'],
-      // 确保代码块渲染不受影响
-      code: [...(defaultSchema.attributes?.code || []), 'className', 'style'],
-      pre: [...(defaultSchema.attributes?.pre || []), 'className', 'style'],
-      div: [...(defaultSchema.attributes?.div || []), 'className', 'style'],
-      span: [...(defaultSchema.attributes?.span || []), 'className', 'style']
-    },
-    protocols: {
-      ...defaultSchema.protocols,
-      src: ['http', 'https', 'data']
-    }
-  };
+  }, []);
 
   // 统一字体大小映射 - 确保正文和折叠块使用相同的字体大小
   const getFontSizeValues = (fontSize: string) => {
@@ -850,415 +1076,339 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
     </style>
   `;
 
-  // 获取代码主题样式
-  const getCodeStyle = () => {
-    const themeMap = {
-      // 经典主题
-      vs,
-      vscDarkPlus,
-      github,
-      tomorrow,
-      twilight,
-      monokai,
-      dracula,
-      nord,
-      oneLight,
-      oneDark,
+  // 组件映射只在主题 / 字号 / 代码设置变化时重建，保证已渲染的段落不会被重新解析
+  const components = useMemo<Components>(() => ({
+    code: ({ inline, className, children }: { inline?: boolean; className?: string; children?: React.ReactNode }) => {
+      const match = /language-(\w+)/.exec(className || '');
+      const language = match ? match[1] : '';
 
-      // 现代化主题 - Prism样式
-      materialDark,
-      materialLight,
-      atomDark,
-      coldarkCold,
-      coldarkDark,
-      prism,
-      synthwave84,
-      nightOwl,
-      shadesOfPurple,
-      lucario,
-      duotoneDark,
-      duotoneLight,
-      okaidia,
-      solarizedlight,
-      darcula,
-      base16AteliersulphurpoolLight,
+      // 确保children是字符串
+      const codeString = String(children).trim();
 
-      // 现代化主题 - HLJS样式
-      atelierCaveLight,
-      atelierCaveDark,
-      atelierDuneLight,
-      atelierDuneDark,
-      atelierEstuaryLight,
-      atelierEstuaryDark,
-      atelierForestLight,
-      atelierForestDark,
-      atelierHeathLight,
-      atelierHeathDark,
-      atelierLakesideLight,
-      atelierLakesideDark,
-      atelierPlateauLight,
-      atelierPlateauDark,
-      atelierSavannaLight,
-      atelierSavannaDark,
-      atelierSeasideLight,
-      atelierSeasideDark,
-      atelierSulphurpoolLight,
-      atelierSulphurpoolDark,
-    };
-    return themeMap[settings.codeTheme as keyof typeof themeMap] || vscDarkPlus;
-  };
+      // Mermaid diagram rendering
+      if (!inline && language === 'mermaid') {
+        return <MermaidDiagram code={codeString} isDark={isDark} />;
+      }
+
+      // 多行代码块 — 先纯文本，接近视口再加载高亮
+      if (!inline && codeString.includes('\n')) {
+        return (
+          <LazyCode
+            code={codeString}
+            language={language}
+            themeName={settings.codeTheme}
+            isDark={isDark}
+            wordWrap={settings.wordWrap}
+            fontSizeClass={settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-lg' : settings.fontSize === 'xl' ? 'text-xl' : 'text-base'}
+          />
+        );
+      }
+
+      // 行内代码
+      return (
+        <code
+          className={`font-mono text-gray-800 dark:text-gray-200 ${settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-base' : settings.fontSize === 'xl' ? 'text-lg' : 'text-sm'}`}
+          style={{
+            color: isDark ? '#e5e7eb' : '#374151',
+            fontFamily: 'JetBrains Mono, Monaco, Consolas, monospace',
+          }}
+        >
+          {codeString}
+        </code>
+      );
+    },
+    h1: ({ children, id }) => {
+      const sizeClass = settings.fontSize === 'sm' ? 'text-2xl' :
+        settings.fontSize === 'lg' ? 'text-4xl' :
+          settings.fontSize === 'xl' ? 'text-5xl' : 'text-3xl';
+      return (
+        <h1 id={id} className={`${sizeClass} font-bold text-gray-900 dark:text-white mt-8 mb-4 first:mt-0`}>
+          {children}
+        </h1>
+      );
+    },
+    h2: ({ children, id }) => {
+      const sizeClass = settings.fontSize === 'sm' ? 'text-xl' :
+        settings.fontSize === 'lg' ? 'text-3xl' :
+          settings.fontSize === 'xl' ? 'text-4xl' : 'text-2xl';
+      return (
+        <h2 id={id} className={`${sizeClass} font-bold text-gray-900 dark:text-white mt-6 mb-3`}>
+          {children}
+        </h2>
+      );
+    },
+    h3: ({ children, id }) => {
+      const sizeClass = settings.fontSize === 'sm' ? 'text-lg' :
+        settings.fontSize === 'lg' ? 'text-2xl' :
+          settings.fontSize === 'xl' ? 'text-3xl' : 'text-xl';
+      return (
+        <h3 id={id} className={`${sizeClass} font-bold text-gray-900 dark:text-white mt-5 mb-3`}>
+          {children}
+        </h3>
+      );
+    },
+    p: ({ children }) => {
+      const textStyles = getUnifiedTextStyles();
+      return (
+        <p
+          className={`${textStyles.className} mb-4`}
+          style={textStyles.style}
+        >
+          {children}
+        </p>
+      );
+    },
+    video: ({ ...props }) => {
+      return (
+        <video
+          {...props}
+          controls={props.controls ?? true}
+          autoPlay={props.autoPlay ?? true}
+          loop={props.loop ?? true}
+          muted={props.muted ?? true}
+          playsInline={props.playsInline ?? true}
+          preload={typeof props.preload === 'string' ? props.preload : 'metadata'}
+        />
+      );
+    },
+    a: ({ href, children }) => {
+      return (
+        <a
+          href={href}
+          className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline"
+          target={href?.startsWith('http') ? '_blank' : undefined}
+          rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+        >
+          {children}
+        </a>
+      );
+    },
+    blockquote: ({ children }) => {
+      const textStyles = getUnifiedTextStyles();
+      return (
+        <blockquote
+          className={`border-l-4 border-primary-500 pl-4 py-1.5 my-4 ${textStyles.className}`}
+          style={{
+            ...textStyles.style,
+            quotes: 'none',
+            fontStyle: 'normal',
+          }}
+        >
+          <div style={{ quotes: 'none', fontStyle: 'normal' }}>
+            {children}
+          </div>
+        </blockquote>
+      );
+    },
+    ul: ({ children }) => {
+      const textStyles = getUnifiedTextStyles();
+      return (
+        <ul
+          className={`list-disc list-outside !ml-0 pl-5 mb-4 ${textStyles.className}`}
+          style={textStyles.style}
+        >
+          {children}
+        </ul>
+      );
+    },
+    ol: ({ children, start, ...props }) => {
+      const textStyles = getUnifiedTextStyles();
+      return (
+        <ol
+          start={start}
+          className={`list-decimal list-outside !ml-0 pl-5 mb-4 ${textStyles.className}`}
+          style={{
+            ...textStyles.style,
+            listStylePosition: 'outside'
+          }}
+          {...props}
+        >
+          {children}
+        </ol>
+      );
+    },
+    li: ({ children }) => {
+      const textStyles = getUnifiedTextStyles();
+      return (
+        <li
+          className={`ml-0 ${textStyles.className}`}
+          style={{
+            ...textStyles.style,
+            display: 'list-item',
+            listStylePosition: 'outside'
+          }}
+        >
+          {children}
+        </li>
+      );
+    },
+    table: ({ children }) => (
+      <div className="overflow-x-auto my-4">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          {children}
+        </table>
+      </div>
+    ),
+    th: ({ children }) => (
+      <th className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        {children}
+      </th>
+    ),
+    td: ({ children }) => (
+      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+        {children}
+      </td>
+    ),
+    img: ({ node, alt, src, ...props }) => {
+      // Fallback 语法解析：![封面 | w=480 h=320 .mx-auto .rounded](url)
+      const parseFallbackAttributes = (altText: string) => {
+        const pipeIndex = altText?.indexOf(' | ');
+        if (pipeIndex === -1) return { cleanAlt: altText, attributes: {} };
+        
+        const cleanAlt = altText.substring(0, pipeIndex);
+        const attributeString = altText.substring(pipeIndex + 3);
+        const attributes: Record<string, string> = {};
+        const classes: string[] = [];
+        
+        const parts = attributeString.split(/\s+/);
+        parts.forEach(part => {
+          if (part.startsWith('.')) {
+            classes.push(part.substring(1));
+          } else if (part.includes('=')) {
+            const [key, value] = part.split('=');
+            if (key === 'w' || key === 'width') {
+              attributes.width = value;
+            } else if (key === 'h' || key === 'height') {
+              attributes.height = value;
+            } else {
+              attributes[key] = value;
+            }
+          }
+        });
+        
+        if (classes.length > 0) {
+          attributes.className = classes.join(' ');
+        }
+        
+        return { cleanAlt, attributes };
+      };
+      
+      // 从 node.properties 获取 remark-attr 解析的属性
+      const nodeAttributes = (node?.properties || {}) as Record<string, string>;
+      
+      // 解析 Fallback 语法
+      const { cleanAlt, attributes: fallbackAttributes } = parseFallbackAttributes(alt || '');
+      
+      // 合并属性：remark-attr 优先级更高
+      const finalAttributes = { ...fallbackAttributes, ...nodeAttributes };
+      
+      // 构建样式和类名
+      const customClasses = finalAttributes.className || '';
+      const width = finalAttributes.width;
+      const height = finalAttributes.height;
+      
+      // 基础类名，保持响应式和懒加载特性
+      const baseClasses = "max-w-full h-auto my-4 cursor-zoom-in transition-all duration-200 hover:scale-[1.02] hover:shadow-lg rounded-lg";
+      const finalClassName = customClasses ? `${baseClasses} ${customClasses}` : baseClasses;
+      
+      // 构建内联样式
+      const inlineStyle: React.CSSProperties = {};
+      if (width) {
+        inlineStyle.width = width.includes('%') ? width : `${width}px`;
+      }
+      if (height) {
+        inlineStyle.height = height.includes('%') ? height : `${height}px`;
+      }
+      
+      if (!src) return null;
+      
+      return (
+        <img
+          src={src}
+          alt={cleanAlt}
+          className={`markdown-image ${finalClassName}`}
+          style={inlineStyle}
+          loading="lazy"
+          decoding="async"
+          onClick={() => openLightbox(src)}
+          {...props}
+        />
+      );
+    },
+    // 增强的折叠块支持 - 使用动态字体大小系统
+    details: ({ children, ...props }) => (
+      <LazyDetails
+        className={`
+        foldable-block group relative my-6 
+        border border-gray-200/80 dark:border-gray-700/80 
+        rounded-xl shadow-sm hover:shadow-md
+        bg-gradient-to-br from-gray-50/50 to-white dark:from-gray-800/30 dark:to-gray-900/50
+        overflow-hidden
+        transition-[border-color,box-shadow] duration-300 ease-in-out
+        hover:border-blue-200 dark:hover:border-blue-700/50
+        hover:from-blue-50/30 hover:to-blue-50/10 
+        dark:hover:from-blue-900/20 dark:hover:to-blue-900/10
+        focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-300
+        dark:focus-within:ring-blue-400/20 dark:focus-within:border-blue-600
+      `}
+        style={{ fontSize: fontSizes.base }}
+        {...props}
+      >
+        {children}
+      </LazyDetails>
+    ),
+    summary: ({ children }) => (
+      <summary className={`
+      px-5 py-4 cursor-pointer font-medium select-none
+      bg-gradient-to-r from-gray-100/80 to-gray-50/60 
+      dark:from-gray-700/60 dark:to-gray-800/60
+      text-gray-800 dark:text-gray-100
+      border-b border-gray-200/70 dark:border-gray-600/50
+      transition-all duration-300 ease-in-out
+      hover:from-blue-100/80 hover:to-blue-50/60 
+      dark:hover:from-blue-800/40 dark:hover:to-blue-900/30
+      hover:text-blue-900 dark:hover:text-blue-100
+      active:bg-blue-200/50 dark:active:bg-blue-700/30
+      focus:outline-none focus:bg-blue-100/50 dark:focus:bg-blue-800/30
+      relative overflow-hidden
+      before:absolute before:inset-0 before:bg-gradient-to-r 
+      before:from-transparent before:via-white/20 before:to-transparent
+      before:translate-x-[-100%] before:transition-transform before:duration-700
+      hover:before:translate-x-[100%]
+      after:content-[''] after:absolute after:right-5 after:top-1/2 
+      after:w-0 after:h-0 after:border-l-[6px] after:border-r-[6px] 
+      after:border-t-[8px] after:border-l-transparent after:border-r-transparent
+      after:border-t-gray-500 dark:after:border-t-gray-400
+      after:transition-all after:duration-300 after:ease-in-out
+      after:transform after:-translate-y-1/2 after:rotate-[-90deg]
+      group-open:after:rotate-0 group-open:after:border-t-blue-600 
+      dark:group-open:after:border-t-blue-400
+    `}
+        style={{
+          fontSize: fontSizes.base,
+          fontWeight: settings.fontSize === 'sm' ? '500' :
+            settings.fontSize === 'lg' ? '600' :
+              settings.fontSize === 'xl' ? '600' : '500'
+        }}>
+        <span className="relative z-10 flex items-center">
+          <span className="mr-3 text-blue-600 dark:text-blue-400 font-mono text-xs opacity-70">
+            ▶
+          </span>
+          {children}
+        </span>
+      </summary>
+    ),
+  // getUnifiedTextStyles / fontSizes 均由 settings 派生
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [settings, isDark, openLightbox]);
 
   return (
     <>
       {/* 注入折叠块的自定义样式 */}
       <div dangerouslySetInnerHTML={{ __html: foldableStyles }} />
 
-      <div className={`prose dark:prose-invert max-w-none prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 [&_video]:w-full [&_video]:max-w-full [&_video]:rounded-xl [&_video]:shadow-medium [&_video]:border [&_video]:border-gray-200 dark:[&_video]:border-gray-700 [&_video]:bg-black [&_video]:my-6 ${className}`}>
-          <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkImageSize]}
-          rehypePlugins={[
-            rehypeRaw,
-            [rehypeSanitize as unknown as never, sanitizeSchema],
-            rehypeSlug
-          ]}
-          components={{
-            code: ({ inline, className, children }: { inline?: boolean; className?: string; children?: React.ReactNode }) => {
-              const match = /language-(\w+)/.exec(className || '');
-              const language = match ? match[1] : '';
-
-              // 确保children是字符串
-              const codeString = String(children).trim();
-
-              // Mermaid diagram rendering
-              if (!inline && language === 'mermaid') {
-                return <MermaidDiagram code={codeString} isDark={isDark} />;
-              }
-
-              // 多行代码块
-              if (!inline && codeString.includes('\n')) {
-                return (
-                  <div className="my-1">
-                    <SyntaxHighlighter
-                      style={getCodeStyle()}
-                      language={language || 'text'}
-                      PreTag="div"
-                      className={`!mt-0 !mb-0 !bg-transparent [&>*]:!bg-transparent [&_*]:!bg-transparent ${settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-lg' : settings.fontSize === 'xl' ? 'text-xl' : 'text-base'}`}
-                      showLineNumbers={false}
-                      wrapLines={settings.wordWrap}
-                      wrapLongLines={settings.wordWrap}
-                      customStyle={{
-                        backgroundColor: isDark ? '#111827' : '#f9fafb',
-                        background: isDark ? '#111827' : '#f9fafb',
-                        border: 'none',
-                        borderRadius: '0px',
-                        padding: '16px',
-                        margin: '0'
-                      }}
-                    >
-                      {codeString}
-                    </SyntaxHighlighter>
-                  </div>
-                );
-              }
-
-              // 行内代码
-              return (
-                <code
-                  className={`font-mono text-gray-800 dark:text-gray-200 ${settings.fontSize === 'sm' ? 'text-sm' : settings.fontSize === 'lg' ? 'text-base' : settings.fontSize === 'xl' ? 'text-lg' : 'text-sm'}`}
-                  style={{
-                    color: isDark ? '#e5e7eb' : '#374151',
-                    fontFamily: 'JetBrains Mono, Monaco, Consolas, monospace',
-                  }}
-                >
-                  {codeString}
-                </code>
-              );
-            },
-            h1: ({ children, id }) => {
-              const sizeClass = settings.fontSize === 'sm' ? 'text-2xl' :
-                settings.fontSize === 'lg' ? 'text-4xl' :
-                  settings.fontSize === 'xl' ? 'text-5xl' : 'text-3xl';
-              return (
-                <h1 id={id} className={`${sizeClass} font-bold text-gray-900 dark:text-white mt-8 mb-4 first:mt-0`}>
-                  {children}
-                </h1>
-              );
-            },
-            h2: ({ children, id }) => {
-              const sizeClass = settings.fontSize === 'sm' ? 'text-xl' :
-                settings.fontSize === 'lg' ? 'text-3xl' :
-                  settings.fontSize === 'xl' ? 'text-4xl' : 'text-2xl';
-              return (
-                <h2 id={id} className={`${sizeClass} font-bold text-gray-900 dark:text-white mt-6 mb-3`}>
-                  {children}
-                </h2>
-              );
-            },
-            h3: ({ children, id }) => {
-              const sizeClass = settings.fontSize === 'sm' ? 'text-lg' :
-                settings.fontSize === 'lg' ? 'text-2xl' :
-                  settings.fontSize === 'xl' ? 'text-3xl' : 'text-xl';
-              return (
-                <h3 id={id} className={`${sizeClass} font-bold text-gray-900 dark:text-white mt-5 mb-3`}>
-                  {children}
-                </h3>
-              );
-            },
-            p: ({ children }) => {
-              const textStyles = getUnifiedTextStyles();
-              return (
-                <p
-                  className={`${textStyles.className} mb-4`}
-                  style={textStyles.style}
-                >
-                  {children}
-                </p>
-              );
-            },
-            video: ({ ...props }) => {
-              return (
-                <video
-                  {...props}
-                  controls={props.controls ?? true}
-                  autoPlay={props.autoPlay ?? true}
-                  loop={props.loop ?? true}
-                  muted={props.muted ?? true}
-                  playsInline={props.playsInline ?? true}
-                  preload={typeof props.preload === 'string' ? props.preload : 'metadata'}
-                />
-              );
-            },
-            a: ({ href, children }) => {
-              return (
-                <a
-                  href={href}
-                  className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline"
-                  target={href?.startsWith('http') ? '_blank' : undefined}
-                  rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
-                >
-                  {children}
-                </a>
-              );
-            },
-            blockquote: ({ children }) => {
-              const textStyles = getUnifiedTextStyles();
-              return (
-                <blockquote
-                  className={`border-l-4 border-primary-500 pl-4 py-1.5 my-4 ${textStyles.className}`}
-                  style={{
-                    ...textStyles.style,
-                    quotes: 'none',
-                    fontStyle: 'normal',
-                  }}
-                >
-                  <div style={{ quotes: 'none', fontStyle: 'normal' }}>
-                    {children}
-                  </div>
-                </blockquote>
-              );
-            },
-            ul: ({ children }) => {
-              const textStyles = getUnifiedTextStyles();
-              return (
-                <ul
-                  className={`list-disc list-outside !ml-0 pl-5 mb-4 ${textStyles.className}`}
-                  style={textStyles.style}
-                >
-                  {children}
-                </ul>
-              );
-            },
-            ol: ({ children, start, ...props }) => {
-              const textStyles = getUnifiedTextStyles();
-              return (
-                <ol
-                  start={start}
-                  className={`list-decimal list-outside !ml-0 pl-5 mb-4 ${textStyles.className}`}
-                  style={{
-                    ...textStyles.style,
-                    listStylePosition: 'outside'
-                  }}
-                  {...props}
-                >
-                  {children}
-                </ol>
-              );
-            },
-            li: ({ children }) => {
-              const textStyles = getUnifiedTextStyles();
-              return (
-                <li
-                  className={`ml-0 ${textStyles.className}`}
-                  style={{
-                    ...textStyles.style,
-                    display: 'list-item',
-                    listStylePosition: 'outside'
-                  }}
-                >
-                  {children}
-                </li>
-              );
-            },
-            table: ({ children }) => (
-              <div className="overflow-x-auto my-4">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  {children}
-                </table>
-              </div>
-            ),
-            th: ({ children }) => (
-              <th className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {children}
-              </th>
-            ),
-            td: ({ children }) => (
-              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
-                {children}
-              </td>
-            ),
-            img: ({ node, alt, src, ...props }) => {
-              // Fallback 语法解析：![封面 | w=480 h=320 .mx-auto .rounded](url)
-              const parseFallbackAttributes = (altText: string) => {
-                const pipeIndex = altText?.indexOf(' | ');
-                if (pipeIndex === -1) return { cleanAlt: altText, attributes: {} };
-                
-                const cleanAlt = altText.substring(0, pipeIndex);
-                const attributeString = altText.substring(pipeIndex + 3);
-                const attributes: Record<string, string> = {};
-                const classes: string[] = [];
-                
-                const parts = attributeString.split(/\s+/);
-                parts.forEach(part => {
-                  if (part.startsWith('.')) {
-                    classes.push(part.substring(1));
-                  } else if (part.includes('=')) {
-                    const [key, value] = part.split('=');
-                    if (key === 'w' || key === 'width') {
-                      attributes.width = value;
-                    } else if (key === 'h' || key === 'height') {
-                      attributes.height = value;
-                    } else {
-                      attributes[key] = value;
-                    }
-                  }
-                });
-                
-                if (classes.length > 0) {
-                  attributes.className = classes.join(' ');
-                }
-                
-                return { cleanAlt, attributes };
-              };
-              
-              // 从 node.properties 获取 remark-attr 解析的属性
-              const nodeAttributes = (node?.properties || {}) as Record<string, string>;
-              
-              // 解析 Fallback 语法
-              const { cleanAlt, attributes: fallbackAttributes } = parseFallbackAttributes(alt || '');
-              
-              // 合并属性：remark-attr 优先级更高
-              const finalAttributes = { ...fallbackAttributes, ...nodeAttributes };
-              
-              // 构建样式和类名
-              const customClasses = finalAttributes.className || '';
-              const width = finalAttributes.width;
-              const height = finalAttributes.height;
-              
-              // 基础类名，保持响应式和懒加载特性
-              const baseClasses = "max-w-full h-auto my-4 cursor-zoom-in transition-all duration-200 hover:scale-[1.02] hover:shadow-lg rounded-lg";
-              const finalClassName = customClasses ? `${baseClasses} ${customClasses}` : baseClasses;
-              
-              // 构建内联样式
-              const inlineStyle: React.CSSProperties = {};
-              if (width) {
-                inlineStyle.width = width.includes('%') ? width : `${width}px`;
-              }
-              if (height) {
-                inlineStyle.height = height.includes('%') ? height : `${height}px`;
-              }
-              
-              if (!src) return null;
-              
-              return (
-                <img
-                  src={src}
-                  alt={cleanAlt}
-                  className={`markdown-image ${finalClassName}`}
-                  style={inlineStyle}
-                  loading="lazy"
-                  decoding="async"
-                  onClick={() => openLightbox(src)}
-                  {...props}
-                />
-              );
-            },
-            // 增强的折叠块支持 - 使用动态字体大小系统
-            details: ({ children, ...props }) => (
-              <details
-                className={`
-                foldable-block group relative my-6 
-                border border-gray-200/80 dark:border-gray-700/80 
-                rounded-xl shadow-sm hover:shadow-md
-                bg-gradient-to-br from-gray-50/50 to-white dark:from-gray-800/30 dark:to-gray-900/50
-                backdrop-blur-sm overflow-hidden
-                transition-all duration-300 ease-in-out
-                hover:border-blue-200 dark:hover:border-blue-700/50
-                hover:from-blue-50/30 hover:to-blue-50/10 
-                dark:hover:from-blue-900/20 dark:hover:to-blue-900/10
-                focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-300
-                dark:focus-within:ring-blue-400/20 dark:focus-within:border-blue-600
-              `}
-                style={{ fontSize: fontSizes.base }}
-                {...props}
-              >
-                {children}
-              </details>
-            ),
-            summary: ({ children }) => (
-              <summary className={`
-              px-5 py-4 cursor-pointer font-medium select-none
-              bg-gradient-to-r from-gray-100/80 to-gray-50/60 
-              dark:from-gray-700/60 dark:to-gray-800/60
-              text-gray-800 dark:text-gray-100
-              border-b border-gray-200/70 dark:border-gray-600/50
-              transition-all duration-300 ease-in-out
-              hover:from-blue-100/80 hover:to-blue-50/60 
-              dark:hover:from-blue-800/40 dark:hover:to-blue-900/30
-              hover:text-blue-900 dark:hover:text-blue-100
-              active:bg-blue-200/50 dark:active:bg-blue-700/30
-              focus:outline-none focus:bg-blue-100/50 dark:focus:bg-blue-800/30
-              relative overflow-hidden
-              before:absolute before:inset-0 before:bg-gradient-to-r 
-              before:from-transparent before:via-white/20 before:to-transparent
-              before:translate-x-[-100%] before:transition-transform before:duration-700
-              hover:before:translate-x-[100%]
-              after:content-[''] after:absolute after:right-5 after:top-1/2 
-              after:w-0 after:h-0 after:border-l-[6px] after:border-r-[6px] 
-              after:border-t-[8px] after:border-l-transparent after:border-r-transparent
-              after:border-t-gray-500 dark:after:border-t-gray-400
-              after:transition-all after:duration-300 after:ease-in-out
-              after:transform after:-translate-y-1/2 after:rotate-[-90deg]
-              group-open:after:rotate-0 group-open:after:border-t-blue-600 
-              dark:group-open:after:border-t-blue-400
-            `}
-                style={{
-                  fontSize: fontSizes.base,
-                  fontWeight: settings.fontSize === 'sm' ? '500' :
-                    settings.fontSize === 'lg' ? '600' :
-                      settings.fontSize === 'xl' ? '600' : '500'
-                }}>
-                <span className="relative z-10 flex items-center">
-                  <span className="mr-3 text-blue-600 dark:text-blue-400 font-mono text-xs opacity-70">
-                    ▶
-                  </span>
-                  {children}
-                </span>
-              </summary>
-            ),
-          }}
-        >
-          {content}
-          </ReactMarkdown>
+      <div ref={containerRef} className={`prose dark:prose-invert max-w-none prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 [&_video]:w-full [&_video]:max-w-full [&_video]:rounded-xl [&_video]:shadow-medium [&_video]:border [&_video]:border-gray-200 dark:[&_video]:border-gray-700 [&_video]:bg-black [&_video]:my-6 ${className}`}>
+          <ProgressiveMarkdown key={doc.id} doc={doc} components={components} />
       </div>
       
       {/* Lightbox 组件 */}

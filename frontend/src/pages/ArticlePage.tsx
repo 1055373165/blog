@@ -6,6 +6,9 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import OptimizedImage from '../components/ui/OptimizedImage';
 import CollapsibleTOC from '../components/reading/CollapsibleTOC';
 import StripTOC from '../components/reading/StripTOC';
+import ResumeReadingPrompt from '../components/reading/ResumeReadingPrompt';
+import { useResumeReading } from '../hooks/useResumeReading';
+import { getMarkdownDocument } from '../utils/markdownChunks';
 import SubstackLayout from '../components/SubstackLayout';
 import { useReadingTime } from '../hooks/useReadingTime';
 import { formatDate } from '../utils';
@@ -221,6 +224,16 @@ export default function ArticlePage() {
     }
   }, [article, likeLoading, liked, likes_count]);
 
+  // 目录直接来自 markdown 源：长文分段渲染时，目录在正文渲染完之前就是完整的
+  const outline = useMemo(
+    () =>
+      article?.content
+        ? getMarkdownDocument(article.content).headings.map(({ id, text, level }) => ({ id, text, level }))
+        : undefined,
+    [article?.content]
+  );
+  const resume = useResumeReading(article?.slug, outline);
+
   // 缓存文章内容和相关计算 - 更细粒度的依赖（移到顶级以符合 Hooks 规则）
   const memoizedContent = useMemo(() => {
     if (!article) return null;
@@ -323,6 +336,8 @@ export default function ArticlePage() {
           <StripTOC
             contentSelector=".article-content"
             maxLevel={5}
+            items={outline}
+            onActiveChange={resume.onActiveHeading}
           />
         }
       >
@@ -557,8 +572,11 @@ export default function ArticlePage() {
           contentSelector=".article-content"
           maxLevel={5}
           autoCollapse={false}
+          items={outline}
         />
       </div>
+
+      <ResumeReadingPrompt saved={resume.saved} onDismiss={resume.dismiss} />
     </>
   );
 }
