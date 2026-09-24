@@ -49,7 +49,7 @@ export default function HomePage() {
           <BookCarousel
             className="shadow-2xl"
             autoPlay={true}
-            autoPlayInterval={5000}
+            autoPlayInterval={1000}
             showControls={true}
             showDots={true}
           />

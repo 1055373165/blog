@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { 
   HomeIcon, 
@@ -62,6 +62,7 @@ interface FloatingNavigationProps {
 
 export default function FloatingNavigation({ className }: FloatingNavigationProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { settings, isDark, updateColorTheme } = useTheme();
   const { user, isAuthenticated, logout } = useAuth();
   const [themeSettingsOpen, setThemeSettingsOpen] = useState(false);
@@ -283,14 +284,15 @@ export default function FloatingNavigation({ className }: FloatingNavigationProp
 
         if (shortcuts[key]) {
           e.preventDefault();
-          window.location.href = shortcuts[key];
+          // SPA 内跳转：整页刷新会打断全局背景音乐
+          navigate(shortcuts[key]);
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [navigate]);
 
   return (
     <>

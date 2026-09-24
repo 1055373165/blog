@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 
 /* ──────────────────────────────────────────────────────────
    AmbientPlayer
-   A minimal, cinematic floating music player. Sits quietly
-   at the bottom-left of the viewport. Never starts sound for
-   a visitor who hasn't chosen it: music plays only after the
-   user presses play. That choice is remembered, and returning
-   listeners resume on entry — or, if the browser blocks it, on
-   their first gesture anywhere on the page (pointer, touch or
-   key), retrying once the tab becomes visible.
+   A minimal, cinematic floating music player, mounted once at
+   the app root so it keeps playing across route changes and in
+   background tabs. Starts 1.5s after entry; if the browser
+   blocks unmuted autoplay, it starts on the user's first
+   gesture anywhere on the page (pointer, touch or key) or when
+   the tab becomes visible. A visitor who paused it stays paused
+   on later visits, and the playback position survives reloads.
    ────────────────────────────────────────────────────────── */
 
 const TRACK = {
@@ -17,12 +17,17 @@ const TRACK = {
   artist: 'Roger Subirana',
 };
 
-/* Remembers whether the visitor last left the music on ('1') or off ('0') */
+const AUTOPLAY_DELAY_MS = 1500;
+const VOLUME = 0.35;
+/* '0' once the visitor has paused the music themselves */
 const PREF_KEY = 'ambient-player:enabled';
+/* Playback position within this tab, so a full page reload resumes mid-track */
+const POSITION_KEY = 'ambient-player:position';
+const POSITION_SAVE_INTERVAL_MS = 2000;
 
-function readPref(): boolean {
+function pausedByUser(): boolean {
   try {
-    return localStorage.getItem(PREF_KEY) === '1';
+    return localStorage.getItem(PREF_KEY) === '0';
   } catch {
     return false;
   }
@@ -36,9 +41,27 @@ function writePref(enabled: boolean) {
   }
 }
 
+function readPosition(): number {
+  try {
+    return Number(sessionStorage.getItem(POSITION_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writePosition(seconds: number) {
+  try {
+    sessionStorage.setItem(POSITION_KEY, String(Math.floor(seconds)));
+  } catch {
+    // ignore
+  }
+}
+
 export default function AmbientPlayer() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const playPromiseRef = useRef<Promise<void> | null>(null);
+  /* Set once the visitor uses the player; autoplay retries stop from then on */
+  const userChoseRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [visible, setVisible] = useState(false);
 
@@ -48,17 +71,31 @@ export default function AmbientPlayer() {
     return () => clearTimeout(timer);
   }, []);
 
-  /* ── Sync state with native audio events ────────────── */
+  /* ── Sync state with native audio events; remember position ── */
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
+    let lastSaved = 0;
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
+    const onTime = () => {
+      const now = Date.now();
+      if (now - lastSaved < POSITION_SAVE_INTERVAL_MS) return;
+      lastSaved = now;
+      writePosition(a.currentTime);
+    };
+    const onPageHide = () => {
+      if (a.src) writePosition(a.currentTime);
+    };
     a.addEventListener('play', onPlay);
     a.addEventListener('pause', onPause);
+    a.addEventListener('timeupdate', onTime);
+    window.addEventListener('pagehide', onPageHide);
     return () => {
       a.removeEventListener('play', onPlay);
       a.removeEventListener('pause', onPause);
+      a.removeEventListener('timeupdate', onTime);
+      window.removeEventListener('pagehide', onPageHide);
     };
   }, []);
 
@@ -66,17 +103,23 @@ export default function AmbientPlayer() {
   const safePlay = async () => {
     const a = audioRef.current;
     if (!a) return;
-    a.volume = 0.35;
-    // 首次播放才真正加载，避免初始就下载 12MB 文件
+    a.volume = VOLUME;
+    // 首次播放才真正加载音频，并从本标签页上次的位置接着放
     if (!a.src) {
       a.src = TRACK.src;
+      const resumeAt = readPosition();
+      if (resumeAt > 0) {
+        a.addEventListener('loadedmetadata', () => {
+          if (resumeAt < a.duration) a.currentTime = resumeAt;
+        }, { once: true });
+      }
       a.load();
     }
     try {
       playPromiseRef.current = a.play();
       await playPromiseRef.current;
     } catch {
-      // Autoplay blocked or play was aborted — ignore
+      // Autoplay blocked or play was aborted — the gesture fallback retries
     } finally {
       playPromiseRef.current = null;
     }
@@ -95,20 +138,14 @@ export default function AmbientPlayer() {
     a.pause();
   };
 
-  /* ── Resume for returning listeners; fall back to the 1st gesture ─── */
+  /* ── Autoplay 1.5s after entry; fall back to the 1st gesture ─── */
   useEffect(() => {
-    // 从未主动开启过音乐的访客不自动播放，也不下载音频
-    if (!readPref()) return;
+    // 访客自己暂停过音乐，就尊重这个选择，不再自动播放
+    if (pausedByUser()) return;
 
-    // 不在 mount 时立即播放——把昂贵的网络抢占推迟到主线程空闲后
-    const idle =
-      typeof window !== 'undefined' && 'requestIdleCallback' in window
-        ? (cb: () => void) => (window as any).requestIdleCallback(cb, { timeout: 1500 })
-        : (cb: () => void) => setTimeout(cb, 1200);
-
-    const handle = idle(() => {
-      void safePlay();
-    });
+    const timer = setTimeout(() => {
+      if (!userChoseRef.current) void safePlay();
+    }, AUTOPLAY_DELAY_MS);
 
     /* 浏览器只在"已有用户手势"后才允许有声播放，且手势不限于点击。
        捕获阶段监听，避免被子元素的 stopPropagation 吞掉。 */
@@ -117,7 +154,7 @@ export default function AmbientPlayer() {
     const onGesture = (e: Event) => {
       const a = audioRef.current;
       if (!a) return;
-      if (!a.paused) { detach(); return; }
+      if (userChoseRef.current || !a.paused) { detach(); return; }
       // 播放器自身有独立的 toggle 处理，避免"点一下播、再点一下停"抵消
       const target = e.target as HTMLElement | null;
       if (target?.closest?.('[data-ambient-player]')) return;
@@ -125,9 +162,11 @@ export default function AmbientPlayer() {
       detach();
     };
 
-    /* 后台标签页里 play() 必被拒；等页面真正可见时再试一次 */
+    /* 页面在后台打开时 play() 可能被拒；等页面真正可见时再试一次。
+       已经在播放的音乐切到后台后照常播放，这里不会暂停它。 */
     const onVisible = () => {
       const a = audioRef.current;
+      if (userChoseRef.current) { detach(); return; }
       if (document.visibilityState === 'visible' && a?.paused) void safePlay();
     };
 
@@ -145,11 +184,7 @@ export default function AmbientPlayer() {
 
     return () => {
       detach();
-      if (typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
-        (window as any).cancelIdleCallback(handle);
-      } else {
-        clearTimeout(handle as unknown as number);
-      }
+      clearTimeout(timer);
     };
   }, []);
 
@@ -157,6 +192,7 @@ export default function AmbientPlayer() {
   const toggle = () => {
     const a = audioRef.current;
     if (!a) return;
+    userChoseRef.current = true;
     if (a.paused) {
       writePref(true);
       safePlay();
@@ -168,7 +204,7 @@ export default function AmbientPlayer() {
 
   return (
     <>
-      {/* src 在首次播放时通过 safePlay 注入，避免初始页面就下载 12MB */}
+      {/* src 在首次播放时通过 safePlay 注入，页面加载阶段不下载音频 */}
       <audio ref={audioRef} loop preload="none" />
 
       <div

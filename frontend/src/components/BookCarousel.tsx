@@ -13,6 +13,7 @@ import { clsx } from 'clsx';
    opacity — no remounts, no image re-decodes. One hidden card
    on each side is kept loaded as a buffer, and autoplay only
    advances once the card about to enter view has loaded.
+   Autoplay keeps running in background tabs and offscreen.
    ────────────────────────────────────────────────────────── */
 
 interface BookCarouselProps {
@@ -74,7 +75,7 @@ function useIsMobile(): boolean {
 export default function BookCarousel({
   className = '',
   autoPlay = true,
-  autoPlayInterval = 5000,
+  autoPlayInterval = 1000,
   showControls = true,
   showDots = true,
   useLocalImages = true,
@@ -88,8 +89,6 @@ export default function BookCarousel({
   const isMobile = useIsMobile();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay && !reducedMotion);
-  const [isPageVisible, setIsPageVisible] = useState(true);
-  const [isInViewport, setIsInViewport] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [hasFocusWithin, setHasFocusWithin] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -134,30 +133,10 @@ export default function BookCarousel({
     if (reducedMotion) setIsPlaying(false);
   }, [reducedMotion]);
 
-  useEffect(() => {
-    const onVisibility = () => setIsPageVisible(!document.hidden);
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
-  }, []);
-
-  // 视口可见性 — 离屏时停止自动播放
-  useEffect(() => {
-    const node = carouselRef.current;
-    if (!node || typeof IntersectionObserver === 'undefined') {
-      setIsInViewport(true);
-      return;
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => entry && setIsInViewport(entry.isIntersecting),
-      { threshold: 0.05 }
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
   /* ── Autoplay: advance only when the card about to enter view is loaded ── */
   const autoplayActive =
-    isPlaying && isPageVisible && isInViewport && !isHovered && !hasFocusWithin && total > 1 && !loading;
+    // 切到其他标签页或滚出视口时照常轮播；仅在鼠标悬停 / 键盘聚焦时暂停，方便阅读与操作
+    isPlaying && !isHovered && !hasFocusWithin && total > 1 && !loading;
 
   useEffect(() => {
     if (!autoplayActive) return;
@@ -323,8 +302,6 @@ export default function BookCarousel({
                       isLoaded ? 'opacity-100' : 'opacity-0'
                     )}
                   />
-                  {/* 书脊装饰 */}
-                  <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-gradient-to-b from-amber-400 via-amber-600 to-amber-800 opacity-60" />
                   {/* 悬停显示书名 */}
                   <span className="absolute bottom-2 left-2 right-2 rounded bg-black/70 p-2 text-left text-xs text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100">
                     <span className="block font-medium truncate">{book.title}</span>
@@ -357,52 +334,64 @@ export default function BookCarousel({
           </div>
         )}
 
-        {/* 播放控制 · 计数 · 进度 */}
+        {/* 播放控制和圆点指示器 */}
         {hasBooks && !loading && (
-          <div className="mt-10 mx-auto flex max-w-xl items-center gap-4">
+          <div className="flex items-center justify-center mt-8 space-x-8">
             <button
               onClick={() => setIsPlaying((p) => !p)}
-              className="shrink-0 rounded-full p-2.5 bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 shadow border border-white/30 dark:border-gray-700/40 transition-colors hover:bg-white dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className={clsx(
+                'bg-white/90 dark:bg-gray-800/90',
+                'hover:bg-white dark:hover:bg-gray-800',
+                'text-gray-700 dark:text-gray-300 rounded-full p-3 shadow-2xl',
+                'transition-all duration-300 hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+                'border border-white/30 dark:border-gray-700/30',
+                'hover:shadow-[0_0_20px_rgba(59,130,246,0.3)]',
+                'group relative overflow-hidden'
+              )}
               aria-label={isPlaying ? '暂停自动播放' : '开始自动播放'}
             >
               {isPlaying ? (
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                  <rect x="5" y="4" width="3.5" height="12" rx="1" />
-                  <rect x="11.5" y="4" width="3.5" height="12" rx="1" />
+                <svg className="w-5 h-5 relative z-10" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               ) : (
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                  <path d="M6 4.5v11a.5.5 0 00.77.42l8.5-5.5a.5.5 0 000-.84l-8.5-5.5A.5.5 0 006 4.5z" />
+                <svg className="w-5 h-5 relative z-10" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                 </svg>
               )}
+              <span
+                className={clsx(
+                  'absolute inset-0 bg-gradient-to-r from-go-500/20 to-primary-500/20 rounded-full transition-opacity duration-300',
+                  isPlaying ? 'opacity-100' : 'opacity-0'
+                )}
+              />
             </button>
 
             {showDots && (
-              <div className="flex flex-1 items-center gap-[3px]">
+              <div className="flex flex-wrap justify-center gap-3">
                 {books.map((book, index) => (
                   <button
                     key={book.filename}
                     onClick={() => goTo(index)}
                     aria-label={`跳转到第 ${index + 1} 本：${book.title}`}
                     aria-current={index === currentIndex || undefined}
-                    className="group flex-1 py-2 focus:outline-none"
+                    className={clsx(
+                      'relative w-3 h-3 rounded-full transition-all duration-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+                      index === currentIndex
+                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 scale-125 shadow-lg'
+                        : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 hover:scale-110'
+                    )}
                   >
-                    <span
-                      className={clsx(
-                        'block h-[3px] rounded-full transition-colors duration-300 group-focus-visible:ring-2 group-focus-visible:ring-blue-500',
-                        index === currentIndex
-                          ? 'bg-blue-500 dark:bg-blue-400'
-                          : 'bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400 dark:group-hover:bg-gray-500'
-                      )}
-                    />
+                    {index === currentIndex && (
+                      <>
+                        <span className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full animate-ping opacity-50 motion-reduce:animate-none" />
+                        <span className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-full blur-sm" />
+                      </>
+                    )}
                   </button>
                 ))}
               </div>
             )}
-
-            <span className="shrink-0 tabular-nums text-sm text-gray-500 dark:text-gray-400">
-              {currentIndex + 1} / {total}
-            </span>
           </div>
         )}
 
