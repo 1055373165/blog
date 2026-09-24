@@ -49,6 +49,9 @@ func main() {
 	reminderService := services.NewStudyReminderService(database.DB)
 	reminderService.StartReminderScheduler()
 
+	// 后台补齐封面多尺寸缩略图（前台 srcset 依赖）
+	go handlers.WarmCoverThumbnails(cfg)
+
 	// 设置Gin模式
 	gin.SetMode(cfg.Server.Mode)
 

@@ -46,6 +46,27 @@ export function getThumbnailUrl(coverImageUrl: string): string | null {
   return null;
 }
 
+/** Widths the backend generates for every cover (see cover.go coverVariantWidths). */
+const COVER_VARIANT_WIDTHS = [400, 800, 1200] as const;
+
+/**
+ * Builds a srcset of the backend's resized cover variants.
+ *   400w  → {thumb}.jpg          (the legacy thumbnail)
+ *   800w  → {thumb}.w800.jpg
+ *   1200w → {thumb}.w1200.jpg
+ *
+ * Returns null if the URL is not a recognized cover image URL.
+ */
+export function getCoverSrcSet(coverImageUrl: string): string | null {
+  const thumbnail = getThumbnailUrl(coverImageUrl);
+  if (!thumbnail) return null;
+
+  const stem = thumbnail.replace(/\.jpg$/, '');
+  return COVER_VARIANT_WIDTHS.map((w) =>
+    w === 400 ? `${thumbnail} ${w}w` : `${stem}.w${w}.jpg ${w}w`
+  ).join(', ');
+}
+
 /**
  * Preload images in parallel using Promise.allSettled.
  * Returns when all images have either loaded or failed.

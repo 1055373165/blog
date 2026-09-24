@@ -1,6 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Book } from '../api/books';
 
+/* 轮播封面：构建期预处理为 480w WebP 放在 src/assets/books，由 Vite 加 hash，
+   可安全长期缓存。public/books 下的原图仅作加载失败时的回退。 */
+const BOOK_COVER_URLS = import.meta.glob<string>('../assets/books/*.webp', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+});
+
+const getBookCoverUrl = (filename: string): string => {
+  const stem = filename.replace(/\.(jpg|jpeg|png|webp|gif)$/i, '').trim().replace(/:/g, '-');
+  return BOOK_COVER_URLS[`../assets/books/${stem}.webp`] ?? `/books/${filename}`;
+};
+
 /**
  * 本地书籍数据生成函数
  * 根据文件名生成书籍信息，避免API依赖
@@ -142,7 +155,7 @@ const generateLocalBookInfo = (filename: string): Omit<Book, 'created_at'> & { c
     difficulty,
     tags,
     author,
-    url: `/books/${filename}`, // 直接使用本地路径
+    url: getBookCoverUrl(filename),
     created_at: new Date().toISOString(),
   };
 };

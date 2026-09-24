@@ -1,6 +1,6 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigationType } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 
@@ -67,6 +67,16 @@ const queryClient = new QueryClient({
   },
 });
 
+// 前进到新页面时回到顶部；浏览器后退 / 前进（POP）保留原位置
+function ScrollToTopOnPush() {
+  const { pathname } = useLocation();
+  const navigationType = useNavigationType();
+  useEffect(() => {
+    if (navigationType === 'PUSH') window.scrollTo(0, 0);
+  }, [pathname, navigationType]);
+  return null;
+}
+
 // 路由内容组件，用于检测当前路由
 function RouterContent() {
   const location = useLocation();
@@ -97,6 +107,7 @@ function RouterContent() {
       <div className={`min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300 ${getFontSizeClass()}`}>
         {/* 全局环境音乐播放器 — 位于 Suspense 之外，保证路由切换时不卸载 */}
         {!isAdminRoute && <AmbientPlayer />}
+        <ScrollToTopOnPush />
         <Suspense fallback={<LoadingSpinner />}>
         <Routes>
             {/* 前台路由 */}

@@ -3,9 +3,12 @@ import { useEffect, useRef, useState } from 'react';
 /* ──────────────────────────────────────────────────────────
    AmbientPlayer
    A minimal, cinematic floating music player. Sits quietly
-   at the bottom-left of the viewport. Attempts autoplay on
-   mount; if the browser blocks it, waits for the user's
-   first click anywhere on the page to begin.
+   at the bottom-left of the viewport. Never starts sound for
+   a visitor who hasn't chosen it: music plays only after the
+   user presses play. That choice is remembered, and returning
+   listeners resume on entry — or, if the browser blocks it, on
+   their first gesture anywhere on the page (pointer, touch or
+   key), retrying once the tab becomes visible.
    ────────────────────────────────────────────────────────── */
 
 const TRACK = {
@@ -13,6 +16,25 @@ const TRACK = {
   title: 'Between Worlds',
   artist: 'Roger Subirana',
 };
+
+/* Remembers whether the visitor last left the music on ('1') or off ('0') */
+const PREF_KEY = 'ambient-player:enabled';
+
+function readPref(): boolean {
+  try {
+    return localStorage.getItem(PREF_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writePref(enabled: boolean) {
+  try {
+    localStorage.setItem(PREF_KEY, enabled ? '1' : '0');
+  } catch {
+    // storage unavailable (private mode etc.) — preference just isn't remembered
+  }
+}
 
 export default function AmbientPlayer() {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -73,31 +95,56 @@ export default function AmbientPlayer() {
     a.pause();
   };
 
-  /* ── Defer autoplay attempt until idle; fall back to 1st click ─ */
+  /* ── Resume for returning listeners; fall back to the 1st gesture ─── */
   useEffect(() => {
+    // 从未主动开启过音乐的访客不自动播放，也不下载音频
+    if (!readPref()) return;
+
     // 不在 mount 时立即播放——把昂贵的网络抢占推迟到主线程空闲后
     const idle =
       typeof window !== 'undefined' && 'requestIdleCallback' in window
-        ? (cb: () => void) => (window as any).requestIdleCallback(cb, { timeout: 3000 })
-        : (cb: () => void) => setTimeout(cb, 2000);
+        ? (cb: () => void) => (window as any).requestIdleCallback(cb, { timeout: 1500 })
+        : (cb: () => void) => setTimeout(cb, 1200);
 
     const handle = idle(() => {
-      safePlay();
+      void safePlay();
     });
 
-    const onFirstClick = (e: MouseEvent) => {
+    /* 浏览器只在"已有用户手势"后才允许有声播放，且手势不限于点击。
+       捕获阶段监听，避免被子元素的 stopPropagation 吞掉。 */
+    const GESTURES = ['pointerdown', 'touchstart', 'keydown'] as const;
+
+    const onGesture = (e: Event) => {
       const a = audioRef.current;
-      if (!a || !a.paused) return;
-      // Skip clicks on the player itself — it has its own handler
-      const target = e.target as HTMLElement;
-      if (target.closest('[data-ambient-player]')) return;
-      safePlay();
-      document.removeEventListener('click', onFirstClick);
+      if (!a) return;
+      if (!a.paused) { detach(); return; }
+      // 播放器自身有独立的 toggle 处理，避免"点一下播、再点一下停"抵消
+      const target = e.target as HTMLElement | null;
+      if (target?.closest?.('[data-ambient-player]')) return;
+      void safePlay();
+      detach();
     };
 
-    document.addEventListener('click', onFirstClick);
+    /* 后台标签页里 play() 必被拒；等页面真正可见时再试一次 */
+    const onVisible = () => {
+      const a = audioRef.current;
+      if (document.visibilityState === 'visible' && a?.paused) void safePlay();
+    };
+
+    const detach = () => {
+      GESTURES.forEach((type) =>
+        document.removeEventListener(type, onGesture, true),
+      );
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+
+    GESTURES.forEach((type) =>
+      document.addEventListener(type, onGesture, true),
+    );
+    document.addEventListener('visibilitychange', onVisible);
+
     return () => {
-      document.removeEventListener('click', onFirstClick);
+      detach();
       if (typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
         (window as any).cancelIdleCallback(handle);
       } else {
@@ -110,8 +157,13 @@ export default function AmbientPlayer() {
   const toggle = () => {
     const a = audioRef.current;
     if (!a) return;
-    if (a.paused) safePlay();
-    else safePause();
+    if (a.paused) {
+      writePref(true);
+      safePlay();
+    } else {
+      writePref(false);
+      safePause();
+    }
   };
 
   return (

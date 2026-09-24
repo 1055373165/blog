@@ -42,8 +42,28 @@ type CoverCategory struct {
 	ImageCount int    `json:"image_count"`
 }
 
-// generateThumbnail creates a thumbnail for the given image file.
-// Returns the thumbnail filename or error.
+// coverVariantWidths 是为每张封面生成的缩略图宽度。400 为列表 / 占位用的基础缩略图，
+// 800 / 1200 供前台卡片 srcset 按设备像素比选择，避免前台直接加载数 MB 的原图。
+var coverVariantWidths = []int{1200, 800, thumbnailMaxWidth}
+
+// thumbnailFilename 返回指定宽度缩略图的文件名。
+// 400 宽保持历史命名 {key}.jpg 以兼容已有链接，其余为 {key}.w{width}.jpg。
+func thumbnailFilename(thumbnailKey string, width int) string {
+	if width == thumbnailMaxWidth {
+		return thumbnailKey + ".jpg"
+	}
+	return fmt.Sprintf("%s.w%d.jpg", thumbnailKey, width)
+}
+
+// removeThumbnails 删除一张封面的全部尺寸缩略图（忽略不存在的文件）。
+func removeThumbnails(thumbDir, thumbnailKey string) {
+	for _, w := range coverVariantWidths {
+		os.Remove(filepath.Join(thumbDir, thumbnailFilename(thumbnailKey, w)))
+	}
+}
+
+// generateThumbnail creates every thumbnail width for the given image file,
+// skipping widths whose file is already newer than the source.
 func generateThumbnail(srcPath, thumbDir, filename string) error {
 	// SVG 不支持生成缩略图，直接跳过
 	if strings.ToLower(filepath.Ext(filename)) == ".svg" {
@@ -54,17 +74,20 @@ func generateThumbnail(srcPath, thumbDir, filename string) error {
 		return fmt.Errorf("create thumbnail dir: %w", err)
 	}
 
-	thumbPath := filepath.Join(thumbDir, filename+".jpg")
-
-	// Skip if thumbnail already exists and is newer than source
 	srcInfo, err := os.Stat(srcPath)
 	if err != nil {
 		return err
 	}
-	if thumbInfo, err := os.Stat(thumbPath); err == nil {
-		if thumbInfo.ModTime().After(srcInfo.ModTime()) {
-			return nil // thumbnail is up to date
+
+	stale := make(map[int]bool)
+	for _, w := range coverVariantWidths {
+		thumbInfo, err := os.Stat(filepath.Join(thumbDir, thumbnailFilename(filename, w)))
+		if err != nil || !thumbInfo.ModTime().After(srcInfo.ModTime()) {
+			stale[w] = true
 		}
+	}
+	if len(stale) == 0 {
+		return nil // all thumbnails are up to date
 	}
 
 	srcFile, err := os.Open(srcPath)
@@ -78,29 +101,74 @@ func generateThumbnail(srcPath, thumbDir, filename string) error {
 		return fmt.Errorf("decode image: %w", err)
 	}
 
-	bounds := srcImg.Bounds()
-	origW := bounds.Dx()
-	origH := bounds.Dy()
-
-	// Calculate new dimensions maintaining aspect ratio
-	newW := thumbnailMaxWidth
-	newH := origH * newW / origW
-	if origW <= thumbnailMaxWidth {
-		// Image is already small enough
-		newW = origW
-		newH = origH
+	// 从大到小逐级缩放：只有第一档需要处理原图，后续每档以上一档为源，速度快且不失真
+	cur := srcImg
+	for _, w := range coverVariantWidths {
+		if cur.Bounds().Dx() > w {
+			b := cur.Bounds()
+			dst := image.NewRGBA(image.Rect(0, 0, w, b.Dy()*w/b.Dx()))
+			draw.BiLinear.Scale(dst, dst.Bounds(), cur, b, draw.Over, nil)
+			cur = dst
+		}
+		if !stale[w] {
+			continue
+		}
+		if err := writeJPEG(filepath.Join(thumbDir, thumbnailFilename(filename, w)), cur); err != nil {
+			return err
+		}
 	}
+	return nil
+}
 
-	dst := image.NewRGBA(image.Rect(0, 0, newW, newH))
-	draw.ApproxBiLinear.Scale(dst, dst.Bounds(), srcImg, srcImg.Bounds(), draw.Over, nil)
-
-	thumbFile, err := os.Create(thumbPath)
+func writeJPEG(path string, img image.Image) error {
+	f, err := os.Create(path)
 	if err != nil {
 		return err
 	}
-	defer thumbFile.Close()
+	if err := jpeg.Encode(f, img, &jpeg.Options{Quality: 78}); err != nil {
+		f.Close()
+		os.Remove(path)
+		return err
+	}
+	return f.Close()
+}
 
-	return jpeg.Encode(thumbFile, dst, &jpeg.Options{Quality: 75})
+// WarmCoverThumbnails 在后台为所有已有封面补齐缺失的缩略图尺寸。
+// 逐张串行处理，避免同时解码多张大图占满内存。
+func WarmCoverThumbnails(cfg *config.Config) {
+	coverDir := filepath.Join(cfg.Upload.Path, "cover")
+	thumbDir := filepath.Join(coverDir, thumbnailDir)
+
+	entries, err := os.ReadDir(coverDir)
+	if err != nil {
+		return
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			if isSupportedImage(entry.Name()) {
+				warmOne(filepath.Join(coverDir, entry.Name()), thumbDir, entry.Name())
+			}
+			continue
+		}
+		if entry.Name() == thumbnailDir {
+			continue
+		}
+		files, err := os.ReadDir(filepath.Join(coverDir, entry.Name()))
+		if err != nil {
+			continue
+		}
+		for _, f := range files {
+			if !f.IsDir() && isSupportedImage(f.Name()) {
+				warmOne(filepath.Join(coverDir, entry.Name(), f.Name()), thumbDir, entry.Name()+"__"+f.Name())
+			}
+		}
+	}
+}
+
+func warmOne(srcPath, thumbDir, thumbnailKey string) {
+	if err := generateThumbnail(srcPath, thumbDir, thumbnailKey); err != nil {
+		fmt.Printf("WARNING: failed to generate thumbnails for %s: %v\n", srcPath, err)
+	}
 }
 
 // isSupportedImage checks if the file extension is a supported image format
@@ -665,8 +733,7 @@ func DeleteCoverImage(c *gin.Context) {
 		// root-level filename
 		thumbnailKey = filename
 	}
-	thumbPath := filepath.Join(cfg.Upload.Path, "cover", thumbnailDir, thumbnailKey+".jpg")
-	os.Remove(thumbPath) // ignore error, thumbnail may not exist
+	removeThumbnails(filepath.Join(cfg.Upload.Path, "cover", thumbnailDir), thumbnailKey)
 
 	fmt.Printf("🗑️ [SUCCESS] 封面图片已删除: %s\n", filePath)
 

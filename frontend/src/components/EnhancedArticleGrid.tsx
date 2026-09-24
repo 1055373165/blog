@@ -2,11 +2,11 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Article, Tag } from '../types';
 import { formatDistanceToNow, format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getAvatarUrl } from '../utils/avatarUtils';
 import { clsx } from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
-import { getThumbnailUrl } from '../utils/imageUtils';
+import ResponsiveCover from './ui/ResponsiveCover';
 
 // Format date helper function
 const formatDate = (dateString: string) => {
@@ -24,6 +24,8 @@ interface EnhancedArticleGridProps {
   showExcerpt?: boolean;
   // Optional: override grid column classes for 'grid' and 'mixed' variants
   gridColumns?: string;
+  /** How many leading covers load eagerly with high priority (0 when the grid is below the fold). */
+  eagerCount?: number;
 }
 
 // Generate a deterministic, low-saturation background color for a tag
@@ -52,10 +54,12 @@ const EnhancedArticleCard = ({
   showTags,
   showExcerpt = true,
   className,
-  variant = 'card'
+  variant = 'card',
+  priority = false
 }: {
   article: Article;
   index: number;
+  priority?: boolean;
   showStats?: boolean;
   showCategory?: boolean;
   showTags?: boolean;
@@ -63,12 +67,10 @@ const EnhancedArticleCard = ({
   className?: string;
   variant?: 'card' | 'list';
 }) => {
+  const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
-  const [fullImageLoaded, setFullImageLoaded] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const thumbnailUrl = article.cover_image ? getThumbnailUrl(article.cover_image) : null;
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -118,8 +120,8 @@ const EnhancedArticleCard = ({
   const handleClick = (e: React.MouseEvent) => {
     // 防止事件冒泡影响其他组件
     e.stopPropagation();
-    // 直接导航到文章页面
-    window.location.href = `/article/${article.slug}`;
+    // SPA 内导航，避免整页刷新后重新下载全部资源
+    navigate(`/article/${article.slug}`);
   };
 
   // 列表样式渲染
@@ -145,43 +147,17 @@ const EnhancedArticleCard = ({
         onMouseLeave={() => setIsHovered(false)}
         onClick={handleClick}
       >
-        {/* 左侧图片 - progressive loading: thumbnail → full image */}
+        {/* 左侧图片 - 按渲染尺寸选择后端缩略图，不加载原图 */}
         {article.cover_image && (
           <div className="relative overflow-hidden w-48 h-32 bg-gray-100 dark:bg-gray-700 rounded-lg flex-shrink-0">
-            {!thumbnailLoaded && !fullImageLoaded && (
-              <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-pulse rounded-lg" />
-            )}
-            {/* Thumbnail layer - loads fast */}
-            {thumbnailUrl && !fullImageLoaded && (
-              <img
-                src={thumbnailUrl}
-                alt=""
-                loading={index < 3 ? 'eager' : 'lazy'}
-                decoding="async"
-                width={192}
-                height={128}
-                {...(index < 3 ? { fetchpriority: 'high' as any } : {})}
-                className={clsx(
-                  'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',
-                  thumbnailLoaded ? 'opacity-100' : 'opacity-0'
-                )}
-                onLoad={() => setThumbnailLoaded(true)}
-              />
-            )}
-            {/* Full image layer - loads in background, fades in over thumbnail */}
-            <img
+            <ResponsiveCover
               src={article.cover_image}
               alt={article.title}
-              loading={index < 3 ? 'eager' : 'lazy'}
-              decoding="async"
+              sizes="192px"
+              priority={priority}
               width={192}
               height={128}
-              {...(index < 3 ? { fetchpriority: 'high' as any } : { fetchpriority: 'low' as any })}
-              className={clsx(
-                'absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-105',
-                fullImageLoaded ? 'opacity-100' : 'opacity-0'
-              )}
-              onLoad={() => setFullImageLoaded(true)}
+              className="group-hover:scale-105"
             />
 
             {/* 阅读时间 */}
@@ -295,43 +271,17 @@ const EnhancedArticleCard = ({
           isHovered && 'opacity-100'
         )} />
 
-        {/* 图片容器 - progressive loading: thumbnail → full image */}
+        {/* 图片容器 - 按渲染尺寸选择后端缩略图，不加载原图 */}
         {article.cover_image && (
           <div className="relative overflow-hidden aspect-video bg-gray-100 dark:bg-gray-700">
-            {!thumbnailLoaded && !fullImageLoaded && (
-              <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-pulse" />
-            )}
-            {/* Thumbnail layer - loads fast */}
-            {thumbnailUrl && !fullImageLoaded && (
-              <img
-                src={thumbnailUrl}
-                alt=""
-                loading={index < 3 ? 'eager' : 'lazy'}
-                decoding="async"
-                width={640}
-                height={360}
-                {...(index < 3 ? { fetchpriority: 'high' as any } : {})}
-                className={clsx(
-                  'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',
-                  thumbnailLoaded ? 'opacity-100' : 'opacity-0'
-                )}
-                onLoad={() => setThumbnailLoaded(true)}
-              />
-            )}
-            {/* Full image layer - loads in background, fades in over thumbnail */}
-            <img
+            <ResponsiveCover
               src={article.cover_image}
               alt={article.title}
-              loading={index < 3 ? 'eager' : 'lazy'}
-              decoding="async"
+              sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+              priority={priority}
               width={640}
               height={360}
-              {...(index < 3 ? { fetchpriority: 'high' as any } : { fetchpriority: 'low' as any })}
-              className={clsx(
-                'absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110',
-                fullImageLoaded ? 'opacity-100' : 'opacity-0'
-              )}
-              onLoad={() => setFullImageLoaded(true)}
+              className="group-hover:scale-110"
             />
 
             {/* 图片悬浮遮罩 */}
@@ -445,7 +395,8 @@ export default function EnhancedArticleGrid({
   showCategory = true,
   showTags = true,
   showExcerpt = true,
-  gridColumns
+  gridColumns,
+  eagerCount = 3
 }: EnhancedArticleGridProps) {
   const { user } = useAuth();
   const isAdmin = user?.is_admin || false;
@@ -509,6 +460,7 @@ export default function EnhancedArticleGrid({
             key={article.id}
             article={article}
             index={index}
+            priority={index < eagerCount}
             showStats={shouldShowStats}
             showCategory={showCategory}
             showTags={showTags}
@@ -529,6 +481,7 @@ export default function EnhancedArticleGrid({
             key={article.id}
             article={article}
             index={index}
+            priority={index < eagerCount}
             showStats={shouldShowStats}
             showCategory={showCategory}
             showTags={showTags}
@@ -548,6 +501,7 @@ export default function EnhancedArticleGrid({
           <EnhancedArticleCard
             article={articles[0]}
             index={0}
+            priority={eagerCount > 0}
             showStats={shouldShowStats}
             showCategory={showCategory}
             showTags={showTags}
@@ -564,6 +518,7 @@ export default function EnhancedArticleGrid({
               key={article.id}
               article={article}
               index={index + 1}
+              priority={index + 1 < eagerCount}
               showStats={shouldShowStats}
               showCategory={showCategory}
               showTags={showTags}
@@ -584,6 +539,7 @@ export default function EnhancedArticleGrid({
           key={article.id}
           article={article}
           index={index}
+          priority={index < eagerCount}
           showStats={shouldShowStats}
           showCategory={showCategory}
           showTags={showTags}

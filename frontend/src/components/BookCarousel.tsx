@@ -1,19 +1,19 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { CSSProperties, KeyboardEvent } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, RefreshCwIcon } from 'lucide-react';
-import OptimizedImage from './ui/OptimizedImage';
 import { useBooksForCarousel } from '../hooks/useBooks';
 import { useLocalBooksForCarousel } from '../hooks/useLocalBooks';
-import { useImagePreloader } from '../hooks/useImagePreloader';
-import { useImageCache } from '../hooks/useImageCache';
 import { Book } from '../api/books';
 import { clsx } from 'clsx';
 
-// 扩展的书籍类型，用于轮播显示
-interface CarouselBook extends Book {
-  displayIndex: number;
-  realIndex: number;
-  isCenterPosition: boolean;
-}
+/* ──────────────────────────────────────────────────────────
+   BookCarousel
+   Cards are keyed by book and stay mounted while they are in
+   the render window, so a slide only animates transform and
+   opacity — no remounts, no image re-decodes. One hidden card
+   on each side is kept loaded as a buffer, and autoplay only
+   advances once the card about to enter view has loaded.
+   ────────────────────────────────────────────────────────── */
 
 interface BookCarouselProps {
   className?: string;
@@ -21,621 +21,397 @@ interface BookCarouselProps {
   autoPlayInterval?: number;
   showControls?: boolean;
   showDots?: boolean;
-  useLocalImages?: boolean; // 新增: 是否使用本地图片优化
+  useLocalImages?: boolean; // 是否使用本地构建期优化的封面
 }
 
-// 空的fallback书籍数据，在API失败时使用
-const fallbackBooks: Book[] = [];
+/* Cards visible on each side of the center, per breakpoint */
+const VISIBLE_RADIUS_DESKTOP = 2;
+const VISIBLE_RADIUS_MOBILE = 1;
+/* Retry delay when the next card's cover hasn't loaded yet */
+const NOT_READY_RETRY_MS = 400;
+
+function cardStyle(offset: number, radius: number, isMobile: boolean): CSSProperties {
+  const abs = Math.abs(offset);
+  const hidden = abs > radius;
+  const spacing = isMobile ? 0.9 : 1.15;
+  const scale = abs === 0 ? 1.12 : abs === 1 ? 0.92 : 0.78;
+  return {
+    transform:
+      `translate(-50%, -50%) translateX(calc(var(--book-w) * ${offset * spacing})) ` +
+      `perspective(1000px) rotateY(${offset * 8}deg) scale(${hidden ? 0.7 : scale})`,
+    opacity: hidden ? 0 : abs === 0 ? 1 : abs === 1 ? 0.85 : 0.55,
+    zIndex: 10 - abs,
+    pointerEvents: hidden ? 'none' : undefined,
+  };
+}
+
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onChange = () => setReduced(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return reduced;
+}
+
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const onChange = () => setIsMobile(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return isMobile;
+}
 
 export default function BookCarousel({
   className = '',
   autoPlay = true,
-  autoPlayInterval = 3000,
+  autoPlayInterval = 5000,
   showControls = true,
   showDots = true,
-  useLocalImages = true // 默认使用本地优化
+  useLocalImages = true,
 }: BookCarouselProps) {
-  // 根据配置选择数据源: 本地优化 vs API
   // Only enable API hook when NOT using local images, to avoid wasted network requests
   const apiBooks = useBooksForCarousel(!useLocalImages);
   const localBooks = useLocalBooksForCarousel();
   const { books, loading, error, refresh, hasBooks, totalBooks } = useLocalImages ? localBooks : apiBooks;
+
+  const reducedMotion = usePrefersReducedMotion();
+  const isMobile = useIsMobile();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(autoPlay);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(autoPlay && !reducedMotion);
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [isInViewport, setIsInViewport] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [hasFocusWithin, setHasFocusWithin] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadedCovers, setLoadedCovers] = useState<ReadonlySet<string>>(() => new Set());
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  // 使用实际的书籍数据，如果没有数据则使用fallback
-  const activeBooks = hasBooks ? books : fallbackBooks;
+  const total = books.length;
+  const radius = isMobile ? VISIBLE_RADIUS_MOBILE : VISIBLE_RADIUS_DESKTOP;
+  /* Render one extra (invisible) card per side so it is loaded before it slides in */
+  const renderRadius = radius + 1;
 
-  // 生成优化的图片URL - 直接访问本地文件而不是API
-  const getOptimizedImageUrl = useCallback((book: Book) => {
-    // 直接使用本地路径，避免网络请求
-    return `/books/${book.filename}`;
+  const coverUrl = useCallback(
+    (book: Book) => (useLocalImages ? book.url : `/books/${book.filename}`),
+    [useLocalImages]
+  );
+
+  const markLoaded = useCallback((filename: string) => {
+    setLoadedCovers((prev) => {
+      if (prev.has(filename)) return prev;
+      const next = new Set(prev);
+      next.add(filename);
+      return next;
+    });
   }, []);
 
-  // 智能图片预加载 - 使用优化后的URLs
-  const imageUrls = activeBooks.map(book => getOptimizedImageUrl(book));
-  // 预加载优化: 仅当组件可见时才预加载，避免离屏组件浪费带宽与触发不必要的网络请求
-  useImagePreloader(imageUrls, currentIndex, {
-    preloadRange: 2,
-    delay: 200,
-    enabled: hasBooks && !loading && isInViewport && isPageVisible,
-  });
+  const goTo = useCallback(
+    (index: number) => {
+      if (total === 0) return;
+      setCurrentIndex(((index % total) + total) % total);
+    },
+    [total]
+  );
+  const next = useCallback(() => setCurrentIndex((i) => (total ? (i + 1) % total : 0)), [total]);
+  const prev = useCallback(() => setCurrentIndex((i) => (total ? (i - 1 + total) % total : 0)), [total]);
 
-  // 图片缓存管理
-  const imageCacheManager = useImageCache();
-
-  // 获取当前显示的书籍（以currentIndex为中心对称显示）
-  const getVisibleBooks = useCallback((): CarouselBook[] => {
-    if (activeBooks.length === 0) return [];
-    
-    // 响应式显示数量：移动设备显示3本，桌面显示5本
-    const visibleCount = Math.min(isMobile ? 3 : 5, activeBooks.length);
-    const result: CarouselBook[] = [];
-    
-    // 计算中心偏移量
-    const centerOffset = Math.floor(visibleCount / 2);
-    
-    for (let i = 0; i < visibleCount; i++) {
-      // 以currentIndex为中心，计算每个位置的真实索引
-      const offset = i - centerOffset;
-      const realIndex = (currentIndex + offset + activeBooks.length) % activeBooks.length;
-      
-      result.push({ 
-        ...activeBooks[realIndex], 
-        displayIndex: i,
-        realIndex: realIndex,
-        isCenterPosition: i === centerOffset
-      });
-    }
-    return result;
-  }, [currentIndex, isMobile, activeBooks]);
-
-  // 下一页
-  const nextSlide = useCallback(() => {
-    if (activeBooks.length === 0) return;
-    setCurrentIndex((prev) => (prev + 1) % activeBooks.length);
-  }, [activeBooks.length]);
-
-  // 上一页
-  const prevSlide = useCallback(() => {
-    if (activeBooks.length === 0) return;
-    setCurrentIndex((prev) => (prev - 1 + activeBooks.length) % activeBooks.length);
-  }, [activeBooks.length]);
-
-  // 跳转到指定索引
-  const goToSlide = useCallback((index: number) => {
-    setCurrentIndex(index);
-  }, []);
-
-
-  // 检测移动设备
+  // 当书籍数量变化时，确保 currentIndex 在有效范围内
   useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+    if (total > 0 && currentIndex >= total) setCurrentIndex(0);
+  }, [total, currentIndex]);
 
-
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    
-    return () => {
-      window.removeEventListener('resize', checkIsMobile);
-    };
-  }, []);
-
-  // 监听页面可见性变化
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      setIsPageVisible(!document.hidden);
-    };
+    if (reducedMotion) setIsPlaying(false);
+  }, [reducedMotion]);
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  useEffect(() => {
+    const onVisibility = () => setIsPageVisible(!document.hidden);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
   }, []);
 
-  // 视口可见性 — 离屏时停止自动播放与预加载，避免后台浪费 CPU/带宽
+  // 视口可见性 — 离屏时停止自动播放
   useEffect(() => {
     const node = carouselRef.current;
     if (!node || typeof IntersectionObserver === 'undefined') {
       setIsInViewport(true);
       return;
     }
-
     const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry) setIsInViewport(entry.isIntersecting);
-      },
-      { rootMargin: '200px 0px', threshold: 0.05 }
+      ([entry]) => entry && setIsInViewport(entry.isIntersecting),
+      { threshold: 0.05 }
     );
-
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
 
-  // 自动播放逻辑 — 仅当播放中、页面可见、组件在视口内、未悬停时运行
-  useEffect(() => {
-    if (
-      !isPlaying ||
-      !isPageVisible ||
-      !isInViewport ||
-      isHovered ||
-      activeBooks.length === 0 ||
-      loading
-    ) {
-      return;
-    }
+  /* ── Autoplay: advance only when the card about to enter view is loaded ── */
+  const autoplayActive =
+    isPlaying && isPageVisible && isInViewport && !isHovered && !hasFocusWithin && total > 1 && !loading;
 
-    const interval = setInterval(nextSlide, autoPlayInterval);
-    return () => clearInterval(interval);
-  }, [
-    isPlaying,
-    isPageVisible,
-    isInViewport,
-    isHovered,
-    nextSlide,
-    autoPlayInterval,
-    activeBooks.length,
-    loading,
-  ]);
-
-  // 键盘导航
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowLeft') {
-        prevSlide();
-      } else if (event.key === 'ArrowRight') {
-        nextSlide();
-      } else if (event.key === ' ') {
-        event.preventDefault();
-        setIsPlaying((prev) => !prev);
+    if (!autoplayActive) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      const entering = books[(currentIndex + radius + 1) % total];
+      if (entering && !loadedCovers.has(entering.filename)) {
+        timer = setTimeout(tick, NOT_READY_RETRY_MS);
+        return;
       }
+      next();
     };
+    timer = setTimeout(tick, autoPlayInterval);
+    return () => clearTimeout(timer);
+  }, [autoplayActive, autoPlayInterval, currentIndex, books, total, radius, loadedCovers, next]);
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [prevSlide, nextSlide, isPlaying]);
+  /* ── Keyboard: scoped to the carousel, never global ── */
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      prev();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      next();
+    } else if (e.key === ' ' && e.target === e.currentTarget) {
+      e.preventDefault();
+      setIsPlaying((p) => !p);
+    }
+  };
 
-  const visibleBooks = getVisibleBooks();
-
-  // 手动刷新功能
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
       await refresh();
-    } catch (error) {
-      // 静默失败 — UI 上有 error 状态展示
     } finally {
       setIsRefreshing(false);
     }
   }, [refresh]);
 
-  // 当书籍数量变化时，确保currentIndex在有效范围内
-  useEffect(() => {
-    if (activeBooks.length > 0 && currentIndex >= activeBooks.length) {
-      setCurrentIndex(0);
+  /* Books within the render window, keyed by filename so they stay mounted */
+  const windowBooks: { book: Book; index: number; offset: number }[] = [];
+  if (total > 0) {
+    const r = Math.min(renderRadius, Math.floor((total - 1) / 2));
+    for (let o = -r; o <= r; o++) {
+      const index = (currentIndex + o + total) % total;
+      windowBooks.push({ book: books[index], index, offset: o });
     }
-  }, [activeBooks.length, currentIndex]);
+  }
+  const current = total > 0 ? books[currentIndex] : null;
+
+  const subtitle = loading
+    ? '正在加载书籍...'
+    : error
+      ? '书籍数据加载失败，请尝试刷新'
+      : hasBooks
+        ? `从入门到精通，精心挑选的Go语言学习资源，当前共 ${totalBooks} 本书籍`
+        : '暂无书籍数据';
 
   return (
-    <div 
+    <div
       ref={carouselRef}
       className={clsx(
-        'relative overflow-hidden rounded-3xl backdrop-blur-xl transition-all duration-700',
-        'bg-gradient-to-br from-white/95 via-blue-50/80 to-purple-50/70',
-        'dark:from-gray-800/95 dark:via-gray-900/90 dark:to-gray-800/80',
-        'shadow-2xl border border-white/20 dark:border-gray-800/20',
-        isHovered && 'shadow-[0_0_60px_rgba(59,130,246,0.15)] scale-[1.02]',
+        'relative overflow-hidden rounded-3xl border border-white/20 dark:border-gray-800/40',
+        'bg-gradient-to-br from-white via-blue-50/80 to-purple-50/70',
+        'dark:from-gray-800 dark:via-gray-900 dark:to-gray-800',
+        'outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
         className
       )}
+      style={{ contain: 'layout paint' }}
       role="region"
-      aria-label="Go语言书籍展示"
+      aria-roledescription="carousel"
+      aria-label="Go语言精选书籍"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onFocus={(e) => {
+        // 仅键盘焦点（:focus-visible）暂停自动播放；鼠标点击按钮不应让播放停住
+        if (e.target.matches(':focus-visible')) setHasFocusWithin(true);
+      }}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHasFocusWithin(false);
+      }}
     >
-      {/* 增强的3D背景装饰 */}
-      <div className="absolute inset-0">
-        {/* 主背景层 */}
-        <div className="absolute inset-0 opacity-10 dark:opacity-20">
-          <div 
-            className="absolute top-10 left-10 w-32 h-32 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-full blur-3xl animate-float"
-          />
-          <div 
-            className="absolute bottom-10 right-10 w-40 h-40 bg-gradient-to-br from-purple-400 to-pink-600 rounded-full blur-3xl animate-float-delayed"
-          />
-          <div 
-            className="absolute top-1/2 left-1/2 w-60 h-60 bg-gradient-to-br from-green-400 to-blue-600 rounded-full blur-3xl opacity-30 animate-pulse-slow"
-            style={{
-              transform: `translate(-50%, -50%)`
-            }}
-          />
-        </div>
-        
-        {/* 书架的木纹背景 */}
-        <div className="absolute inset-0 opacity-5 dark:opacity-10">
-          <div className="w-full h-full bg-gradient-to-b from-amber-100 via-amber-200 to-amber-300 dark:from-amber-900 dark:via-amber-800 dark:to-amber-700" 
-               style={{
-                 backgroundImage: `
-                   repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px),
-                   repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(0,0,0,0.05) 20px, rgba(0,0,0,0.05) 22px)
-                 `
-               }}
-          />
-        </div>
-        
-        {/* 动态光线效果 */}
-        <div className={clsx(
-          'absolute inset-0 opacity-0 transition-opacity duration-500',
-          isHovered && 'opacity-30'
-        )}>
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-go-400/50 to-transparent animate-channel-flow" />
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary-400/50 to-transparent animate-channel-flow" style={{ animationDelay: '1s' }} />
-        </div>
-      </div>
-
-      <div className="relative px-8 py-12">
+      <div className="relative px-6 md:px-8 py-12">
         {/* 标题区域 */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-4 mb-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              Go语言精选书籍
-            </h2>
-            {/* 刷新按钮 */}
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing || loading}
-              className={`
-                p-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500
-                ${isRefreshing || loading 
-                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed' 
-                  : 'bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 shadow-lg hover:scale-110'
-                }
-              `}
-              title="刷新书籍列表"
-            >
-              <RefreshCwIcon className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            {loading ? `正在加载书籍数据... (${useLocalImages ? '本地优化' : 'API模式'})` : 
-             error ? `书籍数据加载失败，请尝试刷新 (${useLocalImages ? '本地优化' : 'API模式'})` :
-             hasBooks ? `从入门到精通，精心挑选的Go语言学习资源，当前共 ${totalBooks} 本书籍` :
-             '暂无书籍数据，请检查books目录'}
-          </p>
-          
-          {/* 缓存状态指示器（开发模式显示） */}
-          {process.env.NODE_ENV === 'development' && imageCacheManager.cacheStatus && (
-            <div className="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center">
-              <span className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                📦 缓存: {imageCacheManager.cacheStatus.total} 张图片
-                {imageCacheManager.isRegistered && (
-                  <span className="text-green-600 dark:text-green-400">● SW已激活</span>
-                )}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* 书籍展示区域 */}
-        <div className="relative">
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <span className="ml-4 text-gray-600 dark:text-gray-300">正在加载书籍...</span>
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <div className="text-red-500 mb-4">
-                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <p className="text-gray-600 dark:text-gray-300 text-center mb-4">{error}</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Go语言精选书籍</h2>
+            {!useLocalImages && (
               <button
                 onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                disabled={isRefreshing || loading}
+                className="p-2 rounded-full bg-white/80 dark:bg-gray-800/80 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                title="刷新书籍列表"
+                aria-label="刷新书籍列表"
               >
-                {isRefreshing ? '刷新中...' : '重试'}
+                <RefreshCwIcon className={clsx('w-5 h-5', isRefreshing && 'animate-spin')} />
               </button>
-            </div>
-          ) : !hasBooks ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <div className="text-gray-400 mb-4">
-                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-              </div>
-              <p className="text-gray-600 dark:text-gray-300 text-center mb-4">暂无书籍数据</p>
-              <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
-                {useLocalImages 
-                  ? '请将图书图片放入 /frontend/public/books/ 目录（本地优化模式）'
-                  : 'API数据为空，请检查后端服务'
-                }
-              </p>
-            </div>
-          ) : (
-            // 3D书架展示区域
-            <div 
-              className="relative"
-              style={{
-                transform: 'perspective(1200px)',
-                transformStyle: 'preserve-3d'
-              }}
-            >
-              {/* 书架底部 */}
-              <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-4/5 h-8 bg-gradient-to-r from-amber-600/20 via-amber-700/30 to-amber-600/20 rounded-full blur-lg" />
-              
-              <div className="flex items-end justify-center space-x-4 md:space-x-6 lg:space-x-8 relative z-10">
-                {visibleBooks.map((book, index) => {
-                  const centerIndex = Math.floor((isMobile ? 3 : 5) / 2);
-                  const isCenter = book.isCenterPosition;
-                  const isAdjacent = isMobile 
-                    ? (index === 0 || index === 2)
-                    : (index === 1 || index === 3);
-                  const isEdge = isMobile 
-                    ? false
-                    : (index === 0 || index === 4);
-                  
-                  // 3D位置计算
-                  const distanceFromCenter = Math.abs(index - centerIndex);
-                  const depthOffset = distanceFromCenter * 10;
-                  const heightOffset = distanceFromCenter * 20;
-
-                  return (
-                    <div
-                      key={`book-${book.realIndex}-${book.displayIndex}`}
-                      className={clsx(
-                        'relative transition-all duration-700 ease-out cursor-pointer group',
-                        'transform-gpu', // GPU加速
-                        'book-card clickable carousel',
-                        isCenter && 'z-30',
-                        isAdjacent && 'z-20',
-                        isEdge && 'z-10 opacity-60'
-                      )}
-                      style={{
-                        transform: `
-                          perspective(1000px)
-                          translateZ(${isCenter ? 40 : -depthOffset}px)
-                          translateY(${-heightOffset}px)
-                          rotateY(${(index - centerIndex) * 8}deg)
-                          scale(${isCenter ? 1.15 : isAdjacent ? 1.0 : 0.85})
-                        `,
-                        transformStyle: 'preserve-3d',
-                        filter: `brightness(${isCenter ? 1.0 : isAdjacent ? 0.95 : 0.8}) contrast(1.0)`
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        goToSlide(book.realIndex);
-                      }}
-                      data-book="true"
-                      data-book-title={book.title}
-                    >
-                      {/* 增强的3D阴影系统 */}
-                      <div className={clsx(
-                        'absolute inset-0 transition-all duration-700',
-                        'transform translate-y-4 translateZ(-10px)',
-                        isCenter && 'scale-110'
-                      )}>
-                        {/* 主阴影 */}
-                        <div className="absolute inset-0 bg-black/30 dark:bg-black/50 rounded-xl blur-xl" />
-                        {/* 内阴影 */}
-                        <div className="absolute inset-2 bg-black/15 dark:bg-black/25 rounded-lg blur-lg" />
-                        {/* 光晕效果 */}
-                        {isCenter && (
-                          <div className="absolute -inset-4 bg-gradient-to-b from-primary-500/20 via-go-500/20 to-transparent rounded-xl blur-2xl" />
-                        )}
-                      </div>
-
-                      {/* 增强的3D书籍封面 */}
-                      <div className={clsx(
-                        'relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden transition-all duration-700',
-                        'border-2 shadow-2xl',
-                        isCenter 
-                          ? 'border-blue-300 dark:border-blue-600 shadow-blue-500/25 dark:shadow-blue-400/25'
-                          : 'border-gray-200 dark:border-gray-700',
-                        'group-hover:shadow-4xl'
-                      )}
-                      style={{
-                        transform: 'translateZ(20px)',
-                        boxShadow: isCenter 
-                          ? '0 25px 50px -12px rgba(59, 130, 246, 0.25), 0 0 30px rgba(59, 130, 246, 0.1)'
-                          : '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
-                      }}>
-                        {/* 书脊装饰 */}
-                        <div className="absolute left-0 top-2 bottom-2 w-1 bg-gradient-to-b from-amber-400 via-amber-600 to-amber-800 rounded-r opacity-60" style={{ transform: 'translateZ(1px)' }} />
-                        
-                        <div className="relative w-32 md:w-40 lg:w-48 aspect-[3/4] bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
-                          <img
-                            src={getOptimizedImageUrl(book)}
-                            alt={book.title}
-                            className={clsx(
-                              'absolute inset-0 w-full h-full object-cover transition-all duration-700 relative z-10',
-                              isAdjacent && 'brightness-95',
-                              isEdge && 'brightness-75',
-                              'group-hover:brightness-110 group-hover:contrast-105'
-                            )}
-                            style={{
-                              transform: 'translateZ(5px)',
-                              filter: `saturate(${isCenter ? 1.0 : 0.9}) hue-rotate(0deg)`
-                            }}
-                            loading={book.isCenterPosition ? 'eager' : 'lazy'}
-                            decoding="async"
-                            width={192}
-                            height={256}
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              if (target.src.endsWith(`/books/${book.filename}`) && book.url) {
-                                target.src = book.url;
-                              }
-                            }}
-                          />
-                        </div>
-                        
-                        {/* 书籍光泽效果 */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/10 rounded-xl pointer-events-none" style={{ transform: 'translateZ(10px)' }} />
-                        
-                        {/* 动态光效 */}
-                        {isHovered && isCenter && (
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 animate-glass-shimmer" style={{ transform: 'translateZ(15px)' }} />
-                        )}
-
-
-                        {/* 增强的中心焦点指示器 */}
-                        {isCenter && (
-                          <div className="absolute -top-3 -right-3 w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center animate-glow-pulse shadow-lg" style={{ transform: 'translateZ(25px)' }}>
-                            <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-ping opacity-30" />
-                          </div>
-                        )}
-                        
-                        {/* 书籍信息标签 */}
-                        <div className={clsx(
-                          'absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs p-2 rounded opacity-0 transition-all duration-300',
-                          'group-hover:opacity-100'
-                        )} style={{ transform: 'translateZ(20px)' }}>
-                          <div className="font-medium truncate">{book.title}</div>
-                          <div className="text-gray-300 text-[10px] mt-0.5">Go语言学习资料</div>
-                        </div>
-                      </div>
-                      
-                      {/* 书籍反射效果 */}
-                      <div className="absolute -bottom-1 left-0 right-0 h-8 bg-gradient-to-t from-black/20 to-transparent rounded-b-xl blur-sm opacity-60" style={{ transform: 'translateZ(-5px)' }} />
-                    </div>
-                  );
-                })}
-              </div>
-              
-              {/* 书架环境光效 */}
-              <div className="absolute inset-0 pointer-events-none">
-                {/* 顶部光源 */}
-                <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 w-3/4 h-20 bg-gradient-to-b from-yellow-200/30 via-yellow-100/20 to-transparent rounded-full blur-2xl" />
-                
-                {/* 左右侧光 */}
-                <div className="absolute top-1/4 -left-10 w-20 h-1/2 bg-gradient-to-r from-blue-200/20 to-transparent rounded-full blur-xl" />
-                <div className="absolute top-1/4 -right-10 w-20 h-1/2 bg-gradient-to-l from-purple-200/20 to-transparent rounded-full blur-xl" />
-              </div>
-            </div>
-          )}
+            )}
+          </div>
+          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">{subtitle}</p>
         </div>
 
-        {/* 增强的控制按钮 */}
-        {showControls && hasBooks && !loading && (
-          <>
+        {/* 书籍展示区域 — 固定高度，卡片绝对定位，只动画 transform / opacity */}
+        {error ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <p className="text-gray-600 dark:text-gray-300 text-center mb-4">{error}</p>
             <button
-              onClick={prevSlide}
-              disabled={activeBooks.length === 0}
-              className={clsx(
-                'absolute left-4 top-1/2 transform -translate-y-1/2 z-40',
-                'bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl',
-                'hover:bg-white dark:hover:bg-gray-800',
-                'text-gray-700 dark:text-gray-300 rounded-full p-4 shadow-2xl',
-                'transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500',
-                'disabled:opacity-50 disabled:cursor-not-allowed',
-                'border border-white/30 dark:border-gray-700/30',
-                'hover:shadow-[0_0_30px_rgba(59,130,246,0.3)]',
-                'group'
-              )}
-              aria-label="上一组书籍"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              <ChevronLeftIcon className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+              {isRefreshing ? '刷新中...' : '重试'}
             </button>
-
-            <button
-              onClick={nextSlide}
-              disabled={activeBooks.length === 0}
-              className={clsx(
-                'absolute right-4 top-1/2 transform -translate-y-1/2 z-40',
-                'bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl',
-                'hover:bg-white dark:hover:bg-gray-800',
-                'text-gray-700 dark:text-gray-300 rounded-full p-4 shadow-2xl',
-                'transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500',
-                'disabled:opacity-50 disabled:cursor-not-allowed',
-                'border border-white/30 dark:border-gray-700/30',
-                'hover:shadow-[0_0_30px_rgba(59,130,246,0.3)]',
-                'group'
-              )}
-              aria-label="下一组书籍"
-            >
-              <ChevronRightIcon className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-              <div className="absolute inset-0 bg-gradient-to-l from-blue-500/20 to-purple-500/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-            </button>
-          </>
-        )}
-
-        {/* 增强的播放控制和指示器 */}
-        <div className="flex items-center justify-center mt-8 space-x-8">
-          {/* 增强的播放/暂停按钮 */}
-          <button
-            onClick={() => setIsPlaying((prev) => !prev)}
-            className={clsx(
-              'bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl',
-              'hover:bg-white dark:hover:bg-gray-800',
-              'text-gray-700 dark:text-gray-300 rounded-full p-3 shadow-2xl',
-              'transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500',
-              'border border-white/30 dark:border-gray-700/30',
-              'hover:shadow-[0_0_20px_rgba(59,130,246,0.3)]',
-              'group relative overflow-hidden'
-            )}
-            aria-label={isPlaying ? '暂停自动播放' : '开始自动播放'}
+          </div>
+        ) : !loading && !hasBooks ? (
+          <p className="py-20 text-center text-gray-600 dark:text-gray-300">暂无书籍数据</p>
+        ) : (
+          <div
+            className="relative h-[220px] md:h-[270px] lg:h-[320px] [--book-w:8rem] md:[--book-w:10rem] lg:[--book-w:12rem]"
           >
-            {isPlaying ? (
-              <svg className="w-5 h-5 relative z-10" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5 relative z-10" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-              </svg>
-            )}
-            <div className={clsx(
-              'absolute inset-0 bg-gradient-to-r from-go-500/20 to-primary-500/20 rounded-full transition-opacity duration-300',
-              isPlaying ? 'opacity-100' : 'opacity-0'
-            )} />
-          </button>
+            {/* 书架地面光影 — 静态，不参与动画 */}
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/5 h-6 rounded-full bg-amber-700/20 blur-lg" />
 
-          {/* 增强的页面指示器 */}
-          {showDots && hasBooks && !loading && (
-            <div className="flex space-x-3">
-              {activeBooks.map((_, index) => (
+            {windowBooks.map(({ book, index, offset }) => {
+              const isCenter = offset === 0;
+              const isLoaded = loadedCovers.has(book.filename);
+              return (
                 <button
-                  key={index}
-                  onClick={() => goToSlide(index)}
+                  key={book.filename}
+                  type="button"
+                  tabIndex={isCenter ? 0 : -1}
+                  aria-hidden={Math.abs(offset) > radius || undefined}
+                  aria-label={isCenter ? `当前：${book.title}` : `切换到 ${book.title}`}
+                  onClick={() => goTo(index)}
                   className={clsx(
-                    'relative w-3 h-3 rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-blue-500 group',
-                    index === currentIndex 
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 scale-125 shadow-lg' 
-                      : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 hover:scale-110'
+                    'group absolute left-1/2 top-1/2 w-[var(--book-w)] aspect-[3/4] rounded-xl overflow-hidden',
+                    'bg-gray-200 dark:bg-gray-700 shadow-xl',
+                    'transition-[transform,opacity] duration-500 ease-out motion-reduce:transition-none',
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+                    isCenter ? 'ring-2 ring-blue-400/70 dark:ring-blue-500/70 cursor-default' : 'cursor-pointer'
                   )}
-                  aria-label={`跳转到第 ${index + 1} 本书`}
+                  style={cardStyle(offset, radius, isMobile)}
                 >
-                  {index === currentIndex && (
-                    <>
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full animate-ping opacity-50" />
-                      <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-full blur-sm" />
-                    </>
-                  )}
+                  <img
+                    src={coverUrl(book)}
+                    alt={book.title}
+                    width={192}
+                    height={256}
+                    loading="eager"
+                    decoding="async"
+                    draggable={false}
+                    onLoad={() => markLoaded(book.filename)}
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      const original = `/books/${encodeURI(book.filename)}`;
+                      if (!target.src.endsWith(original)) target.src = original;
+                      else markLoaded(book.filename); // 不让一张坏图卡住自动播放
+                    }}
+                    className={clsx(
+                      'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',
+                      isLoaded ? 'opacity-100' : 'opacity-0'
+                    )}
+                  />
+                  {/* 书脊装饰 */}
+                  <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-gradient-to-b from-amber-400 via-amber-600 to-amber-800 opacity-60" />
+                  {/* 悬停显示书名 */}
+                  <span className="absolute bottom-2 left-2 right-2 rounded bg-black/70 p-2 text-left text-xs text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100">
+                    <span className="block font-medium truncate">{book.title}</span>
+                  </span>
                 </button>
-              ))}
-            </div>
-          )}
-        </div>
+              );
+            })}
 
-        {/* 键盘操作提示 */}
-        {hasBooks && !loading && (
-          <div className="text-center mt-6 text-sm text-gray-500 dark:text-gray-400">
-            <p>使用 ← → 键导航，空格键控制播放，点击书籍切换到对应位置</p>
+            {/* 左右切换 */}
+            {showControls && total > 1 && (
+              <>
+                <button
+                  onClick={prev}
+                  className="absolute left-0 md:left-2 top-1/2 -translate-y-1/2 z-20 rounded-full p-3 md:p-4 bg-white/85 dark:bg-gray-800/85 text-gray-700 dark:text-gray-300 shadow-lg border border-white/30 dark:border-gray-700/40 transition-colors hover:bg-white dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  aria-label="上一本"
+                >
+                  <ChevronLeftIcon className="w-5 h-5 md:w-6 md:h-6" />
+                </button>
+                <button
+                  onClick={next}
+                  className="absolute right-0 md:right-2 top-1/2 -translate-y-1/2 z-20 rounded-full p-3 md:p-4 bg-white/85 dark:bg-gray-800/85 text-gray-700 dark:text-gray-300 shadow-lg border border-white/30 dark:border-gray-700/40 transition-colors hover:bg-white dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  aria-label="下一本"
+                >
+                  <ChevronRightIcon className="w-5 h-5 md:w-6 md:h-6" />
+                </button>
+              </>
+            )}
+
+            <span className="sr-only" aria-live={autoplayActive ? 'off' : 'polite'}>{current ? `第 ${currentIndex + 1} 本，共 ${total} 本：${current.title}` : ''}</span>
           </div>
         )}
-      </div>
 
+        {/* 播放控制 · 计数 · 进度 */}
+        {hasBooks && !loading && (
+          <div className="mt-10 mx-auto flex max-w-xl items-center gap-4">
+            <button
+              onClick={() => setIsPlaying((p) => !p)}
+              className="shrink-0 rounded-full p-2.5 bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 shadow border border-white/30 dark:border-gray-700/40 transition-colors hover:bg-white dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              aria-label={isPlaying ? '暂停自动播放' : '开始自动播放'}
+            >
+              {isPlaying ? (
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                  <rect x="5" y="4" width="3.5" height="12" rx="1" />
+                  <rect x="11.5" y="4" width="3.5" height="12" rx="1" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="M6 4.5v11a.5.5 0 00.77.42l8.5-5.5a.5.5 0 000-.84l-8.5-5.5A.5.5 0 006 4.5z" />
+                </svg>
+              )}
+            </button>
+
+            {showDots && (
+              <div className="flex flex-1 items-center gap-[3px]">
+                {books.map((book, index) => (
+                  <button
+                    key={book.filename}
+                    onClick={() => goTo(index)}
+                    aria-label={`跳转到第 ${index + 1} 本：${book.title}`}
+                    aria-current={index === currentIndex || undefined}
+                    className="group flex-1 py-2 focus:outline-none"
+                  >
+                    <span
+                      className={clsx(
+                        'block h-[3px] rounded-full transition-colors duration-300 group-focus-visible:ring-2 group-focus-visible:ring-blue-500',
+                        index === currentIndex
+                          ? 'bg-blue-500 dark:bg-blue-400'
+                          : 'bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400 dark:group-hover:bg-gray-500'
+                      )}
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <span className="shrink-0 tabular-nums text-sm text-gray-500 dark:text-gray-400">
+              {currentIndex + 1} / {total}
+            </span>
+          </div>
+        )}
+
+        {hasBooks && !loading && (
+          <p className="text-center mt-5 text-sm text-gray-500 dark:text-gray-400">
+            聚焦后可用 ← → 切换、空格暂停；点击两侧书籍直接切换
+          </p>
+        )}
+      </div>
     </div>
   );
 }

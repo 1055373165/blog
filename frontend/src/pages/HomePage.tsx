@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { articlesApi } from '../api';
 import { Article } from '../types';
 import EnhancedArticleGrid from '../components/EnhancedArticleGrid';
-import LoadingSpinner from '../components/LoadingSpinner';
 import BookCarousel from '../components/BookCarousel';
 import CinematicHero from '../components/CinematicHero';
-import { getThumbnailUrl, preloadImages } from '../utils/imageUtils';
 
 export default function HomePage() {
   const [layoutVariant, setLayoutVariant] = useState<'masonry' | 'grid'>('masonry');
@@ -38,37 +36,8 @@ export default function HomePage() {
 
   const popularArticles = popularQuery.data ?? [];
   const recentArticles = recentQuery.data ?? [];
-  const loading = popularQuery.isLoading && recentQuery.isLoading;
 
-  // 文章封面预热 — 仅对首屏可见的少量缩略图，且空闲时执行
-  useEffect(() => {
-    if (popularArticles.length === 0 && recentArticles.length === 0) return;
-
-    const thumbnailUrls = [...popularArticles, ...recentArticles]
-      .slice(0, 6)
-      .map((a) => a.cover_image && getThumbnailUrl(a.cover_image))
-      .filter((url): url is string => !!url);
-    if (thumbnailUrls.length === 0) return;
-
-    const idle =
-      typeof window !== 'undefined' && 'requestIdleCallback' in window
-        ? (cb: () => void) => (window as any).requestIdleCallback(cb, { timeout: 1500 })
-        : (cb: () => void) => setTimeout(cb, 800);
-
-    const handle = idle(() => preloadImages(thumbnailUrls));
-    return () => {
-      if (typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
-        (window as any).cancelIdleCallback(handle);
-      } else {
-        clearTimeout(handle as unknown as number);
-      }
-    };
-  }, [popularArticles, recentArticles]);
-
-  if (loading) {
-    return <LoadingSpinner size="lg" />;
-  }
-
+  // Hero 与书籍轮播不依赖接口，立即渲染；文章区在数据返回前显示骨架屏
   return (
     <div className="bg-transparent">
       {/* Hero Section */}
@@ -80,14 +49,14 @@ export default function HomePage() {
           <BookCarousel
             className="shadow-2xl"
             autoPlay={true}
-            autoPlayInterval={3000}
+            autoPlayInterval={5000}
             showControls={true}
             showDots={true}
           />
         </section>
 
         {/* Enhanced Popular Articles */}
-        {popularArticles.length > 0 && (
+        {(popularQuery.isLoading || popularArticles.length > 0) && (
           <section className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -131,19 +100,19 @@ export default function HomePage() {
             </div>
 
             <EnhancedArticleGrid
-              key={layoutVariant}
               articles={popularArticles}
               loading={popularQuery.isLoading}
               variant={layoutVariant}
               showStats={true}
               showCategory={true}
               showTags={true}
+              eagerCount={0}
             />
           </section>
         )}
 
         {/* Recent Articles */}
-        {recentArticles.length > 0 && (
+        {(recentQuery.isLoading || recentArticles.length > 0) && (
           <section className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -167,13 +136,13 @@ export default function HomePage() {
             </div>
 
             <EnhancedArticleGrid
-              key={`recent-${layoutVariant}`}
               articles={recentArticles}
               loading={recentQuery.isLoading}
               variant={layoutVariant}
               showStats={false}
               showCategory={true}
               showTags={true}
+              eagerCount={0}
             />
           </section>
         )}

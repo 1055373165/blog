@@ -10,25 +10,38 @@ interface AnimatedBackgroundProps {
 
 // 网格动画背景
 const GridBackground = ({ intensity, enableScrollEffect }: { intensity: string; enableScrollEffect?: boolean }) => {
-  const [scrollY, setScrollY] = useState(0);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const rootRef = useRef<HTMLDivElement>(null);
 
+  /* 视差只写 CSS 变量（--mx / --my / --sy），每帧最多一次，不触发 React 重渲染 */
   useEffect(() => {
-    if (!enableScrollEffect) return;
+    const root = rootRef.current;
+    if (!enableScrollEffect || !root) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const handleScroll = () => setScrollY(window.scrollY);
+    let mx = 0;
+    let my = 0;
+    let raf = 0;
+    const flush = () => {
+      raf = 0;
+      root.style.setProperty('--mx', String(mx));
+      root.style.setProperty('--my', String(my));
+      root.style.setProperty('--sy', String(window.scrollY));
+    };
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(flush);
+    };
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({
-        x: (e.clientX / window.innerWidth - 0.5) * 2,
-        y: (e.clientY / window.innerHeight - 0.5) * 2
-      });
+      mx = (e.clientX / window.innerWidth - 0.5) * 2;
+      my = (e.clientY / window.innerHeight - 0.5) * 2;
+      schedule();
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', schedule);
       window.removeEventListener('mousemove', handleMouseMove);
     };
   }, [enableScrollEffect]);
@@ -44,7 +57,11 @@ const GridBackground = ({ intensity, enableScrollEffect }: { intensity: string; 
   const gridSize = getGridSize();
 
   return (
-    <div className="absolute inset-0 overflow-hidden opacity-30 dark:opacity-20">
+    <div
+      ref={rootRef}
+      className="absolute inset-0 overflow-hidden opacity-30 dark:opacity-20"
+      style={{ '--mx': 0, '--my': 0, '--sy': 0 } as React.CSSProperties}
+    >
       {/* 主网格 */}
       <div 
         className="absolute inset-0"
@@ -54,7 +71,7 @@ const GridBackground = ({ intensity, enableScrollEffect }: { intensity: string; 
             linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px)
           `,
           backgroundSize: `${gridSize}px ${gridSize}px`,
-          transform: `translate3d(${mousePosition.x * 10}px, ${mousePosition.y * 10 + scrollY * 0.1}px, 0)`
+          transform: 'translate3d(calc(var(--mx) * 10px), calc(var(--my) * 10px + var(--sy) * 0.1px), 0)'
         }}
       />
       
@@ -67,7 +84,7 @@ const GridBackground = ({ intensity, enableScrollEffect }: { intensity: string; 
             linear-gradient(90deg, rgba(14, 165, 233, 0.05) 1px, transparent 1px)
           `,
           backgroundSize: `${gridSize * 5}px ${gridSize * 5}px`,
-          transform: `translate3d(${mousePosition.x * -5}px, ${mousePosition.y * -5 + scrollY * 0.05}px, 0)`
+          transform: 'translate3d(calc(var(--mx) * -5px), calc(var(--my) * -5px + var(--sy) * 0.05px), 0)'
         }}
       />
       
@@ -81,7 +98,7 @@ const GridBackground = ({ intensity, enableScrollEffect }: { intensity: string; 
             top: `${(i * 31 + 15) % 85}%`,
             animationDelay: `${i * 0.5}s`,
             animationDuration: `${2 + (i % 3)}s`,
-            transform: `translate3d(${mousePosition.x * (i % 3) * 5}px, ${mousePosition.y * (i % 3) * 5 + scrollY * 0.02}px, 0)`
+            transform: `translate3d(calc(var(--mx) * ${(i % 3) * 5}px), calc(var(--my) * ${(i % 3) * 5}px + var(--sy) * 0.02px), 0)`
           }}
         />
       ))}

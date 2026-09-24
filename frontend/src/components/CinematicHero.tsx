@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { prepareWithSegments, layoutNextLine } from '@chenglou/pretext';
 import type { PreparedTextWithSegments, LayoutCursor } from '@chenglou/pretext';
 import { poems } from '../constants/poems';
@@ -22,6 +23,13 @@ const VIDEO_FADE = 0.5;
    shrink the layout width so packed lines don't clip the right edge. */
 const LETTER_SPACING_EM = 0.08;
 const LAYOUT_WIDTH_FACTOR = 1 / (1 + LETTER_SPACING_EM);
+/* The orb carves width out of every line it overlaps, so the same text needs
+   more vertical space than the orb-free measurement predicts. Without slack the
+   layout loop hits its bound mid-poem and silently drops the tail. The orb spans
+   at most ~3 lines, each of which can lose at most one line's worth of content,
+   so four lines of slack is enough — and bounded, so the scroll area can't chase
+   itself as the orb is dragged. */
+const ORB_SLACK_H = 4 * LINE_HEIGHT;
 
 /* Chinese numerals for counter (handles 0–99, sufficient for any reasonable poem count) */
 const CN_DIGITS = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'];
@@ -122,37 +130,76 @@ const FADE_IN = 300;
 export default function CinematicHero() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const rafRef = useRef<number>(0);
   const [currentIndex, setCurrentIndex] = useState(0);
+  /* Poster stays behind the video until its first fade-in completes */
+  const [videoStarted, setVideoStarted] = useState(false);
   const [textOpacity, setTextOpacity] = useState(1);
   const switchingRef = useRef(false);
   const poem = poems[currentIndex];
 
-  /* ── Video fade-loop ────────────────────────────────── */
-  const tick = useCallback(() => {
-    const v = videoRef.current;
-    if (!v || v.paused) { rafRef.current = requestAnimationFrame(tick); return; }
-    const { currentTime, duration } = v;
-    if (duration && Number.isFinite(duration)) {
-      if (currentTime < VIDEO_FADE) v.style.opacity = String(Math.min(currentTime / VIDEO_FADE, 1));
-      else if (currentTime > duration - VIDEO_FADE) v.style.opacity = String(Math.max((duration - currentTime) / VIDEO_FADE, 0));
-      else v.style.opacity = '1';
-    }
-    rafRef.current = requestAnimationFrame(tick);
-  }, []);
-
+  /* ── Video fade-loop ──────────────────────────────────
+     The fade rAF runs only while the video is playing, and the video
+     itself only plays while it is on screen in a visible tab. */
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    v.style.opacity = '0';
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let raf = 0;
+    let inView = false;
+    let restartTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const fade = () => {
+      const { currentTime, duration } = v;
+      if (duration && Number.isFinite(duration)) {
+        if (currentTime < VIDEO_FADE) v.style.opacity = String(Math.min(currentTime / VIDEO_FADE, 1));
+        else if (currentTime > duration - VIDEO_FADE) v.style.opacity = String(Math.max((duration - currentTime) / VIDEO_FADE, 0));
+        else {
+          v.style.opacity = '1';
+          setVideoStarted(true);
+        }
+      }
+      raf = requestAnimationFrame(fade);
+    };
+    const onPlaying = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(fade);
+    };
+    const onPause = () => cancelAnimationFrame(raf);
+
+    const shouldPlay = () => inView && !document.hidden && !reduceMotion;
+    const sync = () => {
+      if (shouldPlay()) v.play().catch(() => {});
+      else v.pause();
+    };
     const handleEnded = () => {
       v.style.opacity = '0';
-      setTimeout(() => { v.currentTime = 0; v.play().catch(() => {}); }, 100);
+      restartTimer = setTimeout(() => {
+        v.currentTime = 0;
+        if (shouldPlay()) v.play().catch(() => {});
+      }, 100);
     };
+
+    const observer = new IntersectionObserver(([entry]) => {
+      inView = !!entry?.isIntersecting;
+      sync();
+    });
+    observer.observe(v);
+
+    v.style.opacity = '0';
+    v.addEventListener('playing', onPlaying);
+    v.addEventListener('pause', onPause);
     v.addEventListener('ended', handleEnded);
-    rafRef.current = requestAnimationFrame(tick);
-    return () => { v.removeEventListener('ended', handleEnded); cancelAnimationFrame(rafRef.current); };
-  }, [tick]);
+    document.addEventListener('visibilitychange', sync);
+    return () => {
+      observer.disconnect();
+      clearTimeout(restartTimer);
+      cancelAnimationFrame(raf);
+      v.removeEventListener('playing', onPlaying);
+      v.removeEventListener('pause', onPause);
+      v.removeEventListener('ended', handleEnded);
+      document.removeEventListener('visibilitychange', sync);
+    };
+  }, []);
 
   /* ── Switch poem with fade transition ──────────────── */
   const switchTo = useCallback((idx: number) => {
@@ -199,6 +246,12 @@ export default function CinematicHero() {
     const orb = persistedOrb ? { ...persistedOrb } : defaultOrb;
     persistedOrb = { ...orb };
     const linePool: HTMLDivElement[] = [];
+    /* Last values written per pooled line, so unchanged lines cost no DOM writes */
+    const drawn: { text: string; x: number; y: number }[] = [];
+
+    /* Layout runs on demand (drag, resize, boot) instead of every frame */
+    let framePending = false;
+    let requestFrame = () => {};
 
     /* ── Drag handlers ────────────────────────────────── */
     let dragging = false;
@@ -226,6 +279,7 @@ export default function CinematicHero() {
       orb.x = x;
       orb.y = y;
       persistedOrb = { x, y };
+      requestFrame();
     };
     const onPointerUp = (e: PointerEvent) => {
       if (!dragging) return;
@@ -237,6 +291,8 @@ export default function CinematicHero() {
     orbEl.addEventListener('pointermove', onPointerMove);
     orbEl.addEventListener('pointerup', onPointerUp);
     orbEl.addEventListener('pointercancel', onPointerUp);
+
+    const resizeObserver = new ResizeObserver(() => requestFrame());
 
     const boot = async () => {
       try {
@@ -254,30 +310,50 @@ export default function CinematicHero() {
       const naturalH = naturalLines.length > 0
         ? naturalLines[naturalLines.length - 1].y + LINE_HEIGHT + 16
         : 0;
+      let lastSpacerH = naturalH;
       spacer.style.height = naturalH + 'px';
 
       function frame() {
+        framePending = false;
         if (cancelled) return;
         const sw = stage!.clientWidth;
         const colW = Math.min(COL_MAX_W, sw - GUTTER * 2);
         const colX = GUTTER;
-        /* Layout within naturalH bounds — orb lives in content-space, carves text */
+        /* Layout within naturalH + slack — orb lives in content-space, carves text */
         const lines = layoutLines(
-          prepared, colX, 0, colW, naturalH,
+          prepared, colX, 0, colW, naturalH + ORB_SLACK_H,
           orb.x, orb.y, ORB_R, true,
         );
+        /* Grow the scroll area when the orb pushes text past its natural height,
+           so the extra lines stay reachable instead of being clipped. */
+        const contentH = lines.length > 0
+          ? lines[lines.length - 1].y + LINE_HEIGHT + 16
+          : 0;
+        const spacerH = Math.max(naturalH, contentH);
+        if (spacerH !== lastSpacerH) {
+          lastSpacerH = spacerH;
+          spacer.style.height = spacerH + 'px';
+        }
         syncPool(linePool, lines.length, stage!);
         for (let i = 0; i < lines.length; i++) {
           const el = linePool[i];
-          el.textContent = lines[i].text;
-          el.style.left = lines[i].x + 'px';
-          el.style.top = lines[i].y + 'px';
+          const { text, x, y } = lines[i];
+          const prev = drawn[i];
+          if (prev?.text !== text) el.textContent = text;
+          if (prev?.x !== x) el.style.left = x + 'px';
+          if (prev?.y !== y) el.style.top = y + 'px';
+          drawn[i] = { text, x, y };
         }
         orbEl.style.left = (orb.x - ORB_R) + 'px';
         orbEl.style.top = (orb.y - ORB_R) + 'px';
-        animId = requestAnimationFrame(frame);
       }
-      animId = requestAnimationFrame(frame);
+      requestFrame = () => {
+        if (framePending || cancelled) return;
+        framePending = true;
+        animId = requestAnimationFrame(frame);
+      };
+      resizeObserver.observe(stage!);
+      requestFrame();
       } catch (err) { console.error('[CinematicHero] pretext boot error:', err); }
     };
     boot();
@@ -285,6 +361,7 @@ export default function CinematicHero() {
     return () => {
       cancelled = true;
       cancelAnimationFrame(animId);
+      resizeObserver.disconnect();
       orbEl.removeEventListener('pointerdown', onPointerDown);
       orbEl.removeEventListener('pointermove', onPointerMove);
       orbEl.removeEventListener('pointerup', onPointerUp);
@@ -295,32 +372,39 @@ export default function CinematicHero() {
     };
   }, [currentIndex]);
 
-  /* ── Keyboard navigation ────────────────────────────── */
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') switchTo((currentIndex - 1 + poems.length) % poems.length);
-      if (e.key === 'ArrowRight') switchTo((currentIndex + 1) % poems.length);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [currentIndex, switchTo]);
+  /* ── Keyboard navigation — only while the poem column has focus ── */
+  const handleKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      switchTo((currentIndex - 1 + poems.length) % poems.length);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      switchTo((currentIndex + 1) % poems.length);
+    }
+  };
 
   return (
     <section className="w-full overflow-x-hidden pt-32 pb-16">
       <div className="flex flex-col gap-6 px-[6%] lg:flex-row lg:items-center lg:gap-[6%]">
         {/* ── Left: Cinematic Video (symmetric with text) ──────────────── */}
         <div className="animate-fade-rise lg:w-[41vw] shrink-0">
-          <div className="relative overflow-hidden rounded-2xl">
+          {/* 固定 4:3 占位 + 首帧 poster：视频加载前不塌陷、不空白 */}
+          <div
+            className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-cover bg-center"
+            style={videoStarted ? undefined : { backgroundImage: 'url(/hero-poster.jpg)' }}
+          >
             <video
               ref={videoRef}
               src="/hero-video.mp4"
               muted
               playsInline
-              autoPlay
               preload="metadata"
+              width={768}
+              height={576}
               disablePictureInPicture
               disableRemotePlayback
-              className="block w-full"
+              aria-hidden="true"
+              className="block h-full w-full object-cover"
               style={{ opacity: 0 }}
             />
           </div>
@@ -328,8 +412,12 @@ export default function CinematicHero() {
 
         {/* ── Right: Editorial Text · 线装书脊 layout ─────────────── */}
         <div
-          className="animate-fade-rise-delay lg:w-[41vw] shrink-0"
+          className="animate-fade-rise-delay lg:w-[41vw] shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-stone-400/60"
           style={{ opacity: textOpacity, transition: `opacity ${textOpacity === 0 ? FADE_OUT : FADE_IN}ms ease` }}
+          tabIndex={0}
+          role="group"
+          aria-label={`${poem.title}，方向键切换诗词`}
+          onKeyDown={handleKeyDown}
         >
           <div className="flex items-start gap-5">
             {/* ── Spine: vertical title & attribution ─── */}
