@@ -17,7 +17,8 @@ import { useAuth } from '../contexts/AuthContext';
 
 // 重组件按需懒加载：MarkdownRenderer 拖着 markdown-vendor / mermaid / 代码高亮等大依赖，
 // CommentSection / EnhancedArticleGrid 是次要内容，先把首屏头图 + 标题 + 作者信息打出来再装。
-const MarkdownRenderer = lazy(() => import('../components/MarkdownRenderer'));
+const loadMarkdownRenderer = () => import('../components/MarkdownRenderer');
+const MarkdownRenderer = lazy(loadMarkdownRenderer);
 const EnhancedArticleGrid = lazy(() => import('../components/EnhancedArticleGrid'));
 const CommentSection = lazy(() =>
   import('../components/comments').then((m) => ({ default: m.CommentSection }))
@@ -122,6 +123,11 @@ export default function ArticlePage() {
     
     return () => observer.disconnect();
   }, [handleReadingComplete, article?.content, hasCompletedReading]);
+
+  // 渲染器（含 markdown-vendor）与文章接口并行下载，而不是等文章返回后才开始拉取
+  useEffect(() => {
+    void loadMarkdownRenderer();
+  }, []);
 
   // 定义 loadArticle 函数，使其在依赖数组中可访问
   const loadArticle = useCallback(async () => {

@@ -80,6 +80,9 @@ export default defineConfig(async ({ mode }) => ({
           if (id.includes('react-syntax-highlighter') || id.includes('refractor') || id.includes('prismjs')) {
             return 'syntax-vendor'
           }
+          // format / fault 是 markdown 解析链（frontmatter）也用到的小工具；放任 Rollup 分配时它们落进
+          // highlight-vendor，文章页于是为了几行代码多下载 300KB+ 的 highlight.js
+          if (/node_modules\/(format|fault)\//.test(id)) return 'markdown-vendor'
           if (id.includes('highlight.js') || id.includes('lowlight')) return 'highlight-vendor'
 
           // unified 生态（react-markdown / bytemd / 各类 remark/rehype 插件共用）
