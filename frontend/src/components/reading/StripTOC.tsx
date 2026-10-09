@@ -303,7 +303,7 @@ export default function StripTOC({
   return (
     <nav 
       className={clsx(
-        'strip-toc sticky top-8',
+        'strip-toc',
         className
       )}
       aria-label="文章目录"
@@ -336,11 +336,11 @@ export default function StripTOC({
       {/* TOC Items - Clean strip layout with collapse animation */}
       <div 
         className={clsx(
-          'transition-all duration-300 ease-in-out overflow-hidden',
-          isExpanded ? 'max-h-[9999px] opacity-100' : 'max-h-0 opacity-0'
+          'grid transition-[grid-template-rows,opacity] duration-300 ease-in-out',
+          isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
         )}
       >
-        <div className="space-y-0">
+        <div className="min-h-0 overflow-hidden">
           {tocItems.map((item) => (
             <StripTOCItem
               key={item.id}
@@ -349,11 +349,11 @@ export default function StripTOC({
               onClick={handleItemClick}
             />
           ))}
-        </div>
 
-        {/* Bottom fade for visual polish */}
-        <div className="mt-8 px-4">
-          <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent dark:via-gray-700"></div>
+          {/* Bottom fade for visual polish */}
+          <div className="mt-8 px-4">
+            <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent dark:via-gray-700"></div>
+          </div>
         </div>
       </div>
     </nav>

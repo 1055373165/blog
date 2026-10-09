@@ -1,5 +1,4 @@
 import MarkdownRenderer from './MarkdownRenderer';
-import HTMLRenderer from './HTMLRenderer';
 import type { CreateArticleInput } from '../types';
 
 interface ArticlePreviewProps {
@@ -10,14 +9,8 @@ interface ArticlePreviewProps {
 export default function ArticlePreview({ article, className = '' }: ArticlePreviewProps) {
   const estimatedReadingTime = Math.ceil(article.content.length / 200);
 
-  // 检测内容格式 - 如果包含HTML标签，则认为是HTML格式
-  const isHTMLContent = (content: string): boolean => {
-    // 检查是否包含常见的HTML标签
-    const htmlTagRegex = /<\/?(?:h[1-6]|p|div|span|img|a|strong|em|ul|ol|li|blockquote|code|pre|table|tr|td|th)(?:\s[^>]*)?>(?!.*<\/markdown>)/i;
-    return htmlTagRegex.test(content);
-  };
-
-  const isHTML = isHTMLContent(article.content);
+  // 内嵌 HTML 标签不改变文档的 Markdown 格式
+  // 所有文章内容由 MarkdownRenderer 统一解析和安全过滤
 
   return (
     <div className={`max-w-4xl mx-auto ${className}`}>
@@ -82,12 +75,9 @@ export default function ArticlePreview({ article, className = '' }: ArticlePrevi
 
       {/* Article Content - 使用与发布文章相同的渲染器 */}
       <article className="article-content">
-        {isHTML ? (
-          <HTMLRenderer content={article.content || '暂无内容'} />
-        ) : (
-          <MarkdownRenderer
-            content={article.content || '暂无内容'}
-            className="prose prose-lg max-w-none
+        <MarkdownRenderer
+          content={article.content || '暂无内容'}
+          className="prose prose-lg max-w-none
                        prose-headings:text-gray-900 dark:prose-headings:text-white prose-headings:font-heading
                        prose-a:text-go-600 dark:prose-a:text-go-400 prose-a:font-medium hover:prose-a:text-go-700
                        prose-strong:text-gray-900 dark:prose-strong:text-white prose-strong:font-semibold
@@ -98,8 +88,7 @@ export default function ArticlePreview({ article, className = '' }: ArticlePrevi
                        prose-table:border prose-table:border-gray-200 dark:prose-table:border-gray-700 prose-table:rounded-lg prose-table:overflow-hidden
                        prose-th:bg-go-50 dark:prose-th:bg-go-900/30 prose-th:text-go-900 dark:prose-th:text-go-100
                        prose-td:border-gray-200 dark:prose-td:border-gray-700"
-          />
-        )}
+        />
       </article>
 
       {/* Article Footer */}
